@@ -183,3 +183,12 @@
   .ls-paper { border: 0; box-shadow: none; padding: 0; }
   .bx-sol > .bx-b { display: block; }
 }
+
+/* a PISA task opens as a computer-based test in the CBA app */
+.cba-go {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 3px 14px; border-radius: 999px;
+  background: #3b8686; color: #fff !important; font-size: 14px; font-weight: 700; line-height: 1.9; text-decoration: none;
+  box-shadow: 0 4px 10px -6px #3b8686;
+}
+.cba-go:hover { background: #2c6464; }
+@media print { .cba-go { display: none; } }
