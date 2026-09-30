@@ -528,6 +528,78 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13.5px; line-height: 1.7; }
 .footer-bottom p { margin: 0; }
 
+/* ---- live visitors (stats.khmermath.org) ---- */
+.vc-panel { display: grid; grid-template-columns: 1.05fr 1fr; gap: 36px; align-items: start; }
+.vc-intro h2 { font-size: clamp(26px, 3.2vw, 36px); }
+.vc-intro > p { margin: 12px 0 0; color: var(--ink-2); font-size: 17px; }
+.vc-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 26px; }
+.vc-tile {
+  --c: var(--teal); --cs: var(--teal-soft);
+  position: relative; padding: 18px 18px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.vc-tile.t-amber { --c: var(--amber); --cs: var(--amber-soft); }
+.vc-tile.t-blue { --c: var(--blue); --cs: var(--blue-soft); }
+.vc-tile.t-violet { --c: var(--violet); --cs: var(--violet-soft); }
+.vc-tile > .ic { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; padding: 8px; border-radius: 11px; background: var(--cs); color: var(--c); }
+.vc-tile b { display: block; font-size: 32px; line-height: 1.3; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vc-tile span { color: var(--ink-3); font-size: 14.5px; }
+.vc-note { display: flex; gap: 8px; align-items: flex-start; margin: 18px 0 0; color: var(--ink-3); font-size: 14px; line-height: 1.75; }
+.vc-note .ic { flex: none; margin-top: 4px; }
+.vc-card { padding: 22px 22px 14px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.vc-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: 700; font-size: 16.5px; color: var(--ink); }
+.vc-card-h .ic { color: var(--teal); }
+.vc-list { margin: 0; padding: 0; list-style: none; counter-reset: vc; }
+.vc-list li { display: grid; grid-template-columns: 22px 28px minmax(0, 1fr) minmax(60px, 34%) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); counter-increment: vc; }
+.vc-list li:first-child { border-top: 0; }
+.vc-list li::before { content: counter(vc); color: var(--ink-3); font-size: 13px; font-weight: 700; text-align: center; }
+.vc-list li.vc-empty { display: block; padding: 18px 0; color: var(--ink-3); text-align: center; }
+.vc-list li.vc-empty::before { content: none; }
+.vc-flag { display: block; width: 28px; height: 21px; border-radius: 4px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
+.vc-flag-x { display: grid; place-items: center; background: var(--surface-2); color: var(--ink-3); font-size: 12px; font-weight: 700; }
+.vc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.vc-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.vc-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), var(--blue)); }
+.vc-list b { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; font-size: 15px; }
+
+/* ---- help: feedback and support ---- */
+.help-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 22px; }
+.help-card { position: relative; padding: 28px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); scroll-margin-top: calc(var(--header-h) + 20px); }
+.help-card h3 { margin-top: 14px; font-size: 21px; }
+.help-card p { margin: 10px 0 0; color: var(--ink-2); font-size: 15.5px; line-height: 1.85; }
+.help-i { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 14px; background: var(--teal-soft); color: var(--teal); }
+.help-support .help-i { background: var(--rose-soft); color: var(--rose); }
+.help-tips { margin: 14px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.help-tips li { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; color: var(--ink-2); }
+.help-tips .ic { flex: none; width: 18px; height: 18px; margin-top: 5px; color: var(--teal); }
+.help-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.help-card .help-small { font-size: 13.5px; color: var(--ink-3); line-height: 1.75; }
+.help-support { display: grid; grid-template-columns: 1fr 210px; gap: 24px; align-items: center; background: linear-gradient(135deg, var(--rose-soft), var(--surface) 55%); }
+.khqr { display: block; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); transition: transform .18s; }
+.khqr:hover { transform: translateY(-2px) rotate(-.5deg); }
+.khqr img { display: block; width: 100%; height: auto; }
+
+/* ---- footer: visitors, feedback, support ---- */
+.footer-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-top: 40px; padding: 16px 18px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); }
+.vc-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--ink-2); font-size: 14.5px; }
+.vc-foot[hidden] { display: none; }
+.vc-foot-i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--teal-soft); color: var(--teal); }
+.vc-foot-i .ic { width: 19px; height: 19px; }
+.vc-foot b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.vc-flags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+.vc-flags .vc-flag { width: 22px; height: 16.5px; border-radius: 3px; }
+.vc-chip { display: inline-block; line-height: 0; }
+.footer-cta-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.btn-heart .ic { color: var(--rose); }
+
+/* ---- "found an error?" box at the end of lessons and the formula book ---- */
+.report { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 28px 0 8px; padding: 16px 18px; border-radius: 16px;
+  background: var(--amber-soft); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); color: var(--ink); line-height: 1.7; }
+.report-i { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--amber); color: #fff; }
+.report-t { flex: 1 1 260px; display: flex; flex-direction: column; }
+.report-t b { font-size: 16.5px; }
+.report-t span { color: var(--ink-2); font-size: 14.5px; }
+@media print { .report, .footer-cta { display: none; } }
+
 /* ---- responsive ---- */
 @media (max-width: 1080px) {
   .nav-link { padding: 8px 9px; font-size: 15px; }
@@ -571,6 +643,7 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
   .feature-unit { grid-template-columns: 1fr; }
   .feature-unit .fu-shot { border-left: 0; border-top: 1px solid var(--line); min-height: 240px; }
   .community { grid-template-columns: 1fr; padding: 40px 32px; }
+  .vc-panel, .help-grid { grid-template-columns: 1fr; }
   .section { padding: 68px 0; }
 }
 @media (max-width: 640px) {
@@ -591,6 +664,17 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
   .grade-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
   .grade-hero .grade-badge { width: 76px; height: 76px; border-radius: 22px; font-size: 38px; }
   .community { padding: 32px 22px; }
+  .vc-tile { padding: 14px 14px 12px; }
+  .vc-tile b { font-size: 25px; }
+  .vc-tile > .ic { position: static; display: block; width: 32px; height: 32px; padding: 6px; margin-bottom: 6px; }
+  .vc-list li { grid-template-columns: 18px 26px minmax(0, 1fr) auto; }
+  .vc-bar { display: none; }
+  .help-card { padding: 22px 20px; }
+  .help-support { grid-template-columns: 1fr; }
+  .khqr { max-width: 240px; }
+  .help-actions .btn { flex: 1 1 100%; }
+  .footer-cta-btns { margin-left: 0; width: 100%; }
+  .footer-cta-btns .btn { flex: 1 1 100%; }
   .qr-box { justify-self: start; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .section-head { margin-bottom: 34px; }
