@@ -184,11 +184,23 @@
   .bx-sol > .bx-b { display: block; }
 }
 
-/* a PISA task opens as a computer-based test in the CBA app */
-.cba-go {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 3px 14px; border-radius: 999px;
-  background: #3b8686; color: #fff !important; font-size: 14px; font-weight: 700; line-height: 1.9; text-decoration: none;
-  box-shadow: 0 4px 10px -6px #3b8686;
+/* under each PISA task: try it on the computer, or take all of the lesson's tasks as one test (CBA app) */
+.cba-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px -4px 0; padding: 12px 14px;
+  border-radius: 12px; background: var(--lt-teal); border: 1px dashed #b7d6d2; line-height: 1.6;
 }
-.cba-go:hover { background: #2c6464; }
-@media print { .cba-go { display: none; } }
+.cba-bar-t { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; color: var(--teal-d); font-size: 14.5px; font-weight: 600; }
+.cba-bar-t .ic { width: 20px; height: 20px; flex: none; }
+.cba-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 6px 18px;
+  border-radius: 999px; border: 1.5px solid var(--teal); background: #fff; color: var(--teal-d) !important;
+  font-size: 15px; font-weight: 700; white-space: nowrap; text-decoration: none; transition: background .15s, transform .15s;
+}
+.cba-btn:hover { background: #f4faf9; transform: translateY(-1px); }
+.cba-btn-full { background: var(--coral); border-color: var(--coral); color: #fff !important; box-shadow: 0 6px 14px -8px var(--coral-d); }
+.cba-btn-full:hover { background: var(--coral-d); border-color: var(--coral-d); }
+@media (max-width: 640px) {
+  .cba-bar-t { width: 100%; margin-right: 0; }
+  .cba-btn { flex: 1 1 100%; }
+}
+@media print { .cba-bar { display: none; } }
