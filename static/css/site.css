@@ -503,6 +503,19 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 .site-card p { margin: 0 0 12px; color: var(--ink-2); font-size: 15px; line-height: 1.75; }
 .note { font-size: 14.5px; color: var(--ink-3); }
 
+/* ---- formula book banner (grade pages) ---- */
+.fx-banner {
+  display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 16px; color: var(--ink); text-decoration: none;
+  background: linear-gradient(100deg, var(--blue-soft), var(--surface) 70%); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  transition: transform .18s, box-shadow .18s;
+}
+.fx-banner:hover { transform: translateY(-2px); box-shadow: var(--shadow); color: var(--ink); }
+.fx-banner-i { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border-radius: 14px; background: var(--blue); color: var(--surface); }
+.fx-banner-t { flex: 1; display: flex; flex-direction: column; line-height: 1.6; }
+.fx-banner-t b { font-size: 18px; }
+.fx-banner-t span { color: var(--ink-3); font-size: 14.5px; }
+@media (max-width: 640px) { .fx-banner { flex-wrap: wrap; } .fx-banner .btn { width: 100%; } }
+
 /* ---- footer ---- */
 .site-footer { margin-top: 0; padding: 64px 0 28px; background: var(--surface); border-top: 1px solid var(--line); }
 .footer-grid { display: grid; grid-template-columns: 1.5fr repeat(4, 1fr); gap: 32px; }
