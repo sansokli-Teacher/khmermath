@@ -514,6 +514,7 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 .fx-banner-t { flex: 1; display: flex; flex-direction: column; line-height: 1.6; }
 .fx-banner-t b { font-size: 18px; }
 .fx-banner-t span { color: var(--ink-3); font-size: 14.5px; }
+.banners { display: grid; gap: 12px; }
 @media (max-width: 640px) { .fx-banner { flex-wrap: wrap; } .fx-banner .btn { width: 100%; } }
 
 /* ---- footer ---- */

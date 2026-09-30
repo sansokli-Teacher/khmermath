@@ -43,6 +43,8 @@
 }
 .fx-num::before { color: #fff; clip-path: inset(0 50% 0 0); }
 .fx-num::after { color: var(--fx-blue); clip-path: inset(0 0 0 50%); }
+.fx-more { margin-left: auto; padding: 3px 12px; border-radius: 999px; border: 1px solid #c9d2f5; color: var(--fx-blue); font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.fx-more:hover { background: var(--fx-blue-bg); }
 .fx-topics { column-width: 360px; column-gap: 30px; }
 .fx-topic { margin: 0 0 14px; }
 .fx-topic > *, .keep { break-inside: avoid; }
@@ -65,13 +67,13 @@
 .fb-green .fb-t { padding: 6px 12px 0; color: var(--fx-blue); font-weight: 700; font-size: 14px; }
 .fx-main .center { text-align: center; }
 .fx-main .center .tbl table { margin: 0 auto; }
-.fx-main .md { margin: .35em 0; overflow-x: auto; overflow-y: hidden; }
+.fx-main .md { position: relative; margin: .35em 0; overflow-x: auto; overflow-y: hidden; }
 .fx-main .md .katex-display { margin: .2em 0; }
 .fx-main .mi .katex { font-size: 1.08em; }
 .fx-main .list { margin: 4px 0 6px; padding-left: 1.3em; }
 .fx-main .list li { margin: 2px 0; }
 .fx-main .list li.nobullet { list-style: none; }
-.fx-main .tbl { margin: 6px 0; overflow-x: auto; }
+.fx-main .tbl { position: relative; margin: 6px 0; overflow-x: auto; }
 .fx-main table { border-collapse: collapse; font-size: 14.5px; line-height: 1.6; }
 .fx-main table.ruled td { border: 1px solid #8f95b8; padding: 5px 8px; }
 .fx-main table.plain td { padding: 3px 6px; }
