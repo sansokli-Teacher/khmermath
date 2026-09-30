@@ -573,7 +573,10 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 .help-tips .ic { flex: none; width: 18px; height: 18px; margin-top: 5px; color: var(--teal); }
 .help-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .help-card .help-small { font-size: 13.5px; color: var(--ink-3); line-height: 1.75; }
-.help-support { display: grid; grid-template-columns: 1fr 210px; gap: 24px; align-items: center; background: linear-gradient(135deg, var(--rose-soft), var(--surface) 55%); }
+.help-support { display: grid; grid-template-columns: 1fr 250px; grid-template-areas: "head qr" "body qr"; grid-template-rows: auto 1fr; gap: 0 26px; background: linear-gradient(135deg, var(--rose-soft), var(--surface) 55%); }
+.help-support .help-head { grid-area: head; }
+.help-support .help-body { grid-area: body; }
+.help-support .khqr { grid-area: qr; align-self: center; }
 .khqr { display: block; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); transition: transform .18s; }
 .khqr:hover { transform: translateY(-2px) rotate(-.5deg); }
 .khqr img { display: block; width: 100%; height: auto; }
@@ -670,8 +673,8 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
   .vc-list li { grid-template-columns: 18px 26px minmax(0, 1fr) auto; }
   .vc-bar { display: none; }
   .help-card { padding: 22px 20px; }
-  .help-support { grid-template-columns: 1fr; }
-  .khqr { max-width: 240px; }
+  .help-support { grid-template-columns: 1fr; grid-template-areas: "head" "qr" "body"; grid-template-rows: auto; }
+  .help-support .khqr { width: 100%; max-width: 280px; margin: 18px auto 4px; }
   .help-actions .btn { flex: 1 1 100%; }
   .footer-cta-btns { margin-left: 0; width: 100%; }
   .footer-cta-btns .btn { flex: 1 1 100%; }
