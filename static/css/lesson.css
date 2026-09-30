@@ -211,3 +211,21 @@
 .ls-paper .report-i { background: #c9862b; }
 .ls-paper .report .btn { background: #3b8686; border-color: #3b8686; color: #fff !important; text-decoration: none; }
 .ls-paper .report .btn:hover { background: #2c6464; }
+
+/* Grade 7 (lesson/g7/): the answer inside a worked example, the hidden answer of a practice, captions */
+.ans-h { display: flex; align-items: center; gap: 10px; margin: 12px 0 6px; color: var(--teal-d); font-weight: 700; font-size: 15.5px; }
+.ans-h::after { content: ''; flex: 1; border-top: 1px dashed #c9d6d3; }
+details.ans { margin: 10px 0 4px; }
+details.ans > summary { display: inline-flex; align-items: center; gap: 6px; padding: 2px 14px; border-radius: 999px; border: 1px solid #f2d9d3; color: var(--coral-d); font-weight: 700; font-size: 14.5px; cursor: pointer; list-style: none; }
+details.ans > summary::-webkit-details-marker { display: none; }
+details.ans > summary::before { content: '▸'; }
+details.ans[open] > summary::before { content: '▾'; }
+details.ans[open] > summary { margin-bottom: 8px; }
+.fig-todo { margin: 10px auto; padding: 16px; max-width: 320px; border: 1.5px dashed #c9d6d3; border-radius: 12px; color: #888; text-align: center; font-size: 14px; }
+.caption { text-align: center; color: #666; font-size: 14.5px; }
+.book-cover.g7 { color: #1f4f80; }
+.book-cover.g7::before { background: #2d6aa8; }
+.book-cover.g7::after { background: #c9862b; }
+.book-cover.g7 small { color: #c9862b; }
+.legend-wide { max-width: 760px; margin-top: 18px; }
+@media print { details.ans > * { display: block; } }
