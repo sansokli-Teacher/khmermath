@@ -735,3 +735,12 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
   .video-head { margin-top: 36px; }
   .channel-card .btn { width: 100%; }
 }
+/* YouTube Shorts: upright, in a row of their own */
+.yt-short { aspect-ratio: 9 / 16; }
+.shorts-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; max-width: 1080px; }
+.video-feature + .shorts-row, .video-grid + .shorts-row { margin-top: 22px; }
+.video-card.short .vc-body { padding: 10px 12px 12px; }
+.video-card.short h3 { font-size: 15px; line-height: 1.55; }
+@media (max-width: 640px) {
+  .shorts-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+}

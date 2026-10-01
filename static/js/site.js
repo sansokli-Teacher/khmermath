@@ -88,7 +88,7 @@
     f.allowFullscreen = true;
     f.referrerPolicy = 'strict-origin-when-cross-origin';
     var box = document.createElement('div');
-    box.className = 'yt';
+    box.className = a.className;
     box.appendChild(f);
     a.replaceWith(box);
   });
