@@ -1695,6 +1695,52 @@
     },
   });
 
+  // Grade 8, lesson 12, a worked example: M is a point of the bisector of the angle XOY; the
+  // perpendiculars from M meet OX at A and OY at B. (Then MA = MB.) The handle on OY turns that
+  // side; M slides along the bisector.
+  var G8B = { O: [90, 402], X: [596, 402], reach: 380 };     // reach: how far along OY its handle sits
+  CX['g8-l12-bisector-point'] = scripted({
+    steps: 6,
+    start: { Y: [334, 111], M: [362, 275] },
+    place: function (s, key, p) {
+      if (key === 'Y') return add(G8B.O, mul(unit(sub(p, G8B.O)), G8B.reach));
+      var d = unit(add(unit(sub(G8B.X, G8B.O)), unit(sub(s.Y, G8B.O))));      // M stays on the bisector
+      return add(G8B.O, mul(d, Math.max(150, Math.min(330, dotp(sub(p, G8B.O), d)))));
+    },
+    limit: function (s, key, p) {
+      if (key !== 'Y') return true;
+      var v = sub(p, G8B.O), a = Math.atan2(-v[1], v[0]) * 180 / Math.PI;
+      return a >= 34 && a <= 100;
+    },
+    figure: function (s) {
+      var O = G8B.O, X = G8B.X, Y = s.Y, d = unit(add(unit(sub(X, O)), unit(sub(Y, O)))), M = add(O, mul(d, len(sub(s.M, O))));
+      return { O: O, X: X, Y: Y, M: M, d: d, b: bisectorOf(O, X, Y, M), A: footOn(M, O, X), B: footOn(M, O, Y),
+        Ey: toEdge(O, unit(sub(Y, O)), 400) };                 // the side OY runs to the edge of the sheet
+    },
+    base: function (f, ink) {
+      segLine(ink, f.O, f.X, 'cx-seg'); segLine(ink, f.O, f.Ey, 'cx-seg');
+      label(ink, add(f.X, [-10, 22]), 'X', 'cx-label');
+      label(ink, add(add(f.Ey, mul(unit(sub(f.O, f.Ey)), 16)), mul([-f.d[1], f.d[0]], -24)), 'Y', 'cx-label');
+    },
+    top: function (f, ink, i) {
+      point(ink, f.O, 'O', [-0.8, 0.7], null, null, 22);
+      el('circle', { cx: f.Y[0], cy: f.Y[1], r: 7, class: 'cx-handle' }, ink);
+      el('circle', { cx: f.Y[0], cy: f.Y[1], r: 24, class: 'cx-grab', 'data-drag': 'Y' }, ink);
+      if (i >= 2) el('circle', { cx: f.M[0], cy: f.M[1], r: 24, class: 'cx-grab', 'data-drag': 'M' }, ink);
+    },
+    script: function (f) {
+      return [
+        [],
+        f.b.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.O, f.b.end, 'cx-line cx-line-2'], ['mark', function (g) { halfAngles(g, f.O, f.X, f.Y, f.M, 'a'); }],
+          ['pt', f.M, 'M', [0.85, 0.6], 'cx-pt-m', 23]],
+        [['perp', f.M, f.O, f.X], ['mark', function (g) { rightAt(g, f.A, f.M, f.O, f.X); }], ['pt', f.A, 'A', DOWN, null, 22]],
+        [['perp', f.M, f.O, f.Y], ['mark', function (g) { rightAt(g, f.B, f.M, f.O, f.Y); }], ['pt', f.B, 'B', sub(f.B, f.M), null, 22]],
+        [['mark', function (g) { tick(g, f.M, f.A); tick(g, f.M, f.B); }]],
+      ];
+    },
+  });
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
