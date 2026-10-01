@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="50pt" height="11pt" viewBox="0 0 50 11">
+<path fill="none" stroke-width="0.79701" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M -22.677906 -0.00125 L 22.677562 -0.00125 " transform="matrix(1, 0, 0, -1, 25.299, 7.905)"/>
+<path fill-rule="nonzero" fill="rgb(0%, 0%, 0%)" fill-opacity="1" stroke-width="0.3985" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 0.599437 -0.00125 C 0.599437 0.330781 0.329906 0.596406 0.00178125 0.596406 C -0.33025 0.596406 -0.595875 0.330781 -0.595875 -0.00125 C -0.595875 -0.329375 -0.33025 -0.598906 0.00178125 -0.598906 C 0.329906 -0.598906 0.599437 -0.329375 0.599437 -0.00125 Z M 0.599437 -0.00125 " transform="matrix(1, 0, 0, -1, 25.299, 7.905)"/>
+<path fill="none" stroke-width="0.3985" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(0%, 0%, 100%)" stroke-opacity="1" stroke-miterlimit="10" d="M 5.66975 -0.00125 C 5.66975 3.131562 3.130687 5.670625 0.00178125 5.670625 C -3.131031 5.670625 -5.670094 3.131562 -5.670094 -0.00125 " transform="matrix(1, 0, 0, -1, 25.299, 7.905)"/>
+</svg>

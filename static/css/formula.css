@@ -81,6 +81,9 @@
 .fx-main td .katex { white-space: nowrap; }
 .fx-main img.fig { display: inline-block; max-width: 100%; height: auto; vertical-align: middle; }
 .mp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+/* a few short columns inside a topic (multicols) */
+.mcols { column-count: var(--n, 2); column-gap: 18px; margin: 4px 0 8px; }
+.mcols > * { break-inside: avoid; }
 .mp { flex: 1 1 calc(var(--w) - 12px); min-width: 150px; }
 .fx-hit { outline: 2px solid var(--fx-red); outline-offset: 3px; border-radius: 6px; }
 
