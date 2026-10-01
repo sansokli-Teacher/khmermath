@@ -785,6 +785,150 @@
   CX['angle-90'] = ninetyDef(false);
   CX['angle-45'] = ninetyDef(true);
 
+  // The line d' through A parallel to d (Grade 7, lesson 14 §5.2), one page with two tabs.
+  // With the set square: one side of its right angle on d, a ruler against the other side, and
+  // the set square slid along the ruler until that side passes through A (two lines perpendicular
+  // to one line are parallel). The slider turns the ruler while the set square slides: the ruler
+  // that slips. With the compass: AP = PQ = QB = BA, one opening, so APQB is a rhombus.
+  var PAR = { C: [320, 285], reach: 270 };
+  var dotp = function (a, b) { return a[0] * b[0] + a[1] * b[1]; };
+  var turn = function (v, t) { var c = Math.cos(t), k = Math.sin(t); return [v[0] * c - v[1] * k, v[0] * k + v[1] * c]; };
+  function parFrame(s) {
+    var u = unit(sub(s.D, PAR.C)), n = [u[1], -u[0]], v = sub(s.A, PAR.C);    // n: towards the top of the sheet
+    return { A: s.A, D: s.D, u: u, n: n, along: dotp(v, u), dist: dotp(v, n) };
+  }
+  // A stays above d, where the set square and the arcs have room; the handle D only turns the line
+  function parLimit(s, key, p) {
+    var f = parFrame(key === 'D' ? { A: s.A, D: p } : { A: p, D: s.D });
+    return f.u[0] > 0 && Math.abs(Math.atan2(f.u[1], f.u[0])) <= 0.2 && f.along >= -140 && f.along <= 30 && f.dist >= 70 && f.dist <= 190;
+  }
+  function parPlace(s, key, p) { return key === 'D' ? add(PAR.C, mul(unit(sub(p, PAR.C)), PAR.reach)) : p; }
+  function parGiven(f, ink) {
+    var a = add(PAR.C, mul(f.u, -330)), b = add(PAR.C, mul(f.u, 330));
+    el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'cx-seg' }, ink);
+    label(ink, add(add(PAR.C, mul(f.u, 236)), mul(f.n, 20)), 'd', 'cx-label');
+  }
+  function parHandles(f, ink) {
+    point(ink, f.A, 'A', add(f.n, mul(f.u, -0.4)), null, 'A');
+    el('circle', { cx: f.D[0], cy: f.D[1], r: 7, class: 'cx-handle' }, ink);
+    el('circle', { cx: f.D[0], cy: f.D[1], r: 24, class: 'cx-grab', 'data-drag': 'D' }, ink);
+  }
+  function arrowHead(g, m, w) {                            // the mark of parallel lines
+    var b = add(m, mul(w, -11)), t = [-w[1], w[0]];
+    el('polyline', { points: [add(b, mul(t, 6)), m, add(b, mul(t, -6))].map(function (x) { return x.join(','); }).join(' '), class: 'cx-par' }, g);
+  }
+  function rightMark(g, c, a, b) {
+    var k = 13, p1 = add(c, mul(a, k)), p2 = add(p1, mul(b, k)), p3 = add(c, mul(b, k));
+    el('polyline', { points: [p1, p2, p3].map(function (x) { return x.join(','); }).join(' '), class: 'cx-right' }, g);
+  }
+  CX['parallel'] = {
+    steps: 6,
+    warnFrom: 3,
+    start: { A: [270, 135], D: [590, 285], k: 0 },
+    kScale: 1,
+    kOk: function (k) { return k === 0; },
+    place: parPlace, limit: parLimit,
+    figure: function (s) {
+      var f = parFrame(s), u = f.u, n = f.n, lw = 290, lp = 136, phi = s.k * Math.PI / 180;
+      var c0 = add(PAR.C, mul(u, -216)), reach = dotp(sub(s.A, c0), turn(n, phi));
+      // the tools when the set square has gone the share t of its way along the ruler
+      f.at = function (t) {
+        var nt = turn(n, phi * t);
+        return { c: add(c0, mul(nt, reach * t)), w: turn(u, phi * t), p: mul(nt, -1), r1: add(c0, mul(nt, 218)), r2: add(c0, mul(nt, 30 - lp)) };
+      };
+      f.meet = s.k === 0; f.c0 = c0; f.lw = lw; f.lp = lp; f.end = f.at(1);
+      f.e1 = add(f.end.c, mul(f.end.w, 6)); f.e2 = add(f.end.c, mul(f.end.w, lw - 4));
+      return f;
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, q = f.at(0);
+      if (i >= 5 && f.meet) {                              // both lines are perpendicular to the edge of the ruler
+        dash(marks, add(f.c0, mul(f.n, -34)), add(f.end.c, mul(f.n, 34)));
+        rightMark(marks, f.c0, f.u, f.n); rightMark(marks, f.end.c, f.u, f.n);
+        arrowHead(marks, add(f.c0, mul(f.u, 48)), f.u); arrowHead(marks, add(f.end.c, mul(f.u, 48)), f.u);
+      }
+      parGiven(f, ink);
+      if (i >= 4) {
+        el('line', { x1: f.e1[0], y1: f.e1[1], x2: f.e2[0], y2: f.e2[1], class: 'cx-line' }, ink);
+        label(ink, add(f.e2, mul(f.end.w, 22)), 'd′', 'cx-label');
+      }
+      parHandles(f, ink);
+      if (i === 3 || i === 4) q = f.end;
+      if (i >= 2 && i <= 4) drawRuler(tools, q.r1, q.r2);
+      if (i >= 1 && i <= 4) drawSetSquare(tools, q.c, q.w, q.p, f.lw, f.lp);
+    },
+    anim: function (f, i) {
+      var a0 = f.at(0), sq = function (tools, q) { drawSetSquare(tools, q.c, q.w, q.p, f.lw, f.lp); };
+      if (i === 1) return { phases: [{ dur: 1000, draw: function (t, drawn, tools) {
+        drawSetSquare(tools, add(a0.c, mul(f.n, -46 * (1 - t))), a0.w, a0.p, f.lw, f.lp, 0.25 + 0.75 * t);
+      } }] };
+      if (i === 2) return { phases: [{ dur: 1000, draw: function (t, drawn, tools) {
+        var off = mul(f.u, -40 * (1 - t)), grp = el('g', { opacity: 0.25 + 0.75 * t }, tools);
+        drawRuler(grp, add(a0.r1, off), add(a0.r2, off));
+        sq(tools, a0);
+      } }] };
+      if (i === 3) return { phases: [{ dur: 1700, draw: function (t, drawn, tools) {
+        var q = f.at(t);
+        drawRuler(tools, q.r1, q.r2);
+        sq(tools, q);
+      } }] };
+      if (i === 4) return { phases: [{ dur: 1300, draw: function (t, drawn, tools) {
+        var e = add(f.e1, mul(sub(f.e2, f.e1), t));
+        el('line', { x1: f.e1[0], y1: f.e1[1], x2: e[0], y2: e[1], class: 'cx-line' }, drawn);
+        drawRuler(tools, f.end.r1, f.end.r2);
+        sq(tools, f.end);
+        el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+      } }] };
+      return null;
+    },
+  };
+  CX['parallel-compass'] = {
+    steps: 7,
+    warnFrom: 4,
+    start: { A: [250, 145], D: [590, 285], k: 1 },
+    kOk: keptK, kSnap: snapK,
+    place: parPlace, limit: parLimit,
+    figure: function (s) {
+      var f = parFrame(s), u = f.u, A = s.A, h = f.dist, r = Math.max(h + 35, 150), r2 = s.k * r;
+      var foot = add(PAR.C, mul(u, f.along)), P = add(foot, mul(u, -Math.sqrt(r * r - h * h))), Q = add(P, mul(u, r));
+      // B: on the arcs of radius r2 from Q and from A, on the side of AQ away from P
+      var M = mul(add(A, Q), 0.5), half = len(sub(Q, A)) / 2;
+      var B = add(M, mul(unit(sub(M, P)), Math.sqrt(Math.max(r2 * r2 - half * half, 0)))), w = unit(sub(B, A));
+      f.meet = keptK(s.k); f.P = P; f.Q = Q; f.B = B; f.w = w;
+      f.L1 = toEdge(A, mul(w, -1)); f.L2 = toEdge(A, w);
+      f.arcs = [
+        { c: A, r: r, t1: aimAt(A, P) + 0.24, t2: aimAt(A, P) - 0.24 },
+        { c: P, r: r, t1: aimAt(P, Q) - 0.22, t2: aimAt(P, Q) + 0.22 },
+        { c: Q, r: r2, t1: aimAt(Q, B) + 0.26, t2: aimAt(Q, B) - 0.26 },
+        { c: A, r: r2, t1: aimAt(A, B) - 0.26, t2: aimAt(A, B) + 0.26 },
+      ];
+      return f;
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, differ = f.meet ? tick : tick2;
+      if (i >= 6) {
+        dash(marks, f.A, f.P); dash(marks, f.Q, f.B);
+        tick(marks, f.A, f.P); tick(marks, f.P, f.Q); differ(marks, f.Q, f.B); differ(marks, f.A, f.B);
+        if (f.meet) { arrowHead(marks, add(f.Q, mul(f.u, 46)), f.u); arrowHead(marks, add(f.B, mul(f.w, 46)), f.w); }
+      }
+      parGiven(f, ink);
+      if (i >= 5) {
+        el('line', { x1: f.L1[0], y1: f.L1[1], x2: f.L2[0], y2: f.L2[1], class: 'cx-line' }, ink);
+        label(ink, add(add(f.L2, mul(f.w, -16)), mul(f.n, 20)), 'd′', 'cx-label');
+      }
+      for (var a = 0; a < Math.min(i, 4); a++) arcDraw(ink, f.arcs[a]);
+      if (i >= 1) point(ink, f.P, 'P', add(mul(f.u, -0.9), mul(f.n, -0.8)), null, null, 22);
+      if (i >= 2) point(ink, f.Q, 'Q', add(mul(f.u, 0.8), mul(f.n, -1)), null, null, 22);
+      if (i >= 4) point(ink, f.B, 'B', add(f.u, f.n), 'cx-pt-m', null, 24);
+      parHandles(f, ink);
+    },
+    anim: function (f, i) {
+      if (i >= 1 && i <= 4) return { arcs: [i - 1] };
+      if (i === 5) return { ruler: [f.L1, f.L2] };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;

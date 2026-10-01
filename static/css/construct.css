@@ -145,6 +145,7 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 /* the special angles: a tab for each angle, the extension of a ray, the measure of the angle */
 .cx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
 .cx-tab { min-width: 76px; min-height: 44px; padding: 6px 18px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 700 18px 'Times New Roman', 'STIX Two Text', serif; cursor: pointer; }
+.cx-tab-km { font: 600 15.5px 'Kantumruy Pro', system-ui, sans-serif; }
 .cx-tab:hover { border-color: var(--teal); color: var(--ink); }
 .cx-tab[aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
 :root[data-theme="dark"] .cx-tab[aria-selected="true"] { color: #0d1520; }
