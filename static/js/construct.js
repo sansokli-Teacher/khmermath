@@ -1741,6 +1741,45 @@
     },
   });
 
+  // Grade 8, lesson 12, a worked example: OZ bisects the angle XOY; A on OX and B on OY with
+  // OA = OB; M on OZ, joined to A and to B. (The triangles OMA and OMB are congruent, so MA = MB.)
+  CX['g8-l12-bisector-triangles'] = scripted({
+    steps: 6,
+    start: { Y: [334, 111], M: [384, 265] },
+    place: CX['g8-l12-bisector-point'].place,
+    limit: CX['g8-l12-bisector-point'].limit,
+    figure: function (s) {
+      var O = G8B.O, X = G8B.X, uy = unit(sub(s.Y, O)), d = unit(add([1, 0], uy)), M = add(O, mul(d, len(sub(s.M, O)))), R = 215;
+      return { O: O, X: X, Y: s.Y, M: M, d: d, b: bisectorOf(O, X, s.Y, M), A: add(O, [R, 0]), B: add(O, mul(uy, R)),
+        Ey: toEdge(O, uy, 400), Ez: add(O, mul(d, 400)), arc: { c: O, r: R, t1: 0.12, t2: Math.atan2(uy[1], uy[0]) - 0.12 } };
+    },
+    base: function (f, ink) {
+      segLine(ink, f.O, f.X, 'cx-seg'); segLine(ink, f.O, f.Ey, 'cx-seg');
+      label(ink, add(f.X, [-10, 22]), 'X', 'cx-label');
+      label(ink, add(add(f.Ey, mul(unit(sub(f.O, f.Ey)), 16)), mul([-f.d[1], f.d[0]], -24)), 'Y', 'cx-label');
+    },
+    top: function (f, ink, i) {
+      point(ink, f.O, 'O', [-0.8, 0.7], null, null, 22);
+      el('circle', { cx: f.Y[0], cy: f.Y[1], r: 7, class: 'cx-handle' }, ink);
+      el('circle', { cx: f.Y[0], cy: f.Y[1], r: 24, class: 'cx-grab', 'data-drag': 'Y' }, ink);
+      if (i >= 2) label(ink, add(f.Ez, mul([-f.d[1], f.d[0]], 20)), 'Z', 'cx-label');
+      if (i >= 4) el('circle', { cx: f.M[0], cy: f.M[1], r: 24, class: 'cx-grab', 'data-drag': 'M' }, ink);
+    },
+    script: function (f) {
+      return [
+        [],
+        f.b.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.O, f.Ez, 'cx-line cx-line-2'], ['mark', function (g) { halfAngles(g, f.O, f.X, f.Y, f.M, 'a'); }]],
+        [['arc', f.arc], ['pt', f.A, 'A', [0.5, 1], null, 23], ['pt', f.B, 'B', [f.B[1] - f.O[1], f.O[0] - f.B[0]], null, 23]],
+        [['pt', f.M, 'M', [0.9, 0.5], 'cx-pt-m', 23], ['seg', f.M, f.A], ['seg', f.M, f.B]],
+        [['mark', function (g) {
+          triFill(g, f.O, f.M, f.A); triFill(g, f.O, f.M, f.B);
+          tick(g, f.O, f.A); tick(g, f.O, f.B); tick2(g, f.M, f.A); tick2(g, f.M, f.B);
+        }]],
+      ];
+    },
+  });
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
