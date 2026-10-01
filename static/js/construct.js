@@ -20,6 +20,8 @@
  * words for the <span data-fill="KEY"> of the captions when they depend on the state.
  * anim() may return { rulers: [[p, q], ...] } to draw several lines one after another, or
  * { phases: [{ dur, draw(t, drawn, tools) }, ...] } for a movement of its own (the set square).
+ * A page may hold several constructions, one shown at a time: a <div class="cx-tabs"> of
+ * role="tab" buttons, each naming its .cx by aria-controls (the special angles).
  */
 (function () {
   'use strict';
@@ -611,16 +613,188 @@
     });
   }
 
+  // The special angles on a ray Ox, with the compass and the ruler only (one page, a tab each).
+  // 60°: an arc from O cuts Ox at A, the same opening from A cuts that arc at B, and OAB is an
+  // equilateral triangle. 30°: the bisector of that angle (arcs of the same opening from B and
+  // from A meet at C). 90°: Ox is extended beyond O, an arc from O cuts the line at P and Q, and
+  // arcs of one radius from P and from Q meet at B, so OB is the mediator of PQ. 45°: the
+  // bisector of that right angle (the half circle from O cuts Oy at R; arcs from Q and from R).
+  function toEdge(p, u, least) {                           // from p along u to just inside the edge of the sheet
+    var t = 1e9;
+    if (u[0] > 1e-6) t = Math.min(t, (W - 26 - p[0]) / u[0]); else if (u[0] < -1e-6) t = Math.min(t, (26 - p[0]) / u[0]);
+    if (u[1] > 1e-6) t = Math.min(t, (H - 26 - p[1]) / u[1]); else if (u[1] < -1e-6) t = Math.min(t, (26 - p[1]) / u[1]);
+    return add(p, mul(u, Math.max(t, least || 0)));
+  }
+  var aimAt = function (from, to) { return Math.atan2(to[1] - from[1], to[0] - from[0]); };
+  function rayFrame(s) {
+    var u = unit(sub(s.X, s.O)), n = [u[1], -u[0]];        // n: towards the top of the sheet
+    return { O: s.O, X: s.X, u: u, n: n, ax: Math.atan2(u[1], u[0]), Ex: toEdge(s.O, u, 240),
+      // the direction that makes the angle t with Ox
+      dir: function (t) { return add(mul(u, Math.cos(t)), mul(n, Math.sin(t))); } };
+  }
+  // the handle X only turns the ray Ox: between lo and hi degrees above the horizontal
+  function rayLimit(lo, hi) {
+    return function (s, key, p) {
+      var v = sub(p, s.O), a = Math.atan2(-v[1], v[0]) * 180 / Math.PI;
+      return len(v) >= 240 && a >= lo && a <= hi;
+    };
+  }
+  function rayDraw(f, layer, t, name, cls) {               // the ray from O at the angle t, named at its end
+    var d = f.dir(t), e = toEdge(f.O, d, 220);
+    el('line', { x1: f.O[0], y1: f.O[1], x2: e[0], y2: e[1], class: cls || 'cx-line' }, layer);
+    label(layer, add(add(e, mul(d, -14)), mul(f.dir(t + Math.PI / 2), 20)), name, 'cx-label');
+    return e;
+  }
+  function rayGiven(f, ink) {
+    el('line', { x1: f.O[0], y1: f.O[1], x2: f.Ex[0], y2: f.Ex[1], class: 'cx-seg' }, ink);
+    label(ink, add(add(f.Ex, mul(f.u, -14)), mul(f.n, -22)), 'x', 'cx-label');
+  }
+  function rayHandle(f, ink) {
+    el('circle', { cx: f.X[0], cy: f.X[1], r: 7, class: 'cx-handle' }, ink);
+    el('circle', { cx: f.X[0], cy: f.X[1], r: 24, class: 'cx-grab', 'data-drag': 'X' }, ink);
+  }
+  var arcDraw = function (g, q) { el('path', { d: arcPath(q.c, q.r, q.t1, q.t2), class: 'cx-arc' }, g); };
+  var dash = function (g, p, q) { el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: 'cx-equal' }, g); };
+  var degrees = function (t) { return Math.round(t * 180 / Math.PI) + '°'; };
+
+  function sixty(s) {
+    var f = rayFrame(s), R = 180, r = s.k * R, th = 2 * Math.asin(Math.min(1, r / (2 * R)));
+    var O = f.O, A = add(O, mul(f.u, R)), B = add(O, mul(f.dir(th), R));
+    // C: the third corner of the equilateral triangle on AB, away from O
+    var C = add(mul(add(A, B), 0.5), mul(f.dir(th / 2), r * Math.sqrt(3) / 2));
+    f.meet = keptK(s.k); f.R = R; f.r = r; f.th = th; f.A = A; f.B = B; f.C = C;
+    f.arcs = [
+      { c: O, r: R, t1: f.ax + 0.12, t2: f.ax - Math.max(th, Math.PI / 3) - 0.24 },
+      { c: A, r: r, t1: aimAt(A, B) + 0.26, t2: aimAt(A, B) - 0.26 },
+      { c: B, r: r, t1: aimAt(B, C) - 0.26, t2: aimAt(B, C) + 0.26 },
+      { c: A, r: r, t1: aimAt(A, C) + 0.26, t2: aimAt(A, C) - 0.26 },
+    ];
+    return f;
+  }
+  // half: the 30° page, which goes on to bisect the angle AOB
+  function sixtyDef(half) {
+    var last = half ? 6 : 4, lineAt = half ? 5 : 3;
+    return {
+      steps: last + 1,
+      warnFrom: 2,
+      start: { O: [half ? 96 : 130, 372], X: [half ? 560 : 580, 372], k: 1 },
+      kOk: keptK, kSnap: snapK,
+      limit: rayLimit(-8, 28),
+      figure: sixty,
+      draw: function (f, i, g, layer) {
+        var ink = layer.ink, marks = layer.marks, th = half ? f.th / 2 : f.th;
+        if (i >= last) {
+          sector(marks, f.O, f.ax, -th, 74, 'a');
+          if (half) { sector(marks, f.O, f.ax - th, -th, 74, 'b'); dash(marks, f.O, f.B); dash(marks, f.A, f.C); dash(marks, f.B, f.C); }
+          else { dash(marks, f.A, f.B); tick(marks, f.O, f.A); tick(marks, f.O, f.B); (f.meet ? tick : tick2)(marks, f.A, f.B); }
+          label(marks, add(f.O, mul(f.dir(th / 2), 112)), degrees(th), 'cx-note cx-r');
+        }
+        rayGiven(f, ink);
+        if (i >= lineAt) rayDraw(f, ink, th, half ? 'z' : 'y');
+        for (var a = 0; a < Math.min(i, half ? 4 : 2); a++) arcDraw(ink, f.arcs[a]);
+        if (i >= 1) point(ink, f.A, 'A', add(mul(f.u, 0.8), mul(f.n, -0.8)));
+        if (i >= 2) point(ink, f.B, 'B', f.dir(f.th + Math.PI / 4), half ? null : 'cx-pt-m');
+        if (half && i >= 4) point(ink, f.C, 'C', f.dir(f.th / 2 - Math.PI / 2), 'cx-pt-m', null, 27);
+        point(ink, f.O, 'O', add(mul(f.u, -0.75), mul(f.n, -0.66)));
+        rayHandle(f, ink);
+      },
+      anim: function (f, i) {
+        if (i >= 1 && i < lineAt) return { arcs: [i - 1] };
+        if (i === lineAt) return { ruler: [f.O, toEdge(f.O, f.dir(half ? f.th / 2 : f.th), 220)] };
+        return null;
+      },
+    };
+  }
+  CX['angle-60'] = sixtyDef(false);
+  CX['angle-30'] = sixtyDef(true);
+
+  function ninety(s) {
+    var f = rayFrame(s), c = 110, r = s.k * 2 * c, meet = r > c + 0.5, h = meet ? Math.sqrt(r * r - c * c) : 0;
+    var O = f.O, P = add(O, mul(f.u, -c)), Q = add(O, mul(f.u, c)), B = add(O, mul(f.n, h)), Rp = add(O, mul(f.n, c));
+    var r2 = 1.15 * c, C = add(O, mul(f.dir(Math.PI / 4), c * Math.SQRT1_2 + Math.sqrt(r2 * r2 - c * c / 2)));
+    var towards = meet ? B : add(O, mul(f.n, r * 0.75));
+    f.meet = meet; f.c = c; f.r = r; f.P = P; f.Q = Q; f.B = B; f.Rp = Rp; f.C = C; f.L = add(O, mul(f.u, -c - 64));
+    f.arcs = [
+      { c: O, r: c, t1: f.ax - 0.3, t2: f.ax + 0.3 },                           // a mark at Q, a mark at P
+      { c: O, r: c, t1: f.ax + Math.PI + 0.3, t2: f.ax + Math.PI - 0.3 },
+      { c: O, r: c, t1: f.ax + 0.14, t2: f.ax - Math.PI - 0.14 },               // or the half circle through Q, R and P
+      { c: P, r: r, t1: aimAt(P, towards) + 0.3, t2: aimAt(P, towards) - 0.3 },
+      { c: Q, r: r, t1: aimAt(Q, towards) - 0.3, t2: aimAt(Q, towards) + 0.3 },
+      { c: Q, r: r2, t1: aimAt(Q, C) + 0.3, t2: aimAt(Q, C) - 0.3 },
+      { c: Rp, r: r2, t1: aimAt(Rp, C) - 0.3, t2: aimAt(Rp, C) + 0.3 },
+    ];
+    return f;
+  }
+  // half: the 45° page, which goes on to bisect the right angle xOy
+  function ninetyDef(half) {
+    var last = half ? 9 : 6, q = Math.PI / 2;
+    return {
+      steps: last + 1,
+      warnFrom: 4,
+      start: { O: [half ? 262 : 300, 378], X: [half ? 572 : 590, 378], k: half ? 0.95 : 0.8 },
+      limit: rayLimit(-6, 18),
+      figure: ninety,
+      draw: function (f, i, g, layer) {
+        var ink = layer.ink, marks = layer.marks, ok = f.meet, s = 15;
+        if (i >= last && ok) {
+          if (half) {
+            sector(marks, f.O, f.ax, -q / 2, 54, 'a'); sector(marks, f.O, f.ax - q / 2, -q / 2, 54, 'b');
+            dash(marks, f.Q, f.C); dash(marks, f.Rp, f.C);
+            label(marks, add(f.O, mul(f.dir(q / 4), 84)), '45°', 'cx-note cx-r');
+          } else {
+            var p1 = add(f.O, mul(f.u, s)), p2 = add(p1, mul(f.n, s)), p3 = add(f.O, mul(f.n, s));
+            el('polyline', { points: [p1, p2, p3].map(function (x) { return x.join(','); }).join(' '), class: 'cx-right' }, marks);
+            dash(marks, f.P, f.B); dash(marks, f.Q, f.B); tick(marks, f.P, f.O); tick(marks, f.O, f.Q);
+            label(marks, add(f.O, add(mul(f.u, 44), mul(f.n, 36))), '90°', 'cx-note cx-r');
+          }
+        }
+        rayGiven(f, ink);
+        if (i >= 1) {
+          el('line', { x1: f.O[0], y1: f.O[1], x2: f.L[0], y2: f.L[1], class: 'cx-ext' }, ink);
+          label(ink, add(add(f.L, mul(f.u, 12)), mul(f.n, -22)), 'x′', 'cx-label');
+        }
+        if (i >= 5 && ok) rayDraw(f, ink, q, 'y', half ? 'cx-line cx-line-2' : null);      // 45°: Oy is only on the way
+        if (half && i >= 8 && ok) rayDraw(f, ink, q / 2, 'z');
+        if (i >= 2) { if (half) arcDraw(ink, f.arcs[2]); else { arcDraw(ink, f.arcs[0]); arcDraw(ink, f.arcs[1]); } }
+        if (i >= 3) arcDraw(ink, f.arcs[3]);
+        if (i >= 4) arcDraw(ink, f.arcs[4]);
+        if (half && ok && i >= 6) arcDraw(ink, f.arcs[5]);
+        if (half && ok && i >= 7) arcDraw(ink, f.arcs[6]);
+        if (i >= 2) {
+          point(ink, f.P, 'P', add(mul(f.u, -1), mul(f.n, -0.85)));
+          point(ink, f.Q, 'Q', add(f.u, mul(f.n, -0.85)));
+        }
+        if (i >= 4 && ok) point(ink, f.B, 'B', f.u, half ? null : 'cx-pt-m', null, 24);
+        if (half && i >= 5 && ok) point(ink, f.Rp, 'R', add(mul(f.u, -1), mul(f.n, 0.8)), null, null, 24);
+        if (half && i >= 7 && ok) point(ink, f.C, 'C', f.dir(-q / 2), 'cx-pt-m', null, 27);
+        point(ink, f.O, 'O', mul(f.n, -1));
+        rayHandle(f, ink);
+      },
+      anim: function (f, i) {
+        if (i === 1) return { ruler: [f.O, f.L], cls: 'cx-ext' };
+        if (i === 2) return { arcs: half ? [2] : [0, 1] };
+        if (i === 3 || i === 4) return { arcs: [i] };
+        if (!f.meet) return null;
+        if (i === 5) return { ruler: [f.O, toEdge(f.O, f.n, 220)], cls: half ? 'cx-line cx-line-2' : null };
+        if (half && (i === 6 || i === 7)) return { arcs: [i - 1] };
+        if (half && i === 8) return { ruler: [f.O, toEdge(f.O, f.dir(q / 2), 220)] };
+        return null;
+      },
+    };
+  }
+  CX['angle-90'] = ninetyDef(false);
+  CX['angle-45'] = ninetyDef(true);
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
     return t;
   }
-  // a point with its name pushed out along dir
-  function point(g, p, name, dir, cls, drag) {
+  // a point with its name pushed out along dir (by dist, 20 if not given)
+  function point(g, p, name, dir, cls, drag, dist) {
     el('circle', { cx: p[0], cy: p[1], r: 5, class: 'cx-pt ' + (cls || '') }, g);
     var d = unit(dir || [0, -1]);
-    label(g, add(p, mul(d, 20)), name, 'cx-label');
+    label(g, add(p, mul(d, dist || 20)), name, 'cx-label');
     if (drag) el('circle', { cx: p[0], cy: p[1], r: 22, class: 'cx-grab', 'data-drag': drag }, g);
   }
 
@@ -841,4 +1015,41 @@
     add: add, sub: sub, mul: mul, len: len, unit: unit };
 
   document.querySelectorAll('.cx[data-cx]').forEach(Player);
+
+  // Several constructions on one page (the special angles): a row of tabs shows one at a time.
+  // The address keeps the choice (#a30), so a link can open the page on one of them.
+  document.querySelectorAll('.cx-tabs').forEach(function (bar) {
+    var tabs = Array.prototype.slice.call(bar.querySelectorAll('[role="tab"]'));
+    var pane = function (t) { return document.getElementById(t.getAttribute('aria-controls')); };
+    function show(tab, focus) {
+      tabs.forEach(function (t) {
+        var on = t === tab, p = pane(t), playing = p.querySelector('.cx-play.on');
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        if (!on && playing) playing.click();               // a hidden construction stops playing
+        p.hidden = !on;
+      });
+      if (focus) tab.focus();
+    }
+    tabs.forEach(function (t, j) {
+      t.addEventListener('click', function () {
+        show(t);
+        if (history.replaceState) history.replaceState(null, '', '#' + t.getAttribute('aria-controls'));
+      });
+      t.addEventListener('keydown', function (e) {
+        var to = e.key === 'ArrowRight' ? j + 1 : e.key === 'ArrowLeft' ? j - 1 : null;
+        if (to == null) return;
+        e.preventDefault();
+        tabs[(to + tabs.length) % tabs.length].click();
+        tabs[(to + tabs.length) % tabs.length].focus();
+      });
+    });
+    var fromHash = function () {
+      var want = tabs.filter(function (t) { return '#' + t.getAttribute('aria-controls') === location.hash; })[0];
+      if (want) show(want);
+    };
+    show(tabs.filter(function (t) { return t.getAttribute('aria-selected') === 'true'; })[0] || tabs[0]);
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+  });
 })();

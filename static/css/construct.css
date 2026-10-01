@@ -142,3 +142,15 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 /* the set square that slides along the ruler */
 .cx-sq { fill: rgba(46, 122, 112, .16); stroke: #2e7a70; stroke-width: 1.6; stroke-linejoin: round; pointer-events: none; }
 .cx-sq-in { fill: none; stroke: #2e7a70; stroke-width: 1; stroke-linejoin: round; pointer-events: none; }
+/* the special angles: a tab for each angle, the extension of a ray, the measure of the angle */
+.cx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.cx-tab { min-width: 76px; min-height: 44px; padding: 6px 18px; border: 1.5px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: 700 18px 'Times New Roman', 'STIX Two Text', serif; cursor: pointer; }
+.cx-tab:hover { border-color: var(--teal); color: var(--ink); }
+.cx-tab[aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+:root[data-theme="dark"] .cx-tab[aria-selected="true"] { color: #0d1520; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cx-tab[aria-selected="true"] { color: #0d1520; } }
+.cx-tab:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.cx[hidden] { display: none; }
+.cx-ext { stroke: #132238; stroke-width: 2.2; stroke-dasharray: 8 7; stroke-linecap: round; }
+@media (max-width: 640px) { .cx-ext { stroke-width: 3.6; } .cx-tab { flex: 1 1 0; min-width: 0; padding: 6px 8px; } }
+@media print { .cx-tabs { display: none; } .cx[hidden] { display: grid; } }
