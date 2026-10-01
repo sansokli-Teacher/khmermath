@@ -86,17 +86,18 @@
     var u = mul(w, 1 / d), m = add(a.c, mul(u, x)), n = [-u[1], u[0]];
     return [add(m, mul(n, h)), add(m, mul(n, -h))].filter(function (p) { return onArc(a, ang(a.c, p)) && onArc(b, ang(b.c, p)); });
   }
-  // where a handle may go: the named points first (k: 0), then ends and crossings (k: 1)
+  // where a handle may go: the named points first (k: 0), then ends and crossings (k: 1; x: a crossing)
   function findCands() {
     var out = [], S = doc.segs, A = doc.arcs, i, j;
     var put = function (p) { out.push({ p: p, k: 1 }); };
+    var meet = function (p) { out.push({ p: p, k: 1, x: 1 }); };
     doc.pts.forEach(function (o) { out.push({ p: o.p, k: 0 }); });
     S.forEach(function (s) { if (!s.full) { put(s.a); put(s.b); } });
     for (i = 0; i < S.length; i++) {
-      for (j = i + 1; j < S.length; j++) lineLine(S[i], S[j]).forEach(put);
-      for (j = 0; j < A.length; j++) lineArc(S[i], A[j]).forEach(put);
+      for (j = i + 1; j < S.length; j++) lineLine(S[i], S[j]).forEach(meet);
+      for (j = 0; j < A.length; j++) lineArc(S[i], A[j]).forEach(meet);
     }
-    for (i = 0; i < A.length; i++) for (j = i + 1; j < A.length; j++) arcArc(A[i], A[j]).forEach(put);
+    for (i = 0; i < A.length; i++) for (j = i + 1; j < A.length; j++) arcArc(A[i], A[j]).forEach(meet);
     cands = out;
   }
   // the place for p: a point or a crossing within SNAP, else the nearest spot on a line or an arc
@@ -199,10 +200,21 @@
     el('circle', { cx: f1(hinge[0]), cy: f1(hinge[1]), r: 22, class: 'bd-hit', 'data-h': 'hinge' }, tools);
     el('circle', { cx: f1(e[0]), cy: f1(e[1]), r: 22, class: 'bd-hit', 'data-h': 'pencil' }, tools);
   }
+  // the crossings, as blue dots: where the ruler, the needle or a new point can be put exactly.
+  // They belong to the tools, not to the picture, and a crossing that has a name is not shown twice.
+  function drawCrossings() {
+    var seen = doc.pts.map(function (o) { return o.p; });
+    cands.forEach(function (c) {
+      if (!c.x || !inView(c.p) || seen.some(function (s) { return len(sub(s, c.p)) < 2; })) return;
+      seen.push(c.p);
+      el('circle', { cx: f1(c.p[0]), cy: f1(c.p[1]), r: 5, class: 'bd-cross' }, tools);
+    });
+  }
   function renderTools() {
     clear(tools);
     if (st.tool === 'ruler') drawRulerTool();
     if (st.tool === 'compass') drawCompassTool();
+    if (st.tool !== 'name') drawCrossings();             // on top: a crossing stays blue under the ruler's mark
     if (mark) el('circle', { cx: f1(mark[0]), cy: f1(mark[1]), r: 9, class: 'bd-snap' }, tools);
   }
   // a tool that was never placed, or is in use and off the sheet (a smaller sheet), goes to its first place

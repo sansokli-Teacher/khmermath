@@ -45,7 +45,8 @@
 .bd-ring-p { fill: rgba(201, 134, 43, .12); stroke: #c9862b; }
 .bd-ring-p.on { fill: rgba(201, 134, 43, .38); stroke-dasharray: none; stroke-width: 2.4; }
 .bd-open { font: 600 14px 'Kantumruy Pro', system-ui, sans-serif; fill: #6a788a; text-anchor: middle; paint-order: stroke; stroke: #fffefa; stroke-width: 4px; pointer-events: none; }
-.bd-snap { fill: none; stroke: #2e7a70; stroke-width: 2.4; pointer-events: none; }
+.bd-cross { fill: #2d6aa8; stroke: #fffefa; stroke-width: 1.5; pointer-events: none; }
+.bd-snap { fill: rgba(45, 106, 168, .22); stroke: #2d6aa8; stroke-width: 2.4; pointer-events: none; }
 
 /* ---- the whole window: the way the board opens ---- */
 html.bd-full-on, html.bd-full-on body { overflow: hidden; overscroll-behavior: none; }
