@@ -16,6 +16,21 @@
     });
   }
 
+  // A formula in a line of text that is wider than its place and cannot break (one long integral)
+  // would push the page sideways on a phone: it becomes a strip that scrolls on its own. Inside a
+  // narrow column beside a picture (.mp) the book lets a formula run over, and so does the page.
+  function fitMaths() {
+    Array.prototype.forEach.call(main.querySelectorAll('.mi'), function (m) {
+      if (m.classList.contains('mi-wide') || m.closest('.mp')) return;
+      var box = m.parentElement.getBoundingClientRect();
+      var over = Array.prototype.some.call(m.getClientRects(), function (r) { return r.right > box.right + 1; });
+      if (over) m.classList.add('mi-wide');
+    });
+  }
+  fitMaths();
+  var fitTimer;
+  window.addEventListener('resize', function () { clearTimeout(fitTimer); fitTimer = setTimeout(fitMaths, 200); });
+
   // search: show the topics whose text (Khmer or English, formulas included) contains the words typed
   var input = document.getElementById('fx-q');
   var lessons = Array.prototype.slice.call(main.querySelectorAll('.fx-lesson'));
