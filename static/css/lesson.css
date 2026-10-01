@@ -68,6 +68,8 @@
 .ls-paper .mp { flex: 1 1 calc(var(--w) - 18px); min-width: 180px; }
 .ls-paper .mc { column-count: var(--n); column-width: 200px; column-gap: 28px; }
 .ls-paper .mc > * { break-inside: avoid; }
+.ls-paper .mc > .list { break-inside: auto; margin-top: 0; }   /* a list set in columns: its items fill the columns */
+.ls-paper .mc > .list > li { break-inside: avoid; margin: 0; padding: 2px 0; }
 .ls-paper .wrapfig { width: var(--w); min-width: 120px; max-width: 45%; margin: 4px 0 10px 18px; float: right; text-align: center; }
 .ls-paper .wrapfig.left { float: left; margin: 4px 18px 10px 0; }
 .ls-paper .step { color: var(--coral); }
