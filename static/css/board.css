@@ -19,10 +19,12 @@
 .bd-name input { width: 5.5em; min-height: 44px; padding: 4px 12px; border-radius: 10px; border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); font: italic 700 20px 'Times New Roman', 'STIX Two Text', serif; }
 .bd-name input:disabled { opacity: .5; }
 .bd-confirm { flex: 1 1 100%; font-weight: 600; color: var(--ink); }
-.bd-foot { justify-content: space-between; }
+.bd-foot { gap: 4px 22px; }
+.bd-ic { flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; font-size: 19px; line-height: 1; }
+.bd-ic-on, .bd.full .bd-ic-off { display: none; }
+.bd.full .bd-ic-on { display: inline; }
 .bd-switch { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
 .bd-switch input { width: 22px; height: 22px; accent-color: var(--teal); }
-.bd-foot .btn { margin-left: auto; }
 
 /* ---- the sheet ---- */
 .bd-stage { overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line-2); box-shadow: var(--shadow); background: #fffefa; }
@@ -45,11 +47,26 @@
 .bd-open { font: 600 14px 'Kantumruy Pro', system-ui, sans-serif; fill: #6a788a; text-anchor: middle; paint-order: stroke; stroke: #fffefa; stroke-width: 4px; pointer-events: none; }
 .bd-snap { fill: none; stroke: #2e7a70; stroke-width: 2.4; pointer-events: none; }
 
+/* ---- the whole window: the way the board opens ---- */
+html.bd-full-on, html.bd-full-on body { overflow: hidden; overscroll-behavior: none; }
+.bd.full {
+  position: fixed; inset: 0; z-index: 2000; gap: 8px; background: var(--bg);
+  padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+}
+.bd.full .bd-stage { position: relative; flex: 1 1 0; min-height: 0; border-radius: 12px; box-shadow: none; }
+.bd.full .bd-svg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.bd.full .bd-opts { min-height: 0; padding: 6px 12px; }
+.bd.full .bd-hint { font-size: 14.5px; line-height: 1.55; }
+.bd.full .bd-foot { min-height: 0; }
+
 @media (max-width: 640px) {
   .bd-tool, .bd-seg button { padding: 6px 14px; font-size: 15.5px; }
   .bd-tools, .bd-acts { width: 100%; }
-  .bd-acts .btn { flex: 1 1 auto; padding-left: 10px; padding-right: 10px; }
-  .bd-foot .btn { width: 100%; }
+  .bd-acts .btn { flex: 1 1 auto; min-width: 44px; padding-left: 10px; padding-right: 10px; }
+  /* the arrows and the two drawings say it: the words would not fit on one row */
+  .bd-acts .bd-lbl { display: none; }
+  .bd.full .bd-tool { flex: 1 1 auto; padding: 6px 8px; }
+  .bd.full .bd-hint { font-size: 13.5px; }
 }
 @media print {
   .bd-bar, .bd-opts, .bd-foot { display: none; }

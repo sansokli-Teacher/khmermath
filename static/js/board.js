@@ -27,7 +27,7 @@
   var PAPER = '#fffefa', INK = '#132238', BLUE = '#2d6aa8';
 
   var doc = { pts: [], segs: [], arcs: [] };
-  var st = { tool: 'point', cmode: 'set', grid: true, marks: true, ruler: null, compass: null };
+  var st = { tool: 'point', cmode: 'set', grid: true, marks: true, full: true, ruler: null, compass: null };
   var hist = [], hi = 0, cands = [], W = 0, H = 0;
   var drag = null, mark = null, sel = -1;
 
@@ -205,11 +205,11 @@
     if (st.tool === 'compass') drawCompassTool();
     if (mark) el('circle', { cx: f1(mark[0]), cy: f1(mark[1]), r: 9, class: 'bd-snap' }, tools);
   }
-  // tools that were never placed, or are off the sheet (a smaller screen), go to their first place
+  // a tool that was never placed, or is in use and off the sheet (a smaller sheet), goes to its first place
   function placeTools() {
     var r = st.ruler, c = st.compass, y = Math.round(H * 0.62 / 20) * 20, x = Math.max(60, Math.round(W * 0.16 / 20) * 20);
-    if (!r || !r.a || !r.b || !inView(r.a) || !inView(r.b)) st.ruler = { a: [x, y], b: [Math.min(x + 240, W - 70), y] };
-    if (!c || !c.c || !c.e || !inView(c.c) || !inView(c.e)) st.compass = { c: [x + 20, y - 100], e: [x + 100, y - 100] };
+    if (!r || !r.a || !r.b || (st.tool === 'ruler' && !(inView(r.a) && inView(r.b)))) st.ruler = { a: [x, y], b: [Math.min(x + 240, W - 70), y] };
+    if (!c || !c.c || !c.e || (st.tool === 'compass' && !(inView(c.c) && inView(c.e)))) st.compass = { c: [x + 20, y - 100], e: [x + 100, y - 100] };
   }
 
   // -------------------------------------------- history, keeping, state ---
@@ -264,7 +264,22 @@
     root.setAttribute('data-tool', tool);
     mark = null;
     pick(-1);
+    placeTools();
     renderTools();
+    save();
+    size();
+  }
+  // the board takes the whole window (the way it opens), or sits in the page
+  function setFull(on) {
+    st.full = !!on;
+    root.classList.toggle('full', st.full);
+    document.documentElement.classList.toggle('bd-full-on', st.full);
+    var b = q('[data-act="full"]'), word = b.getAttribute(st.full ? 'data-on' : 'data-off');
+    b.setAttribute('aria-pressed', String(st.full));
+    b.setAttribute('aria-label', word);
+    b.querySelector('.bd-lbl').textContent = word;
+    W = 0;
+    size();
     save();
   }
   // the point whose name is being changed
@@ -453,12 +468,14 @@
   var ACTS = {
     undo: function () { travel(-1); },
     redo: function () { travel(1); },
-    clear: function () { confirmBox.hidden = false; },
-    'clear-no': function () { confirmBox.hidden = true; },
+    clear: function () { confirmBox.hidden = false; size(); },
+    'clear-no': function () { confirmBox.hidden = true; size(); },
+    full: function () { setFull(!st.full); },
     'clear-yes': function () {
       confirmBox.hidden = true;
       pick(-1);
       commit(function () { doc = { pts: [], segs: [], arcs: [] }; });
+      size();
     },
     line: function () {
       var r = st.ruler;
@@ -482,6 +499,7 @@
     });
   });
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && st.full && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { setFull(false); return; }
     if (!(e.ctrlKey || e.metaKey) || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     var k = e.key.toLowerCase();
     if (k === 'z') { e.preventDefault(); travel(e.shiftKey ? 1 : -1); }
@@ -489,11 +507,13 @@
   });
 
   // --------------------------------------------------------- the sheet ---
+  // In the page the sheet is as wide as the page and its height is settled once (the bars of a
+  // phone come and go); in the whole window it is what the bars above and below leave.
   function size() {
     var w = Math.round(stage.clientWidth);
-    if (!w || w === W) return;
-    W = w;
-    H = Math.max(380, Math.min(640, Math.round(window.innerHeight * 0.72)));
+    var h = st.full ? Math.round(stage.clientHeight) : Math.max(380, Math.min(640, Math.round(window.innerHeight * 0.72)));
+    if (!w || !h || (w === W && (!st.full || h === H))) return;
+    W = w; H = h;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     drawPaper();
     placeTools();
@@ -503,10 +523,11 @@
   load();
   hist = [JSON.stringify(doc)];
   all('[data-sw]').forEach(function (box) { box.checked = !!st[box.getAttribute('data-sw')]; });
-  size();
+  setFull(st.full);
   findCands();
   renderInk();
   buttons();
   setTool(q('.bd-tool[data-tool="' + st.tool + '"]') ? st.tool : 'point');
   window.addEventListener('resize', size);
+  if (window.ResizeObserver) new ResizeObserver(size).observe(stage);
 })();
