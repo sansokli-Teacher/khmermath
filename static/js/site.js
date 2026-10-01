@@ -71,3 +71,36 @@
     try { localStorage.setItem('km-theme', next); } catch (err) { /* storage unavailable */ }
   });
 })();
+
+/* YouTube videos (tools/videos.py): the picture becomes the player on click, so a
+   page with videos loads no YouTube code until someone wants to watch. Without
+   JavaScript, or with a modifier key, the link opens the video on YouTube. */
+(function () {
+  'use strict';
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.yt[data-yt]');
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0) return;
+    e.preventDefault();
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + a.getAttribute('data-yt') + '?autoplay=1&rel=0';
+    f.title = a.getAttribute('data-title') || 'YouTube';
+    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.allowFullscreen = true;
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    var box = document.createElement('div');
+    box.className = 'yt';
+    box.appendChild(f);
+    a.replaceWith(box);
+  });
+  // topic chips above the video grid
+  document.querySelectorAll('.video-filter').forEach(function (bar) {
+    var grid = bar.closest('.video-head').nextElementSibling;
+    bar.addEventListener('click', function (e) {
+      var chip = e.target.closest('.vf-chip');
+      if (!chip) return;
+      bar.querySelectorAll('.vf-chip').forEach(function (c) { c.classList.toggle('on', c === chip); });
+      var t = chip.getAttribute('data-topic');
+      grid.querySelectorAll('.video-card').forEach(function (card) { card.hidden = !!t && card.getAttribute('data-topic') !== t; });
+    });
+  });
+})();
