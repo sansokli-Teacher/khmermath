@@ -1,0 +1,123 @@
+/* khmermath.org — geometric constructions (construct/*.html, static/js/construct.js).
+   The figure is drawn on a light sheet of squared paper in both themes, like a
+   page of an exercise book. */
+.cx-hero .lead { max-width: 640px; }
+.cx-tools { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 18px 0 0; padding: 0; list-style: none; color: var(--ink-3); font-size: 14.5px; }
+.cx-tools li { display: inline-flex; align-items: center; gap: 8px; }
+.cx-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+.cx-section { padding-top: 48px; }
+var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic; font-size: 1.08em; }
+
+/* ---- the player ---- */
+.cx { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); grid-template-areas: 'board side' 'try side'; gap: 18px 26px; align-items: start; }
+.cx-board { grid-area: board; }
+.cx-side { grid-area: side; }
+.cx-try { grid-area: try; }
+.cx-board { position: relative; }
+.cx-stage { overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line-2); box-shadow: var(--shadow); background: #fffefa; }
+.cx-svg { display: block; width: 100%; height: auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.cx-grid { stroke: #e3ebf3; stroke-width: 1; }
+.cx-grid.b { stroke: #cfdbe8; }
+.cx-seg { stroke: #132238; stroke-width: 3; stroke-linecap: round; }
+.cx-arc { fill: none; stroke: #2d6aa8; stroke-width: 2.4; stroke-linecap: round; }
+.cx-line { stroke: #2e7a70; stroke-width: 3; stroke-linecap: round; }
+.cx-radius { stroke: #c9862b; stroke-width: 2; stroke-dasharray: 6 5; }
+.cx-half { stroke: #6a788a; stroke-width: 2; }
+.cx-equal { stroke: #2d6aa8; stroke-width: 1.4; stroke-dasharray: 4 5; opacity: .55; }
+.cx-right { fill: none; stroke: #2e7a70; stroke-width: 2; }
+.cx-tick { stroke: #c9862b; stroke-width: 2.6; stroke-linecap: round; }
+.cx-pt { fill: #132238; }
+.cx-pt-m { fill: #c9862b; }
+.cx-grab { fill: transparent; cursor: grab; touch-action: none; }
+.cx.dragging .cx-grab { cursor: grabbing; }
+.cx-label { font: 700 20px 'Times New Roman', 'STIX Two Text', serif; font-style: italic; fill: #132238; paint-order: stroke; stroke: #fffefa; stroke-width: 5px; }
+.cx-note { font: 600 15px 'Kantumruy Pro', system-ui, sans-serif; fill: #6a788a; paint-order: stroke; stroke: #fffefa; stroke-width: 4px; }
+.cx-note.cx-r { font: italic 700 18px 'Times New Roman', serif; fill: #c9862b; }
+/* the compass and the ruler */
+.cx-c-leg { stroke: #56677d; stroke-width: 5; stroke-linecap: round; opacity: .9; }
+.cx-c-handle { stroke: #3d5068; stroke-width: 7; stroke-linecap: round; opacity: .9; }
+.cx-c-hinge { fill: #3d5068; stroke: #fff; stroke-width: 1.5; }
+.cx-c-needle { fill: #132238; }
+.cx-c-pencil { fill: #c9862b; stroke: #fff; stroke-width: 1.2; }
+.cx-ruler { fill: rgba(255, 222, 140, .55); stroke: #c9862b; stroke-width: 1.2; }
+.cx-ruler-tick { stroke: #a8732a; stroke-width: 1; }
+.cx-c-leg, .cx-c-handle, .cx-c-hinge, .cx-c-needle, .cx-c-pencil, .cx-ruler, .cx-ruler-tick { pointer-events: none; }
+.cx-warn { position: absolute; left: 12px; right: 12px; bottom: 12px; margin: 0; padding: 8px 14px; border-radius: 10px; background: #fbe7e9; color: #8e2a3c; border: 1px solid #efc0c8; font-size: 15px; }
+.cx-warn[hidden] { display: none; }
+
+.cx-side { display: flex; flex-direction: column; gap: 14px; }
+.cx-now { margin: 0; min-height: 5.6em; padding: 14px 16px; border-radius: var(--radius); background: var(--teal-soft); color: var(--ink); font-size: 16.5px; line-height: 1.8; }
+.cx-now b { display: inline-block; margin-right: 6px; padding: 0 9px; border-radius: 999px; background: var(--teal); color: #fff; font-size: 13.5px; }
+.cx-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cx-controls .btn { min-height: 40px; }
+.cx-controls .btn:disabled { opacity: .45; cursor: default; transform: none; }
+.cx-play.on { background: var(--amber-soft); border-color: var(--amber); color: var(--ink); }
+.cx-reset { font-size: 20px; }
+.cx-steps { margin: 0; padding: 0; list-style: none; counter-reset: cx; border-top: 1px solid var(--line); }
+.cx-steps li { counter-increment: cx; position: relative; padding: 8px 8px 8px 40px; border-bottom: 1px solid var(--line); color: var(--ink-3); font-size: 14.5px; line-height: 1.7; cursor: pointer; border-radius: 8px; }
+.cx-steps li::before { content: counter(cx, khmer); position: absolute; left: 6px; top: 9px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--line-2); font-size: 13px; color: var(--ink-3); }
+.cx-steps li:hover { background: var(--surface-2); }
+.cx-steps li.done { color: var(--ink-2); }
+.cx-steps li.done::before { background: var(--teal-soft); border-color: var(--teal); color: var(--teal); }
+.cx-steps li.on { color: var(--ink); background: var(--surface-2); font-weight: 600; }
+.cx-steps li.on::before { background: var(--teal); border-color: var(--teal); color: #fff; }
+.cx-try { padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); font-size: 14.5px; color: var(--ink-2); }
+.cx-try p { margin: 0 0 8px; }
+.cx-try-h { font-weight: 700; color: var(--ink); }
+.cx-k-row { display: flex; flex-direction: column; gap: 4px; }
+.cx-k { width: 100%; accent-color: var(--teal); }
+.cx-k-out { margin: 6px 0 0 !important; font-weight: 600; color: var(--teal); }
+.cx-k-out.bad { color: var(--rose); }
+
+/* ---- below the player ---- */
+.cx-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.cx-note-card { padding: 24px 26px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.section-alt .cx-note-card { background: var(--bg); }
+.cx-note-card h2 { margin-bottom: 10px; font-size: 21px; }
+.cx-note-card p { color: var(--ink-2); }
+.cx-aside { padding: 10px 14px; border-left: 3px solid var(--teal); background: var(--surface-2); border-radius: 0 10px 10px 0; font-size: 15px; }
+.cx-mistakes, .cx-practice { margin: 0; padding-left: 1.3em; color: var(--ink-2); }
+.cx-mistakes li, .cx-practice li { margin-bottom: 10px; }
+.cx-mistakes b { color: var(--ink); }
+.cx-practice details { margin-top: 6px; }
+.cx-practice summary { cursor: pointer; color: var(--teal); font-weight: 600; }
+.cx-links { margin: 0 0 14px; padding: 0; list-style: none; }
+.cx-links li { display: flex; flex-direction: column; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.cx-links a { font-weight: 600; text-decoration: none; }
+.cx-links span { font-size: 14px; color: var(--ink-3); }
+
+/* ---- the menu page ---- */
+.cx-soon-h { margin: 44px 0 16px; font-size: 20px; color: var(--ink-2); }
+.cx-soon .card { padding: 18px 20px; }
+.cx-card .cx-thumb { width: 100%; height: auto; margin: -4px 0 12px; border-radius: 10px; background: #fffefa; border: 1px solid var(--line); }
+.cx-thumb-grid { stroke: #e6edf4; stroke-width: 1; }
+.cx-thumb-arc { fill: none; stroke: #2d6aa8; stroke-width: 2; }
+.cx-thumb-line { stroke: #2e7a70; stroke-width: 2.4; }
+.cx-thumb-seg { stroke: #132238; stroke-width: 2.6; }
+.cx-thumb-right { fill: none; stroke: #2e7a70; stroke-width: 1.6; }
+.cx-thumb circle { fill: #132238; }
+.cx-thumb circle.m { fill: #c9862b; }
+.cx-thumb text { font: italic 700 14px 'Times New Roman', serif; fill: #132238; }
+
+@media (max-width: 960px) {
+  .cx { grid-template-columns: 1fr; grid-template-areas: 'board' 'side' 'try'; }
+  .cx-now { min-height: 0; }
+  .cx-notes { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .cx-section { padding-top: 24px; }
+  /* the figure is drawn smaller on a phone: thicker strokes, larger letters */
+  .cx-label { font-size: 32px; stroke-width: 7px; }
+  .cx-note { font-size: 24px; }
+  .cx-note.cx-r { font-size: 28px; }
+  .cx-pt { r: 8px; }
+  .cx-seg, .cx-line { stroke-width: 5; }
+  .cx-arc { stroke-width: 4; }
+  .cx-c-leg { stroke-width: 7; }
+  .cx-grid { stroke-width: 1.5; }
+  .cx-note-card { padding: 18px; }
+  .cx-controls .btn { flex: 1 1 auto; }
+}
+@media print {
+  .cx-controls, .cx-try { display: none; }
+}
