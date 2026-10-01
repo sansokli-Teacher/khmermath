@@ -1457,6 +1457,123 @@
     },
   };
 
+  // The ellipse from its definition (Grade 12, conics): every point P with PF1 + PF2 = 2a. Two
+  // pins at the foci, a string of length 2a tied to them, a pencil that keeps the string taut and
+  // goes round. The string is 10 cm; the slider is the distance F1F2 (0: a circle). P is dragged
+  // along the curve, and the two lengths are written on the sheet with their sum.
+  var EL = { I: [320, 260], a: 5 };
+  function ellipseOf(s) {
+    var c = s.k / 2, a = EL.a, b = Math.sqrt(a * a - c * c), I = EL.I;
+    var at = function (t) { return [I[0] + a * CM * Math.cos(t), I[1] - b * CM * Math.sin(t)]; };
+    var t = Math.atan2(-(s.P[1] - I[1]) / b, (s.P[0] - I[0]) / a);
+    return { meet: true, a: a, b: b, c: c, I: I, at: at, t: t, P: at(t), F1: [I[0] - c * CM, I[1]], F2: [I[0] + c * CM, I[1]] };
+  }
+  var cm1 = function (px) { return (Math.round(px / CM * 10) / 10) + ' cm'; };
+  function ellipsePath(f, t1, t2) {
+    var n = Math.max(2, Math.ceil(Math.abs(t2 - t1) / 0.06)), d = [];
+    for (var j = 0; j <= n; j++) { var p = f.at(t1 + (t2 - t1) * j / n); d.push((j ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)); }
+    return d.join('');
+  }
+  function drawPin(g, p) {
+    el('circle', { cx: p[0], cy: p[1], r: 7, class: 'cx-pin' }, g);
+    el('circle', { cx: p[0] - 2, cy: p[1] - 2, r: 2, class: 'cx-pin-shine' }, g);
+  }
+  function drawPencil(g, p) {
+    var d = unit([0.42, -0.91]), n = [-d[1], d[0]], q = function (along, side) { return add(add(p, mul(d, along)), mul(n, side)); };
+    var pts = function (list) { return list.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' '); };
+    el('polygon', { points: pts([q(13, -4.5), q(66, -4.5), q(66, 4.5), q(13, 4.5)]), class: 'cx-pencil' }, g);
+    el('polygon', { points: pts([p, q(13, -4.5), q(13, 4.5)]), class: 'cx-pencil-tip' }, g);
+    el('circle', { cx: p[0], cy: p[1], r: 2.4, class: 'cx-c-needle' }, g);
+  }
+  // the string from pin to pencil to pin, with the two lengths and their sum written above
+  function tautString(g, f, P) {
+    el('path', { d: 'M' + f.F1.join(' ') + 'L' + P[0].toFixed(1) + ' ' + P[1].toFixed(1) + 'L' + f.F2.join(' '), class: 'cx-string' }, g);
+  }
+  function sumNote(g, f, P) {
+    var d1 = len(sub(P, f.F1)), d2 = len(sub(P, f.F2));
+    el('text', { x: 22, y: 58, class: 'cx-given cx-sum', 'dominant-baseline': 'central' }, g).textContent =
+      'PF₁ = ' + cm1(d1) + '    PF₂ = ' + cm1(d2) + '    PF₁ + PF₂ = ' + cm1(d1 + d2);
+  }
+  // the string hanging loose between the pins: a curve as long as the string
+  function slackString(g, f) {
+    var L = 2 * f.a * CM, A = f.F1, B = f.F2, mid = mul(add(A, B), 0.5);
+    if (f.c === 0) {
+      el('path', { d: 'M' + A.join(' ') + 'C' + (A[0] - L * 0.3) + ' ' + (A[1] + L * 0.42) + ' ' + (A[0] + L * 0.3) + ' ' + (A[1] + L * 0.42) + ' ' + A.join(' '), class: 'cx-string' }, g);
+      return;
+    }
+    var lengthFor = function (sag) {
+      var prev = A, sum = 0;
+      for (var j = 1; j <= 40; j++) {
+        var t = j / 40, x = (1 - t) * (1 - t) * A[0] + 2 * t * (1 - t) * mid[0] + t * t * B[0];
+        var y = (1 - t) * (1 - t) * A[1] + 2 * t * (1 - t) * (mid[1] + sag) + t * t * B[1];
+        sum += Math.hypot(x - prev[0], y - prev[1]); prev = [x, y];
+      }
+      return sum;
+    };
+    var lo = 0, hi = 500;
+    for (var k = 0; k < 30; k++) { var m = (lo + hi) / 2; if (lengthFor(m) < L) lo = m; else hi = m; }
+    el('path', { d: 'M' + A.join(' ') + 'Q' + mid[0] + ' ' + (mid[1] + lo).toFixed(1) + ' ' + B.join(' '), class: 'cx-string' }, g);
+  }
+  CX['ellipse'] = {
+    steps: 6,
+    start: { P: [EL.I[0] + 103, EL.I[1] - 118], k: 6 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s, words) {
+      var b = Math.sqrt(EL.a * EL.a - s.k * s.k / 4);
+      return 'F₁F₂ = ' + s.k + ' cm  →  b = ' + (Math.round(b * 100) / 100) + ' cm' + (s.k === 0 ? ' — ' + words : '');
+    },
+    place: function (s, key, p) { return ellipseOf({ P: p, k: s.k }).P; },     // P stays on the curve
+    figure: ellipseOf,
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, a = f.a * CM, b = f.b * CM;
+      var V1 = f.at(Math.PI), V2 = f.at(0), B1 = f.at(Math.PI / 2), B2 = f.at(-Math.PI / 2);
+      given(ink, 'F₁F₂ = 2c = ' + cm1(2 * f.c * CM) + '    ខ្សែ៖ 2a = ' + cm1(2 * a));
+      if (i >= 3) sumNote(marks, f, f.P);
+      if (i >= 5) {
+        dash(marks, V1, V2); dash(marks, B1, B2);
+        segLine(marks, f.P, f.F1, 'cx-radius'); segLine(marks, f.P, f.F2, 'cx-radius');
+        label(marks, add(f.I, [a * 0.8, -15]), 'a', 'cx-note cx-r');
+        label(marks, add(mul(add(f.I, B1), 0.5), [-14, 0]), 'b', 'cx-note cx-r');
+        if (f.c) label(marks, add(mul(add(f.I, f.F1), 0.5), [0, 16]), 'c', 'cx-note cx-r');
+      }
+      if (i >= 4) el('path', { d: ellipsePath(f, 0, 2 * Math.PI) + 'Z', class: 'cx-circle' }, ink);
+      if (i >= 5) {
+        point(ink, f.I, 'I', [-0.5, -1], null, null, 20);
+        point(ink, V1, 'V₁', LEFT, null, null, 24); point(ink, V2, 'V₂', RIGHT, null, null, 24);
+        point(ink, B1, 'B₁', [0.75, 1], null, null, 23); point(ink, B2, 'B₂', [0.75, -1], null, null, 23);   // inside: clear of the lines of text
+      }
+      if (f.c) { point(ink, f.F1, 'F₁', [-0.3, 1], null, null, 24); point(ink, f.F2, 'F₂', [0.3, 1], null, null, 24); }
+      else point(ink, f.F1, 'F₁ = F₂', [0, 1], null, null, 24);
+      if (i >= 1 && i <= 4) { drawPin(ink, f.F1); drawPin(ink, f.F2); }
+      if (i === 2) slackString(tools, f);
+      if (i === 3 || i === 4) { tautString(tools, f, f.P); drawPencil(tools, f.P); }
+      if (i >= 3) {
+        el('circle', { cx: f.P[0], cy: f.P[1], r: 5, class: 'cx-pt cx-pt-m' }, tools);
+        label(tools, i >= 5 ? add(f.P, mul(unit(sub(f.P, f.I)), 22)) : add(f.P, [-20, -13]), 'P', 'cx-label');   // beside the pencil
+        el('circle', { cx: f.P[0], cy: f.P[1], r: 24, class: 'cx-grab', 'data-drag': 'P' }, tools);
+      }
+    },
+    anim: function (f, i) {
+      var fade = function (draw) { return function (t, drawn, tools) { draw(el('g', { opacity: 0.2 + 0.8 * t }, tools), t); }; };
+      var hold = function (tools, t) { var P = f.at(t); tautString(tools, f, P); drawPencil(tools, P); sumNote(tools, f, P); return P; };
+      if (i === 1) return { phases: [{ dur: 900, draw: function (t, drawn, tools) {
+        [f.F1, f.F2].forEach(function (F) { drawPin(el('g', { opacity: t }, drawn), add(F, [0, -26 * (1 - t)])); });
+      } }] };
+      if (i === 2) return { phases: [{ dur: 1000, draw: fade(function (grp) { slackString(grp, f); }) }] };
+      if (i === 3) return { phases: [
+        { dur: 800, draw: fade(function (grp) { hold(grp, -Math.PI / 2); }) },                          // the pencil pulls the string tight
+        { dur: 1500, draw: function (t, drawn, tools) { hold(tools, -Math.PI / 2 + (f.t + Math.PI / 2) * t); } },
+      ] };
+      if (i === 4) return { phases: [{ dur: 5600, draw: function (t, drawn, tools) {
+        var now = f.t + 2 * Math.PI * t;
+        el('path', { d: ellipsePath(f, f.t, now), class: 'cx-circle' }, drawn);
+        hold(tools, now);
+      } }] };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;

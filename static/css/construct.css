@@ -176,3 +176,11 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 /* a tangent: the circle that is given */
 .cx-ring { fill: none; stroke: #132238; stroke-width: 3; }
 @media (max-width: 640px) { .cx-ring { stroke-width: 5; } }
+/* the ellipse drawn with two pins and a string */
+.cx-pin { fill: #b4546a; stroke: #fff; stroke-width: 1.5; }
+.cx-pin-shine { fill: rgba(255, 255, 255, .7); }
+.cx-string { fill: none; stroke: #8a5a1f; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.cx-pencil { fill: #e7b24a; stroke: #a8732a; stroke-width: 1; pointer-events: none; }
+.cx-pencil-tip { fill: #f4dcb3; stroke: #a8732a; stroke-width: 1; pointer-events: none; }
+.cx-sum { fill: #2e7a70; }
+@media (max-width: 640px) { .cx-string { stroke-width: 3.6; } .cx-pin { r: 10px; } }
