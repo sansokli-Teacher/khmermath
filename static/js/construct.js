@@ -1222,13 +1222,13 @@
   }
   var footOn = function (P, A, B) { var u = unit(sub(B, A)); return add(A, mul(u, dotp(sub(P, A), u))); };
   // the compass is opened from its centre to a point, then draws the whole circle
-  function circlePhases(c, through) {
+  function circlePhases(c, through, cls) {
     var r = len(sub(through, c)), t0 = aimAt(c, through);
     return [
       { dur: 1000, draw: function (t, drawn, tools) { drawCompass(tools, c, add(c, mul(sub(through, c), Math.max(t, 0.06)))); } },
       { dur: 2400, draw: function (t, drawn, tools) {
         var th = t0 + (2 * Math.PI - 0.002) * t;
-        el('path', { d: arcPath(c, r, t0, th), class: 'cx-circle' }, drawn);
+        el('path', { d: arcPath(c, r, t0, th), class: cls || 'cx-circle' }, drawn);
         drawCompass(tools, c, onCircle(c, r, th));
       } },
     ];
@@ -1357,6 +1357,102 @@
       if (i === 5) return { arcs: [6, 7, 8, 9] };
       if (i === 6) return { ruler: [f.I, f.Wp], cls: 'cx-line cx-line-2' };
       if (i === 7) return { phases: circlePhases(f.I, f.D) };
+      return null;
+    },
+  };
+
+  // A tangent to a circle (Grade 9, lesson 13), one page with two tabs. At a point A of the
+  // circle: the ray OA is drawn past A, and the perpendicular to it at A is built as for the right
+  // angle (marks P and Q either side of A, arcs from P and from Q meeting at B). From a point P
+  // outside: M is the middle of OP (its mediator); the circle of centre M through O cuts the
+  // given circle at A and B; the angles OAP and OBP stand on a half circle, so they are right.
+  var TAN = { O: [300, 240], R: 105, O2: [200, 250], R2: 100 };
+  CX['tangent-at'] = {
+    steps: 7,
+    start: { A: [386, 180] },
+    place: function (s, key, p) { return add(TAN.O, mul(unit(sub(p, TAN.O)), TAN.R)); },   // A stays on the circle
+    figure: function (s) {
+      var O = TAN.O, u = unit(sub(s.A, O)), A = add(O, mul(u, TAN.R)), n = [u[1], -u[0]], c = 60, r = 1.5 * c;
+      var P = add(A, mul(u, -c)), Q = add(A, mul(u, c)), B = add(A, mul(n, Math.sqrt(r * r - c * c)));
+      var reach = function (d) { return add(A, mul(d, Math.min(190, len(sub(toEdge(A, d), A))))); };
+      var ax = Math.atan2(u[1], u[0]);
+      return { meet: true, O: O, A: A, u: u, n: n, P: P, Q: Q, B: B, end: add(A, mul(u, c + 36)), T1: reach(mul(n, -1)), T2: reach(n),
+        arcs: [
+          { c: A, r: c, t1: ax + Math.PI - 0.3, t2: ax + Math.PI + 0.3 }, { c: A, r: c, t1: ax - 0.3, t2: ax + 0.3 },
+          { c: P, r: r, t1: aimAt(P, B) - 0.3, t2: aimAt(P, B) + 0.3 }, { c: Q, r: r, t1: aimAt(Q, B) + 0.3, t2: aimAt(Q, B) - 0.3 },
+        ] };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      if (i >= 6) {
+        segLine(marks, f.O, f.A, 'cx-radius');
+        rightMark(marks, f.A, mul(f.u, -1), f.n);
+        dash(marks, f.P, f.B); dash(marks, f.Q, f.B);
+      }
+      el('circle', { cx: f.O[0], cy: f.O[1], r: TAN.R, class: 'cx-ring' }, ink);
+      if (i >= 1) segLine(ink, f.O, f.end, 'cx-line cx-line-2');
+      if (i >= 5) segLine(ink, f.T1, f.T2, 'cx-line');
+      for (var a = 0; a < (i >= 4 ? 4 : i >= 3 ? 3 : i >= 2 ? 2 : 0); a++) arcDraw(ink, f.arcs[a]);
+      if (i >= 2) {
+        point(ink, f.P, 'P', add(mul(f.u, -0.8), mul(f.n, -0.8)), null, null, 23);
+        point(ink, f.Q, 'Q', add(mul(f.u, 0.8), mul(f.n, -0.8)), null, null, 23);
+      }
+      if (i >= 4) point(ink, f.B, 'B', add(f.n, mul(f.u, 0.9)), 'cx-pt-m', null, 23);
+      point(ink, f.O, 'O', add(mul(f.u, -0.8), mul(f.n, -0.6)), null, null, 21);
+      point(ink, f.A, 'A', add(mul(f.u, 0.5), mul(f.n, -0.9)), null, 'A', 21);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { ruler: [f.O, f.end], cls: 'cx-line cx-line-2' };
+      if (i === 2) return { arcs: [0, 1] };
+      if (i === 3 || i === 4) return { arcs: [i - 1] };
+      if (i === 5) return { ruler: [f.T1, f.T2] };
+      return null;
+    },
+  };
+  CX['tangent-from'] = {
+    steps: 7,
+    start: { P: [500, 220] },
+    // P stays outside the circle, and the circle on OP stays on the sheet
+    limit: function (s, key, p) {
+      var M = mul(add(TAN.O2, p), 0.5), h = len(sub(p, TAN.O2)) / 2;
+      return 2 * h >= TAN.R2 + 70 && M[0] - h >= 6 && M[0] + h <= W - 6 && M[1] - h >= 6 && M[1] + h <= H - 6;
+    },
+    figure: function (s) {
+      var O = TAN.O2, R = TAN.R2, P = s.P, d = len(sub(P, O)), e = unit(sub(P, O)), q = [e[1], -e[0]], M = mul(add(O, P), 0.5);
+      var along = R * R / d, off = R * Math.sqrt(1 - R * R / (d * d));           // the touching points, from O
+      var A = add(O, add(mul(e, along), mul(q, off))), B = add(O, add(mul(e, along), mul(q, -off)));
+      var med = mediatorOf(O, P, M), past = function (X) { return add(X, mul(unit(sub(X, P)), 46)); };
+      return { meet: true, O: O, P: P, M: M, A: A, B: B, e: e, q: q, half: d / 2, med: med, arcs: med.arcs, EA: past(A), EB: past(B) };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      if (i >= 6) {
+        [f.A, f.B].forEach(function (X) {
+          segLine(marks, f.O, X, 'cx-radius');
+          rightMark(marks, X, unit(sub(f.O, X)), unit(sub(f.P, X)));
+          tick(marks, f.P, X);
+        });
+      }
+      el('circle', { cx: f.O[0], cy: f.O[1], r: TAN.R2, class: 'cx-ring' }, ink);
+      if (i >= 4) el('circle', { cx: f.M[0], cy: f.M[1], r: f.half, class: 'cx-arc' }, ink);
+      if (i >= 1) segLine(ink, f.O, f.P, 'cx-line cx-line-2');
+      if (i >= 3) segLine(ink, f.med.e1, f.med.e2, 'cx-line cx-line-2');
+      if (i >= 5) { segLine(ink, f.P, f.EA, 'cx-line'); segLine(ink, f.P, f.EB, 'cx-line'); }
+      if (i >= 2) f.arcs.forEach(function (a) { arcDraw(ink, a); });
+      if (i >= 3) point(ink, f.M, 'M', add(mul(f.e, 0.75), mul(f.q, -0.7)), null, null, 22);
+      if (i >= 4) {
+        point(ink, f.A, 'A', add(mul(f.q, 1), mul(f.e, -0.5)), 'cx-pt-m', null, 23);
+        point(ink, f.B, 'B', add(mul(f.q, -1), mul(f.e, -0.5)), 'cx-pt-m', null, 23);
+      }
+      point(ink, f.O, 'O', mul(f.e, -1), null, null, 21);
+      point(ink, f.P, 'P', f.e, null, 'P', 21);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { ruler: [f.O, f.P], cls: 'cx-line cx-line-2' };
+      if (i === 2) return { arcs: [0, 1, 2, 3] };
+      if (i === 3) return { ruler: [f.med.e1, f.med.e2], cls: 'cx-line cx-line-2' };
+      if (i === 4) return { phases: circlePhases(f.M, f.O, 'cx-arc') };
+      if (i === 5) return { rulers: [[f.P, f.EA], [f.P, f.EB]] };
       return null;
     },
   };

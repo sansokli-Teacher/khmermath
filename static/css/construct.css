@@ -173,3 +173,6 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 /* the circles of a triangle */
 .cx-circle { fill: none; stroke: #2e7a70; stroke-width: 3; }
 @media (max-width: 640px) { .cx-circle { stroke-width: 5; } }
+/* a tangent: the circle that is given */
+.cx-ring { fill: none; stroke: #132238; stroke-width: 3; }
+@media (max-width: 640px) { .cx-ring { stroke-width: 5; } }
