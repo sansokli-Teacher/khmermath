@@ -72,7 +72,7 @@
 .fx-main .mi .katex { font-size: 1.08em; }
 .fx-main .list { margin: 4px 0 6px; padding-left: 1.3em; }
 .fx-main .list li { margin: 2px 0; }
-.fx-main .list li.nobullet { list-style: none; }
+.fx-main .list li.nobullet, .fx-main .list.nobullets > li { list-style: none; }
 .fx-main .tbl { position: relative; margin: 6px 0; overflow-x: auto; }
 .fx-main table { border-collapse: collapse; font-size: 14.5px; line-height: 1.6; }
 .fx-main table.ruled td { border: 1px solid #8f95b8; padding: 5px 8px; }
