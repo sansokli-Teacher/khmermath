@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="137pt" height="97pt" viewBox="0 0 137 97">
+<path fill-rule="nonzero" fill="rgb(0%, 54.998779%, 0%)" fill-opacity="1" d="M 11.640625 85.585938 L 11.640625 11.882812 L 125.027344 11.882812 L 125.027344 85.585938 Z M 11.640625 85.585938 "/>
+<path fill-rule="nonzero" fill="rgb(0%, 0%, 0%)" fill-opacity="1" d="M 11.640625 85.585938 L 68.332031 48.734375 L 11.640625 11.882812 Z M 11.640625 85.585938 "/>
+<path fill-rule="nonzero" fill="rgb(0%, 0%, 0%)" fill-opacity="1" d="M 125.027344 85.585938 L 68.332031 48.734375 L 125.027344 11.882812 Z M 125.027344 85.585938 "/>
+<path fill-rule="nonzero" fill="rgb(0%, 54.998779%, 0%)" fill-opacity="1" d="M 11.640625 85.585938 L 68.332031 48.734375 L 125.027344 85.585938 Z M 11.640625 85.585938 "/>
+<path fill-rule="nonzero" fill="rgb(0%, 54.998779%, 0%)" fill-opacity="1" d="M 11.640625 11.882812 L 68.332031 48.734375 L 125.027344 11.882812 Z M 11.640625 11.882812 "/>
+<path fill="none" stroke-width="3.9851" stroke-linecap="round" stroke-linejoin="round" stroke="rgb(99.645996%, 90.704346%, 0.704956%)" stroke-opacity="1" stroke-miterlimit="10" d="M 0.000625 0.0000625 L 113.387344 73.703188 M 0.000625 73.703188 L 113.387344 0.0000625 " transform="matrix(1, 0, 0, -1, 11.64, 85.586)"/>
+<path fill="none" stroke-width="0.79701" stroke-linecap="round" stroke-linejoin="round" stroke="rgb(0%, 0%, 0%)" stroke-opacity="1" stroke-miterlimit="10" d="M 0.000625 0.0000625 L 0.000625 73.703188 L 113.387344 73.703188 L 113.387344 0.0000625 Z M 0.000625 0.0000625 " transform="matrix(1, 0, 0, -1, 11.64, 85.586)"/>
+<path fill="none" stroke-width="1.19553" stroke-linecap="round" stroke-linejoin="round" stroke="rgb(90.99884%, 44.699097%, 36.099243%)" stroke-opacity="1" stroke-dasharray="2.98883 2.98883" stroke-miterlimit="10" d="M -8.503281 36.851625 L 121.89125 36.851625 " transform="matrix(1, 0, 0, -1, 11.64, 85.586)"/>
+<path fill="none" stroke-width="1.19553" stroke-linecap="round" stroke-linejoin="round" stroke="rgb(90.99884%, 44.699097%, 36.099243%)" stroke-opacity="1" stroke-dasharray="2.98883 2.98883" stroke-miterlimit="10" d="M 56.692031 -8.503844 L 56.692031 82.207094 " transform="matrix(1, 0, 0, -1, 11.64, 85.586)"/>
+</svg>
