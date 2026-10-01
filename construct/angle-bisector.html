@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>សំណង់ធរណីមាត្រ — KhmerMath</title>
-<meta name="description" content="រៀន ឬរំលឹករបៀបសង់រូបធរណីមាត្រ ដោយប្រើដែកឈាន និងបន្ទាត់ ម្ដងមួយជំហាន ជាមួយរូបមានចលនា។">
-<link rel="canonical" href="https://khmermath.org/construct/">
+<title>សង់កន្លះបន្ទាត់ពុះមុំ — សំណង់ធរណីមាត្រ — KhmerMath</title>
+<meta name="description" content="រៀនសង់កន្លះបន្ទាត់ពុះមុំ ម្ដងមួយជំហាន ដោយប្រើបន្ទាត់ និងដែកឈាន៖ រូបមានចលនា ហេតុផល កំហុសដែលច្រើនជួប និងលំហាត់។">
+<link rel="canonical" href="https://khmermath.org/construct/angle-bisector.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="KhmerMath">
 <meta property="og:locale" content="km_KH">
-<meta property="og:title" content="សំណង់ធរណីមាត្រ — KhmerMath">
-<meta property="og:description" content="រៀន ឬរំលឹករបៀបសង់រូបធរណីមាត្រ ដោយប្រើដែកឈាន និងបន្ទាត់ ម្ដងមួយជំហាន ជាមួយរូបមានចលនា។">
-<meta property="og:url" content="https://khmermath.org/construct/">
+<meta property="og:title" content="សង់កន្លះបន្ទាត់ពុះមុំ — សំណង់ធរណីមាត្រ — KhmerMath">
+<meta property="og:description" content="រៀនសង់កន្លះបន្ទាត់ពុះមុំ ម្ដងមួយជំហាន ដោយប្រើបន្ទាត់ និងដែកឈាន៖ រូបមានចលនា ហេតុផល កំហុសដែលច្រើនជួប និងលំហាត់។">
+<meta property="og:url" content="https://khmermath.org/construct/angle-bisector.html">
 <meta property="og:image" content="https://khmermath.org/static/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -49,53 +49,94 @@
 </header>
 <main id="content">
 
-<section class="page-hero">
+<section class="page-hero cx-hero">
   <div class="wrap">
-    <ol class="crumbs"><li><a href="../index.html">ទំព័រដើម</a></li><li aria-current="page">សំណង់ធរណីមាត្រ</li></ol>
-    <h1>សំណង់ធរណីមាត្រ</h1>
-    <p class="lead">រៀន ឬរំលឹករបៀបសង់រូបធរណីមាត្រ ដោយប្រើដែកឈាន និងបន្ទាត់ ម្ដងមួយជំហាន ជាមួយរូបមានចលនា។ ភ្លេចរបៀបសង់ពីថ្នាក់មុន? មើលនៅទីនេះ។</p>
+    <ol class="crumbs"><li><a href="../index.html">ទំព័រដើម</a></li><li><a href="index.html">សំណង់ធរណីមាត្រ</a></li><li aria-current="page">កន្លះបន្ទាត់ពុះមុំ</li></ol>
+    <h1>សង់កន្លះបន្ទាត់ពុះមុំ</h1>
+    <p class="lead">ពុះមុំមួយជាពីរមុំប៉ុនគ្នា ដោយប្រើតែបន្ទាត់ និងដែកឈាន។</p>
+    <ul class="cx-tools">
+      <li><span class="cx-dot"></span>ត្រូវការ៖ ដែកឈាន · បន្ទាត់ · ខ្មៅដៃ</li>
+      <li><span class="cx-dot"></span>ថ្នាក់ទី ៧ ដល់ទី ៩</li>
+      <li lang="en"><span class="cx-dot"></span>Angle bisector</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section cx-section">
+  <div class="wrap">
+    <div class="cx" data-cx="angle-bisector" data-label="ការសង់កន្លះបន្ទាត់ពុះនៃមុំ xOy"
+         data-k-ok="ធំជាងពាក់កណ្ដាល AB — ធ្នូកាត់គ្នា ✓" data-k-short="មិនធំជាងពាក់កណ្ដាល AB — ធ្នូមិនកាត់គ្នាទេ">
+      <div class="cx-board">
+        <div class="cx-stage" aria-live="off"><noscript>សូមបើក JavaScript ដើម្បីមើលរូបមានចលនា។</noscript></div>
+        <p class="cx-warn" hidden>ធ្នូមិនកាត់គ្នាទេ៖ កាំតូចពេក។ សូមបើកដែកឈានឱ្យកាំធំជាងពាក់កណ្ដាលនៃ <var>AB</var>។</p>
+      </div>
+      <div class="cx-try">
+        <p class="cx-try-h">សាកល្បងខ្លួនឯង</p>
+        <p>អូសរង្វង់តូចនៅលើជ្រុង <var>Ox</var> ឬ <var>Oy</var> ដើម្បីប្ដូរមុំ។ ប្ដូរគម្លាតដែកឈាន ដើម្បីមើលថាពេលណាធ្នូកាត់គ្នា។</p>
+        <label class="cx-k-row"><span>គម្លាតដែកឈាន (កាំនៃធ្នូផ្ចិត <var>A</var> និង <var>B</var>)</span>
+          <input type="range" class="cx-k" min="30" max="130" step="1" aria-label="គម្លាតដែកឈាន">
+        </label>
+        <p class="cx-k-out" aria-live="polite"></p>
+      </div>
+      <div class="cx-side">
+        <p class="cx-now" aria-live="polite"></p>
+        <div class="cx-controls">
+          <button type="button" class="btn btn-ghost btn-sm cx-prev" aria-label="ជំហានមុន">◀ ថយក្រោយ</button>
+          <button type="button" class="btn btn-primary btn-sm cx-next" aria-label="ជំហានបន្ទាប់">បន្ទាប់ ▶</button>
+          <button type="button" class="btn btn-ghost btn-sm cx-play" data-play="ចាក់ទាំងអស់" data-pause="ផ្អាក"><span>ចាក់ទាំងអស់</span></button>
+          <button type="button" class="icon-btn cx-reset" title="ចាប់ផ្ដើមវិញ" aria-label="ចាប់ផ្ដើមវិញ">↺</button>
+        </div>
+        <ol class="cx-steps">
+          <li>គេឱ្យមុំ <var>xOy</var>។ យើងចង់សង់កន្លះបន្ទាត់ពុះ ដែលចែកមុំនេះជាពីរមុំប៉ុនគ្នា។</li>
+          <li>គូសធ្នូរង្វង់ផ្ចិត <var>O</var> ឱ្យកាត់ជ្រុងទាំងពីរនៃមុំ ត្រង់ចំណុច <var>A</var> និង <var>B</var>។</li>
+          <li>គូសធ្នូរង្វង់ផ្ចិត <var>B</var> នៅខាងក្នុងមុំ ដោយកាំធំជាង ½<var>AB</var>។</li>
+          <li>រក្សាគម្លាតដែកឈានឱ្យនៅដដែល។ គូសធ្នូរង្វង់ផ្ចិត <var>A</var> ឱ្យកាត់ធ្នូមុន។ ធ្នូទាំងពីរកាត់គ្នាត្រង់ចំណុច <var>t</var>។</li>
+          <li>ប្រើបន្ទាត់ គូសភ្ជាប់ <var>Ot</var>។</li>
+          <li><var>Ot</var> ជាកន្លះបន្ទាត់ពុះនៃមុំ <var>xOy</var>៖ មុំ <var>xOt</var> និងមុំ <var>tOy</var> ប៉ុនគ្នា។</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap cx-notes">
+    <div class="cx-note-card">
+      <h2>ហេតុអ្វីបានជាត្រឹមត្រូវ?</h2>
+      <p><var>A</var> និង <var>B</var> នៅលើធ្នូរង្វង់ផ្ចិត <var>O</var> តែមួយ ដូច្នេះ <var>OA</var> = <var>OB</var>។ ធ្នូផ្ចិត <var>A</var> និងធ្នូផ្ចិត <var>B</var> មានកាំដូចគ្នា ដូច្នេះ <var>At</var> = <var>Bt</var>។</p>
+      <p>ត្រីកោណ <var>OAt</var> និង <var>OBt</var> មានជ្រុងប៉ុនគ្នាទាំងបី (ជ.ជ.ជ)៖ <var>OA</var> = <var>OB</var>, <var>At</var> = <var>Bt</var> និង <var>Ot</var> ជាជ្រុងរួម។ ដូច្នេះ ត្រីកោណទាំងពីរប៉ុនគ្នា ហើយមុំ <var>AOt</var> ប៉ុននឹងមុំ <var>BOt</var>។</p>
+      <p class="cx-aside">ពិនិត្យដោយបត់ក្រដាស៖ បើបត់ក្រដាសតាម <var>Ot</var> ជ្រុង <var>Ox</var> ត្រួតស៊ីនឹងជ្រុង <var>Oy</var>។</p>
+    </div>
+    <div class="cx-note-card">
+      <h2>កំហុសដែលច្រើនជួប</h2>
+      <ul class="cx-mistakes">
+        <li><b>ប្ដូរគម្លាតដែកឈាន ពេលប្ដូរពី <var>B</var> ទៅ <var>A</var>។</b> ពេលនោះ <var>At</var> មិនស្មើ <var>Bt</var> ហើយ <var>Ot</var> មិនពុះមុំជាពីរប៉ុនគ្នាទេ។</li>
+        <li><b>កាំតូចពេក។</b> បើកាំមិនធំជាង ½<var>AB</var> ធ្នូទាំងពីរមិនកាត់គ្នាទេ។ សាកល្បងដោយរំកិល «គម្លាតដែកឈាន» ខាងលើ។</li>
+        <li><b>យកចំណុច <var>A</var> និង <var>B</var> ដោយមិនគូសធ្នូផ្ចិត <var>O</var>។</b> បើ <var>OA</var> មិនស្មើ <var>OB</var> បន្ទាត់ដែលគូសបានមិនមែនជាកន្លះបន្ទាត់ពុះទេ។</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <section class="section">
-  <div class="wrap">
-    <div class="cards">
-      <a class="card cx-card" href="segment-bisector.html">
-        <svg class="cx-thumb" viewBox="0 0 240 150" aria-hidden="true">
-          <path d="M10 10h220M10 30h220M10 50h220M10 70h220M10 90h220M10 110h220M10 130h220M30 0v150M60 0v150M90 0v150M120 0v150M150 0v150M180 0v150M210 0v150" class="cx-thumb-grid"/>
-          <path d="M101.5 10.3A72 72 0 0 1 133.6 41.2 M133.6 108.8A72 72 0 0 1 101.5 139.7 M106.4 41.2A72 72 0 0 1 138.5 10.3 M138.5 139.7A72 72 0 0 1 106.4 108.8" class="cx-thumb-arc"/>
-          <path d="M120 8v134" class="cx-thumb-line"/>
-          <path d="M70 75h100" class="cx-thumb-seg"/>
-          <path d="M126 75v-6h-6" class="cx-thumb-right"/>
-          <circle cx="70" cy="75" r="3.5"/><circle cx="170" cy="75" r="3.5"/><circle cx="120" cy="75" r="3.5" class="m"/>
-          <text x="58" y="79">A</text><text x="176" y="79">B</text><text x="124" y="90">M</text>
-        </svg>
-        <div class="card-top"><span class="chip chip-live">មានហើយ</span></div>
-        <h3>មេដ្យាទ័រនៃអង្កត់</h3>
-        <p>រកចំណុចកណ្ដាល និងបន្ទាត់កែងនៃអង្កត់មួយ ដោយប្រើតែដែកឈាន និងបន្ទាត់។</p>
-        <div class="go">មើលរបៀបសង់ <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></div>
-      </a>
-      <a class="card cx-card" href="angle-bisector.html">
-        <svg class="cx-thumb" viewBox="0 0 240 150" aria-hidden="true">
-          <path d="M10 10h220M10 30h220M10 50h220M10 70h220M10 90h220M10 110h220M10 130h220M30 0v150M60 0v150M90 0v150M120 0v150M150 0v150M180 0v150M210 0v150" class="cx-thumb-grid"/>
-          <path d="M106.5 142.7A74.0 74.0 0 0 0 69.4 63.0 M121.1 101.9A50.0 50.0 0 0 0 130.8 62.3 M110.0 78.0A50.0 50.0 0 0 1 146.5 96.1" class="cx-thumb-arc"/>
-          <path d="M34.0 128.0L215.3 43.5" class="cx-thumb-line"/>
-          <path d="M230.0 128.0L34 128L136.8 5.4" class="cx-thumb-seg" fill="none"/>
-          <circle cx="34" cy="128" r="3.5"/><circle cx="108.0" cy="128.0" r="3.2"/><circle cx="81.6" cy="71.3" r="3.2"/><circle cx="130.2" cy="83.1" r="3.5" class="m"/>
-          <text x="20" y="138">O</text><text x="224" y="143">x</text><text x="121" y="9">y</text><text x="136" y="97">t</text>
-        </svg>
-        <div class="card-top"><span class="chip chip-live">មានហើយ</span></div>
-        <h3>កន្លះបន្ទាត់ពុះមុំ</h3>
-        <p>ពុះមុំមួយជាពីរមុំប៉ុនគ្នា ដោយប្រើដែកឈាន និងបន្ទាត់។</p>
-        <div class="go">មើលរបៀបសង់ <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></div>
-      </a>
+  <div class="wrap cx-notes">
+    <div class="cx-note-card">
+      <h2>សាកធ្វើលើក្រដាស</h2>
+      <ol class="cx-practice">
+        <li>គូសមុំ <var>xOy</var> មួយ។ សង់កន្លះបន្ទាត់ពុះ <var>Ot</var> របស់វា រួចកាត់ ហើយបត់ក្រដាសតាម <var>Ot</var> ដើម្បីពិនិត្យថា ជ្រុង <var>Ox</var> ត្រួតស៊ីនឹងជ្រុង <var>Oy</var>។</li>
+        <li>គូសត្រីកោណ <var>ABC</var> មួយ។ សង់កន្លះបន្ទាត់ពុះនៃមុំទាំងបី។ តើអ្នកសង្កេតឃើញអ្វី?
+          <details><summary>មើលចម្លើយ</summary><p>កន្លះបន្ទាត់ពុះទាំងបីប្រសព្វគ្នាត្រង់ចំណុចតែមួយ។ ចំណុចនោះនៅចម្ងាយស្មើគ្នាពីជ្រុងទាំងបីនៃត្រីកោណ។</p></details>
+        </li>
+      </ol>
     </div>
-    <h2 class="cx-soon-h">កំពុងរៀបចំ</h2>
-    <div class="cards cx-soon">
-      <div class="card soon"><div class="card-top"><span class="chip chip-soon">កំពុងរៀបចំ</span></div><h3>ចម្លងអង្កត់ និងចម្លងមុំ</h3><p>គូសអង្កត់ ឬមុំថ្មី ឱ្យស្មើនឹងអង្កត់ ឬមុំដែលគេឱ្យ។</p></div>
-      <div class="card soon"><div class="card-top"><span class="chip chip-soon">កំពុងរៀបចំ</span></div><h3>បន្ទាត់កែង និងបន្ទាត់ស្រប</h3><p>គូសបន្ទាត់កែង ឬបន្ទាត់ស្រប កាត់តាមចំណុចមួយ។</p></div>
-      <div class="card soon"><div class="card-top"><span class="chip chip-soon">កំពុងរៀបចំ</span></div><h3>សង់ត្រីកោណ</h3><p>សង់ត្រីកោណ ពេលគេឱ្យជ្រុង និងមុំ។</p></div>
-      <div class="card soon"><div class="card-top"><span class="chip chip-soon">កំពុងរៀបចំ</span></div><h3>មុំពិសេស</h3><p>សង់មុំ 60°, 30°, 90° និង 45° ដោយប្រើតែដែកឈាន និងបន្ទាត់។</p></div>
+    <div class="cx-note-card">
+      <h2>ប្រើនៅពេលណា?</h2>
+      <ul class="cx-links">
+        <li><a href="../lesson/g7/L13.html">ថ្នាក់ទី ៧ មេរៀនទី ១៣ · មុំ</a><span>សង់កន្លះបន្ទាត់ពុះមុំដោយប្រើបន្ទាត់និងដែកឈាន</span></li>
+        <li><a href="../lesson/g7/L15.html">ថ្នាក់ទី ៧ មេរៀនទី ១៥ · រូបធរណីមាត្រដែលមានវិមាត្រពីរ</a><span>កន្លះបន្ទាត់ពុះនៃត្រីកោណ</span></li>
+        <li><a href="../formular/g8/#l17">រូបមន្តសង្ខេប ថ្នាក់ទី ៨ មេរៀនទី ១៧ · បន្ទាត់ពិសេសក្នុងត្រីកោណ</a><span>ពុះមុំ (Angle Bisector)</span></li>
+      </ul>
+      <p class="cx-aside">សូមមើលផងដែរ៖ <a href="segment-bisector.html">សង់មេដ្យាទ័រនៃអង្កត់</a>។</p>
     </div>
   </div>
 </section>

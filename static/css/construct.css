@@ -121,3 +121,14 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 @media print {
   .cx-controls, .cx-try { display: none; }
 }
+
+/* the angle bisector: handles that turn the sides, and the two equal angles */
+.cx-handle { fill: #fffefa; stroke: #6a788a; stroke-width: 2; }
+.cx-sector { stroke: none; }
+.cx-sector-a { fill: rgba(46, 122, 112, .26); }
+.cx-sector-b { fill: rgba(201, 134, 43, .3); }
+.cx-sector-edge { fill: none; stroke-width: 2.2; }
+.cx-sector-edge-a { stroke: #2e7a70; }
+.cx-sector-edge-b { stroke: #c9862b; }
+.cx-thumb path.cx-thumb-seg { fill: none; }
+@media (max-width: 640px) { .cx-handle { r: 11px; stroke-width: 3; } }

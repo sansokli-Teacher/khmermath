@@ -7,8 +7,11 @@
  * (or play it all), drag the given points, and change the compass opening to
  * see when the construction fails.
  *
- * A construction is CX[NAME] = { figure(state) → shapes, steps: n }. Each step
- * lists the shapes it adds; an arc or a line can be animated.
+ * A construction is CX[NAME] = { steps, start, figure(state), draw(f, i, …), anim(f, i) }:
+ * start holds the points students may drag and the compass opening k; figure() works
+ * out the geometry; draw() shows step i; anim() names the arcs or the line to animate on
+ * arriving at a step. limit(state, key, p) may refuse a drag; warnFrom is the first
+ * step at which «the arcs do not meet» is shown.
  */
 (function () {
   'use strict';
@@ -70,6 +73,7 @@
   CX['segment-bisector'] = {
     steps: 7,
     start: { A: [170, 248], B: [470, 248], k: 0.72 },
+    limit: function (s, key, p) { return len(sub(p, s[key === 'A' ? 'B' : 'A'])) >= 90; },
     figure: function (s) {
       var A = s.A, B = s.B, AB = len(sub(B, A)), r = s.k * AB, M = mul(add(A, B), 0.5);
       var u = unit(sub(B, A)), n = [u[1], -u[0]];
@@ -134,6 +138,84 @@
     },
   };
 
+  // Bisector of the angle xOy (Grade 7, lesson 13): an arc from O meets the sides at A
+  // and B; arcs of one radius from B and from A meet at t; Ot bisects the angle.
+  CX['angle-bisector'] = {
+    steps: 6,
+    warnFrom: 3,
+    start: { O: [150, 362], X: [540, 362], Y: [395, 112], k: 0.8 },
+    // the sides stay long enough to carry the arc, and the angle between 25° and 160°
+    limit: function (s, key, p) {
+      var a = sub(p, s.O), b = sub(s[key === 'X' ? 'Y' : 'X'], s.O);
+      var ang = Math.acos(Math.max(-1, Math.min(1, (a[0] * b[0] + a[1] * b[1]) / (len(a) * len(b))))) * 180 / Math.PI;
+      return len(a) >= 190 && ang >= 25 && ang <= 160;
+    },
+    figure: function (s) {
+      var O = s.O, ux = unit(sub(s.X, O)), uy = unit(sub(s.Y, O)), R = 165;
+      var A = add(O, mul(ux, R)), B = add(O, mul(uy, R)), AB = len(sub(B, A)), r = s.k * AB;
+      var M = mul(add(A, B), 0.5), d = unit(sub(M, O)), meet = r > AB / 2 + 0.5;
+      var h = meet ? Math.sqrt(r * r - AB * AB / 4) : 0, T = add(M, mul(d, h));
+      var wA = unit(sub(ux, mul(d, ux[0] * d[0] + ux[1] * d[1])));      // away from the bisector, on A's side
+      var aim = function (from, to) { return Math.atan2(to[1] - from[1], to[0] - from[0]); };
+      var ax = Math.atan2(ux[1], ux[0]), turn = Math.atan2(uy[1], uy[0]) - ax;
+      while (turn > Math.PI) turn -= 2 * Math.PI;
+      while (turn < -Math.PI) turn += 2 * Math.PI;
+      var sg = turn > 0 ? 1 : -1, towards = meet ? T : add(M, mul(d, r * 0.75));
+      // a ray is drawn from O to just inside the edge of the sheet
+      var edge = function (u) {
+        var t = 1e9;
+        if (u[0] > 1e-6) t = Math.min(t, (W - 26 - O[0]) / u[0]); else if (u[0] < -1e-6) t = Math.min(t, (26 - O[0]) / u[0]);
+        if (u[1] > 1e-6) t = Math.min(t, (H - 26 - O[1]) / u[1]); else if (u[1] < -1e-6) t = Math.min(t, (26 - O[1]) / u[1]);
+        return add(O, mul(u, Math.max(t, R + 40)));
+      };
+      return {
+        meet: meet, r: r, R: R, O: O, A: A, B: B, M: M, T: T, d: d, ux: ux, uy: uy, wA: wA, ax: ax, turn: turn,
+        X: s.X, Y: s.Y, Ex: edge(ux), Ey: edge(uy), Et: edge(d),
+        arcs: [
+          { c: O, r: R, t1: ax - sg * 0.2, t2: ax + turn + sg * 0.2 },
+          { c: B, r: r, t1: aim(B, towards) - sg * 0.42, t2: aim(B, towards) + sg * 0.42 },
+          { c: A, r: r, t1: aim(A, towards) + sg * 0.42, t2: aim(A, towards) - sg * 0.42 },
+        ],
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, wB = mul(f.wA, -1);
+      if (i >= 5 && f.meet) {                             // the two equal angles
+        var rho = 86, half = f.turn / 2, sw = f.turn > 0 ? 1 : 0;
+        [[f.ax, 'a'], [f.ax + half, 'b']].forEach(function (q) {
+          var p1 = onCircle(f.O, rho, q[0]), p2 = onCircle(f.O, rho, q[0] + half);
+          el('path', { d: 'M' + f.O.join(' ') + 'L' + p1.join(' ') + 'A' + rho + ' ' + rho + ' 0 0 ' + sw + ' ' + p2.join(' ') + 'Z', class: 'cx-sector cx-sector-' + q[1] }, marks);
+          el('path', { d: 'M' + p1.join(' ') + 'A' + rho + ' ' + rho + ' 0 0 ' + sw + ' ' + p2.join(' '), class: 'cx-sector-edge cx-sector-edge-' + q[1] }, marks);
+          var m1 = onCircle(f.O, rho - 7, q[0] + half / 2), m2 = onCircle(f.O, rho + 7, q[0] + half / 2);
+          el('line', { x1: m1[0], y1: m1[1], x2: m2[0], y2: m2[1], class: 'cx-tick' }, marks);
+        });
+        [f.A, f.B].forEach(function (P) { el('line', { x1: P[0], y1: P[1], x2: f.T[0], y2: f.T[1], class: 'cx-equal' }, marks); });
+      }
+      [[f.Ex, 'x', f.wA], [f.Ey, 'y', wB]].forEach(function (q) {
+        el('line', { x1: f.O[0], y1: f.O[1], x2: q[0][0], y2: q[0][1], class: 'cx-seg' }, ink);
+        label(ink, add(add(q[0], mul(unit(sub(f.O, q[0])), 14)), mul(q[2], 17)), q[1], 'cx-label');
+      });
+      for (var a = 0; a < Math.min(i, 3); a++) el('path', { d: arcPath(f.arcs[a].c, f.arcs[a].r, f.arcs[a].t1, f.arcs[a].t2), class: 'cx-arc' }, ink);
+      if (i >= 4 && f.meet) el('line', { x1: f.O[0], y1: f.O[1], x2: f.Et[0], y2: f.Et[1], class: 'cx-line' }, ink);
+      if (i >= 1) { point(ink, f.A, 'A', add(f.wA, mul(f.ux, 0.25))); point(ink, f.B, 'B', add(wB, mul(f.uy, 0.25))); }
+      if (i >= 3 && f.meet) {
+        el('circle', { cx: f.T[0], cy: f.T[1], r: 5, class: 'cx-pt cx-pt-m' }, ink);
+        label(ink, add(f.T, add(mul(f.wA, 24), mul(f.d, 20))), 't', 'cx-label');
+      }
+      point(ink, f.O, 'O', mul(f.d, -1));
+      // the handles that turn the sides
+      [['X', f.X], ['Y', f.Y]].forEach(function (q) {
+        el('circle', { cx: q[1][0], cy: q[1][1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: q[1][0], cy: q[1][1], r: 24, class: 'cx-grab', 'data-drag': q[0] }, ink);
+      });
+    },
+    anim: function (f, i) {
+      if (i >= 1 && i <= 3) return { arcs: [i - 1] };
+      if (i === 4 && f.meet) return { ruler: [f.O, f.Et] };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
@@ -158,7 +240,12 @@
     var slider = root.querySelector('.cx-k');
     var kOut = root.querySelector('.cx-k-out');
     var btn = function (sel) { return root.querySelector(sel); };
-    var state = { A: def.start.A.slice(), B: def.start.B.slice(), k: def.start.k };
+    var fresh = function () {
+      var s = {};
+      for (var key in def.start) s[key] = Array.isArray(def.start[key]) ? def.start[key].slice() : def.start[key];
+      return s;
+    };
+    var state = fresh();
     var step = 0, playing = false, timer = null, raf = null;
 
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'cx-svg', role: 'img', 'aria-label': root.getAttribute('data-label') || '' });
@@ -174,7 +261,7 @@
       clear(marks); clear(ink); clear(tools);
       var f = def.figure(state);
       def.draw(f, i, svg, { ink: ink, marks: marks, tools: tools });
-      warn.hidden = f.meet || i < 2;
+      warn.hidden = f.meet || i < (def.warnFrom || 2);
       return f;
     }
     function caption() {
@@ -207,10 +294,11 @@
           var t = Math.min(1, (ts - t0) / dur);
           clear(tools); clear(drawn);
           if (a.arcs) {
-            for (var j = 0; j < part; j++) { var q = f.arcs[parts[j]]; el('path', { d: arcPath(q.c, f.r, q.t1, q.t2), class: 'cx-arc' }, drawn); }
+            for (var j = 0; j < part; j++) { var q = f.arcs[parts[j]]; el('path', { d: arcPath(q.c, q.r || f.r, q.t1, q.t2), class: 'cx-arc' }, drawn); }
             var arc = f.arcs[parts[part]], th = arc.t1 + (arc.t2 - arc.t1) * ease(t);
-            el('path', { d: arcPath(arc.c, f.r, arc.t1, th), class: 'cx-arc' }, drawn);
-            drawCompass(tools, arc.c, onCircle(arc.c, f.r, th));
+            var rr = arc.r || f.r;
+            el('path', { d: arcPath(arc.c, rr, arc.t1, th), class: 'cx-arc' }, drawn);
+            drawCompass(tools, arc.c, onCircle(arc.c, rr, th));
           } else {
             var p = a.ruler[0], q2 = a.ruler[1], e = add(p, mul(sub(q2, p), ease(t)));
             drawRuler(tools, p, q2);
@@ -254,7 +342,7 @@
     btn('.cx-play').addEventListener('click', play);
     btn('.cx-reset').addEventListener('click', function () {
       stopPlay();
-      state = { A: def.start.A.slice(), B: def.start.B.slice(), k: def.start.k };
+      state = fresh();
       if (slider) { slider.value = Math.round(state.k * 100); showK(); }
       go(0, false);
     });
@@ -301,8 +389,8 @@
     });
     svg.addEventListener('pointermove', function (e) {
       if (!dragging) return;
-      var p = toSvg(e), other = state[dragging === 'A' ? 'B' : 'A'];
-      if (len(sub(p, other)) < 90) return;               // keep AB long enough to see
+      var p = toSvg(e);
+      if (def.limit && !def.limit(state, dragging, p)) return;
       state[dragging] = p;
       render(step);
     });
