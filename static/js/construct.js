@@ -59,6 +59,7 @@
     el('circle', { cx: c[0], cy: c[1], r: 3.2, class: 'cx-c-needle' }, g);
     el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, g);
     el('circle', { cx: hinge[0], cy: hinge[1], r: 6, class: 'cx-c-hinge' }, g);
+    return hinge;
   }
   // A ruler laid along p→q, set a little to one side of the line it draws.
   function drawRuler(g, p, q) {
@@ -834,6 +835,10 @@
 
     go(0, false);
   }
+
+  // the tools and the small helpers, for the drawing board (static/js/board.js)
+  window.KMGeo = { el: el, arcPath: arcPath, drawCompass: drawCompass, drawRuler: drawRuler, drawSetSquare: drawSetSquare,
+    add: add, sub: sub, mul: mul, len: len, unit: unit };
 
   document.querySelectorAll('.cx[data-cx]').forEach(Player);
 })();

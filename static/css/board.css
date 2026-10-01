@@ -1,0 +1,56 @@
+/* khmermath.org — «ក្ដារខៀនធរណីមាត្រ» (construct/board.html, static/js/board.js).
+   Loaded after construct.css, whose ruler and compass it reuses. The sheet is light
+   paper in both themes; everything a finger touches is at least 44 px. */
+.bd-hero .lead { max-width: 640px; }
+.bd { display: flex; flex-direction: column; gap: 12px; }
+.bd-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; }
+.bd-tools, .bd-acts, .bd-foot, .bd-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bd-opt[hidden] { display: none; }
+.bd .btn { min-height: 44px; }
+.bd .btn:disabled { opacity: .45; cursor: default; transform: none; }
+.bd-tool, .bd-seg button {
+  min-height: 44px; padding: 6px 18px; border-radius: 999px; border: 1.5px solid var(--line-2);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+.bd-tool[aria-pressed="true"], .bd-seg button[aria-pressed="true"] { background: var(--teal-soft); border-color: var(--teal); color: var(--teal-strong); box-shadow: inset 0 0 0 1px var(--teal); }
+.bd-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; padding: 8px 14px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); }
+.bd-hint { flex: 1 1 260px; margin: 0; color: var(--ink-2); font-size: 15.5px; line-height: 1.7; }
+.bd-name label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.bd-name input { width: 5.5em; min-height: 44px; padding: 4px 12px; border-radius: 10px; border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); font: italic 700 20px 'Times New Roman', 'STIX Two Text', serif; }
+.bd-name input:disabled { opacity: .5; }
+.bd-confirm { flex: 1 1 100%; font-weight: 600; color: var(--ink); }
+.bd-foot { justify-content: space-between; }
+.bd-switch { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 6px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.bd-switch input { width: 22px; height: 22px; accent-color: var(--teal); }
+.bd-foot .btn { margin-left: auto; }
+
+/* ---- the sheet ---- */
+.bd-stage { overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line-2); box-shadow: var(--shadow); background: #fffefa; }
+.bd-svg { display: block; width: 100%; height: auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.bd[data-tool="point"] .bd-svg { cursor: crosshair; }
+.bd[data-tool="name"] .bd-svg { cursor: pointer; }
+.bd-svg [data-h] { touch-action: none; }
+.bd-hit { fill: transparent; cursor: grab; }
+.bd.dragging .bd-hit, .bd.dragging .bd-svg { cursor: grabbing; }
+.bd-svg .bd-ruler { pointer-events: auto; cursor: move; }
+.bd-edge { stroke: transparent; stroke-width: 44; pointer-events: stroke; cursor: crosshair; }
+.bd-edge-line { stroke: #a8732a; stroke-width: 1.6; pointer-events: none; }
+.bd-num { font: 600 11px system-ui, sans-serif; fill: #7a5216; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.bd-anchor { fill: #c9862b; stroke: #fffefa; stroke-width: 1.5; pointer-events: none; }
+.bd-stem { stroke: #a8732a; stroke-width: 1.2; stroke-dasharray: 3 3; pointer-events: none; }
+.bd-grip { fill: #fffefa; stroke: #a8732a; stroke-width: 2.4; pointer-events: none; }
+.bd-ring { fill: rgba(61, 80, 104, .1); stroke: #3d5068; stroke-width: 1.6; stroke-dasharray: 4 4; pointer-events: none; }
+.bd-ring-p { fill: rgba(201, 134, 43, .12); stroke: #c9862b; }
+.bd-ring-p.on { fill: rgba(201, 134, 43, .38); stroke-dasharray: none; stroke-width: 2.4; }
+.bd-open { font: 600 14px 'Kantumruy Pro', system-ui, sans-serif; fill: #6a788a; text-anchor: middle; paint-order: stroke; stroke: #fffefa; stroke-width: 4px; pointer-events: none; }
+.bd-snap { fill: none; stroke: #2e7a70; stroke-width: 2.4; pointer-events: none; }
+
+@media (max-width: 640px) {
+  .bd-tool, .bd-seg button { padding: 6px 14px; font-size: 15.5px; }
+  .bd-tools, .bd-acts { width: 100%; }
+  .bd-acts .btn { flex: 1 1 auto; padding-left: 10px; padding-right: 10px; }
+  .bd-foot .btn { width: 100%; }
+}
+@media print {
+  .bd-bar, .bd-opts, .bd-foot { display: none; }
+}
