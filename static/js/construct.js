@@ -1574,6 +1574,127 @@
     },
   };
 
+  // ------------------------------------------------ figures of the lessons ---
+  // A figure of a lesson, drawn step by step so that students see how it is made, is written as a
+  // list: scripted({ steps, start, limit, figure(state), base(f, ink), top(f, ink), script(f) }).
+  // script(f) gives, for each step, what that step adds:
+  //   ['seg', P, Q, cls]                a line drawn along the ruler
+  //   ['arc', {c, r, t1, t2}]           an arc drawn with the compass
+  //   ['perp', P, A, B, cls]            the perpendicular from P to the line AB, along a set square slid on AB
+  //   ['pt', P, name, dir, cls, dist]   a point and its name, once the step is drawn
+  //   ['mark', function (g) { ... }]    marks (ticks, right angles, equal angles), behind the ink
+  // The picture of step i is everything up to i; on arriving at a step its lines and arcs are drawn
+  // one after another, each with its tool. A new figure is a figure() and this list, nothing more.
+  // The perpendicular from P to AB as Grade 7 lesson 14 §5.1 draws it: one side of the right angle of
+  // the set square on AB, the set square slid along AB until its other side passes through P.
+  function perpPhases(P, A, B, cls) {
+    var D = footOn(P, A, B), w = unit(sub(P, D)), far = len(sub(B, D)) > len(sub(A, D)) ? B : A, p = unit(sub(far, D));
+    var lw = len(sub(P, D)) + 34, lp = Math.max(70, Math.min(0.62 * lw, len(sub(far, D)) + 30)), from = add(D, mul(p, 58));
+    var sq = function (g, c, alpha) { drawSetSquare(g, c, w, p, lw, lp, alpha); };
+    return [
+      { dur: 700, draw: function (t, drawn, tools) { sq(tools, from, 0.2 + 0.8 * t); } },
+      { dur: 900, draw: function (t, drawn, tools) { sq(tools, add(from, mul(sub(D, from), t))); } },
+      { dur: 800, draw: function (t, drawn, tools) {
+        var e = add(P, mul(sub(D, P), t));
+        segLine(drawn, P, e, cls);
+        sq(tools, D);
+        el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+      } },
+    ];
+  }
+  function scripted(spec) {
+    var inkOf = function (g, it) {
+      if (it[0] === 'seg') segLine(g, it[1], it[2], it[3] || 'cx-line');
+      else if (it[0] === 'arc') arcDraw(g, it[1]);
+      else if (it[0] === 'perp') segLine(g, it[1], footOn(it[1], it[2], it[3]), it[4] || 'cx-perp');
+    };
+    var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp'; };
+    return {
+      steps: spec.steps, start: spec.start, limit: spec.limit, place: spec.place, presets: spec.presets,
+      figure: function (s) { var f = spec.figure(s); f.meet = true; f.script = spec.script(f); return f; },
+      draw: function (f, i, g, layer) {
+        var k;
+        if (spec.base) spec.base(f, layer.ink, i);
+        for (k = 0; k <= i; k++) f.script[k].forEach(function (it) {
+          if (it[0] === 'mark') it[1](layer.marks); else if (it[0] !== 'pt') inkOf(layer.ink, it);
+        });
+        for (k = 0; k <= i; k++) f.script[k].forEach(function (it) {
+          if (it[0] === 'pt') point(layer.ink, it[1], it[2], it[3], it[4], null, it[5]);
+        });
+        if (spec.top) spec.top(f, layer.ink, i);
+      },
+      anim: function (f, i) {
+        var items = f.script[i].filter(drawnWithTool), phases = [];
+        items.forEach(function (it, n) {
+          var before = function (drawn) { for (var m = 0; m < n; m++) inkOf(drawn, items[m]); };
+          if (it[0] === 'seg') phases.push({ dur: 950, draw: function (t, drawn, tools) {
+            before(drawn);
+            drawRuler(tools, it[1], it[2]);
+            segLine(drawn, it[1], add(it[1], mul(sub(it[2], it[1]), t)), it[3] || 'cx-line');
+          } });
+          else if (it[0] === 'arc') phases.push({ dur: 900, draw: function (t, drawn, tools) {
+            var q = it[1], th = q.t1 + (q.t2 - q.t1) * t;
+            before(drawn);
+            el('path', { d: arcPath(q.c, q.r, q.t1, th), class: 'cx-arc' }, drawn);
+            drawCompass(tools, q.c, onCircle(q.c, q.r, th));
+          } });
+          else perpPhases(it[1], it[2], it[3], it[4] || 'cx-perp').forEach(function (ph) {
+            phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
+          });
+        });
+        return phases.length ? { phases: phases } : null;
+      },
+    };
+  }
+  // the two halves of the angle at V between VP and VQ, cut by VI: two arcs of one colour
+  function halfAngles(g, V, P, Q, I, kind) {
+    var turnTo = function (X, t0) { var d = aimAt(V, X) - t0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+    var tP = aimAt(V, P), tI = aimAt(V, I);
+    wedge(g, V, tP, turnTo(I, tP), 34, kind);
+    wedge(g, V, tI, turnTo(Q, tI), 40, kind);
+  }
+  var rightAt = function (g, D, I, A, B) { rightMark(g, D, unit(sub(I, D)), unit(sub(len(sub(B, D)) > len(sub(A, D)) ? B : A, D))); };
+
+  // Grade 8, lesson 12, a worked example: the bisectors of the angles B and C of the triangle ABC
+  // meet at I; the perpendiculars from I to AB, BC and AC meet them at D, E and F. (Then ID = IE = IF,
+  // and AI bisects the angle A.)
+  CX['g8-l12-incentre'] = scripted({
+    steps: 9,
+    start: { A: [300, 86], B: [116, 394], C: [550, 394] },
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      return t.least >= 190 && Math.min.apply(null, t.angles) >= 0.56 && t.r >= 52;
+    },
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.bB = bisectorOf(f.B, f.C, f.A, f.I); f.bC = bisectorOf(f.C, f.A, f.B, f.I);
+      f.D = footOn(f.I, f.A, f.B); f.E = footOn(f.I, f.B, f.C); f.F = footOn(f.I, f.C, f.A);
+      f.past = add(f.I, mul(unit(sub(f.I, f.A)), 46));
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var arcs = function (b) { return b.arcs.map(function (a) { return ['arc', a]; }); }, aux = 'cx-line cx-line-2';
+      var foot = function (X, P, Q, name) {
+        return [['perp', f.I, P, Q], ['mark', function (g) { rightAt(g, X, f.I, P, Q); }], ['pt', X, name, sub(X, f.I), null, 22]];
+      };
+      return [
+        [],
+        arcs(f.bB),
+        [['seg', f.B, f.bB.end, aux], ['mark', function (g) { halfAngles(g, f.B, f.C, f.A, f.I, 'a'); }]],
+        arcs(f.bC),
+        [['seg', f.C, f.bC.end, aux], ['mark', function (g) { halfAngles(g, f.C, f.A, f.B, f.I, 'a'); }],
+          ['pt', f.I, 'I', [0.55, 0.85], 'cx-pt-m', 25]],
+        foot(f.D, f.A, f.B, 'D'), foot(f.E, f.B, f.C, 'E'), foot(f.F, f.C, f.A, 'F'),
+        [['seg', f.A, f.past, 'cx-line'], ['mark', function (g) {
+          [f.D, f.E, f.F].forEach(function (X) { tick(g, f.I, X); });
+          halfAngles(g, f.A, f.B, f.C, f.I, 'b');
+        }]],
+      ];
+    },
+  });
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
