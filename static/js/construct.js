@@ -13,7 +13,8 @@
  * arriving at a step. limit(state, key, p) may refuse a drag and place(state, key, p)
  * may move it (a point kept on a line); warnFrom is the first step at which the
  * warning is shown, when figure().meet is false. The slider is good when k > 0.5,
- * or when kOk(k) says so; kSnap(value) may pull the slider onto a value.
+ * or when kOk(k) says so; kSnap(value) may pull the slider onto a value. A button
+ * with data-preset="NAME" in the page runs presets.NAME(state) (a ready-made case).
  */
 (function () {
   'use strict';
@@ -351,6 +352,102 @@
     },
   };
 
+  // The line d' through A perpendicular to d (Grade 7, lesson 14, with the compass instead of
+  // the set square): an arc from A cuts d at P and Q; arcs of one radius from P and from Q
+  // meet at B; AB is perpendicular to d. A may lie on d: then P and Q are on either side of it.
+  var PERP = { C: [320, 250], half: 110, reach: 270 };
+  function perpFrame(s) {
+    var u = unit(sub(s.D, PERP.C)), n = [u[1], -u[0]];
+    if (n[1] > 0) n = mul(n, -1);                        // n points to the top of the sheet
+    var v = sub(s.A, PERP.C);
+    return { u: u, n: n, along: v[0] * u[0] + v[1] * u[1], dist: v[0] * n[0] + v[1] * n[1] };
+  }
+  CX['perpendicular'] = {
+    steps: 6,
+    warnFrom: 3,
+    start: { A: [296, 96], D: [590, 250], k: 0.8 },
+    presets: {
+      off: function (s) { var f = perpFrame(s); s.A = add(add(PERP.C, mul(f.u, -24)), mul(f.n, 150)); },
+      on: function (s) { var f = perpFrame(s); s.A = add(PERP.C, mul(f.u, -24)); },
+    },
+    // A snaps onto d when it comes close; the handle D only turns the line
+    place: function (s, key, p) {
+      if (key === 'D') return add(PERP.C, mul(unit(sub(p, PERP.C)), PERP.reach));
+      var f = perpFrame({ A: p, D: s.D });
+      return Math.abs(f.dist) < 13 ? add(PERP.C, mul(f.u, f.along)) : p;
+    },
+    limit: function (s, key, p) {
+      var t = key === 'D' ? { A: s.A, D: p } : { A: p, D: s.D }, f = perpFrame(t);
+      return f.u[0] > 0 && Math.abs(Math.atan2(f.u[1], f.u[0])) <= 0.56 && Math.abs(f.along) <= 150 && Math.abs(f.dist) <= 190;
+    },
+    figure: function (s) {
+      var fr = perpFrame(s), u = fr.u, n = fr.n, on = Math.abs(fr.dist) < 0.5, c = PERP.half;
+      var H = add(PERP.C, mul(u, fr.along)), A = on ? H : s.A;
+      var side = on ? -1 : (fr.dist > 0 ? 1 : -1);          // A's side of d; B goes to the other side
+      var nA = mul(n, side), nB = mul(n, -side);
+      var P = add(H, mul(u, -c)), Q = add(H, mul(u, c)), R = on ? c : Math.hypot(c, fr.dist);
+      var r = s.k * 2 * c, meet = r > c + 0.5, h = meet ? Math.sqrt(r * r - c * c) : 0, B = add(H, mul(nB, h));
+      var aim = function (from, to) { return Math.atan2(to[1] - from[1], to[0] - from[0]); };
+      var fix = function (t, ref) { while (t - ref > Math.PI) t -= 2 * Math.PI; while (ref - t > Math.PI) t += 2 * Math.PI; return t; };
+      var tP = aim(A, P), tQ = fix(aim(A, Q), tP), sg = tQ > tP ? 1 : -1;
+      // the arc from A: one sweep through P and Q, or (A on d) a short mark at each
+      var first = on ? [{ c: A, r: R, t1: tP - 0.3, t2: tP + 0.3 }, { c: A, r: R, t1: tQ - 0.3, t2: tQ + 0.3 }]
+        : [{ c: A, r: R, t1: tP - sg * 0.16, t2: tQ + sg * 0.16 }];
+      var towards = meet ? B : add(H, mul(nB, r * 0.75));
+      var hi = Math.max(on ? 0 : Math.abs(fr.dist), 0) + 46, lo = h + 46;
+      return {
+        meet: meet, on: on, A: A, H: H, P: P, Q: Q, B: B, D: s.D, u: u, n: n, nA: nA, nB: nB, r: r, R: R,
+        d1: add(PERP.C, mul(u, -330)), d2: add(PERP.C, mul(u, 330)),
+        e1: add(H, mul(nA, hi)), e2: add(H, mul(nB, lo)),
+        nFirst: first.length,
+        arcs: first.concat([
+          { c: P, r: r, t1: aim(P, towards) - 0.4, t2: aim(P, towards) + 0.4 },
+          { c: Q, r: r, t1: aim(Q, towards) + 0.4, t2: aim(Q, towards) - 0.4 },
+        ]),
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, k = f.nFirst;
+      var arc = function (q) { el('path', { d: arcPath(q.c, q.r, q.t1, q.t2), class: 'cx-arc' }, ink); };
+      if (i >= 5 && f.meet) {
+        [f.P, f.Q].forEach(function (X) {
+          el('line', { x1: X[0], y1: X[1], x2: f.B[0], y2: f.B[1], class: 'cx-equal' }, marks);
+          if (!f.on) el('line', { x1: X[0], y1: X[1], x2: f.A[0], y2: f.A[1], class: 'cx-equal' }, marks);
+        });
+        var m = f.on ? f.nB : f.nA, s = 13, p1 = add(f.H, mul(f.u, s)), p2 = add(p1, mul(m, s)), p3 = add(f.H, mul(m, s));
+        el('polyline', { points: [p1, p2, p3].map(function (x) { return x.join(','); }).join(' '), class: 'cx-right' }, marks);
+        tick(marks, f.P, f.H); tick(marks, f.H, f.Q);
+      }
+      el('line', { x1: f.d1[0], y1: f.d1[1], x2: f.d2[0], y2: f.d2[1], class: 'cx-seg' }, ink);
+      label(ink, add(add(PERP.C, mul(f.u, -292)), mul(f.n, 20)), 'd', 'cx-label');
+      if (i >= 4 && f.meet) {
+        el('line', { x1: f.e1[0], y1: f.e1[1], x2: f.e2[0], y2: f.e2[1], class: 'cx-line' }, ink);
+        label(ink, add(add(f.e2, mul(f.nB, -12)), mul(f.u, 24)), 'd′', 'cx-label');
+      }
+      if (i >= 1) for (var a = 0; a < k; a++) arc(f.arcs[a]);
+      if (i >= 2) arc(f.arcs[k]);
+      if (i >= 3) arc(f.arcs[k + 1]);
+      if (i >= 1) {
+        var off = mul(f.nB, f.on ? -0.8 : 0.9);              // clear of the arc through P and Q
+        point(ink, f.P, 'P', add(mul(f.u, -0.9), off));
+        point(ink, f.Q, 'Q', add(mul(f.u, 0.9), off));
+      }
+      if (i >= 3 && f.meet) point(ink, f.B, 'B', add(f.u, mul(f.nB, 0.3)), 'cx-pt-m');
+      if (i >= 5 && f.meet && !f.on) point(ink, f.H, 'H', add(mul(f.u, -1), mul(f.nA, 0.9)), 'cx-pt-m');
+      point(ink, f.A, 'A', f.on ? add(mul(f.u, -0.45), mul(f.nA, 1)) : add(mul(f.u, -1), mul(f.nA, 0.3)), null, 'A');
+      el('circle', { cx: f.D[0], cy: f.D[1], r: 7, class: 'cx-handle' }, ink);
+      el('circle', { cx: f.D[0], cy: f.D[1], r: 24, class: 'cx-grab', 'data-drag': 'D' }, ink);
+    },
+    anim: function (f, i) {
+      var k = f.nFirst;
+      if (i === 1) return { arcs: k === 2 ? [0, 1] : [0] };
+      if (i === 2) return { arcs: [k] };
+      if (i === 3) return { arcs: [k + 1] };
+      if (i === 4 && f.meet) return { ruler: [f.e1, f.e2] };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
@@ -480,6 +577,15 @@
       state = fresh();
       if (slider) { slider.value = Math.round(state.k * 100); showK(); }
       go(0, false);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('[data-preset]'), function (b) {
+      b.addEventListener('click', function () {
+        var set = def.presets && def.presets[b.getAttribute('data-preset')];
+        if (!set) return;
+        stopPlay(); stopAnim();
+        set(state);
+        render(step);
+      });
     });
     items.forEach(function (li, j) {
       li.tabIndex = 0;

@@ -132,3 +132,6 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-sector-edge-b { stroke: #c9862b; }
 .cx-thumb path.cx-thumb-seg { fill: none; }
 @media (max-width: 640px) { .cx-handle { r: 11px; stroke-width: 3; } }
+/* ready-made cases under the figure (the perpendicular: A off the line, A on the line) */
+.cx-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.cx-presets .btn { min-height: 36px; }
