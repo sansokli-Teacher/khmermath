@@ -10,8 +10,10 @@
  * A construction is CX[NAME] = { steps, start, figure(state), draw(f, i, …), anim(f, i) }:
  * start holds the points students may drag and the compass opening k; figure() works
  * out the geometry; draw() shows step i; anim() names the arcs or the line to animate on
- * arriving at a step. limit(state, key, p) may refuse a drag; warnFrom is the first
- * step at which «the arcs do not meet» is shown.
+ * arriving at a step. limit(state, key, p) may refuse a drag and place(state, key, p)
+ * may move it (a point kept on a line); warnFrom is the first step at which the
+ * warning is shown, when figure().meet is false. The slider is good when k > 0.5,
+ * or when kOk(k) says so; kSnap(value) may pull the slider onto a value.
  */
 (function () {
   'use strict';
@@ -216,6 +218,139 @@
     },
   };
 
+  // the same opening kept (k = 1), for the constructions that carry a length with the compass
+  var keptK = function (k) { return Math.abs(k - 1) < 0.005; };
+  var snapK = function (v) { return Math.abs(v - 100) <= 2 ? 100 : v; };
+  // a filled angle from direction t0, turning by dt, with its edge and one tick
+  function sector(g, c, t0, dt, rho, kind) {
+    var p1 = onCircle(c, rho, t0), p2 = onCircle(c, rho, t0 + dt);
+    var arc = 'A' + rho + ' ' + rho + ' 0 ' + (Math.abs(dt) > Math.PI ? 1 : 0) + ' ' + (dt > 0 ? 1 : 0) + ' ' + p2.join(' ');
+    el('path', { d: 'M' + c.join(' ') + 'L' + p1.join(' ') + arc + 'Z', class: 'cx-sector cx-sector-' + kind }, g);
+    el('path', { d: 'M' + p1.join(' ') + arc, class: 'cx-sector-edge cx-sector-edge-' + kind }, g);
+    var m1 = onCircle(c, rho - 7, t0 + dt / 2), m2 = onCircle(c, rho + 7, t0 + dt / 2);
+    el('line', { x1: m1[0], y1: m1[1], x2: m2[0], y2: m2[1], class: 'cx-tick' }, g);
+  }
+  function tick(g, p, q) {
+    var m = mul(add(p, q), 0.5), u = unit(sub(q, p)), n = [u[1], -u[0]];
+    el('line', { x1: m[0] - n[0] * 8, y1: m[1] - n[1] * 8, x2: m[0] + n[0] * 8, y2: m[1] + n[1] * 8, class: 'cx-tick' }, g);
+  }
+
+  // A segment A'B' on the line xy as long as AB (Grade 7, lesson 12): open the compass on
+  // AB, mark A' on the line, and with the same opening cut the line at B'.
+  CX['copy-segment'] = {
+    steps: 5,
+    warnFrom: 3,
+    start: { A: [160, 212], B: [356, 178], P: [168, 350], k: 1 },
+    kOk: keptK, kSnap: snapK,
+    place: function (s, key, p) { return key === 'P' ? [Math.max(60, Math.min(430, p[0])), s.P[1]] : p; },
+    limit: function (s, key, p) {
+      if (key === 'P') return true;
+      var d = len(sub(p, s[key === 'A' ? 'B' : 'A']));
+      return d >= 90 && d <= 300 && p[1] >= 170 && p[1] <= 262;      // room for the compass above, the line xy below
+    },
+    figure: function (s) {
+      var A = s.A, B = s.B, AB = len(sub(B, A)), r = s.k * AB, u = unit(sub(B, A)), n = [u[1], -u[0]];
+      if (n[1] > 0) n = mul(n, -1);
+      var P = [Math.max(44, Math.min(s.P[0], 600 - r)), s.P[1]], Q = [P[0] + r, P[1]];
+      return { meet: keptK(s.k), r: r, A: A, B: B, u: u, n: n, P: P, Q: Q, arcs: [{ c: P, r: r, t1: -0.34, t2: 0.34 }] };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, y = f.P[1];
+      el('line', { x1: 30, y1: y, x2: W - 30, y2: y, class: 'cx-seg' }, ink);
+      label(ink, [40, y + 24], 'x', 'cx-label'); label(ink, [W - 40, y + 24], 'y', 'cx-label');
+      el('line', { x1: f.A[0], y1: f.A[1], x2: f.B[0], y2: f.B[1], class: 'cx-seg' }, ink);
+      if (i >= 3) el('path', { d: arcPath(f.P, f.r, -0.34, 0.34), class: 'cx-arc' }, ink);
+      if (i >= 4) {
+        el('line', { x1: f.P[0], y1: y, x2: f.Q[0], y2: y, class: 'cx-line' }, ink);
+        tick(marks, f.A, f.B); tick(marks, f.P, f.Q);
+        label(marks, [(f.P[0] + f.Q[0]) / 2, y - 30], f.meet ? 'A′B′ = AB' : 'A′B′ ≠ AB', 'cx-note cx-r');
+      }
+      point(ink, f.A, 'A', mul(f.u, -1), null, 'A');
+      point(ink, f.B, 'B', f.u, null, 'B');
+      if (i >= 2) point(ink, f.P, 'A′', [0, 1], null, 'P');
+      if (i >= 3) point(ink, f.Q, 'B′', [0.8, 0.9], 'cx-pt-m');
+      if (i === 1) drawCompass(layer.tools, f.A, f.B);
+    },
+    anim: function (f, i) { return i === 3 ? { arcs: [0] } : null; },
+  };
+
+  // An angle zAt equal to the angle xOy (Grade 7, lesson 13): an arc from O cuts the sides
+  // at M and N; the same arc from A cuts At at B; an arc from B of radius MN cuts it at C.
+  CX['copy-angle'] = {
+    steps: 8,
+    warnFrom: 5,
+    start: { O: [84, 318], Y: [216, 161], A: [372, 318], T: [600, 318], k: 1 },
+    kOk: keptK, kSnap: snapK,
+    // the angle stays between 25° and 110°; the ray At within 30° of the horizontal
+    limit: function (s, key, p) {
+      var v = sub(p, key === 'Y' ? s.O : s.A), ang = Math.atan2(-v[1], v[0]) * 180 / Math.PI;
+      return key === 'Y' ? len(v) >= 170 && ang >= 25 && ang <= 110 : len(v) >= 190 && Math.abs(ang) <= 30;
+    },
+    figure: function (s) {
+      var O = s.O, A = s.A, R = 132, ux = [1, 0], uy = unit(sub(s.Y, O)), ut = unit(sub(s.T, A));
+      var turn = Math.atan2(uy[1], uy[0]), sg = turn > 0 ? 1 : -1, at = Math.atan2(ut[1], ut[0]);
+      var M = add(O, mul(ux, R)), N = add(O, mul(uy, R)), MN = len(sub(N, M)), r = s.k * MN;
+      var beta = 2 * Math.asin(Math.min(1, r / (2 * R))), B = add(A, mul(ut, R)), C = onCircle(A, R, at + sg * beta);
+      var uz = unit(sub(C, A)), toC = Math.atan2(C[1] - B[1], C[0] - B[0]);
+      return {
+        meet: keptK(s.k), O: O, A: A, M: M, N: N, B: B, C: C, Y: s.Y, T: s.T, R: R, r: r,
+        ux: ux, uy: uy, ut: ut, uz: uz, turn: turn, sg: sg, at: at, beta: beta,
+        Ex: add(O, mul(ux, 214)), Ey: add(O, mul(uy, len(sub(s.Y, O)) + 18)),
+        Et: add(A, mul(ut, len(sub(s.T, A)) + 18)), Ez: add(A, mul(uz, 200)),
+        arcs: [
+          { c: O, r: R, t1: -sg * 0.18, t2: turn + sg * 0.18 },
+          { c: A, r: R, t1: at - sg * 0.18, t2: at + sg * (Math.max(Math.abs(turn), beta) + 0.3) },
+          { c: B, r: r, t1: toC + sg * 0.36, t2: toC - sg * 0.36 },
+        ],
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, sg = f.sg;
+      var out = function (u, side) { return [-side * sg * u[1], side * sg * u[0]]; };   // side 1: beyond the second side of the angle
+      if (i >= 7) {
+        sector(marks, f.O, 0, f.turn, 74, 'a');
+        sector(marks, f.A, f.at, sg * f.beta, 74, f.meet ? 'a' : 'b');
+        [[f.M, f.N], [f.B, f.C]].forEach(function (q) { el('line', { x1: q[0][0], y1: q[0][1], x2: q[1][0], y2: q[1][1], class: 'cx-equal' }, marks); });
+      }
+      [[f.Ex, 'x', out(f.ux, -1)], [f.Ey, 'y', out(f.uy, 1)]].forEach(function (q) {
+        el('line', { x1: f.O[0], y1: f.O[1], x2: q[0][0], y2: q[0][1], class: 'cx-seg' }, ink);
+        label(ink, add(add(q[0], mul(unit(sub(f.O, q[0])), 10)), mul(q[2], 28)), q[1], 'cx-label');
+      });
+      if (i >= 2) {
+        el('line', { x1: f.A[0], y1: f.A[1], x2: f.Et[0], y2: f.Et[1], class: 'cx-line' }, ink);
+        label(ink, add(add(f.Et, mul(f.ut, -8)), mul(out(f.ut, -1), 28)), 't', 'cx-label');
+      }
+      if (i >= 6) {
+        el('line', { x1: f.A[0], y1: f.A[1], x2: f.Ez[0], y2: f.Ez[1], class: 'cx-line' }, ink);
+        label(ink, add(add(f.Ez, mul(f.uz, -8)), mul(out(f.uz, 1), 20)), 'z', 'cx-label');
+      }
+      if (i >= 1) el('path', { d: arcPath(f.arcs[0].c, f.R, f.arcs[0].t1, f.arcs[0].t2), class: 'cx-arc' }, ink);
+      if (i >= 3) el('path', { d: arcPath(f.arcs[1].c, f.R, f.arcs[1].t1, f.arcs[1].t2), class: 'cx-arc' }, ink);
+      if (i >= 5) el('path', { d: arcPath(f.arcs[2].c, f.r, f.arcs[2].t1, f.arcs[2].t2), class: 'cx-arc' }, ink);
+      if (i === 4) el('line', { x1: f.M[0], y1: f.M[1], x2: f.N[0], y2: f.N[1], class: 'cx-radius' }, marks);
+      if (i >= 1) { point(ink, f.M, 'M', out(f.ux, -1)); point(ink, f.N, 'N', out(f.uy, 1)); }
+      if (i >= 3) point(ink, f.B, 'B', out(f.ut, -1));
+      if (i >= 5) point(ink, f.C, 'C', add(out(f.uz, 1), mul(f.uz, 0.5)), 'cx-pt-m');
+      point(ink, f.O, 'O', [-0.75, 0.66]);
+      if (i >= 2) point(ink, f.A, 'A', [-0.75, 0.66]);
+      // the handles: Oy turns the angle, At turns the copy
+      [['Y', f.Y, 0], ['T', f.T, 2]].forEach(function (q) {
+        if (i < q[2]) return;
+        el('circle', { cx: q[1][0], cy: q[1][1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: q[1][0], cy: q[1][1], r: 24, class: 'cx-grab', 'data-drag': q[0] }, ink);
+      });
+      if (i === 4) drawCompass(layer.tools, f.M, f.N);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { arcs: [0] };
+      if (i === 2) return { ruler: [f.A, f.Et] };
+      if (i === 3) return { arcs: [1] };
+      if (i === 5) return { arcs: [2] };
+      if (i === 6) return { ruler: [f.A, f.Ez] };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
@@ -360,8 +495,9 @@
     // the compass opening, as a share of AB
     function showK() {
       if (!slider) return;
+      if (def.kSnap) slider.value = def.kSnap(+slider.value);
       state.k = slider.value / 100;
-      var ok = state.k > 0.5;
+      var ok = def.kOk ? def.kOk(state.k) : state.k > 0.5;
       kOut.textContent = ok ? root.getAttribute('data-k-ok') : root.getAttribute('data-k-short');
       kOut.classList.toggle('bad', !ok);
     }
@@ -390,6 +526,7 @@
     svg.addEventListener('pointermove', function (e) {
       if (!dragging) return;
       var p = toSvg(e);
+      if (def.place) p = def.place(state, dragging, p);
       if (def.limit && !def.limit(state, dragging, p)) return;
       state[dragging] = p;
       render(step);
