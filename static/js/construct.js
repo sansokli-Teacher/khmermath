@@ -1927,6 +1927,19 @@
 
   document.querySelectorAll('.cx[data-cx]').forEach(Player);
 
+  // Reached from a picture of a lesson (?from=g8/L12.html#fig-...), the page offers the way back to
+  // that picture: the button .cx-back, which the page holds hidden (its words are in the page).
+  (function () {
+    var back = document.querySelector('.cx-back'), m = /[?&]from=([^&#]*)/.exec(location.search);
+    var from = m ? decodeURIComponent(m[1]) : '';
+    if (!back) return;
+    if (/^g[789]\/L\d\d\.html#fig-[a-z0-9-]+$/.test(from)) back.href = '../lesson/' + from;
+    if (!back.getAttribute('href')) return;
+    var first = document.querySelector('.cx-section .wrap');
+    if (first && back.parentElement !== first) first.insertBefore(back, first.firstChild);
+    back.hidden = false;
+  })();
+
   // Several constructions on one page (the special angles): a row of tabs shows one at a time.
   // The address keeps the choice (#a30), so a link can open the page on one of them.
   document.querySelectorAll('.cx-tabs').forEach(function (bar) {

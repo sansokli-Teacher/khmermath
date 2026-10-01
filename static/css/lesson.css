@@ -233,6 +233,8 @@ details.ans[open] > summary { margin-bottom: 8px; }
 @media print { details.ans > * { display: block; } }
 
 /* a picture that has an animation on the construction pages */
+/* coming back from the animation, the task above the picture is in view too */
+[id^="fig-"] { scroll-margin-top: 42vh; }
 .anim-link { margin: 2px 0 14px; text-align: center; }
 .anim-link a { display: inline-block; padding: 5px 14px; border-radius: 999px; border: 1.5px solid #2e7a70; color: #226058; background: #e3f1ed; font-size: 14.5px; font-weight: 600; text-decoration: none; }
 .anim-link a:hover { background: #2e7a70; color: #fff; }
