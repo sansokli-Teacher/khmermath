@@ -16,7 +16,8 @@
  * or when kOk(k) says so; kSnap(value) may pull the slider onto a value. A button
  * with data-preset="NAME" in the page runs presets.NAME(state) (a ready-made case).
  * The slider may count something else than a share: kScale is what one unit of k is on
- * the slider (100 by default), kText(state) the line under it; fill(state) gives the
+ * the slider (100 by default), kText(state, words) the line under it (words: what the page
+ * says for a good or a bad value); fill(state) gives the
  * words for the <span data-fill="KEY"> of the captions when they depend on the state.
  * anim() may return { rulers: [[p, q], ...] } to draw several lines one after another, or
  * { phases: [{ dur, draw(t, drawn, tools) }, ...] } for a movement of its own (the set square).
@@ -929,6 +930,275 @@
     },
   };
 
+  // Triangles from given measures (Grade 7 lesson 15 §2.5, Grade 8 lesson 12 §1.2), one page with
+  // three tabs, drawn as the books do: a ruler with centimetres, a protractor, a compass.
+  // Three sides: AB, then arcs of radius AC from A and BC from B (the slider is BC: no triangle
+  // unless |AB - AC| < BC < AB + AC). Two sides and the angle between them: AB, the angle at A
+  // with the protractor, C on the ray at AC (the slider is the angle). A side and its two
+  // angles: AB, an angle at A and one at B, the rays meet at C (the slider is the angle at B).
+  var CM = 36, PR = 100;                                    // one centimetre and the protractor's radius, on the sheet
+  var cmText = function (v) { return (Math.round(v * 10) / 10) + ' cm'; };
+  var UP = [0, -1], DOWN = [0, 1], RIGHT = [1, 0], LEFT = [-1, 0];
+  var segLine = function (g, p, q, cls) { return el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: cls }, g); };
+  // a ruler with centimetre marks: its zero at p, laid along d, its body on the side nrm of the line
+  function drawCmRuler(g, p, d, cm, nrm, alpha) {
+    var grp = el('g', { opacity: alpha == null ? 1 : alpha }, g);
+    var a = add(p, mul(d, -16)), b = add(p, mul(d, cm * CM + 16)), off = mul(nrm, 4), w = mul(nrm, 38);
+    var pts = [add(a, off), add(b, off), add(add(b, off), w), add(add(a, off), w)];
+    el('polygon', { points: pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' '), class: 'cx-ruler' }, grp);
+    for (var h = 0; h <= cm * 2; h++) {
+      var t = add(add(p, mul(d, h * CM / 2)), off);
+      segLine(grp, t, add(t, mul(nrm, h % 2 ? 6 : 11)), 'cx-ruler-tick');
+      if (h % 2 === 0) label(grp, add(t, mul(nrm, 23)), String(h / 2), 'cx-ruler-num');
+    }
+  }
+  // a protractor on a horizontal line: its centre at c, its zero along u0, a mark at `mark` degrees
+  function prDir(u0, deg) { var t = deg * Math.PI / 180; return add(mul(u0, Math.cos(t)), mul(UP, Math.sin(t))); }
+  function drawProtractor(g, c, u0, mark, alpha) {
+    var grp = el('g', { opacity: alpha == null ? 1 : alpha }, g), a = add(c, mul(u0, PR)), b = add(c, mul(u0, -PR));
+    el('path', { d: 'M' + a.join(' ') + 'A' + PR + ' ' + PR + ' 0 0 ' + (u0[0] < 0 ? 1 : 0) + ' ' + b.join(' ') + 'Z', class: 'cx-pr' }, grp);
+    for (var deg = 0; deg <= 180; deg += 5) {
+      var d = prDir(u0, deg), rim = add(c, mul(d, PR));
+      segLine(grp, rim, add(rim, mul(d, deg % 30 === 0 ? -12 : deg % 10 === 0 ? -8 : -4)), 'cx-pr-tick');
+      if (deg % 30 === 0) label(grp, add(add(c, mul(d, PR - 25)), deg % 180 ? [0, 0] : [0, -9]), String(deg), 'cx-pr-num');   // 0 and 180 clear of the zero line
+    }
+    el('circle', { cx: c[0], cy: c[1], r: 3, class: 'cx-pr-c' }, grp);
+    if (mark != null) {
+      var m = prDir(u0, mark);
+      segLine(grp, add(c, mul(m, PR - 13)), add(c, mul(m, PR + 2)), 'cx-pr-mark');
+      label(grp, add(c, mul(m, PR + 30)), mark + '°', 'cx-note cx-r');
+    }
+  }
+  var markAt = function (c, u0, deg) { return add(c, mul(prDir(u0, deg), PR + 8)); };   // the pencil dot beside the rim
+  var dot = function (g, p, r) { el('circle', { cx: p[0], cy: p[1], r: r == null ? 3.4 : r, class: 'cx-mark' }, g); };
+  function given(g, text) { el('text', { x: 22, y: 30, class: 'cx-given', 'dominant-baseline': 'central' }, g).textContent = text; }
+  function wedge(g, c, t0, dt, rho, kind) {                // an angle, filled, without the tick of sector()
+    var p1 = onCircle(c, rho, t0), p2 = onCircle(c, rho, t0 + dt);
+    var arc = 'A' + rho + ' ' + rho + ' 0 0 ' + (dt > 0 ? 1 : 0) + ' ' + p2.join(' ');
+    el('path', { d: 'M' + c.join(' ') + 'L' + p1.join(' ') + arc + 'Z', class: 'cx-sector cx-sector-' + kind }, g);
+    el('path', { d: 'M' + p1.join(' ') + arc, class: 'cx-sector-edge cx-sector-edge-' + kind }, g);
+  }
+  function triFill(g, A, B, C) {
+    el('polygon', { points: [A, B, C].map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' '), class: 'cx-tri' }, g);
+  }
+  // the name of a side, beside its middle, away from the third corner
+  function sideNote(g, p, q, other, text) {
+    var m = mul(add(p, q), 0.5), u = unit(sub(q, p)), n = [-u[1], u[0]];
+    if (dotp(n, sub(other, m)) > 0) n = mul(n, -1);
+    label(g, add(m, mul(n, 16 + 16 * Math.abs(n[0]))), text, 'cx-note');   // further out beside a steep side: the words are wide
+  }
+  // the ruler comes under the line, then the pencil runs along it from p for `cm` centimetres
+  function cmSegmentPhases(p, d, cm, rulerCm, nrm, cls) {
+    var q = add(p, mul(d, cm * CM));
+    return [
+      { dur: 800, draw: function (t, drawn, tools) { drawCmRuler(tools, add(p, mul(nrm, 30 * (1 - t))), d, rulerCm, nrm, 0.25 + 0.75 * t); } },
+      { dur: 1100, draw: function (t, drawn, tools) {
+        var e = add(p, mul(sub(q, p), t));
+        segLine(drawn, p, e, cls);
+        drawCmRuler(tools, p, d, rulerCm, nrm);
+        el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+      } },
+    ];
+  }
+  // the compass is opened to `cm` on the ruler (its zero at z), carried to the centre c, turned
+  // with the pencil lifted to where the arc starts, and then draws the arc
+  function compassPhases(z, cm, rulerCm, c, arc) {
+    var r = cm * CM, turnTo = arc.t1;
+    while (turnTo > Math.PI) turnTo -= 2 * Math.PI;
+    while (turnTo < -Math.PI) turnTo += 2 * Math.PI;
+    var ph = [{ dur: 1200, draw: function (t, drawn, tools) {
+      drawCmRuler(tools, z, RIGHT, rulerCm, DOWN);
+      drawCompass(tools, z, add(z, [Math.max(r * t, 8), 0]));
+    } }];
+    if (len(sub(c, z)) > 1) ph.push({ dur: 800, draw: function (t, drawn, tools) {
+      var o = add(z, mul(sub(c, z), t));
+      drawCmRuler(tools, z, RIGHT, rulerCm, DOWN, 1 - t);
+      drawCompass(tools, o, add(o, [r, 0]));
+    } });
+    ph.push({ dur: 700, draw: function (t, drawn, tools) { drawCompass(tools, c, onCircle(c, r, turnTo * t)); } });
+    ph.push({ dur: 1000, draw: function (t, drawn, tools) {
+      var th = arc.t1 + (arc.t2 - arc.t1) * t;
+      el('path', { d: arcPath(c, r, arc.t1, th), class: 'cx-arc' }, drawn);
+      drawCompass(tools, c, onCircle(c, r, th));
+    } });
+    return ph;
+  }
+  // the protractor comes down on c, then the pencil marks the angle beside its rim
+  function protractorPhases(c, u0, deg) {
+    var m = markAt(c, u0, deg);
+    return [
+      { dur: 900, draw: function (t, drawn, tools) { drawProtractor(tools, add(c, [0, -34 * (1 - t)]), u0, null, 0.25 + 0.75 * t); } },
+      { dur: 900, draw: function (t, drawn, tools) {
+        drawProtractor(tools, c, u0, deg);
+        dot(drawn, m, 3.4 * Math.min(1, t * 2));
+        el('circle', { cx: m[0], cy: m[1], r: 4.2, class: 'cx-c-pencil', opacity: t < 0.85 ? 1 : 0 }, tools);
+      } },
+    ];
+  }
+  var triEnds = function (ink, f) {                         // A and B, named clear of the ruler under AB
+    point(ink, f.A, 'A', f.ang > 100 ? [-0.8, 0.6] : [-0.85, -0.55], null, null, 22);   // and of a ray that leans to the left
+    point(ink, f.B, 'B', [0.85, -0.55], null, null, 22);
+  };
+
+  CX['triangle-sss'] = {
+    steps: 6,
+    warnFrom: 3,
+    start: { k: 3 },
+    kScale: 2,
+    kOk: function (k) { return k > 1 && k < 11; },
+    kText: function (s, words) { return 'BC = ' + cmText(s.k) + ' — ' + words; },
+    fill: function (s) { return { bc: String(s.k) }; },
+    figure: function (s) {
+      var A = [220, 350], ab = 6, ac = 5, bc = s.k, B = add(A, [ab * CM, 0]);
+      var meet = bc > Math.abs(ab - ac) && bc < ab + ac, x = (ac * ac + ab * ab - bc * bc) / (2 * ab);
+      var C = add(A, [x * CM, -Math.sqrt(Math.max(ac * ac - x * x, 0)) * CM]);
+      // where the arcs are drawn: through C, or (no triangle) where they come nearest to each other
+      var tA = meet ? aimAt(A, C) : bc >= ab + ac ? Math.PI : 0, tB = meet ? aimAt(B, C) : Math.PI;
+      var spread = function (r) { return Math.max(0.16, Math.min(1.1, 55 / r)); }, sA = spread(ac * CM), sB = spread(bc * CM);
+      return { meet: meet, A: A, B: B, C: C, ab: ab, ac: ac, bc: bc,
+        arcs: [{ c: A, r: ac * CM, t1: tA + sA, t2: tA - sA }, { c: B, r: bc * CM, t1: tB + sB, t2: tB - sB }] };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      given(ink, 'AB = ' + cmText(f.ab) + '    AC = ' + cmText(f.ac) + '    BC = ' + cmText(f.bc));
+      if (i < 1) return;
+      if (i >= 5 && f.meet) {
+        triFill(marks, f.A, f.B, f.C);
+        sideNote(marks, f.A, f.B, f.C, cmText(f.ab)); sideNote(marks, f.A, f.C, f.B, cmText(f.ac)); sideNote(marks, f.B, f.C, f.A, cmText(f.bc));
+      }
+      segLine(ink, f.A, f.B, 'cx-seg');
+      if (i >= 4 && f.meet) { segLine(ink, f.A, f.C, 'cx-line'); segLine(ink, f.B, f.C, 'cx-line'); }
+      [0, 1].forEach(function (j) {
+        var q = f.arcs[j], e;
+        if (i < j + 2) return;
+        arcDraw(ink, q);
+        if (i !== j + 2) return;                            // the opening, shown on the step that draws the arc
+        e = onCircle(q.c, q.r, (q.t1 + q.t2) / 2 + (f.meet ? (j ? -1 : 1) * Math.min(0.2, 30 / q.r) : 0));
+        segLine(marks, q.c, e, 'cx-radius');
+        if (f.meet) sideNote(marks, q.c, e, add(q.c, [j ? -40 : 40, 60]), cmText(j ? f.bc : f.ac));
+        else sideNote(marks, q.c, add(q.c, mul(sub(e, q.c), 0.7)), add(q.c, [0, -60]), cmText(j ? f.bc : f.ac));   // along AB: under it
+      });
+      triEnds(ink, f);
+      if (i >= 3 && f.meet) point(ink, f.C, 'C', UP, 'cx-pt-m', null, 24);
+      if (i === 1) drawCmRuler(tools, f.A, RIGHT, 11, DOWN);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.ab, 11, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: compassPhases(f.A, f.ac, 11, f.A, f.arcs[0]) };
+      if (i === 3) return { phases: compassPhases(f.A, f.bc, 11, f.B, f.arcs[1]) };
+      if (i === 4 && f.meet) return { rulers: [[f.A, f.C], [f.B, f.C]] };
+      return null;
+    },
+  };
+
+  CX['triangle-sas'] = {
+    steps: 7,
+    start: { k: 60 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) {
+      return '∠A = ' + s.k + '°  →  BC ≈ ' + cmText(Math.sqrt(16 + 36 - 48 * Math.cos(s.k * Math.PI / 180)));
+    },
+    fill: function (s) { return { a: String(s.k) }; },
+    figure: function (s) {
+      var A = [230, 372], ab = 4, ac = 6, B = add(A, [ab * CM, 0]), d = prDir(RIGHT, s.k);
+      return { meet: true, A: A, B: B, C: add(A, mul(d, ac * CM)), ab: ab, ac: ac, ang: s.k, d: d,
+        Ex: add(A, mul(d, (ac + 1.1) * CM)), M: markAt(A, RIGHT, s.k), nr: [d[1], -d[0]] };   // nr: the side of Ax away from B
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      given(ink, 'AB = ' + cmText(f.ab) + '    ∠A = ' + f.ang + '°    AC = ' + cmText(f.ac));
+      if (i < 1) return;
+      if (i >= 6) {
+        triFill(marks, f.A, f.B, f.C);
+        wedge(marks, f.A, 0, -f.ang * Math.PI / 180, 34, 'a');
+        label(marks, add(f.A, mul(prDir(RIGHT, f.ang / 2), 56)), f.ang + '°', 'cx-note cx-r');
+        sideNote(marks, f.A, f.B, f.C, cmText(f.ab)); sideNote(marks, f.A, f.C, f.B, cmText(f.ac));
+      }
+      segLine(ink, f.A, f.B, 'cx-seg');
+      if (i >= 3) {
+        segLine(ink, f.A, f.Ex, 'cx-line cx-line-2');
+        label(ink, add(add(f.Ex, mul(f.d, -6)), mul(f.nr, 20)), 'x', 'cx-label');
+      }
+      if (i >= 5) segLine(ink, f.B, f.C, 'cx-line');
+      if (i >= 6) segLine(ink, f.A, f.C, 'cx-line');
+      if (i >= 2) dot(ink, f.M);
+      triEnds(ink, f);
+      if (i >= 4) point(ink, f.C, 'C', mul(f.nr, -1), 'cx-pt-m', null, 24);
+      if (i === 1) drawCmRuler(tools, f.A, RIGHT, 5, DOWN);
+      if (i === 2) drawProtractor(tools, f.A, RIGHT, f.ang);
+      if (i === 4) drawCmRuler(tools, f.A, f.d, 7, f.nr);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.ab, 5, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: protractorPhases(f.A, RIGHT, f.ang) };
+      if (i === 3) return { ruler: [f.A, f.Ex], cls: 'cx-line cx-line-2' };
+      if (i === 4) return { phases: [
+        { dur: 800, draw: function (t, drawn, tools) { drawCmRuler(tools, add(f.A, mul(f.nr, 30 * (1 - t))), f.d, 7, f.nr, 0.25 + 0.75 * t); } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          drawCmRuler(tools, f.A, f.d, 7, f.nr);
+          el('circle', { cx: f.C[0], cy: f.C[1], r: 5 * Math.min(1, t * 2), class: 'cx-pt cx-pt-m' }, drawn);
+          el('circle', { cx: f.C[0], cy: f.C[1], r: 4.2, class: 'cx-c-pencil', opacity: t < 0.85 ? 1 : 0 }, tools);
+        } },
+      ] };
+      if (i === 5) return { ruler: [f.B, f.C] };
+      return null;
+    },
+  };
+
+  CX['triangle-asa'] = {
+    steps: 7,
+    start: { k: 40 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) { return '∠B = ' + s.k + '°  →  ∠C = 180° − 60° − ' + s.k + '° = ' + (120 - s.k) + '°'; },
+    fill: function (s) { return { b: String(s.k) }; },
+    figure: function (s) {
+      var A = [200, 384], ab = 6, a = 60, b = s.k, B = add(A, [ab * CM, 0]), rad = Math.PI / 180;
+      var dA = prDir(RIGHT, a), dB = prDir(LEFT, b), ac = ab * Math.sin(b * rad) / Math.sin((a + b) * rad);
+      var C = add(A, mul(dA, ac * CM));
+      return { meet: true, A: A, B: B, C: C, ab: ab, a: a, b: b, dA: dA, dB: dB,
+        Ex: add(C, mul(dA, 46)), Ey: add(C, mul(dB, 46)), MA: markAt(A, RIGHT, a), MB: markAt(B, LEFT, b) };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, rad = Math.PI / 180;
+      given(ink, 'AB = ' + cmText(f.ab) + '    ∠A = ' + f.a + '°    ∠B = ' + f.b + '°');
+      if (i < 1) return;
+      if (i >= 6) {
+        triFill(marks, f.A, f.B, f.C);
+        wedge(marks, f.A, 0, -f.a * rad, 34, 'a'); wedge(marks, f.B, Math.PI, f.b * rad, 34, 'b');
+        label(marks, add(f.A, mul(prDir(RIGHT, f.a / 2), 56)), f.a + '°', 'cx-note cx-r');
+        label(marks, add(f.B, mul(prDir(LEFT, f.b / 2), 60)), f.b + '°', 'cx-note cx-r');
+        sideNote(marks, f.A, f.B, f.C, cmText(f.ab));
+      }
+      segLine(ink, f.A, f.B, 'cx-seg');
+      if (i >= 3) {
+        segLine(ink, f.A, f.Ex, 'cx-line cx-line-2');
+        label(ink, add(f.Ex, mul([f.dA[1], -f.dA[0]], 18)), 'x', 'cx-label');
+      }
+      if (i >= 5) {
+        segLine(ink, f.B, f.Ey, 'cx-line cx-line-2');
+        label(ink, add(f.Ey, mul([-f.dB[1], f.dB[0]], 18)), 'y', 'cx-label');
+      }
+      if (i >= 6) { segLine(ink, f.A, f.C, 'cx-line'); segLine(ink, f.B, f.C, 'cx-line'); }
+      if (i >= 2) dot(ink, f.MA);
+      if (i >= 4) dot(ink, f.MB);
+      triEnds(ink, f);
+      if (i >= 5) point(ink, f.C, 'C', RIGHT, 'cx-pt-m', null, 26);
+      if (i === 1) drawCmRuler(tools, f.A, RIGHT, 7, DOWN);
+      if (i === 2) drawProtractor(tools, f.A, RIGHT, f.a);
+      if (i === 4) drawProtractor(tools, f.B, LEFT, f.b);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.ab, 7, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: protractorPhases(f.A, RIGHT, f.a) };
+      if (i === 3) return { ruler: [f.A, f.Ex], cls: 'cx-line cx-line-2' };
+      if (i === 4) return { phases: protractorPhases(f.B, LEFT, f.b) };
+      if (i === 5) return { ruler: [f.B, f.Ey], cls: 'cx-line cx-line-2' };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
@@ -1113,7 +1383,8 @@
       if (def.kSnap) slider.value = def.kSnap(+slider.value);
       state.k = slider.value / kScale;
       var ok = def.kOk ? def.kOk(state.k) : state.k > 0.5;
-      kOut.textContent = def.kText ? def.kText(state) : ok ? root.getAttribute('data-k-ok') : root.getAttribute('data-k-short');
+      var words = ok ? root.getAttribute('data-k-ok') : root.getAttribute('data-k-short');
+      kOut.textContent = def.kText ? def.kText(state, words) : words;
       kOut.classList.toggle('bad', !ok);
       refill();
     }
