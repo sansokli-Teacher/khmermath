@@ -68,6 +68,8 @@ html.bd-full-on, html.bd-full-on body { overflow: hidden; overscroll-behavior: n
   .bd-acts .bd-lbl { display: none; }
   .bd.full .bd-tool { flex: 1 1 auto; padding: 6px 8px; }
   .bd.full .bd-hint { font-size: 13.5px; }
+  .bd-foot { gap: 0 14px; }
+  .bd-switch { font-size: 15px; padding: 0 2px; }
 }
 @media print {
   .bd-bar, .bd-opts, .bd-foot { display: none; }

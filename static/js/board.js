@@ -27,7 +27,7 @@
   var PAPER = '#fffefa', INK = '#132238', BLUE = '#2d6aa8';
 
   var doc = { pts: [], segs: [], arcs: [] };
-  var st = { tool: 'point', cmode: 'set', grid: true, marks: true, full: true, ruler: null, compass: null };
+  var st = { tool: 'point', cmode: 'set', grid: true, marks: true, dots: true, full: true, ruler: null, compass: null };
   var hist = [], hi = 0, cands = [], W = 0, H = 0;
   var drag = null, mark = null, sel = -1;
 
@@ -214,7 +214,7 @@
     clear(tools);
     if (st.tool === 'ruler') drawRulerTool();
     if (st.tool === 'compass') drawCompassTool();
-    if (st.tool !== 'name') drawCrossings();             // on top: a crossing stays blue under the ruler's mark
+    if (st.dots && st.tool !== 'name') drawCrossings();             // on top: a crossing stays blue under the ruler's mark
     if (mark) el('circle', { cx: f1(mark[0]), cy: f1(mark[1]), r: 9, class: 'bd-snap' }, tools);
   }
   // a tool that was never placed, or is in use and off the sheet (a smaller sheet), goes to its first place
