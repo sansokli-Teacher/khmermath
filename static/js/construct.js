@@ -1199,6 +1199,168 @@
     },
   };
 
+  // The circumscribed and the inscribed circle of a triangle (Grade 8, lesson 12), one page with two
+  // tabs. Circumscribed: the mediators of AB and of BC meet at O, at the same distance from the
+  // three corners; the circle of centre O through A. Inscribed: the bisectors of the angles A and B
+  // meet at I, at the same distance from the three sides; that distance is found by the
+  // perpendicular ID from I to AB; the circle of centre I and radius ID. The corners are dragged.
+  function triangleOf(s) {
+    var A = s.A, B = s.B, C = s.C, a = len(sub(B, C)), b = len(sub(C, A)), c = len(sub(A, B));
+    var ang = function (x, y, z) { return Math.acos(Math.max(-1, Math.min(1, (y * y + z * z - x * x) / (2 * y * z)))); };
+    var d = 2 * (A[0] * (B[1] - C[1]) + B[0] * (C[1] - A[1]) + C[0] * (A[1] - B[1])) || 1e-9;
+    var qa = dotp(A, A), qb = dotp(B, B), qc = dotp(C, C);
+    var O = [(qa * (B[1] - C[1]) + qb * (C[1] - A[1]) + qc * (A[1] - B[1])) / d, (qa * (C[0] - B[0]) + qb * (A[0] - C[0]) + qc * (B[0] - A[0])) / d];
+    var I = mul(add(add(mul(A, a), mul(B, b)), mul(C, c)), 1 / (a + b + c));
+    return { A: A, B: B, C: C, a: a, b: b, c: c, O: O, R: len(sub(A, O)), I: I, r: Math.abs(d) / 2 / (a + b + c),
+      G: mul(add(add(A, B), C), 1 / 3), least: Math.min(a, b, c), angles: [ang(a, b, c), ang(b, c, a), ang(c, a, b)] };
+  }
+  function triDrawn(f, ink) {                              // the triangle, its corners named away from its middle
+    [[f.A, f.B], [f.B, f.C], [f.C, f.A]].forEach(function (q) { segLine(ink, q[0], q[1], 'cx-seg'); });
+  }
+  function triCorners(f, ink) {
+    ['A', 'B', 'C'].forEach(function (k) { point(ink, f[k], k, sub(f[k], f.G), null, k, 22); });
+  }
+  var footOn = function (P, A, B) { var u = unit(sub(B, A)); return add(A, mul(u, dotp(sub(P, A), u))); };
+  // the compass is opened from its centre to a point, then draws the whole circle
+  function circlePhases(c, through) {
+    var r = len(sub(through, c)), t0 = aimAt(c, through);
+    return [
+      { dur: 1000, draw: function (t, drawn, tools) { drawCompass(tools, c, add(c, mul(sub(through, c), Math.max(t, 0.06)))); } },
+      { dur: 2400, draw: function (t, drawn, tools) {
+        var th = t0 + (2 * Math.PI - 0.002) * t;
+        el('path', { d: arcPath(c, r, t0, th), class: 'cx-circle' }, drawn);
+        drawCompass(tools, c, onCircle(c, r, th));
+      } },
+    ];
+  }
+  // the mediator of PQ with the compass: two marks from P, two from Q, and the line through the
+  // crossings, drawn long enough to pass through O
+  function mediatorOf(P, Q, O) {
+    var M = mul(add(P, Q), 0.5), u = unit(sub(Q, P)), n = [u[1], -u[0]], half = len(sub(Q, P)) / 2, dO = dotp(sub(O, M), n);
+    var inside = function (X) { return X[0] > 12 && X[0] < W - 12 && X[1] > 12 && X[1] < H - 12; }, r, h, X1, X2;
+    // an opening whose crossings fall on the sheet and clear of O, so that O is not lost among the marks
+    [1.25, 1.5, 1.12, 1.75, 1.25].some(function (k) {
+      r = k * half; h = Math.sqrt(r * r - half * half); X1 = add(M, mul(n, h)); X2 = add(M, mul(n, -h));
+      return Math.abs(h - Math.abs(dO)) >= 26 && inside(X1) && inside(X2);
+    });
+    var mark = function (c, X, sg) { var t = aimAt(c, X); return { c: c, r: r, t1: t - sg * 0.2, t2: t + sg * 0.2 }; };
+    return { M: M, u: u, n: n, arcs: [mark(P, X1, 1), mark(P, X2, 1), mark(Q, X1, -1), mark(Q, X2, -1)],
+      e1: add(M, mul(n, Math.max(h + 24, dO + 34))), e2: add(M, mul(n, Math.min(-h - 24, dO - 34))) };
+  }
+  CX['circumcircle'] = {
+    steps: 7,
+    start: { A: [200, 330], B: [460, 330], C: [370, 130] },
+    presets: {
+      acute: function (s) { s.A = [200, 330]; s.B = [460, 330]; s.C = [370, 130]; },
+      right: function (s) { s.A = [200, 340]; s.B = [470, 340]; s.C = [200, 160]; },
+      obtuse: function (s) { s.A = [210, 220]; s.B = [430, 220]; s.C = [300, 160]; },
+    },
+    // the triangle stays a triangle, and its circle stays on the sheet
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      return t.least >= 100 && Math.min.apply(null, t.angles) >= 0.38 &&
+        t.O[0] - t.R >= 6 && t.O[0] + t.R <= W - 6 && t.O[1] - t.R >= 6 && t.O[1] + t.R <= H - 6;
+    },
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.meet = true; f.m1 = mediatorOf(f.A, f.B, f.O); f.m2 = mediatorOf(f.B, f.C, f.O); f.m3 = mediatorOf(f.C, f.A, f.O);
+      f.arcs = f.m1.arcs.concat(f.m2.arcs);
+      return f;
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      if (i >= 6) {
+        dash(marks, f.m3.e1, f.m3.e2);                      // the third mediator passes through O too
+        [f.A, f.B, f.C].forEach(function (P) { segLine(marks, f.O, P, 'cx-radius'); tick(marks, f.O, P); });
+        [f.m1, f.m2, f.m3].forEach(function (m) { rightMark(marks, m.M, m.u, dotp(sub(f.G, m.M), m.n) > 0 ? m.n : mul(m.n, -1)); });
+      }
+      if (i === 5) segLine(marks, f.O, f.A, 'cx-radius');
+      triDrawn(f, ink);
+      if (i >= 5) el('circle', { cx: f.O[0], cy: f.O[1], r: f.R, class: 'cx-circle' }, ink);
+      if (i >= 2) segLine(ink, f.m1.e1, f.m1.e2, 'cx-line cx-line-2');
+      if (i >= 4) segLine(ink, f.m2.e1, f.m2.e2, 'cx-line cx-line-2');
+      for (var a = 0; a < (i >= 3 ? 8 : i >= 1 ? 4 : 0); a++) arcDraw(ink, f.arcs[a]);
+      triCorners(f, ink);
+      if (i >= 4) point(ink, f.O, 'O', [-0.75, -0.66], 'cx-pt-m', null, 22);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { arcs: [0, 1, 2, 3] };
+      if (i === 2) return { ruler: [f.m1.e1, f.m1.e2], cls: 'cx-line cx-line-2' };
+      if (i === 3) return { arcs: [4, 5, 6, 7] };
+      if (i === 4) return { ruler: [f.m2.e1, f.m2.e2], cls: 'cx-line cx-line-2' };
+      if (i === 5) return { phases: circlePhases(f.O, f.A) };
+      return null;
+    },
+  };
+
+  // the bisector of the angle at V (its sides towards P and Q) with the compass, as far as past I
+  function bisectorOf(V, P, Q, I) {
+    var up = unit(sub(P, V)), uq = unit(sub(Q, V)), rho = Math.min(88, 0.42 * Math.min(len(sub(P, V)), len(sub(Q, V))));
+    var P1 = add(V, mul(up, rho)), Q1 = add(V, mul(uq, rho)), chord = len(sub(Q1, P1)), r2 = Math.max(0.8 * chord, 40);
+    var d = unit(sub(I, V)), T = add(mul(add(P1, Q1), 0.5), mul(d, Math.sqrt(r2 * r2 - chord * chord / 4)));
+    var t1 = aimAt(V, P), dt = aimAt(V, Q) - t1;
+    while (dt > Math.PI) dt -= 2 * Math.PI;
+    while (dt < -Math.PI) dt += 2 * Math.PI;
+    var sg = dt > 0 ? 1 : -1, mark = function (c, k) { var t = aimAt(c, T); return { c: c, r: r2, t1: t - k * 0.34, t2: t + k * 0.34 }; };
+    return { T: T, d: d, end: add(I, mul(d, 44)),
+      arcs: [{ c: V, r: rho, t1: t1 - sg * 0.14, t2: t1 + dt + sg * 0.14 }, mark(P1, 1), mark(Q1, -1)] };
+  }
+  CX['incircle'] = {
+    steps: 9,
+    start: { A: [130, 384], B: [530, 384], C: [350, 96] },
+    // room for the arcs at each corner, and for the two marks on AB either side of D
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      var reach = Math.sqrt(28 * t.r + 196) + 14, D = footOn(t.I, t.A, t.B);
+      return t.least >= 170 && Math.min.apply(null, t.angles) >= 0.52 && t.r >= 46 &&
+        len(sub(D, t.A)) >= reach && len(sub(D, t.B)) >= reach && footOn(t.I, t.A, t.B)[1] <= H - 62;
+    },
+    figure: function (s) {
+      var f = triangleOf(s), u = unit(sub(f.B, f.A)), D = footOn(f.I, f.A, f.B), n = unit(sub(f.I, D));
+      var r3 = f.r + 14, hc = Math.sqrt(r3 * r3 - f.r * f.r), U = add(D, mul(u, -hc)), V = add(D, mul(u, hc));
+      var r4 = 1.28 * hc, Wp = add(D, mul(n, -Math.sqrt(r4 * r4 - hc * hc)));
+      var mark = function (c, r, X, sp) { var t = aimAt(c, X); return { c: c, r: r, t1: t - sp, t2: t + sp }; };
+      f.meet = true; f.bA = bisectorOf(f.A, f.B, f.C, f.I); f.bB = bisectorOf(f.B, f.C, f.A, f.I); f.bC = bisectorOf(f.C, f.A, f.B, f.I);
+      f.D = D; f.E = footOn(f.I, f.B, f.C); f.F = footOn(f.I, f.C, f.A); f.U = U; f.V = V; f.Wp = Wp; f.u = u; f.n = n;
+      f.arcs = f.bA.arcs.concat(f.bB.arcs, [mark(f.I, r3, U, 0.2), mark(f.I, r3, V, 0.2), mark(U, r4, Wp, 0.36), mark(V, r4, Wp, -0.36)]);
+      return f;
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      if (i >= 8) {
+        dash(marks, f.C, f.bC.end);                         // the third bisector passes through I too
+        [[f.D, f.A, f.B], [f.E, f.B, f.C], [f.F, f.C, f.A]].forEach(function (q) {
+          segLine(marks, f.I, q[0], 'cx-radius'); tick(marks, f.I, q[0]);
+          rightMark(marks, q[0], unit(sub(q[2], q[1])), unit(sub(f.I, q[0])));
+        });
+      }
+      if (i === 7) segLine(marks, f.I, f.D, 'cx-radius');
+      triDrawn(f, ink);
+      if (i >= 7) el('circle', { cx: f.I[0], cy: f.I[1], r: f.r, class: 'cx-circle' }, ink);
+      if (i >= 2) segLine(ink, f.A, f.bA.end, 'cx-line cx-line-2');
+      if (i >= 4) segLine(ink, f.B, f.bB.end, 'cx-line cx-line-2');
+      if (i >= 6 && i < 8) segLine(ink, f.I, f.Wp, 'cx-line cx-line-2');
+      for (var a = 0; a < (i >= 5 ? 10 : i >= 3 ? 6 : i >= 1 ? 3 : 0); a++) arcDraw(ink, f.arcs[a]);
+      triCorners(f, ink);
+      if (i >= 6) point(ink, f.D, 'D', add(mul(f.n, -1), mul(f.u, 0.9)), null, null, 22);
+      if (i >= 8) {
+        point(ink, f.E, 'E', sub(f.E, f.I), null, null, 22);
+        point(ink, f.F, 'F', sub(f.F, f.I), null, null, 22);
+      }
+      if (i >= 4) point(ink, f.I, 'I', [1, -0.1], 'cx-pt-m', null, 24);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { arcs: [0, 1, 2] };
+      if (i === 2) return { ruler: [f.A, f.bA.end], cls: 'cx-line cx-line-2' };
+      if (i === 3) return { arcs: [3, 4, 5] };
+      if (i === 4) return { ruler: [f.B, f.bB.end], cls: 'cx-line cx-line-2' };
+      if (i === 5) return { arcs: [6, 7, 8, 9] };
+      if (i === 6) return { ruler: [f.I, f.Wp], cls: 'cx-line cx-line-2' };
+      if (i === 7) return { phases: circlePhases(f.I, f.D) };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;

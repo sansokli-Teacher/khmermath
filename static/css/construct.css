@@ -170,3 +170,6 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
   .cx-given { font-size: 24px; }
   .cx-tab-km { border-radius: 16px; line-height: 1.45; font-size: 14px; }
 }
+/* the circles of a triangle */
+.cx-circle { fill: none; stroke: #2e7a70; stroke-width: 3; }
+@media (max-width: 640px) { .cx-circle { stroke-width: 5; } }
