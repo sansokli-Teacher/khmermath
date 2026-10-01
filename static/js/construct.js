@@ -15,6 +15,10 @@
  * warning is shown, when figure().meet is false. The slider is good when k > 0.5,
  * or when kOk(k) says so; kSnap(value) may pull the slider onto a value. A button
  * with data-preset="NAME" in the page runs presets.NAME(state) (a ready-made case).
+ * The slider may count something else than a share: kScale is what one unit of k is on
+ * the slider (100 by default), kText(state) the line under it; fill(state) gives the
+ * words for the <span data-fill="KEY"> of the captions when they depend on the state.
+ * anim() may return { rulers: [[p, q], ...] } to draw several lines one after another.
  */
 (function () {
   'use strict';
@@ -448,6 +452,100 @@
     },
   };
 
+  // AB divided into n equal parts (Grade 9, lesson 15, Thales): n equal steps C, D, E ... on a
+  // ray Ax; the last point is joined to B; the parallels through the others cut AB at C', D' ...
+  var KM_COUNT = ['', '', 'ពីរ', 'បី', 'បួន', 'ប្រាំ', 'ប្រាំមួយ'];
+  var kmDigits = function (n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); };
+  var joinKm = function (a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' និង ' + a[a.length - 1]; };
+  var stepName = function (j) { return 'CDEFGH'[j - 1]; };
+  function divideOk(A, B, X) {
+    var a = sub(B, A), b = sub(X, A), la = len(a), lb = len(b);
+    var ang = Math.acos(Math.max(-1, Math.min(1, (a[0] * b[0] + a[1] * b[1]) / (la * lb)))) * 180 / Math.PI;
+    return la >= 170 && lb >= 200 && ang >= 20 && ang <= 140;
+  }
+  CX['divide-segment'] = {
+    steps: 6,
+    start: { A: [96, 344], B: [540, 344], X: [398, 96], k: 3 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) { return 'ចែកជា ' + kmDigits(s.k) + ' ចំណែកប៉ុនគ្នា'; },
+    fill: function (s) {
+      var n = s.k, pts = [], inner = [], img = [], eq = ['A' + stepName(1) + '′'];
+      for (var j = 1; j <= n; j++) pts.push(stepName(j));
+      for (j = n - 1; j >= 1; j--) { inner.push(stepName(j)); img.push(stepName(j) + '′'); }
+      for (j = 1; j < n; j++) eq.push(stepName(j) + '′' + (j === n - 1 ? 'B' : stepName(j + 1) + '′'));
+      var steps = ['A' + stepName(1)];
+      for (j = 1; j < n; j++) steps.push(stepName(j) + stepName(j + 1));
+      return { n: KM_COUNT[n], pts: joinKm(pts), last: stepName(n), inner: joinKm(inner), images: joinKm(img),
+        eq: eq.join(' = '), steps: steps.join(' = ') };
+    },
+    limit: function (s, key, p) {
+      return divideOk(key === 'A' ? p : s.A, key === 'B' ? p : s.B, key === 'X' ? p : s.X);
+    },
+    figure: function (s) {
+      var A = s.A, B = s.B, n = s.k, u = unit(sub(s.X, A)), lx = len(sub(s.X, A)), v = unit(sub(B, A));
+      var st = Math.max(26, Math.min(84, (lx - 34) / n)), K = [A], Kp = [A], arcs = [], rulers = [];
+      var side = u[0] * v[1] - u[1] * v[0] > 0 ? 1 : -1;       // which side of Ax the point B is on
+      var nx = mul([-u[1], u[0]], -side), nb = mul([-v[1], v[0]], side);   // away from B; away from Ax
+      var ta = Math.atan2(u[1], u[0]);
+      for (var j = 1; j <= n; j++) {
+        K.push(add(A, mul(u, st * j)));
+        Kp.push(add(A, mul(sub(B, A), j / n)));
+        arcs.push({ c: K[j - 1], r: st, t1: ta - 0.24, t2: ta + 0.24 });
+      }
+      var w = unit(sub(B, K[n]));                             // the direction of EB and of every parallel
+      for (j = n - 1; j >= 1; j--) rulers.push([add(K[j], mul(w, -18)), add(Kp[j], mul(w, 18))]);
+      return { meet: true, n: n, A: A, B: B, X: s.X, u: u, v: v, w: w, nx: nx, nb: nb, K: K, Kp: Kp, st: st,
+        Ex: add(A, mul(u, lx + 18)), arcs: arcs, rulers: rulers };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, n = f.n, j;
+      var seg = function (p, q, cls, to) { el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: cls }, to || ink); };
+      if (i >= 5) {
+        for (j = 1; j <= n; j++) { tick(marks, f.K[j - 1], f.K[j]); tick2(marks, f.Kp[j - 1], f.Kp[j]); }
+        for (j = 1; j <= n; j++) {                           // an arrow head on each parallel
+          var m = add(mul(add(f.K[j], f.Kp[j]), 0.5), mul(f.w, 5)), b = add(m, mul(f.w, -11)), t = [-f.w[1], f.w[0]];
+          el('polyline', { points: [add(b, mul(t, 6)), m, add(b, mul(t, -6))].map(function (x) { return x.join(','); }).join(' '), class: 'cx-par' }, marks);
+        }
+      }
+      seg(f.A, f.B, 'cx-seg');
+      if (i >= 1) {
+        seg(f.A, f.Ex, 'cx-line');
+        label(ink, add(add(f.Ex, mul(f.u, -6)), mul(f.nx, 28)), 'x', 'cx-label');
+      }
+      if (i >= 3) seg(f.K[n], f.B, 'cx-line');
+      if (i >= 4) f.rulers.forEach(function (q) { seg(q[0], q[1], 'cx-line cx-line-2'); });
+      if (i >= 2) {
+        f.arcs.forEach(function (q) { el('path', { d: arcPath(q.c, q.r, q.t1, q.t2), class: 'cx-arc' }, ink); });
+        for (j = 1; j <= n; j++) {                           // the name clear of the little arc
+          el('circle', { cx: f.K[j][0], cy: f.K[j][1], r: 5, class: 'cx-pt' }, ink);
+          label(ink, add(f.K[j], add(mul(f.nx, 27), mul(f.u, -10))), stepName(j), 'cx-label');
+        }
+      }
+      if (i >= 4) for (j = 1; j < n; j++) point(ink, f.Kp[j], stepName(j) + '′', f.nb, 'cx-pt-m');
+      point(ink, f.A, 'A', add(mul(f.v, -1), mul(f.nb, 0.35)), null, 'A');
+      point(ink, f.B, 'B', add(f.v, mul(f.nb, 0.35)), null, 'B');
+      if (i >= 1) {
+        el('circle', { cx: f.X[0], cy: f.X[1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f.X[0], cy: f.X[1], r: 24, class: 'cx-grab', 'data-drag': 'X' }, ink);
+      }
+    },
+    anim: function (f, i) {
+      if (i === 1) return { ruler: [f.A, f.Ex] };
+      if (i === 2) return { arcs: f.arcs.map(function (q, j) { return j; }) };
+      if (i === 3) return { ruler: [f.K[f.n], f.B] };
+      if (i === 4 && f.rulers.length) return { rulers: f.rulers, cls: 'cx-line cx-line-2' };
+      return null;
+    },
+  };
+  function tick2(g, p, q) {
+    var m = mul(add(p, q), 0.5), u = unit(sub(q, p)), n = [u[1], -u[0]];
+    [-3, 3].forEach(function (o) {
+      var c = add(m, mul(u, o));
+      el('line', { x1: c[0] - n[0] * 8, y1: c[1] - n[1] * 8, x2: c[0] + n[0] * 8, y2: c[1] + n[1] * 8, class: 'cx-tick' }, g);
+    });
+  }
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;
@@ -478,7 +576,17 @@
       return s;
     };
     var state = fresh();
-    var step = 0, playing = false, timer = null, raf = null;
+    var step = 0, playing = false, timer = null, raf = null, kScale = def.kScale || 100;
+    // the words of the captions that depend on the state (how many parts, which letters)
+    function refill() {
+      if (!def.fill) return;
+      var words = def.fill(state);
+      Array.prototype.forEach.call(root.querySelectorAll('[data-fill]'), function (e) {
+        var w = words[e.getAttribute('data-fill')];
+        if (w != null) e.textContent = w;
+      });
+    }
+    refill();
 
     var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'cx-svg', role: 'img', 'aria-label': root.getAttribute('data-label') || '' });
     stage.innerHTML = '';
@@ -518,8 +626,9 @@
       render(step - 1);
       clear(marks); clear(tools);                         // the previous step's hints go
       return new Promise(function (done) {
-        var t0 = null, dur = a.arcs ? 1100 : 1000, part = 0;
-        var parts = a.arcs ? a.arcs.slice() : [0];
+        var lines = a.rulers || (a.ruler ? [a.ruler] : null);
+        var t0 = null, dur = a.arcs ? (a.arcs.length > 3 ? 750 : 1100) : 1000, part = 0;
+        var parts = a.arcs ? a.arcs.slice() : lines.map(function (q, j) { return j; });
         var drawn = el('g', {}, ink);
         function frame(ts) {
           if (t0 == null) t0 = ts;
@@ -532,9 +641,10 @@
             el('path', { d: arcPath(arc.c, rr, arc.t1, th), class: 'cx-arc' }, drawn);
             drawCompass(tools, arc.c, onCircle(arc.c, rr, th));
           } else {
-            var p = a.ruler[0], q2 = a.ruler[1], e = add(p, mul(sub(q2, p), ease(t)));
+            for (var jj = 0; jj < part; jj++) el('line', { x1: lines[jj][0][0], y1: lines[jj][0][1], x2: lines[jj][1][0], y2: lines[jj][1][1], class: a.cls || 'cx-line' }, drawn);
+            var p = lines[part][0], q2 = lines[part][1], e = add(p, mul(sub(q2, p), ease(t)));
             drawRuler(tools, p, q2);
-            el('line', { x1: p[0], y1: p[1], x2: e[0], y2: e[1], class: 'cx-line' }, drawn);
+            el('line', { x1: p[0], y1: p[1], x2: e[0], y2: e[1], class: a.cls || 'cx-line' }, drawn);
           }
           if (t < 1) { raf = requestAnimationFrame(frame); return; }
           if (++part < parts.length) { t0 = null; raf = requestAnimationFrame(frame); return; }
@@ -575,7 +685,7 @@
     btn('.cx-reset').addEventListener('click', function () {
       stopPlay();
       state = fresh();
-      if (slider) { slider.value = Math.round(state.k * 100); showK(); }
+      if (slider) { slider.value = Math.round(state.k * kScale); showK(); }
       go(0, false);
     });
     Array.prototype.forEach.call(root.querySelectorAll('[data-preset]'), function (b) {
@@ -602,15 +712,16 @@
     function showK() {
       if (!slider) return;
       if (def.kSnap) slider.value = def.kSnap(+slider.value);
-      state.k = slider.value / 100;
+      state.k = slider.value / kScale;
       var ok = def.kOk ? def.kOk(state.k) : state.k > 0.5;
-      kOut.textContent = ok ? root.getAttribute('data-k-ok') : root.getAttribute('data-k-short');
+      kOut.textContent = def.kText ? def.kText(state) : ok ? root.getAttribute('data-k-ok') : root.getAttribute('data-k-short');
       kOut.classList.toggle('bad', !ok);
+      refill();
     }
     if (slider) {
-      slider.value = Math.round(state.k * 100);
+      slider.value = Math.round(state.k * kScale);
       showK();
-      slider.addEventListener('input', function () { stopPlay(); stopAnim(); showK(); render(step); });
+      slider.addEventListener('input', function () { stopPlay(); stopAnim(); showK(); caption(); render(step); });
     }
 
     // drag A or B (mouse, finger or pen)

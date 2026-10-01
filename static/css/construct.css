@@ -135,3 +135,7 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 /* ready-made cases under the figure (the perpendicular: A off the line, A on the line) */
 .cx-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
 .cx-presets .btn { min-height: 36px; }
+/* dividing a segment: the parallels and their arrow heads */
+.cx-line-2 { stroke: #2d6aa8; stroke-width: 2.4; }
+.cx-par { fill: none; stroke: #2d6aa8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 640px) { .cx-line-2 { stroke-width: 4; } .cx-par { stroke-width: 4; } }
