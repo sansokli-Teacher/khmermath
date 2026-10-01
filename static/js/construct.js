@@ -18,7 +18,8 @@
  * The slider may count something else than a share: kScale is what one unit of k is on
  * the slider (100 by default), kText(state) the line under it; fill(state) gives the
  * words for the <span data-fill="KEY"> of the captions when they depend on the state.
- * anim() may return { rulers: [[p, q], ...] } to draw several lines one after another.
+ * anim() may return { rulers: [[p, q], ...] } to draw several lines one after another, or
+ * { phases: [{ dur, draw(t, drawn, tools) }, ...] } for a movement of its own (the set square).
  */
 (function () {
   'use strict';
@@ -70,6 +71,19 @@
       var t = add(add(a, off), mul(d, s)), k = s % 70 === 0 ? 12 : 7;
       el('line', { x1: t[0], y1: t[1], x2: t[0] + n[0] * k, y2: t[1] + n[1] * k, class: 'cx-ruler-tick' }, g);
     }
+  }
+
+  // A set square: its right angle at c, one side of the right angle along w (the edge that is
+  // drawn along), the other along p (the edge that rests against the ruler).
+  function drawSetSquare(g, c, w, p, lw, lp, alpha) {
+    var a = add(c, mul(w, lw)), b = add(c, mul(p, lp)), m = mul(add(add(c, a), b), 1 / 3);
+    var grp = el('g', { opacity: alpha == null ? 1 : alpha }, g);
+    var pts = function (list) { return list.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' '); };
+    var inner = [c, a, b].map(function (x) { return add(m, mul(sub(x, m), 0.42)); });
+    // one shape with a hole, so that what lies under the hole stays readable
+    var ring = function (list) { return 'M' + list.map(function (x) { return x[0].toFixed(1) + ' ' + x[1].toFixed(1); }).join('L') + 'Z'; };
+    el('path', { d: ring([c, a, b]) + ring(inner), 'fill-rule': 'evenodd', class: 'cx-sq' }, grp);
+    el('polyline', { points: pts([add(c, mul(w, 12)), add(add(c, mul(w, 12)), mul(p, 12)), add(c, mul(p, 12))]), class: 'cx-sq-in' }, grp);
   }
 
   // ----------------------------------------------- the constructions ---
@@ -454,6 +468,8 @@
 
   // AB divided into n equal parts (Grade 9, lesson 15, Thales): n equal steps C, D, E ... on a
   // ray Ax; the last point is joined to B; the parallels through the others cut AB at C', D' ...
+  // The parallels are drawn as Grade 7 lesson 14 does: the set square laid on EB, a ruler against
+  // its other side, and the set square slid along the ruler to each point.
   var KM_COUNT = ['', '', 'ពីរ', 'បី', 'បួន', 'ប្រាំ', 'ប្រាំមួយ'];
   var kmDigits = function (n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); };
   var joinKm = function (a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' និង ' + a[a.length - 1]; };
@@ -464,7 +480,7 @@
     return la >= 170 && lb >= 200 && ang >= 20 && ang <= 140;
   }
   CX['divide-segment'] = {
-    steps: 6,
+    steps: 7,
     start: { A: [96, 344], B: [540, 344], X: [398, 96], k: 3 },
     kScale: 1,
     kOk: function () { return true; },
@@ -476,7 +492,8 @@
       for (j = 1; j < n; j++) eq.push(stepName(j) + '′' + (j === n - 1 ? 'B' : stepName(j + 1) + '′'));
       var steps = ['A' + stepName(1)];
       for (j = 1; j < n; j++) steps.push(stepName(j) + stepName(j + 1));
-      return { n: KM_COUNT[n], pts: joinKm(pts), last: stepName(n), inner: joinKm(inner), images: joinKm(img),
+      return { n: KM_COUNT[n], pts: joinKm(pts), last: stepName(n), first: inner[0], firstImg: img[0],
+        more: n > 2 ? ' ធ្វើដូចគ្នាចំពោះចំណុច ' + joinKm(inner.slice(1)) + '៖ បានចំណុច ' + joinKm(img.slice(1)) + '។' : '',
         eq: eq.join(' = '), steps: steps.join(' = ') };
     },
     limit: function (s, key, p) {
@@ -495,13 +512,26 @@
       }
       var w = unit(sub(B, K[n]));                             // the direction of EB and of every parallel
       for (j = n - 1; j >= 1; j--) rulers.push([add(K[j], mul(w, -18)), add(Kp[j], mul(w, 18))]);
+      // the set square: its right angle slides on a line perpendicular to EB, behind the points of Ax
+      var dot = function (a, b) { return a[0] * b[0] + a[1] * b[1]; };
+      var d = [-w[1], w[0]], pd = dot(sub(A, K[n]), d) < 0 ? d : mul(d, -1), back = 1e9, reach = -1e9;
+      for (j = 1; j <= n; j++) back = Math.min(back, dot(K[j], w));
+      back -= 58;                                            // clear of the names C, D, E ...
+      for (j = 1; j < n; j++) reach = Math.max(reach, dot(Kp[j], w));
+      var lw = Math.max(210, Math.min(380, reach - back + 16)), lp = lw * 0.56, cor = [null], c0, lo = 1e9, hi = -1e9;
+      for (j = 1; j <= n; j++) cor.push(add(K[j], mul(w, back - dot(K[j], w))));
+      for (j = 1; j <= n; j++) {
+        c0 = dot(sub(cor[j], cor[n]), d);
+        lo = Math.min(lo, c0, c0 + dot(pd, d) * lp); hi = Math.max(hi, c0, c0 + dot(pd, d) * lp);
+      }
       return { meet: true, n: n, A: A, B: B, X: s.X, u: u, v: v, w: w, nx: nx, nb: nb, K: K, Kp: Kp, st: st,
-        Ex: add(A, mul(u, lx + 18)), arcs: arcs, rulers: rulers };
+        Ex: add(A, mul(u, lx + 18)), arcs: arcs, rulers: rulers,
+        sq: { cor: cor, pd: pd, lw: lw, lp: lp, r1: add(cor[n], mul(d, lo)), r2: add(cor[n], mul(d, hi)) } };
     },
     draw: function (f, i, g, layer) {
       var ink = layer.ink, marks = layer.marks, n = f.n, j;
       var seg = function (p, q, cls, to) { el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: cls }, to || ink); };
-      if (i >= 5) {
+      if (i >= 6) {
         for (j = 1; j <= n; j++) { tick(marks, f.K[j - 1], f.K[j]); tick2(marks, f.Kp[j - 1], f.Kp[j]); }
         for (j = 1; j <= n; j++) {                           // an arrow head on each parallel
           var m = add(mul(add(f.K[j], f.Kp[j]), 0.5), mul(f.w, 5)), b = add(m, mul(f.w, -11)), t = [-f.w[1], f.w[0]];
@@ -514,7 +544,7 @@
         label(ink, add(add(f.Ex, mul(f.u, -6)), mul(f.nx, 28)), 'x', 'cx-label');
       }
       if (i >= 3) seg(f.K[n], f.B, 'cx-line');
-      if (i >= 4) f.rulers.forEach(function (q) { seg(q[0], q[1], 'cx-line cx-line-2'); });
+      if (i >= 5) f.rulers.forEach(function (q) { seg(q[0], q[1], 'cx-line cx-line-2'); });
       if (i >= 2) {
         f.arcs.forEach(function (q) { el('path', { d: arcPath(q.c, q.r, q.t1, q.t2), class: 'cx-arc' }, ink); });
         for (j = 1; j <= n; j++) {                           // the name clear of the little arc
@@ -522,19 +552,53 @@
           label(ink, add(f.K[j], add(mul(f.nx, 27), mul(f.u, -10))), stepName(j), 'cx-label');
         }
       }
-      if (i >= 4) for (j = 1; j < n; j++) point(ink, f.Kp[j], stepName(j) + '′', f.nb, 'cx-pt-m');
+      if (i >= 5) for (j = 1; j < n; j++) point(ink, f.Kp[j], stepName(j) + '′', f.nb, 'cx-pt-m');
       point(ink, f.A, 'A', add(mul(f.v, -1), mul(f.nb, 0.35)), null, 'A');
       point(ink, f.B, 'B', add(f.v, mul(f.nb, 0.35)), null, 'B');
       if (i >= 1) {
         el('circle', { cx: f.X[0], cy: f.X[1], r: 7, class: 'cx-handle' }, ink);
         el('circle', { cx: f.X[0], cy: f.X[1], r: 24, class: 'cx-grab', 'data-drag': 'X' }, ink);
       }
+      // the ruler and the set square: laid on EB (step 5), left where the last parallel was drawn (step 6)
+      if (i === 4 || i === 5) {
+        drawRuler(layer.tools, f.sq.r1, f.sq.r2);
+        drawSetSquare(layer.tools, f.sq.cor[i === 4 ? n : 1], f.w, f.sq.pd, f.sq.lw, f.sq.lp);
+      }
     },
     anim: function (f, i) {
+      var q = f.sq, n = f.n, line = function (a, b, to) { el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'cx-line cx-line-2' }, to); };
       if (i === 1) return { ruler: [f.A, f.Ex] };
-      if (i === 2) return { arcs: f.arcs.map(function (q, j) { return j; }) };
-      if (i === 3) return { ruler: [f.K[f.n], f.B] };
-      if (i === 4 && f.rulers.length) return { rulers: f.rulers, cls: 'cx-line cx-line-2' };
+      if (i === 2) return { arcs: f.arcs.map(function (a, j) { return j; }) };
+      if (i === 3) return { ruler: [f.K[n], f.B] };
+      if (i === 4) return { phases: [                         // the set square comes onto EB, then the ruler against it
+        { dur: 900, draw: function (t, drawn, tools) { drawSetSquare(tools, add(q.cor[n], mul(q.pd, 46 * (1 - t))), f.w, q.pd, q.lw, q.lp, 0.25 + 0.75 * t); } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          var off = mul(f.w, -40 * (1 - t)), grp = el('g', { opacity: 0.25 + 0.75 * t }, tools);
+          drawRuler(grp, add(q.r1, off), add(q.r2, off));
+          drawSetSquare(tools, q.cor[n], f.w, q.pd, q.lw, q.lp);
+        } },
+      ] };
+      if (i === 5) {                                          // slide to each point, draw along the edge
+        var phases = [];
+        f.rulers.forEach(function (r, k) {
+          var j = n - 1 - k, from = q.cor[j + 1], to = q.cor[j];
+          var done = function (drawn) { for (var m = 0; m < k; m++) line(f.rulers[m][0], f.rulers[m][1], drawn); };
+          phases.push({ dur: 1000, draw: function (t, drawn, tools) {
+            done(drawn);
+            drawRuler(tools, q.r1, q.r2);
+            drawSetSquare(tools, add(from, mul(sub(to, from), t)), f.w, q.pd, q.lw, q.lp);
+          } });
+          phases.push({ dur: 1000, draw: function (t, drawn, tools) {
+            var e = add(r[0], mul(sub(r[1], r[0]), t));
+            done(drawn);
+            line(r[0], e, drawn);
+            drawRuler(tools, q.r1, q.r2);
+            drawSetSquare(tools, to, f.w, q.pd, q.lw, q.lp);
+            el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+          } });
+        });
+        return { phases: phases };
+      }
       return null;
     },
   };
@@ -625,6 +689,22 @@
       if (!a) { render(step); return Promise.resolve(); }
       render(step - 1);
       clear(marks); clear(tools);                         // the previous step's hints go
+      if (a.phases) {
+        return new Promise(function (done) {
+          var ph = 0, t0 = null, drawn = el('g', {}, ink);
+          function frame(ts) {
+            if (t0 == null) t0 = ts;
+            var cur = a.phases[ph], t = Math.min(1, (ts - t0) / cur.dur);
+            clear(tools); clear(drawn);
+            cur.draw(ease(t), drawn, tools);
+            if (t < 1) { raf = requestAnimationFrame(frame); return; }
+            if (++ph < a.phases.length) { t0 = null; raf = requestAnimationFrame(frame); return; }
+            raf = null;
+            setTimeout(function () { if (!raf) render(step); done(); }, 350);
+          }
+          raf = requestAnimationFrame(frame);
+        });
+      }
       return new Promise(function (done) {
         var lines = a.rulers || (a.ruler ? [a.ruler] : null);
         var t0 = null, dur = a.arcs ? (a.arcs.length > 3 ? 750 : 1100) : 1000, part = 0;

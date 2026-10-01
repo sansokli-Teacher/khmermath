@@ -139,3 +139,6 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-line-2 { stroke: #2d6aa8; stroke-width: 2.4; }
 .cx-par { fill: none; stroke: #2d6aa8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 640px) { .cx-line-2 { stroke-width: 4; } .cx-par { stroke-width: 4; } }
+/* the set square that slides along the ruler */
+.cx-sq { fill: rgba(46, 122, 112, .16); stroke: #2e7a70; stroke-width: 1.6; stroke-linejoin: round; pointer-events: none; }
+.cx-sq-in { fill: none; stroke: #2e7a70; stroke-width: 1; stroke-linejoin: round; pointer-events: none; }
