@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS classes (
 CREATE TABLE IF NOT EXISTS students (
   id TEXT PRIMARY KEY,      -- the existing student id, e.g. "0109293"
   class_id INTEGER NOT NULL REFERENCES classes(id),
-  name TEXT NOT NULL,
+  surname TEXT NOT NULL,    -- គោត្តនាម
+  first_name TEXT NOT NULL, -- នាម
   pin_hash TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);

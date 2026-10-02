@@ -22,27 +22,44 @@ export async function createClass(req, env) {
 
 export async function listStudents(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
-  const { results } = await env.DB.prepare('SELECT id, name FROM students WHERE class_id = ?1 ORDER BY name').bind(params.classId).all();
+  const { results } = await env.DB.prepare(
+    'SELECT id, surname, first_name FROM students WHERE class_id = ?1 ORDER BY surname, first_name',
+  ).bind(params.classId).all();
   return json({ students: results });
 }
 
-async function makeStudent(env, classId, id, name, secret) {
+async function makeStudent(env, classId, id, surname, firstName, secret) {
   const pin = randomPin(4);
   const pinHash = await hashSecretValue(pin, id, secret);
   await env.DB.prepare(
-    'INSERT INTO students (id, class_id, name, pin_hash) VALUES (?1, ?2, ?3, ?4) ' +
-    'ON CONFLICT(id) DO UPDATE SET class_id = ?2, name = ?3',
-  ).bind(id, classId, name, pinHash).run();
-  return { id, name, pin };
+    'INSERT INTO students (id, class_id, surname, first_name, pin_hash) VALUES (?1, ?2, ?3, ?4, ?5) ' +
+    'ON CONFLICT(id) DO UPDATE SET class_id = ?2, surname = ?3, first_name = ?4',
+  ).bind(id, classId, surname, firstName, pinHash).run();
+  return { id, surname, first_name: firstName, pin };
 }
 
 // Adds one student, returning the plain PIN once so the teacher can hand it out.
 export async function addStudent(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
-  const { id, name } = await req.json();
-  if (!id || !name) return err('id and name are required.', 400);
-  const student = await makeStudent(env, params.classId, String(id), name, env.SESSION_SECRET);
+  const { id, surname, first_name } = await req.json();
+  if (!id || !surname || !first_name) return err('id, surname, and first_name are required.', 400);
+  const student = await makeStudent(env, params.classId, String(id), surname, first_name, env.SESSION_SECRET);
   return json(student);
+}
+
+// Edits an existing student's id/surname/first name without touching their PIN.
+// Changing the id moves the row to a new primary key, so responses/results tied
+// to the old id (referenced by student_id) would be orphaned — refuse that case
+// rather than silently losing history.
+export async function updateStudent(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { id, surname, first_name } = await req.json();
+  if (!surname || !first_name) return err('surname and first_name are required.', 400);
+  if (id && String(id) !== params.studentId) return err('Changing a student\'s ID is not supported — reset their PIN under the new ID instead.', 400);
+  const result = await env.DB.prepare('UPDATE students SET surname = ?1, first_name = ?2 WHERE id = ?3')
+    .bind(surname, first_name, params.studentId).run();
+  if (!result.meta.rows_written) return err('Student not found.', 404);
+  return json({ ok: true });
 }
 
 // Bulk-imports a roster (e.g. pasted from the teacher's own list), generating a
@@ -54,8 +71,8 @@ export async function importRoster(req, env, params) {
   if (!Array.isArray(students) || students.length === 0) return err('students[] is required.', 400);
   const created = [];
   for (const s of students) {
-    if (!s.id || !s.name) continue;
-    created.push(await makeStudent(env, params.classId, String(s.id), s.name, env.SESSION_SECRET));
+    if (!s.id || !s.surname || !s.first_name) continue;
+    created.push(await makeStudent(env, params.classId, String(s.id), s.surname, s.first_name, env.SESSION_SECRET));
   }
   return json({ students: created });
 }

@@ -85,6 +85,38 @@ render.classes = async function () {
   container.append(card, addCard);
 };
 
+let editingStudentId = null;
+
+function studentRow(container, cls, s) {
+  if (editingStudentId === s.id) {
+    const surnameInput = h('input', { type: 'text', value: s.surname, style: 'min-width:0' });
+    const firstNameInput = h('input', { type: 'text', value: s.first_name, style: 'min-width:0' });
+    return h('tr', {}, [
+      h('td', {}, s.id),
+      h('td', {}, surnameInput),
+      h('td', {}, firstNameInput),
+      h('td', { class: 'row' }, [
+        h('button', { onclick: async () => {
+          await api(`/api/students/${s.id}`, { method: 'PUT', body: { surname: surnameInput.value.trim(), first_name: firstNameInput.value.trim() } });
+          editingStudentId = null;
+          renderRoster(container);
+        } }, 'រក្សាទុក'),
+        h('button', { class: 'secondary', onclick: () => { editingStudentId = null; renderRoster(container); } }, 'បោះបង់'),
+      ]),
+    ]);
+  }
+  return h('tr', {}, [
+    h('td', {}, s.id), h('td', {}, s.surname), h('td', {}, s.first_name),
+    h('td', { class: 'row' }, [
+      h('button', { class: 'secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ'),
+      h('button', { class: 'secondary', onclick: async () => {
+        const { pin } = await api(`/api/students/${s.id}/reset-pin`, { method: 'POST' });
+        await Exam.notify(`PIN ថ្មីសម្រាប់ ${s.surname} ${s.first_name}: ${pin}`);
+      } }, 'កំណត់ PIN ថ្មី'),
+    ]),
+  ]);
+}
+
 async function renderRoster(container) {
   const { classes } = await api('/api/classes');
   const cls = classes.find((c) => c.id === selectedClassId);
@@ -96,14 +128,8 @@ async function renderRoster(container) {
       h('button', { class: 'secondary', onclick: () => { selectedClassId = null; render.classes(); } }, '← ត្រឡប់'),
     ]),
     h('table', {}, [
-      h('thead', {}, h('tr', {}, [h('th', {}, 'លេខសម្គាល់'), h('th', {}, 'ឈ្មោះ'), h('th', {}, '')])),
-      h('tbody', {}, students.map((s) => h('tr', {}, [
-        h('td', {}, s.id), h('td', {}, s.name),
-        h('td', {}, h('button', { class: 'secondary', onclick: async () => {
-          const { pin } = await api(`/api/students/${s.id}/reset-pin`, { method: 'POST' });
-          await Exam.notify(`PIN ថ្មីសម្រាប់ ${s.name}: ${pin}`);
-        } }, 'កំណត់ PIN ថ្មី')),
-      ]))),
+      h('thead', {}, h('tr', {}, [h('th', {}, 'លេខសម្គាល់'), h('th', {}, 'គោត្តនាម'), h('th', {}, 'នាម'), h('th', {}, '')])),
+      h('tbody', {}, students.map((s) => studentRow(container, cls, s))),
     ]),
   ]);
 
@@ -111,10 +137,13 @@ async function renderRoster(container) {
     h('h3', {}, 'បញ្ចូលសិស្សម្នាក់'),
     h('div', { class: 'row' }, [
       h('input', { type: 'text', id: 'one-id', placeholder: 'លេខសម្គាល់', style: 'flex:1' }),
-      h('input', { type: 'text', id: 'one-name', placeholder: 'ឈ្មោះ', style: 'flex:2' }),
+      h('input', { type: 'text', id: 'one-surname', placeholder: 'គោត្តនាម', style: 'flex:1' }),
+      h('input', { type: 'text', id: 'one-first-name', placeholder: 'នាម', style: 'flex:1' }),
       h('button', { onclick: async () => {
         const { pin } = await api(`/api/classes/${selectedClassId}/students`, { method: 'POST', body: {
-          id: document.getElementById('one-id').value.trim(), name: document.getElementById('one-name').value.trim(),
+          id: document.getElementById('one-id').value.trim(),
+          surname: document.getElementById('one-surname').value.trim(),
+          first_name: document.getElementById('one-first-name').value.trim(),
         } });
         await Exam.notify(`PIN: ${pin}`);
         renderRoster(container);
@@ -124,12 +153,15 @@ async function renderRoster(container) {
 
   const bulk = h('div', { class: 'card' }, [
     h('h3', {}, 'នាំចូលបញ្ជីសិស្សច្រើននាក់'),
-    h('p', { class: 'muted' }, 'សូមចម្លងបញ្ជីរបស់អ្នក ១ ជួរ ១ សិស្ស ជាទម្រង់៖ លេខសម្គាល់, ឈ្មោះ'),
-    h('textarea', { id: 'bulk-text', placeholder: '0109293, សុខ ដារា\n0109294, សុខ សុភា' }),
+    h('p', { class: 'muted' }, 'សូមចម្លងបញ្ជីរបស់អ្នក ១ ជួរ ១ សិស្ស ជាទម្រង់៖ លេខសម្គាល់, គោត្តនាម, នាម'),
+    h('textarea', { id: 'bulk-text', placeholder: '0109293, សុខ, ដារា\n0109294, សុខ, សុភា' }),
     h('div', { class: 'row', style: 'margin-top:8px' }, [
       h('button', { onclick: async () => {
         const lines = document.getElementById('bulk-text').value.split('\n').map((l) => l.trim()).filter(Boolean);
-        const parsed = lines.map((line) => { const [id, ...rest] = line.split(','); return { id: (id || '').trim(), name: rest.join(',').trim() }; }).filter((s) => s.id && s.name);
+        const parsed = lines.map((line) => {
+          const [id, surname, ...rest] = line.split(',');
+          return { id: (id || '').trim(), surname: (surname || '').trim(), first_name: rest.join(',').trim() };
+        }).filter((s) => s.id && s.surname && s.first_name);
         if (parsed.length === 0) return;
         const { students: created } = await api(`/api/classes/${selectedClassId}/students/bulk`, { method: 'POST', body: { students: parsed } });
         showPinSheet(cls, created);
@@ -145,8 +177,8 @@ function showPinSheet(cls, created) {
   const win = window.open('', '_blank');
   win.document.write(`<html lang="km"><head><meta charset="UTF-8"><title>PIN — ${cls ? cls.name : ''}</title>
     <style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 10px;text-align:left}</style>
-    </head><body><h2>PIN សម្រាប់ថ្នាក់ ${cls ? cls.name : ''}</h2><table><tr><th>លេខសម្គាល់</th><th>ឈ្មោះ</th><th>PIN</th></tr>${
-      created.map((s) => `<tr><td>${s.id}</td><td>${s.name}</td><td>${s.pin}</td></tr>`).join('')
+    </head><body><h2>PIN សម្រាប់ថ្នាក់ ${cls ? cls.name : ''}</h2><table><tr><th>លេខសម្គាល់</th><th>គោត្តនាម</th><th>នាម</th><th>PIN</th></tr>${
+      created.map((s) => `<tr><td>${s.id}</td><td>${s.surname}</td><td>${s.first_name}</td><td>${s.pin}</td></tr>`).join('')
     }</table></body></html>`);
   win.document.close();
 }
@@ -327,7 +359,7 @@ async function renderGradingSession(container) {
   const rows = session.roster.map((s) => {
     const total = (s.mcq_score ?? 0) + (s.writing_score ?? 0);
     return h('tr', {}, [
-      h('td', {}, s.name),
+      h('td', {}, `${s.surname} ${s.first_name}`),
       h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, 'មិនបានប្រឡង')),
       h('td', {}, h('input', { type: 'number', value: s.writing_score ?? '', 'data-student': s.id, class: 'writing-input' })),
       h('td', {}, h('input', { type: 'number', value: s.writing_max ?? '', 'data-student-max': s.id, class: 'writing-max-input' })),

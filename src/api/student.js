@@ -8,14 +8,15 @@ const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight whe
 export async function login(req, env) {
   const { id, pin } = await req.json();
   if (!id || !pin) return err('id and pin are required.', 400);
-  const student = await env.DB.prepare('SELECT id, name, class_id, pin_hash FROM students WHERE id = ?1').bind(String(id)).first();
+  const student = await env.DB.prepare('SELECT id, surname, first_name, class_id, pin_hash FROM students WHERE id = ?1').bind(String(id)).first();
   if (!student) return err('Incorrect ID or PIN.', 401);
   const ok = await verifySecretValue(pin, student.id, env.SESSION_SECRET, student.pin_hash);
   if (!ok) return err('Incorrect ID or PIN.', 401);
+  const fullName = `${student.surname} ${student.first_name}`;
   const cookie = await createSessionCookie(
-    { role: 'student', id: student.id, name: student.name, classId: student.class_id }, env.SESSION_SECRET,
+    { role: 'student', id: student.id, name: fullName, classId: student.class_id }, env.SESSION_SECRET,
   );
-  return json({ ok: true, name: student.name }, 200, { 'Set-Cookie': cookie });
+  return json({ ok: true, name: fullName }, 200, { 'Set-Cookie': cookie });
 }
 
 export async function logout() {

@@ -42,11 +42,11 @@ export async function getSession(req, env, params) {
     .bind(session.test_id).first();
 
   const { results: roster } = await env.DB.prepare(
-    `SELECT s.id, s.name,
+    `SELECT s.id, s.surname, s.first_name,
             r.mcq_score, r.mcq_max, r.writing_score, r.writing_max, r.submitted_at, r.published_at
      FROM students s
      LEFT JOIN results r ON r.student_id = s.id AND r.session_id = ?1
-     WHERE s.class_id = ?2 ORDER BY s.name`,
+     WHERE s.class_id = ?2 ORDER BY s.surname, s.first_name`,
   ).bind(params.sessionId, session.class_id).all();
 
   session.mcq_max = maxPointsRow.m;
