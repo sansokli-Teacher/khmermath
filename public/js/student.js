@@ -1,4 +1,12 @@
-const { h, api, typeset, showError, fmtDateTime, fmtClock } = Exam;
+const { h, api, showError, fmtDateTime, fmtClock } = Exam;
+
+// See js/mathtype.js — renders plain math shorthand (x^2, 3/4, √20…) and
+// literal \( \) / \[ \] LaTeX, side by side in the same question/option text.
+function mathEl(tag, attrs, text) {
+  const el = h(tag, attrs);
+  el.innerHTML = Exam.mathHtml(text);
+  return el;
+}
 
 const viewLogin = document.getElementById('view-login');
 const viewStatus = document.getElementById('view-status');
@@ -98,11 +106,11 @@ function renderQuestion() {
   area.innerHTML = '';
   const card = h('div', { class: 'question-card' }, [
     h('div', { class: 'muted' }, `សំណួរទី ${testState.current + 1} / ${testState.questions.length}`),
-    h('div', { class: 'katex-src' }, q.stem_text),
+    mathEl('div', {}, q.stem_text),
     q.image_key ? h('img', { src: `/api/images/${q.image_key}` }) : null,
     h('div', { class: 'radio-list' }, q.options.map((opt, idx) => h('label', { class: `radio-opt${q.selected_index === idx ? ' selected' : ''}` }, [
       h('input', { type: 'radio', name: 'opt', checked: q.selected_index === idx ? 'checked' : null, onchange: () => selectAnswer(q, idx) }),
-      h('span', { class: 'opt-body' }, opt),
+      mathEl('span', { class: 'opt-body' }, opt),
     ]))),
   ]);
   const nextBtn = testState.current < testState.questions.length - 1
@@ -110,7 +118,6 @@ function renderQuestion() {
     : null;
   area.append(card);
   if (nextBtn) area.append(nextBtn);
-  typeset(card);
 }
 
 async function selectAnswer(q, idx) {

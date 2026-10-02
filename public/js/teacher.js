@@ -1,4 +1,14 @@
-const { h, api, typeset, showError, fmtDateTime } = Exam;
+const { h, api, showError, fmtDateTime } = Exam;
+
+// An element whose content is rendered through the math-typing engine
+// (js/mathtype.js) — plain Khmer text passes through unchanged, \( \)/\[ \]
+// is treated as literal LaTeX, and other math-looking runs (x^2, 3/4, √20…)
+// are converted automatically.
+function mathEl(tag, attrs, text) {
+  const el = h(tag, attrs);
+  el.innerHTML = Exam.mathHtml(text);
+  return el;
+}
 
 const viewSetup = document.getElementById('view-setup');
 const viewLogin = document.getElementById('view-login');
@@ -236,34 +246,43 @@ async function renderTestBuilder(container) {
         h('strong', {}, `${i + 1}.`),
         h('button', { class: 'danger', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
       ]),
-      h('div', { class: 'katex-src' }, q.stem_text),
+      mathEl('div', {}, q.stem_text),
       q.image_key ? h('img', { src: `/api/images/${q.image_key}` }) : null,
       h('div', { class: 'radio-list' }, q.options.map((opt, idx) => h('div', { class: `radio-opt${idx === q.correct_index ? ' selected' : ''}` }, [
-        h('span', {}, idx === q.correct_index ? '✓' : '○'), h('span', { class: 'opt-body' }, opt),
+        h('span', {}, idx === q.correct_index ? '✓' : '○'), mathEl('span', { class: 'opt-body' }, opt),
       ]))),
       h('div', { class: 'muted' }, `${q.points} ពិន្ទុ`),
     ])),
   ]);
 
   container.append(header, list, buildQuestionForm(test, container));
-  typeset(list);
 }
 
 function buildQuestionForm(test, container) {
   const optionInputs = [0, 1, 2, 3].map((i) => h('input', { type: 'text', placeholder: `ជម្រើស ${i + 1}`, 'data-opt': i }));
   const correctSelect = h('select', { id: 'q-correct' }, optionInputs.map((_, i) => h('option', { value: i }, `ជម្រើស ${i + 1} ត្រឹមត្រូវ`)));
-  const stemInput = h('textarea', { id: 'q-stem', placeholder: 'ឧ. បើ x + 3 = 7 តម្លៃ x គឺ \\(x = ?\\)' });
+  const stemInput = h('textarea', { id: 'q-stem', placeholder: 'ឧ. បើ x + 3 = 7 តម្លៃ x គឺ? (សរសេរធម្មតា ដូចជា x^2, 3/4, √20 ឬបិទភ្ជាប់ LaTeX ក្នុង \\( \\))' });
   const pointsInput = h('input', { type: 'number', id: 'q-points', value: '1', style: 'width:90px' });
   const fileInput = h('input', { type: 'file', id: 'q-image', accept: 'image/png,image/jpeg,image/webp,image/svg+xml' });
 
+  // One toolbar serves the stem and every option — it writes into whichever
+  // of these fields was focused last.
+  let mathTarget = stemInput;
+  const trackFocus = (f) => f.addEventListener('focus', () => { mathTarget = f; });
+  trackFocus(stemInput);
+  optionInputs.forEach(trackFocus);
+  const mathBar = Exam.mathBar(() => mathTarget);
+
   return h('div', { class: 'card' }, [
     h('h3', {}, 'បញ្ចូលសំណួរថ្មី'),
-    h('label', {}, 'អត្ថបទសំណួរ (អាចបញ្ចូលគណិតវិទ្យាជាមួយ \\( \\) )'),
+    h('label', {}, 'អត្ថបទសំណួរ — សរសេរគណិតវិទ្យាធម្មតា ឬបិទភ្ជាប់ LaTeX'),
+    mathBar,
     stemInput,
+    Exam.mathPreview(stemInput),
     h('label', {}, 'រូបភាព (មិនចាំបាច់)'),
     fileInput,
     h('label', {}, 'ជម្រើសចម្លើយ'),
-    ...optionInputs,
+    ...optionInputs.flatMap((inp) => [inp, Exam.mathPreview(inp)]),
     h('label', {}, 'ជម្រើសត្រឹមត្រូវ'),
     correctSelect,
     h('label', {}, 'ពិន្ទុ'),
