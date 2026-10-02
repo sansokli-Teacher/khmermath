@@ -1799,6 +1799,162 @@
     return t.least >= 190 && Math.min.apply(null, t.angles) >= 0.56 && t.r >= 52;
   };
   var triStart = { A: [340, 100], B: [116, 380], C: [560, 380] };
+
+  // ===== The circle (Grade 7, lesson 17), one page with three tabs ====================================
+  // #parts: draw a circle and name its parts. #pi: a disc rolled once along a ruler: the circumference
+  // is a little more than three diameters. #area: a disc cut in n equal sectors that are laid head to
+  // foot make nearly a rectangle with sides pi*R and R.
+  var CO = [320, 232], CR = 150;
+  var angOf = function (p) { return Math.atan2(p[1] - CO[1], p[0] - CO[0]); };
+  CX['circle-parts'] = scripted({
+    steps: 6,
+    start: { C: [CO[0] + CR * Math.cos(-0.95), CO[1] + CR * Math.sin(-0.95)] },
+    place: function (s, key, p) {
+      var t = angOf(p);
+      if (Math.abs(t) < 0.3) t = t < 0 ? -0.3 : 0.3;
+      if (Math.PI - Math.abs(t) < 0.3) t = t < 0 ? -Math.PI + 0.3 : Math.PI - 0.3;
+      return onCircle(CO, CR, t);
+    },
+    figure: function (s) {
+      var C = s.C, tC = angOf(C);
+      return { O: CO, A: [CO[0] - CR, CO[1]], B: [CO[0] + CR, CO[1]], C: C, tC: tC };
+    },
+    top: function (f, ink, i) { if (i >= 2) el('circle', { cx: f.C[0], cy: f.C[1], r: 24, class: 'cx-grab', 'data-drag': 'C' }, ink); },
+    script: function (f) {
+      var mid = function (P, Q, n, d) { var m = mul(add(P, Q), 0.5), u = unit(sub(Q, P)); return add(m, mul([-u[1] * n, u[0] * n], d)); };
+      return [
+        [['pt', f.O, 'O', [-0.6, 0.9], 'cx-pt-m', 22], ['pt', f.A, 'A', [-1, 0.4], null, 22]],
+        [['arc', { c: f.O, r: CR, t1: Math.PI, t2: 3 * Math.PI - 0.003 }]],
+        [['seg', f.O, f.C, 'cx-line cx-line-2'], ['pt', f.C, 'C', sub(f.C, f.O), null, 22],
+          ['mark', function (g) { label(g, mid(f.O, f.C, -1, 18), 'កាំ OC', 'cx-note'); }]],
+        [['seg', f.A, f.B, 'cx-line'], ['pt', f.B, 'B', [1, 0.4], null, 22],
+          ['mark', function (g) { label(g, [CO[0] - 70, CO[1] + 24], 'អង្កត់ផ្ចិត AB', 'cx-note'); }]],
+        [['seg', f.B, f.C, 'cx-line cx-line-2'],
+          ['mark', function (g) { label(g, mid(f.B, f.C, -1, 30), 'អង្កត់ធ្នូ BC', 'cx-note'); }]],
+        [['mark', function (g) {
+          var t1 = Math.min(0, f.tC), t2 = Math.max(0, f.tC);
+          el('path', { d: arcPath(CO, CR, t1, t2), class: 'cx-trace' }, g);
+          label(g, add(CO, mul(unit([Math.cos((t1 + t2) / 2), Math.sin((t1 + t2) / 2)]), CR + 34)), 'ធ្នូ BC', 'cx-note');
+        }]],
+      ];
+    },
+  });
+
+  // #pi: the disc has diameter k cm; it rolls without slipping one turn along the ruler
+  var PIR = { x0: 92, y: 372 };
+  CX['circle-pi'] = {
+    steps: 5,
+    start: { k: 4 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) { return 'អង្កត់ផ្ចិត d = ' + s.k + ' cm  →  បរិមាត្រ p = ' + (Math.round(Math.PI * s.k * 100) / 100) + ' cm  →  p ÷ d = ' + (Math.round(Math.PI * 100) / 100); },
+    figure: function (s) {
+      var d = s.k * CM;
+      return { d: d, R: d / 2, p: Math.PI * d, x0: PIR.x0, y: PIR.y };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, x1 = f.x0 + f.p;
+      drawCmRuler(ink, [f.x0, f.y], [1, 0], 14, [0, 1]);
+      var disc = function (g2, cx, turn) {
+        el('circle', { cx: cx, cy: f.y - f.R, r: f.R, class: 'cx-disc' }, g2);
+        var P = add([cx, f.y - f.R], mul([Math.sin(turn), Math.cos(turn)], f.R));
+        segLine(g2, [cx, f.y - f.R], P, 'cx-radius');
+        el('circle', { cx: P[0], cy: P[1], r: 5.5, class: 'cx-pt cx-pt-m' }, g2);
+        return P;
+      };
+      var cx0 = f.x0 + 0, cx1 = x1;
+      if (i === 0) { disc(tools, cx0, 0); label(marks, [f.x0 + f.R, f.y - 2 * f.R - 18], 'd = ' + (f.d / CM) + ' cm', 'cx-note'); }
+      else disc(tools, cx1, 0);
+      if (i >= 2) {
+        segLine(marks, [f.x0, f.y - 3], [x1, f.y - 3], 'cx-trace');
+        label(marks, [(f.x0 + x1) / 2, f.y - 2 * f.R - 20], 'បរិមាត្រ p = ' + (Math.round(f.p / CM * 100) / 100) + ' cm', 'cx-note');
+      }
+      if (i >= 3) {
+        for (var j = 0; j < 3; j++) {
+          var a = f.x0 + j * f.d, y = f.y - 2 * f.R - 62 + 0;
+          el('rect', { x: a + 1, y: 70, width: f.d - 2, height: 26, rx: 4, class: j % 2 ? 'cx-sector cx-sector-b' : 'cx-sector cx-sector-a' }, marks);
+          label(marks, [a + f.d / 2, 83], 'd', 'cx-note cx-r');
+        }
+        var rest = f.p - 3 * f.d;
+        el('rect', { x: f.x0 + 3 * f.d + 1, y: 70, width: rest - 2, height: 26, rx: 4, class: 'cx-sector cx-sector-c' }, marks);
+        label(marks, [f.x0 + 3 * f.d + rest / 2, 56], '0.14 d', 'cx-note');
+        label(marks, [f.x0 + 1.5 * f.d, 108], 'បីដងអង្កត់ផ្ចិត', 'cx-note');
+      }
+      if (i >= 4) given(marks, 'p ÷ d = ' + (Math.round(f.p / f.d * 100) / 100) + ' ...  =  π   ក្នុងរង្វង់ទាំងអស់');
+    },
+    anim: function (f, i) {
+      if (i !== 1) return null;
+      return { phases: [{ dur: 4200, draw: function (t, drawn, tools) {
+        var cx = f.x0 + f.p * t, turn = 2 * Math.PI * t;
+        segLine(drawn, [f.x0, f.y - 3], [cx, f.y - 3], 'cx-trace');
+        el('circle', { cx: cx, cy: f.y - f.R, r: f.R, class: 'cx-disc' }, tools);
+        var P = add([cx, f.y - f.R], mul([Math.sin(turn), Math.cos(turn)], f.R));
+        segLine(tools, [cx, f.y - f.R], P, 'cx-radius');
+        el('circle', { cx: P[0], cy: P[1], r: 5.5, class: 'cx-pt cx-pt-m' }, tools);
+      } }] };
+    },
+  };
+
+  // #area: the disc of radius R in n = 2^(k+1) sectors; they stand alternately point down and point up
+  var AR = { R: 92, O: [130, 190], x0: 250, y: 300 };
+  CX['circle-area'] = {
+    steps: 5,
+    start: { k: 3 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) {
+      var n = Math.pow(2, s.k + 1);
+      return n + ' ចំណែក → រាងចតុកោណកែងប្រហែលវិមាត្រ πR និង R' + (n >= 32 ? ' (ស្ទើរតែពិតប្រាកដ)' : '');
+    },
+    figure: function (s) {
+      var n = Math.pow(2, s.k + 1), th = 2 * Math.PI / n, R = AR.R, hw = R * Math.sin(th / 2), tops = [];
+      var secs = [];
+      for (var j = 0; j < n; j++) {
+        var up = j % 2 === 0, from = -Math.PI / 2 + j * th, centre = from + th / 2;
+        var apex = [AR.x0 + 20 + j * hw, up ? AR.y : AR.y - R * Math.cos(th / 2)];
+        var target = up ? -Math.PI / 2 : Math.PI / 2;
+        secs.push({ j: j, centre: centre, apex: apex, target: target, up: up });
+      }
+      return { n: n, th: th, R: R, hw: hw, secs: secs, width: n * hw + hw };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, O = AR.O;
+      var sector = function (g2, apex, centre, cls) {
+        var a1 = centre - f.th / 2, a2 = centre + f.th / 2, p1 = onCircle(apex, f.R, a1);
+        el('path', { d: 'M' + apex.join(' ') + 'L' + p1.map(function (x) { return x.toFixed(1); }).join(' ') + arcPath(apex, f.R, a1, a2).replace(/^M[^A]*/, '') + 'Z', class: cls + ' cx-sector-line' }, g2);
+      };
+      if (i <= 1) {
+        el('circle', { cx: O[0], cy: O[1], r: f.R, class: 'cx-disc' }, ink);
+        if (i === 1) f.secs.forEach(function (q) { sector(ink, O, q.centre, q.j % 2 ? 'cx-sector cx-sector-b' : 'cx-sector cx-sector-a'); });
+        point(ink, O, 'O', [-0.6, 0.9], 'cx-pt-m', null, 20);
+        segLine(marks, O, add(O, [f.R, 0]), 'cx-radius'); label(marks, add(O, [f.R / 2, 14]), 'R', 'cx-note cx-r');
+      }
+      if (i >= 2) {
+        f.secs.forEach(function (q) { sector(ink, q.apex, q.target, q.j % 2 ? 'cx-sector cx-sector-b' : 'cx-sector cx-sector-a'); });
+      }
+      if (i >= 3) {
+        var x1 = AR.x0 + 20, x2 = x1 + f.width;
+        segLine(marks, [x1, AR.y + 20], [x2, AR.y + 20], 'cx-trace');
+        label(marks, [(x1 + x2) / 2, AR.y + 40], 'πR  (កន្លះបរិមាត្រ = πR)', 'cx-note');
+        segLine(marks, [x2 + 16, AR.y], [x2 + 16, AR.y - f.R], 'cx-trace');
+        label(marks, [x2 + 30, AR.y - f.R / 2], 'R', 'cx-note cx-r');
+      }
+      if (i >= 4) given(marks, 'S = πR × R = πR²');
+    },
+    anim: function (f, i) {
+      if (i === 2) return { phases: [{ dur: 3200, draw: function (t, drawn, tools) {
+        f.secs.forEach(function (q) {
+          var d = ((q.target - q.centre + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+          var c = q.centre + d * t, apex = add(AR.O, mul(sub(q.apex, AR.O), t));
+          var a1 = c - f.th / 2, a2 = c + f.th / 2, p1 = onCircle(apex, f.R, a1);
+          el('path', { d: 'M' + apex.join(' ') + 'L' + p1.map(function (x) { return x.toFixed(1); }).join(' ') + arcPath(apex, f.R, a1, a2).replace(/^M[^A]*/, '') + 'Z',
+            class: (q.j % 2 ? 'cx-sector cx-sector-b' : 'cx-sector cx-sector-a') + ' cx-sector-line' }, drawn);
+        });
+      } }] };
+      return null;
+    },
+  };
+
   // a line of the working, below the one before it (the lines of the steps so far stay)
   var says = function (g, n, text) { el('text', { x: 22, y: 30 + 24 * n, class: 'cx-given', 'dominant-baseline': 'central' }, g).textContent = text; };
   var deg = function (n) { return n + '°'; };

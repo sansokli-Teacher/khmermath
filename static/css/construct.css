@@ -201,3 +201,7 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-back { margin: 0 0 16px; }
 .cx-back[hidden] { display: none; }
 @media print { .cx-back { display: none; } }
+
+.cx-disc { fill: rgba(46, 122, 112, .14); stroke: #2e7a70; stroke-width: 2.4; }
+.cx-trace { stroke: #e8725c; stroke-width: 5; stroke-linecap: round; fill: none; }
+.cx-sector-line { stroke: #2e7a70; stroke-width: 1.4; stroke-linejoin: round; }
