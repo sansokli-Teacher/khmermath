@@ -1,6 +1,14 @@
 -- Exam Khmer — D1 schema.
 -- Apply with: npx wrangler d1 execute exam-khmer --remote --file schema.sql
 
+-- Question images, stored as base64 in D1 (no R2 bucket needed — R2 requires a
+-- one-time "enable" step in the Cloudflare dashboard that we're skipping for now).
+CREATE TABLE IF NOT EXISTS images (
+  key TEXT PRIMARY KEY,
+  content_type TEXT NOT NULL,
+  data_base64 TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS teachers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,

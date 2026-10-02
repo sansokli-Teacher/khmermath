@@ -13,8 +13,4 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "exam-khmer"
-database_id = "TODO-run-wrangler-d1-create-exam-khmer-and-paste-id-here"
-
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "exam-khmer-images"
+database_id = "e2c4bb28-e80c-430d-bbd5-36af9696563e"
