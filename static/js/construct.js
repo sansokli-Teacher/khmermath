@@ -1780,6 +1780,93 @@
     },
   });
 
+
+  // Grade 7, lesson 15 §2.4: the sum of the angles of a triangle and the exterior angle. The corners are
+  // dragged; the angles are written with the numbers of the triangle on the sheet.
+  var turnBy = function (t0, t1) { var d = t1 - t0; while (d > Math.PI) d -= 2 * Math.PI; while (d <= -Math.PI) d += 2 * Math.PI; return d; };
+  var wedgeBetween = function (g, V, P, Q, rho, kind) { var t0 = aimAt(V, P); wedge(g, V, t0, turnBy(t0, aimAt(V, Q)), rho, kind); };
+  function wholeDegrees(f) {                        // the three angles in whole degrees that still add up to 180
+    var d = f.angles.map(function (x) { return x * 180 / Math.PI; }), r = d.map(Math.round), k;
+    var diff = r[0] + r[1] + r[2] - 180;
+    while (diff !== 0) {
+      k = 0; d.forEach(function (x, j) { if ((diff > 0 ? r[j] - x : x - r[j]) > (diff > 0 ? r[k] - d[k] : d[k] - r[k])) k = j; });
+      r[k] -= diff > 0 ? 1 : -1; diff += diff > 0 ? -1 : 1;
+    }
+    return r;
+  }
+  var triLimit = function (s, key, p) {
+    var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+    return t.least >= 190 && Math.min.apply(null, t.angles) >= 0.56 && t.r >= 52;
+  };
+  var triStart = { A: [340, 100], B: [116, 380], C: [560, 380] };
+  // a line of the working, below the one before it (the lines of the steps so far stay)
+  var says = function (g, n, text) { el('text', { x: 22, y: 30 + 24 * n, class: 'cx-given', 'dominant-baseline': 'central' }, g).textContent = text; };
+  var deg = function (n) { return n + '°'; };
+  CX['g7-l15-angle-sum'] = scripted({
+    steps: 5,
+    start: triStart,
+    limit: triLimit,
+    figure: function (s) {
+      var f = triangleOf(s), u = unit(sub(f.C, f.B));
+      f.X = sub(f.A, mul(u, 210)); f.Y = add(f.A, mul(u, 210)); f.deg = wholeDegrees(f);
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var dir = function (P, Q) { return unit(add(unit(sub(P, f.A)), unit(sub(Q, f.A)))); };
+      var at = function (g, P, Q, text) { label(g, add(f.A, mul(dir(P, Q), 66)), text, 'cx-note'); };
+      return [
+        [],
+        [['seg', f.X, f.Y, 'cx-line cx-line-2'], ['pt', f.X, 'x', [-1, 0], null, 16], ['pt', f.Y, 'y', [1, 0], null, 16]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.A, f.X, f.B, 36, 'a'); wedgeBetween(g, f.A, f.B, f.C, 42, 'c'); wedgeBetween(g, f.A, f.C, f.Y, 36, 'b');
+          at(g, f.X, f.B, 'A₁'); at(g, f.B, f.C, 'A'); at(g, f.C, f.Y, 'A₂');
+          says(g, 0, '∠A₁ + ∠A + ∠A₂ = 180°');
+        }]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.B, f.C, f.A, 36, 'a'); wedgeBetween(g, f.C, f.A, f.B, 36, 'b');
+          says(g, 1, '∠A₁ = ∠B  ,  ∠A₂ = ∠C');
+        }]],
+        [['mark', function (g) {
+          says(g, 2, '∠A + ∠B + ∠C = ' + deg(f.deg[0]) + ' + ' + deg(f.deg[1]) + ' + ' + deg(f.deg[2]) + ' = 180°');
+        }]],
+      ];
+    },
+  });
+  CX['g7-l15-exterior-angle'] = scripted({
+    steps: 5,
+    start: triStart,
+    limit: triLimit,
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.x = add(f.C, mul(unit(sub(f.C, f.B)), 70)); f.y = add(f.B, mul(unit(sub(f.B, f.A)), 54)); f.z = add(f.A, mul(unit(sub(f.A, f.C)), 70));
+      f.deg = wholeDegrees(f);
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [],
+        [['seg', f.C, f.x, aux], ['pt', f.x, 'x', sub(f.x, f.C), null, 16], ['seg', f.B, f.y, aux], ['pt', f.y, 'y', sub(f.y, f.B), null, 16],
+          ['seg', f.A, f.z, aux], ['pt', f.z, 'z', sub(f.z, f.A), null, 16]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.A, f.B, f.C, 40, 'a'); wedgeBetween(g, f.A, f.z, f.B, 40, 'b');
+          says(g, 0, '∠A + ∠BAz = 180°');
+        }]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.B, f.C, f.A, 36, 'c'); wedgeBetween(g, f.C, f.A, f.B, 36, 'c');
+          says(g, 1, '∠A + ∠B + ∠C = 180°');
+        }]],
+        [['mark', function (g) {
+          says(g, 2, '∠BAz = ∠B + ∠C :  ' + deg(180 - f.deg[0]) + ' = ' + deg(f.deg[1]) + ' + ' + deg(f.deg[2]));
+        }]],
+      ];
+    },
+  });
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;

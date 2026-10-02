@@ -127,9 +127,11 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-sector { stroke: none; }
 .cx-sector-a { fill: rgba(46, 122, 112, .26); }
 .cx-sector-b { fill: rgba(201, 134, 43, .3); }
+.cx-sector-c { fill: rgba(232, 114, 92, .28); }
 .cx-sector-edge { fill: none; stroke-width: 2.2; }
 .cx-sector-edge-a { stroke: #2e7a70; }
 .cx-sector-edge-b { stroke: #c9862b; }
+.cx-sector-edge-c { stroke: #e8725c; }
 .cx-thumb path.cx-thumb-seg { fill: none; }
 @media (max-width: 640px) { .cx-handle { r: 11px; stroke-width: 3; } }
 /* ready-made cases under the figure (the perpendicular: A off the line, A on the line) */
