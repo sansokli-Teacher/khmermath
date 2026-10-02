@@ -1,0 +1,20 @@
+# Exam Khmer — monthly classroom MCQ test system.
+# Deploy with: npx wrangler deploy
+name = "exam-khmer"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+routes = [{ pattern = "exam.khmermath.org", custom_domain = true }]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "exam-khmer"
+database_id = "TODO-run-wrangler-d1-create-exam-khmer-and-paste-id-here"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "exam-khmer-images"

@@ -1,0 +1,85 @@
+import { json, err } from '../lib/http.js';
+import { requireTeacher } from '../lib/session.js';
+import { sessionWindow } from '../lib/time.js';
+
+export async function listSessions(req, env) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { results } = await env.DB.prepare(
+    `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.status, c.name AS class_name, t.title AS test_title
+     FROM test_sessions ts
+     JOIN classes c ON c.id = ts.class_id
+     JOIN tests t ON t.id = ts.test_id
+     ORDER BY ts.scheduled_start DESC`,
+  ).all();
+  const withPhase = results.map((s) => ({ ...s, phase: sessionWindow(s).phase }));
+  return json({ sessions: withPhase });
+}
+
+export async function createSession(req, env) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { test_id, class_id, scheduled_start, duration_minutes } = await req.json();
+  if (!test_id || !class_id || !scheduled_start || !duration_minutes) {
+    return err('test_id, class_id, scheduled_start, and duration_minutes are required.', 400);
+  }
+  const { meta } = await env.DB.prepare(
+    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes) VALUES (?1, ?2, ?3, ?4)',
+  ).bind(test_id, class_id, scheduled_start, duration_minutes).run();
+  return json({ id: meta.last_row_id });
+}
+
+export async function getSession(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const session = await env.DB.prepare(
+    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.status,
+            c.name AS class_name, t.title AS test_title
+     FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
+     WHERE ts.id = ?1`,
+  ).bind(params.sessionId).first();
+  if (!session) return err('Session not found.', 404);
+  session.phase = sessionWindow(session).phase;
+
+  const maxPointsRow = await env.DB.prepare('SELECT COALESCE(SUM(points), 0) AS m FROM test_questions WHERE test_id = ?1')
+    .bind(session.test_id).first();
+
+  const { results: roster } = await env.DB.prepare(
+    `SELECT s.id, s.name,
+            r.mcq_score, r.mcq_max, r.writing_score, r.writing_max, r.submitted_at, r.published_at
+     FROM students s
+     LEFT JOIN results r ON r.student_id = s.id AND r.session_id = ?1
+     WHERE s.class_id = ?2 ORDER BY s.name`,
+  ).bind(params.sessionId, session.class_id).all();
+
+  session.mcq_max = maxPointsRow.m;
+  session.roster = roster;
+  return json(session);
+}
+
+export async function closeSession(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await env.DB.prepare("UPDATE test_sessions SET status = 'closed' WHERE id = ?1").bind(params.sessionId).run();
+  return json({ ok: true });
+}
+
+export async function setWritingScore(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { student_id, writing_score, writing_max } = await req.json();
+  if (!student_id) return err('student_id is required.', 400);
+  const existing = await env.DB.prepare('SELECT id FROM results WHERE session_id = ?1 AND student_id = ?2')
+    .bind(params.sessionId, student_id).first();
+  if (!existing) {
+    // The student never took the MCQ part (e.g. absent that day) but still sat the paper part.
+    await env.DB.prepare(
+      'INSERT INTO results (session_id, student_id, mcq_score, mcq_max, writing_score, writing_max) VALUES (?1, ?2, 0, 0, ?3, ?4)',
+    ).bind(params.sessionId, student_id, writing_score, writing_max).run();
+  } else {
+    await env.DB.prepare('UPDATE results SET writing_score = ?1, writing_max = ?2 WHERE id = ?3')
+      .bind(writing_score, writing_max, existing.id).run();
+  }
+  return json({ ok: true });
+}
+
+export async function publishSession(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await env.DB.prepare("UPDATE results SET published_at = datetime('now') WHERE session_id = ?1").bind(params.sessionId).run();
+  return json({ ok: true });
+}

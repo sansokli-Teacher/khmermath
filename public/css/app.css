@@ -1,0 +1,108 @@
+@import url('../fonts/kantumruy-pro.css');
+@import url('../katex/katex.min.css');
+
+:root {
+  --ink: #1f2b33;
+  --muted: #5b6b76;
+  --line: #dbe3e8;
+  --bg: #f6f8f9;
+  --card: #ffffff;
+  --brand: #1a6fae;
+  --brand-dark: #125680;
+  --good: #1f8a4c;
+  --bad: #c6382f;
+  --warn: #b8860b;
+}
+
+/* A class that sets display:flex/block on an element also carrying the [hidden]
+   attribute would otherwise win over the browser's default [hidden]{display:none} —
+   force hidden to always actually hide. */
+[hidden] { display: none !important; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Kantumruy Pro', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+a { color: var(--brand); text-decoration: none; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+h3 { font-size: 15px; margin: 0 0 8px; color: var(--muted); }
+.muted { color: var(--muted); font-size: 14px; }
+
+label { display: block; font-size: 14px; margin: 10px 0 4px; color: var(--muted); }
+input[type=text], input[type=password], input[type=number], input[type=datetime-local], textarea, select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  font-family: inherit; font-size: 16px; background: #fff; color: var(--ink);
+}
+textarea { resize: vertical; min-height: 60px; }
+
+button, .btn {
+  display: inline-block; border: none; border-radius: 8px; padding: 10px 16px;
+  font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+  background: var(--brand); color: #fff;
+}
+button:hover, .btn:hover { background: var(--brand-dark); }
+button.secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+button.danger { background: #fff; color: var(--bad); border: 1px solid var(--bad); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.error { background: #fdecea; border: 1px solid #f3c2bd; color: var(--bad); padding: 8px 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+.notice { background: #eef6ff; border: 1px solid #c9e2f7; color: var(--brand-dark); padding: 8px 12px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.tabs button { background: #fff; color: var(--muted); border: 1px solid var(--line); font-weight: 600; }
+.tabs button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); gap: 10px; }
+.list-item:last-child { border-bottom: none; }
+
+.badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.badge.open { background: #e4f6ea; color: var(--good); }
+.badge.upcoming { background: #fff3da; color: var(--warn); }
+.badge.closed { background: #eceff1; color: var(--muted); }
+.badge.draft { background: #eceff1; color: var(--muted); }
+.badge.ready { background: #e4f6ea; color: var(--good); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+th { color: var(--muted); font-weight: 600; }
+td input[type=number] { width: 70px; padding: 6px 8px; }
+
+/* MCQ widget — a real on-screen list of choices, not a bare <ul> */
+.radio-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.radio-opt {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: #fff;
+}
+.radio-opt:hover { background: #f2f7fb; }
+.radio-opt.selected { border-color: var(--brand); background: #eef6ff; }
+.radio-opt input[type=radio] { width: 18px; height: 18px; flex: none; margin: 2px 0 0; accent-color: var(--brand); cursor: pointer; }
+.radio-opt .opt-body { min-width: 0; }
+
+.question-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 14px; background: #fff; }
+.question-card img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+.question-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 16px; }
+.question-nav button { width: 36px; height: 36px; padding: 0; background: #fff; color: var(--ink); border: 1px solid var(--line); font-weight: 600; }
+.question-nav button.answered { background: #e4f6ea; border-color: var(--good); color: var(--good); }
+.question-nav button.current { outline: 2px solid var(--brand); }
+
+.timer { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.timer.low { color: var(--bad); }
+
+.center-screen { min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.big-score { font-size: 40px; font-weight: 700; color: var(--brand); }
+
+.pin-sheet { font-family: 'Kantumruy Pro', system-ui; }
+.pin-sheet table { font-size: 15px; }
+@media print { .no-print { display: none !important; } }
