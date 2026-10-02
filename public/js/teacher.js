@@ -68,10 +68,32 @@ const render = {};
 // ---------- Classes & students ----------
 let selectedClassId = null;
 
+async function renderPinCard() {
+  const { has_pin } = await api('/api/settings/pin');
+  return h('div', { class: 'card' }, [
+    h('h3', {}, 'កូដសម្ងាត់សិស្ស (PIN)'),
+    h('p', { class: 'muted' }, 'សិស្សគ្រប់គ្នាប្រើ PIN តែមួយរួមគ្នានេះ (បូកនឹងលេខសម្គាល់ផ្ទាល់ខ្លួន) ដើម្បីចូលធ្វើតេស្ត។ លោកគ្រូជាអ្នកកំណត់ និងអាចផ្លាស់ប្តូរបានគ្រប់ពេល។'),
+    h('p', {}, has_pin ? h('span', { class: 'badge ready' }, 'បានកំណត់ PIN ហើយ') : h('span', { class: 'badge draft' }, 'មិនទាន់កំណត់ PIN ទេ')),
+    h('div', { class: 'row' }, [
+      h('input', { type: 'text', id: 'shared-pin', placeholder: 'ឧ. 2025', inputmode: 'numeric', style: 'flex:1' }),
+      h('button', { onclick: async () => {
+        const pin = document.getElementById('shared-pin').value.trim();
+        try {
+          await api('/api/settings/pin', { method: 'POST', body: { pin } });
+          await Exam.notify('បានកំណត់ PIN ថ្មីរួចរាល់។ សូមប្រាប់សិស្សទាំងអស់ពី PIN នេះ។');
+          render.classes();
+        } catch (e) { await Exam.notify(e.message); }
+      } }, 'កំណត់ PIN'),
+    ]),
+  ]);
+}
+
 render.classes = async function () {
   const container = document.getElementById('tab-classes');
   container.innerHTML = '';
   if (selectedClassId) return renderRoster(container);
+
+  container.append(await renderPinCard());
 
   const { classes } = await api('/api/classes');
   const card = h('div', { class: 'card' }, [
@@ -117,13 +139,7 @@ function studentRow(container, cls, s) {
   }
   return h('tr', {}, [
     h('td', {}, s.id), h('td', {}, s.surname), h('td', {}, s.first_name),
-    h('td', { class: 'row' }, [
-      h('button', { class: 'secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ'),
-      h('button', { class: 'secondary', onclick: async () => {
-        const { pin } = await api(`/api/students/${s.id}/reset-pin`, { method: 'POST' });
-        await Exam.notify(`PIN ថ្មីសម្រាប់ ${s.surname} ${s.first_name}: ${pin}`);
-      } }, 'កំណត់ PIN ថ្មី'),
-    ]),
+    h('td', {}, h('button', { class: 'secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ')),
   ]);
 }
 
@@ -150,12 +166,11 @@ async function renderRoster(container) {
       h('input', { type: 'text', id: 'one-surname', placeholder: 'គោត្តនាម', style: 'flex:1' }),
       h('input', { type: 'text', id: 'one-first-name', placeholder: 'នាម', style: 'flex:1' }),
       h('button', { onclick: async () => {
-        const { pin } = await api(`/api/classes/${selectedClassId}/students`, { method: 'POST', body: {
+        await api(`/api/classes/${selectedClassId}/students`, { method: 'POST', body: {
           id: document.getElementById('one-id').value.trim(),
           surname: document.getElementById('one-surname').value.trim(),
           first_name: document.getElementById('one-first-name').value.trim(),
         } });
-        await Exam.notify(`PIN: ${pin}`);
         renderRoster(container);
       } }, 'បញ្ចូល'),
     ]),
@@ -163,34 +178,31 @@ async function renderRoster(container) {
 
   const bulk = h('div', { class: 'card' }, [
     h('h3', {}, 'នាំចូលបញ្ជីសិស្សច្រើននាក់'),
-    h('p', { class: 'muted' }, 'សូមចម្លងបញ្ជីរបស់អ្នក ១ ជួរ ១ សិស្ស ជាទម្រង់៖ លេខសម្គាល់, គោត្តនាម, នាម'),
-    h('textarea', { id: 'bulk-text', placeholder: '0109293, សុខ, ដារា\n0109294, សុខ, សុភា' }),
+    h('p', { class: 'muted' }, 'សូមចម្លងបញ្ជីរបស់អ្នក ១ ជួរ ១ សិស្ស៖ លេខសម្គាល់ គោត្តនាម នាម (ដកឃ្លា ថេប ឬសញ្ញា , រវាងនីមួយៗ — អាចចម្លងផ្ទាល់ពី Excel/Sheets)'),
+    h('textarea', { id: 'bulk-text', placeholder: '0109293  សុខ  ដារា\n0109294, សុខ, សុភា' }),
     h('div', { class: 'row', style: 'margin-top:8px' }, [
       h('button', { onclick: async () => {
-        const lines = document.getElementById('bulk-text').value.split('\n').map((l) => l.trim()).filter(Boolean);
+        const raw = document.getElementById('bulk-text').value;
+        // Strip zero-width/invisible characters that often ride along when
+        // pasting from Word/PDF/spreadsheets, then accept either comma- or
+        // whitespace/tab-separated fields (an Excel/Sheets paste uses tabs).
+        const lines = raw.replace(/[​‌‍﻿]/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
         const parsed = lines.map((line) => {
-          const [id, surname, ...rest] = line.split(',');
-          return { id: (id || '').trim(), surname: (surname || '').trim(), first_name: rest.join(',').trim() };
+          const parts = (line.includes(',') ? line.split(',') : line.split(/\s+/)).map((p) => p.trim()).filter(Boolean);
+          const [id, surname, ...rest] = parts;
+          return { id: id || '', surname: surname || '', first_name: rest.join(' ') };
         }).filter((s) => s.id && s.surname && s.first_name);
         if (parsed.length === 0) return;
         const { students: created } = await api(`/api/classes/${selectedClassId}/students/bulk`, { method: 'POST', body: { students: parsed } });
-        showPinSheet(cls, created);
-      } }, 'នាំចូល និងបង្កើត PIN'),
+        document.getElementById('bulk-text').value = '';
+        await Exam.notify(`បានបញ្ចូលសិស្សចំនួន ${created.length} នាក់ដោយជោគជ័យ។`);
+        renderRoster(container);
+      } }, 'នាំចូល'),
     ]),
   ]);
 
   container.innerHTML = '';
   container.append(card, addOne, bulk);
-}
-
-function showPinSheet(cls, created) {
-  const win = window.open('', '_blank');
-  win.document.write(`<html lang="km"><head><meta charset="UTF-8"><title>PIN — ${cls ? cls.name : ''}</title>
-    <style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px 10px;text-align:left}</style>
-    </head><body><h2>PIN សម្រាប់ថ្នាក់ ${cls ? cls.name : ''}</h2><table><tr><th>លេខសម្គាល់</th><th>គោត្តនាម</th><th>នាម</th><th>PIN</th></tr>${
-      created.map((s) => `<tr><td>${s.id}</td><td>${s.surname}</td><td>${s.first_name}</td><td>${s.pin}</td></tr>`).join('')
-    }</table></body></html>`);
-  win.document.close();
 }
 
 // ---------- Tests ----------

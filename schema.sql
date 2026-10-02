@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS images (
   data_base64 TEXT NOT NULL
 );
 
+-- One shared value the teacher sets (currently just the one student login
+-- PIN, used by every student) — a tiny key/value table rather than a column
+-- on some other table, so more settings can be added later without another
+-- migration.
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS teachers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
@@ -21,12 +30,12 @@ CREATE TABLE IF NOT EXISTS classes (
   grade INTEGER NOT NULL    -- e.g. 7
 );
 
+-- Login is id + the one shared PIN in `settings` (not a per-student PIN).
 CREATE TABLE IF NOT EXISTS students (
   id TEXT PRIMARY KEY,      -- the existing student id, e.g. "0109293"
   class_id INTEGER NOT NULL REFERENCES classes(id),
   surname TEXT NOT NULL,    -- គោត្តនាម
-  first_name TEXT NOT NULL, -- នាម
-  pin_hash TEXT NOT NULL
+  first_name TEXT NOT NULL  -- នាម
 );
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
 

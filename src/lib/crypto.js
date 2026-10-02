@@ -27,13 +27,6 @@ export function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-// A short numeric PIN is easy for a student to retype on a phone keyboard.
-export function randomPin(digits = 4) {
-  const max = 10 ** digits;
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % max;
-  return String(n).padStart(digits, '0');
-}
-
 export function randomKey() {
   return crypto.randomUUID().replace(/-/g, '');
 }

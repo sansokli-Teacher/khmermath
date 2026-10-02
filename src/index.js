@@ -7,6 +7,7 @@ import * as tests from './api/tests.js';
 import * as images from './api/images.js';
 import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
+import * as settings from './api/settings.js';
 
 function compile(pattern) {
   const keys = [];
@@ -27,7 +28,9 @@ const ROUTES = [
   ['POST', '/api/classes/:classId/students', classes.addStudent],
   ['PUT', '/api/students/:studentId', classes.updateStudent],
   ['POST', '/api/classes/:classId/students/bulk', classes.importRoster],
-  ['POST', '/api/students/:studentId/reset-pin', classes.resetPin],
+
+  ['GET', '/api/settings/pin', settings.getPinStatus],
+  ['POST', '/api/settings/pin', settings.setPin],
 
   ['GET', '/api/tests', tests.listTests],
   ['POST', '/api/tests', tests.createTest],

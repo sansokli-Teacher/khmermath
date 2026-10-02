@@ -1,6 +1,5 @@
 import { json, err } from '../lib/http.js';
 import { requireTeacher } from '../lib/session.js';
-import { hashSecretValue, randomPin } from '../lib/crypto.js';
 
 export async function listClasses(req, env) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
@@ -28,43 +27,39 @@ export async function listStudents(req, env, params) {
   return json({ students: results });
 }
 
-async function makeStudent(env, classId, id, surname, firstName, secret) {
-  const pin = randomPin(4);
-  const pinHash = await hashSecretValue(pin, id, secret);
+async function makeStudent(env, classId, id, surname, firstName) {
   await env.DB.prepare(
-    'INSERT INTO students (id, class_id, surname, first_name, pin_hash) VALUES (?1, ?2, ?3, ?4, ?5) ' +
+    'INSERT INTO students (id, class_id, surname, first_name) VALUES (?1, ?2, ?3, ?4) ' +
     'ON CONFLICT(id) DO UPDATE SET class_id = ?2, surname = ?3, first_name = ?4',
-  ).bind(id, classId, surname, firstName, pinHash).run();
-  return { id, surname, first_name: firstName, pin };
+  ).bind(id, classId, surname, firstName).run();
+  return { id, surname, first_name: firstName };
 }
 
-// Adds one student, returning the plain PIN once so the teacher can hand it out.
 export async function addStudent(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   const { id, surname, first_name } = await req.json();
   if (!id || !surname || !first_name) return err('id, surname, and first_name are required.', 400);
-  const student = await makeStudent(env, params.classId, String(id), surname, first_name, env.SESSION_SECRET);
+  const student = await makeStudent(env, params.classId, String(id), surname, first_name);
   return json(student);
 }
 
-// Edits an existing student's id/surname/first name without touching their PIN.
-// Changing the id moves the row to a new primary key, so responses/results tied
-// to the old id (referenced by student_id) would be orphaned — refuse that case
-// rather than silently losing history.
+// Edits an existing student's surname/first name. Changing the id moves the
+// row to a new primary key, so responses/results tied to the old id
+// (referenced by student_id) would be orphaned — refuse that case rather
+// than silently losing history.
 export async function updateStudent(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   const { id, surname, first_name } = await req.json();
   if (!surname || !first_name) return err('surname and first_name are required.', 400);
-  if (id && String(id) !== params.studentId) return err('Changing a student\'s ID is not supported — reset their PIN under the new ID instead.', 400);
+  if (id && String(id) !== params.studentId) return err('Changing a student\'s ID is not supported — add them again under the new ID instead.', 400);
   const result = await env.DB.prepare('UPDATE students SET surname = ?1, first_name = ?2 WHERE id = ?3')
     .bind(surname, first_name, params.studentId).run();
   if (!result.meta.rows_written) return err('Student not found.', 404);
   return json({ ok: true });
 }
 
-// Bulk-imports a roster (e.g. pasted from the teacher's own list), generating a
-// PIN for every student and returning the full list so it can be printed once
-// and handed out.
+// Bulk-imports a roster (e.g. pasted from the teacher's own list, or straight
+// from a spreadsheet).
 export async function importRoster(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   const { students } = await req.json();
@@ -72,16 +67,7 @@ export async function importRoster(req, env, params) {
   const created = [];
   for (const s of students) {
     if (!s.id || !s.surname || !s.first_name) continue;
-    created.push(await makeStudent(env, params.classId, String(s.id), s.surname, s.first_name, env.SESSION_SECRET));
+    created.push(await makeStudent(env, params.classId, String(s.id), s.surname, s.first_name));
   }
   return json({ students: created });
-}
-
-export async function resetPin(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
-  const pin = randomPin(4);
-  const pinHash = await hashSecretValue(pin, params.studentId, env.SESSION_SECRET);
-  const result = await env.DB.prepare('UPDATE students SET pin_hash = ?1 WHERE id = ?2').bind(pinHash, params.studentId).run();
-  if (!result.meta.rows_written) return err('Student not found.', 404);
-  return json({ id: params.studentId, pin });
 }
