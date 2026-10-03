@@ -119,27 +119,176 @@ render.classes = async function () {
 
 let editingStudentId = null;
 
+function downloadSampleExcel() {
+  if (typeof XLSX === 'undefined') {
+    Exam.notify('មិនទាន់ដំណើរការបណ្ណាល័យ Excel នៅឡើយទេ។');
+    return;
+  }
+  const headers = ['អត្តលេខ', 'គោត្តនាម', 'នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត'];
+  const sampleData = [
+    headers,
+    ['010901', 'សុខ', 'ដារា', 'ប្រុស', '2010-04-15'],
+    ['010902', 'ចាន់', 'សុភា', 'ស្រី', '2010-08-20'],
+    ['010903', 'កែវ', 'វិសាល', 'ប្រុស', '2010-01-05'],
+    ['010904', 'ម៉ៅ', 'ធីតា', 'ស្រី', '2010-11-12'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(sampleData);
+  ws['!cols'] = [{ wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'បញ្ជីសិស្ស');
+  XLSX.writeFile(wb, 'គំរូបញ្ជីឈ្មោះសិស្ស.xlsx');
+}
+
+function parseExcelRows(rawRows) {
+  if (!rawRows || rawRows.length === 0) return [];
+
+  function norm(str) {
+    return String(str || '').replace(/[​‌‍﻿]/g, '').trim().toLowerCase();
+  }
+
+  let headerIndex = -1;
+  let idCol = -1, surnameCol = -1, firstNameCol = -1, fullNameCol = -1, genderCol = -1, dobCol = -1;
+
+  for (let r = 0; r < Math.min(rawRows.length, 15); r++) {
+    const row = rawRows[r].map(norm);
+    const hasId = row.some((c) => c.includes('អត្តលេខ') || c.includes('សម្គាល់') || c === 'id' || c.includes('student'));
+    const hasName = row.some((c) => c.includes('នាម') || c.includes('ឈ្មោះ') || c.includes('name'));
+    if (hasId || hasName) {
+      headerIndex = r;
+      row.forEach((cell, cIdx) => {
+        if (cell.includes('អត្តលេខ') || cell.includes('សម្គាល់') || cell === 'id' || cell.includes('student id')) idCol = cIdx;
+        else if (cell.includes('គោត្តនាម និងនាម') || cell.includes('គោត្តនាម-នាម') || cell.includes('ឈ្មោះពេញ') || cell === 'fullname' || cell === 'full name' || cell === 'ឈ្មោះ') fullNameCol = cIdx;
+        else if (cell.includes('គោត្តនាម') || cell.includes('ត្រកូល') || cell === 'surname' || cell === 'last name' || cell === 'family name') surnameCol = cIdx;
+        else if (cell.includes('នាម') || cell === 'first name' || cell === 'firstname' || cell === 'given name') firstNameCol = cIdx;
+        else if (cell.includes('ភេទ') || cell === 'sex' || cell === 'gender') genderCol = cIdx;
+        else if (cell.includes('កំណើត') || cell === 'dob' || cell.includes('birth')) dobCol = cIdx;
+      });
+      break;
+    }
+  }
+
+  let dataRows = [];
+  if (headerIndex >= 0) {
+    dataRows = rawRows.slice(headerIndex + 1);
+  } else {
+    idCol = 0; surnameCol = 1; firstNameCol = 2; genderCol = 3; dobCol = 4;
+    dataRows = rawRows;
+  }
+
+  const students = [];
+  for (const row of dataRows) {
+    if (!row || row.length === 0) continue;
+    const getVal = (col) => (col >= 0 && col < row.length ? String(row[col] || '').trim() : '');
+
+    let id = getVal(idCol);
+    let surname = getVal(surnameCol);
+    let firstName = getVal(firstNameCol);
+    let fullName = getVal(fullNameCol);
+    let gender = getVal(genderCol);
+    let dob = getVal(dobCol);
+
+    if (!id && row[0]) {
+      const first = String(row[0]).trim();
+      if (/^\w+$/.test(first) && first !== 'ល.រ' && first !== 'no') id = first;
+    }
+
+    if ((!surname || !firstName) && fullName) {
+      const parts = fullName.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        surname = parts[0];
+        firstName = parts.slice(1).join(' ');
+      } else if (parts.length === 1) {
+        surname = parts[0];
+        firstName = parts[0];
+      }
+    }
+
+    if (gender) {
+      const gNorm = gender.toLowerCase();
+      if (gNorm === 'm' || gNorm === 'male' || gNorm === 'ប្រុស' || gNorm === 'ប') gender = 'ប្រុស';
+      else if (gNorm === 'f' || gNorm === 'female' || gNorm === 'ស្រី' || gNorm === 'ស') gender = 'ស្រី';
+    }
+
+    if (id && surname && firstName) {
+      students.push({
+        id: String(id).trim(),
+        surname: String(surname).trim(),
+        first_name: String(firstName).trim(),
+        gender: gender || '',
+        dob: dob || '',
+      });
+    }
+  }
+  return students;
+}
+
 function studentRow(container, cls, s) {
   if (editingStudentId === s.id) {
-    const surnameInput = h('input', { type: 'text', value: s.surname, style: 'min-width:0' });
-    const firstNameInput = h('input', { type: 'text', value: s.first_name, style: 'min-width:0' });
+    const surnameInput = h('input', { type: 'text', value: s.surname || '', style: 'min-width:0;width:100%' });
+    const firstNameInput = h('input', { type: 'text', value: s.first_name || '', style: 'min-width:0;width:100%' });
+    const genderSelect = h('select', { style: 'min-width:0;width:100%' }, [
+      h('option', { value: '', selected: !s.gender }, '— មិនបញ្ជាក់ —'),
+      h('option', { value: 'ប្រុស', selected: s.gender === 'ប្រុស' }, 'ប្រុស'),
+      h('option', { value: 'ស្រី', selected: s.gender === 'ស្រី' }, 'ស្រី'),
+    ]);
+    const dobInput = h('input', { type: 'text', value: s.dob || '', placeholder: 'YYYY-MM-DD', style: 'min-width:0;width:100%' });
+
     return h('tr', {}, [
-      h('td', {}, s.id),
+      h('td', {}, h('strong', {}, s.id)),
       h('td', {}, surnameInput),
       h('td', {}, firstNameInput),
-      h('td', { class: 'row' }, [
-        h('button', { onclick: async () => {
-          await api(`/api/students/${s.id}`, { method: 'PUT', body: { surname: surnameInput.value.trim(), first_name: firstNameInput.value.trim() } });
-          editingStudentId = null;
-          renderRoster(container);
+      h('td', {}, genderSelect),
+      h('td', {}, dobInput),
+      h('td', { class: 'row', style: 'gap:4px' }, [
+        h('button', { class: 'btn-sm', onclick: async () => {
+          const surname = surnameInput.value.trim();
+          const first_name = firstNameInput.value.trim();
+          if (!surname || !first_name) return Exam.notify('សូមបញ្ចូលគោត្តនាម និងនាម។');
+          try {
+            await api(`/api/students/${s.id}`, {
+              method: 'PUT',
+              body: {
+                surname,
+                first_name,
+                gender: genderSelect.value.trim(),
+                dob: dobInput.value.trim(),
+              },
+            });
+            editingStudentId = null;
+            renderRoster(container);
+          } catch (e) {
+            Exam.notify(e.message);
+          }
         } }, 'រក្សាទុក'),
-        h('button', { class: 'secondary', onclick: () => { editingStudentId = null; renderRoster(container); } }, 'បោះបង់'),
+        h('button', { class: 'btn-sm secondary', onclick: () => { editingStudentId = null; renderRoster(container); } }, 'បោះបង់'),
       ]),
     ]);
   }
+
+  const genderBadge = s.gender === 'ប្រុស'
+    ? h('span', { class: 'badge-gender m' }, 'ប្រុស')
+    : s.gender === 'ស្រី'
+    ? h('span', { class: 'badge-gender f' }, 'ស្រី')
+    : h('span', { class: 'muted' }, s.gender || '—');
+
   return h('tr', {}, [
-    h('td', {}, s.id), h('td', {}, s.surname), h('td', {}, s.first_name),
-    h('td', {}, h('button', { class: 'secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ')),
+    h('td', {}, h('strong', {}, s.id)),
+    h('td', {}, s.surname),
+    h('td', {}, s.first_name),
+    h('td', {}, genderBadge),
+    h('td', { class: 'muted' }, s.dob || '—'),
+    h('td', { class: 'row', style: 'gap:4px' }, [
+      h('button', { class: 'btn-sm secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ'),
+      h('button', { class: 'btn-sm danger', onclick: async () => {
+        if (!confirm(`តើលោកគ្រូពិតជាចង់លុបសិស្ស «${s.surname} ${s.first_name}» (${s.id}) ឬ?`)) return;
+        try {
+          await api(`/api/students/${s.id}`, { method: 'DELETE' });
+          renderRoster(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
+      } }, 'លុប'),
+    ]),
   ]);
 }
 
@@ -150,59 +299,204 @@ async function renderRoster(container) {
 
   const card = h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between' }, [
-      h('h2', {}, `បញ្ជីសិស្ស — ${cls ? cls.name : ''}`),
+      h('h2', {}, `បញ្ជីសិស្ស — ${cls ? cls.name : ''} (សរុប ${students.length} នាក់)`),
       h('button', { class: 'secondary', onclick: () => { selectedClassId = null; render.classes(); } }, '← ត្រឡប់'),
     ]),
     h('table', {}, [
-      h('thead', {}, h('tr', {}, [h('th', {}, 'លេខសម្គាល់'), h('th', {}, 'គោត្តនាម'), h('th', {}, 'នាម'), h('th', {}, '')])),
-      h('tbody', {}, students.map((s) => studentRow(container, cls, s))),
+      h('thead', {}, h('tr', {}, [
+        h('th', {}, 'លេខសម្គាល់'),
+        h('th', {}, 'គោត្តនាម'),
+        h('th', {}, 'នាម'),
+        h('th', {}, 'ភេទ'),
+        h('th', {}, 'ថ្ងៃកំណើត'),
+        h('th', {}, 'សកម្មភាព'),
+      ])),
+      h('tbody', {}, students.length === 0
+        ? [h('tr', {}, [h('td', { colspan: 6, style: 'text-align:center;padding:24px;color:var(--muted);' }, 'មិនទាន់មានសិស្សក្នុងថ្នាក់នេះនៅឡើយទេ។ សូមបញ្ចូលដោយដៃ ឬ Upload Excel ខាងក្រោម។')])]
+        : students.map((s) => studentRow(container, cls, s))),
     ]),
   ]);
 
   const addOne = h('div', { class: 'card' }, [
-    h('h3', {}, 'បញ្ចូលសិស្សម្នាក់'),
+    h('h3', {}, 'បញ្ចូលសិស្សម្នាក់ដោយដៃ'),
     h('div', { class: 'row' }, [
-      h('input', { type: 'text', id: 'one-id', placeholder: 'លេខសម្គាល់', style: 'flex:1' }),
-      h('input', { type: 'text', id: 'one-surname', placeholder: 'គោត្តនាម', style: 'flex:1' }),
-      h('input', { type: 'text', id: 'one-first-name', placeholder: 'នាម', style: 'flex:1' }),
+      h('input', { type: 'text', id: 'one-id', placeholder: 'លេខសម្គាល់ * (ឧ. 0109293)', style: 'flex:1.2;min-width:130px;' }),
+      h('input', { type: 'text', id: 'one-surname', placeholder: 'គោត្តនាម * (ឧ. សុខ)', style: 'flex:1.2;min-width:130px;' }),
+      h('input', { type: 'text', id: 'one-first-name', placeholder: 'នាម * (ឧ. ដារា)', style: 'flex:1.2;min-width:130px;' }),
+    ]),
+    h('div', { class: 'row', style: 'margin-top:8px;' }, [
+      h('select', { id: 'one-gender', style: 'flex:1;min-width:120px;' }, [
+        h('option', { value: '' }, '-- ភេទ (ស្រេចចិត្ត) --'),
+        h('option', { value: 'ប្រុស' }, 'ប្រុស'),
+        h('option', { value: 'ស្រី' }, 'ស្រី'),
+      ]),
+      h('input', { type: 'text', id: 'one-dob', placeholder: 'ថ្ងៃខែឆ្នាំកំណើត (ស្រេចចិត្ត ឧ. 2010-04-15)', style: 'flex:1.5;min-width:160px;' }),
       h('button', { onclick: async () => {
-        await api(`/api/classes/${selectedClassId}/students`, { method: 'POST', body: {
-          id: document.getElementById('one-id').value.trim(),
-          surname: document.getElementById('one-surname').value.trim(),
-          first_name: document.getElementById('one-first-name').value.trim(),
-        } });
-        renderRoster(container);
-      } }, 'បញ្ចូល'),
+        const id = document.getElementById('one-id').value.trim();
+        const surname = document.getElementById('one-surname').value.trim();
+        const first_name = document.getElementById('one-first-name').value.trim();
+        const gender = document.getElementById('one-gender').value.trim();
+        const dob = document.getElementById('one-dob').value.trim();
+        if (!id || !surname || !first_name) {
+          return Exam.notify('សូមបញ្ចូលលេខសម្គាល់ គោត្តនាម និងនាមសិស្ស។');
+        }
+        try {
+          await api(`/api/classes/${selectedClassId}/students`, {
+            method: 'POST',
+            body: { id, surname, first_name, gender, dob },
+          });
+          await Exam.notify(`បានបញ្ចូលសិស្ស «${surname} ${first_name}» ដោយជោគជ័យ។`);
+          renderRoster(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
+      } }, 'បញ្ចូលសិស្ស'),
     ]),
   ]);
 
+  // Excel Upload section
+  let excelParsed = null;
+  const excelPreviewBox = h('div', { class: 'preview-box', hidden: true });
+  const fileInput = h('input', { type: 'file', accept: '.xlsx,.xls,.csv', style: 'display:none;' });
+
+  const dropzoneEl = h('div', { class: 'dropzone' }, [
+    h('span', { class: 'dropzone-icon' }, '📊'),
+    h('div', { style: 'font-weight:600;' }, 'ចុចទីនេះ ឬទាញទម្លាក់ឯកសារ Excel (.xlsx, .xls) ឬ .csv មកទីនេះ'),
+    h('div', { class: 'muted', style: 'font-size:13px;margin-top:4px;' }, 'ប្រព័ន្ធនឹងអានជួរឈរ អត្តលេខ, គោត្តនាម, នាម, ភេទ, ថ្ងៃកំណើត ដោយស្វ័យប្រវត្តិ'),
+  ]);
+
+  function handleFile(file) {
+    if (!file) return;
+    if (typeof XLSX === 'undefined') {
+      return Exam.notify('បណ្ណាល័យអាន Excel មិនទាន់ផ្ទុកពេញលេញនៅឡើយ។ សូម refresh ទំព័រ។');
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+        const students = parseExcelRows(rawRows);
+
+        if (students.length === 0) {
+          return Exam.notify('មិនអាចស្វែងរកទិន្នន័យសិស្សក្នុងឯកសារនេះទេ។ សូមពិនិត្យមើលជួរឈរ អត្តលេខ គោត្តនាម នាម។');
+        }
+
+        excelParsed = students;
+        excelPreviewBox.hidden = false;
+        excelPreviewBox.innerHTML = '';
+        excelPreviewBox.append(
+          h('div', { class: 'notice' }, `✅ រកឃើញសិស្សចំនួន ${students.length} នាក់ ពីឯកសារ «${file.name}»`),
+          h('table', { style: 'margin-top:8px' }, [
+            h('thead', {}, h('tr', {}, [
+              h('th', {}, 'ល.រ'),
+              h('th', {}, 'អត្តលេខ'),
+              h('th', {}, 'គោត្តនាម'),
+              h('th', {}, 'នាម'),
+              h('th', {}, 'ភេទ'),
+              h('th', {}, 'ថ្ងៃកំណើត'),
+            ])),
+            h('tbody', {}, students.slice(0, 10).map((s, idx) => h('tr', {}, [
+              h('td', { class: 'muted' }, idx + 1),
+              h('td', {}, h('strong', {}, s.id)),
+              h('td', {}, s.surname),
+              h('td', {}, s.first_name),
+              h('td', {}, s.gender ? (s.gender === 'ប្រុស' ? h('span', { class: 'badge-gender m' }, 'ប្រុស') : h('span', { class: 'badge-gender f' }, 'ស្រី')) : '—'),
+              h('td', { class: 'muted' }, s.dob || '—'),
+            ]))),
+          ]),
+          students.length > 10 ? h('p', { class: 'muted', style: 'text-align:center;margin:6px 0;' }, `... និងសិស្ស ${students.length - 10} នាក់ទៀត ...`) : '',
+          h('div', { class: 'row', style: 'margin-top:12px;justify-content:flex-end;' }, [
+            h('button', { onclick: async () => {
+              try {
+                const { students: created } = await api(`/api/classes/${selectedClassId}/students/bulk`, {
+                  method: 'POST',
+                  body: { students: excelParsed },
+                });
+                await Exam.notify(`បានបញ្ចូលសិស្សចំនួន ${created.length} នាក់ដោយជោគជ័យ!`);
+                renderRoster(container);
+              } catch (e) {
+                Exam.notify(e.message);
+              }
+            } }, `💾 រក្សាទុកចូលក្នុងថ្នាក់ (${students.length} នាក់)`),
+            h('button', { class: 'secondary', onclick: () => {
+              excelParsed = null;
+              excelPreviewBox.hidden = true;
+              excelPreviewBox.innerHTML = '';
+            } }, 'បោះបង់'),
+          ]),
+        );
+      } catch (err) {
+        Exam.notify('កំហុសក្នុងការអានឯកសារ Excel៖ ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  dropzoneEl.onclick = () => fileInput.click();
+  fileInput.onchange = (e) => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  };
+  dropzoneEl.ondragover = (e) => { e.preventDefault(); dropzoneEl.classList.add('dragover'); };
+  dropzoneEl.ondragleave = () => dropzoneEl.classList.remove('dragover');
+  dropzoneEl.ondrop = (e) => {
+    e.preventDefault();
+    dropzoneEl.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  };
+
+  const excelCard = h('div', { class: 'card' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start;' }, [
+      h('div', {}, [
+        h('h3', {}, 'នាំចូលតាមឯកសារ Excel / CSV (.xlsx, .xls, .csv)'),
+        h('p', { class: 'muted', style: 'margin:2px 0 8px;' }, 'គាំទ្រជួរឈរ៖ អត្តលេខ, គោត្តនាម, នាម (និងស្រេចចិត្ត៖ ភេទ, ថ្ងៃខែឆ្នាំកំណើត)។'),
+      ]),
+      h('button', { class: 'secondary btn-sm', onclick: downloadSampleExcel }, '📥 ទាញយកគំរូ Excel (.xlsx)'),
+    ]),
+    fileInput,
+    dropzoneEl,
+    excelPreviewBox,
+  ]);
+
   const bulk = h('div', { class: 'card' }, [
-    h('h3', {}, 'នាំចូលបញ្ជីសិស្សច្រើននាក់'),
-    h('p', { class: 'muted' }, 'សូមចម្លងបញ្ជីរបស់អ្នក ១ ជួរ ១ សិស្ស៖ លេខសម្គាល់ គោត្តនាម នាម (ដកឃ្លា ថេប ឬសញ្ញា , រវាងនីមួយៗ — អាចចម្លងផ្ទាល់ពី Excel/Sheets)'),
-    h('textarea', { id: 'bulk-text', placeholder: '0109293  សុខ  ដារា\n0109294, សុខ, សុភា' }),
+    h('h3', {}, 'ឬចម្លងបិទភ្ជាប់អត្ថបទ (Copy & Paste)'),
+    h('p', { class: 'muted' }, 'ចម្លង ១ ជួរ ១ សិស្ស៖ លេខសម្គាល់  គោត្តនាម  នាម  [ភេទ]  [ថ្ងៃកំណើត] (ដកឃ្លា ថេប ឬសញ្ញាក្បៀស , — អាចចម្លងផ្ទាល់ពី Excel)'),
+    h('textarea', { id: 'bulk-text', placeholder: '0109293\tសុខ\tដារា\tប្រុស\t2010-04-15\n0109294, ចាន់, សុភា, ស្រី, 2010-08-20' }),
     h('div', { class: 'row', style: 'margin-top:8px' }, [
       h('button', { onclick: async () => {
         const raw = document.getElementById('bulk-text').value;
-        // Strip zero-width/invisible characters that often ride along when
-        // pasting from Word/PDF/spreadsheets, then accept either comma- or
-        // whitespace/tab-separated fields (an Excel/Sheets paste uses tabs).
         const lines = raw.replace(/[​‌‍﻿]/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
         const parsed = lines.map((line) => {
-          const parts = (line.includes(',') ? line.split(',') : line.split(/\s+/)).map((p) => p.trim()).filter(Boolean);
-          const [id, surname, ...rest] = parts;
-          return { id: id || '', surname: surname || '', first_name: rest.join(' ') };
+          const parts = (line.includes(',') ? line.split(',') : line.split(/\t+|\s{2,}|\s+/)).map((p) => p.trim()).filter(Boolean);
+          const [id, surname, firstName, gender, ...rest] = parts;
+          let dob = rest.join(' ');
+          let cleanGender = gender || '';
+          if (cleanGender && (cleanGender === 'M' || cleanGender === 'm' || cleanGender === 'ប្រុស')) cleanGender = 'ប្រុស';
+          else if (cleanGender && (cleanGender === 'F' || cleanGender === 'f' || cleanGender === 'ស្រី')) cleanGender = 'ស្រី';
+          else if (cleanGender && /^\d{4}/.test(cleanGender)) {
+            dob = cleanGender + (dob ? ' ' + dob : '');
+            cleanGender = '';
+          }
+          return { id: id || '', surname: surname || '', first_name: firstName || '', gender: cleanGender, dob: dob || '' };
         }).filter((s) => s.id && s.surname && s.first_name);
-        if (parsed.length === 0) return;
-        const { students: created } = await api(`/api/classes/${selectedClassId}/students/bulk`, { method: 'POST', body: { students: parsed } });
-        document.getElementById('bulk-text').value = '';
-        await Exam.notify(`បានបញ្ចូលសិស្សចំនួន ${created.length} នាក់ដោយជោគជ័យ។`);
-        renderRoster(container);
+
+        if (parsed.length === 0) return Exam.notify('មិនមានទិន្នន័យត្រឹមត្រូវសម្រាប់នាំចូលទេ។');
+        try {
+          const { students: created } = await api(`/api/classes/${selectedClassId}/students/bulk`, { method: 'POST', body: { students: parsed } });
+          document.getElementById('bulk-text').value = '';
+          await Exam.notify(`បានបញ្ចូលសិស្សចំនួន ${created.length} នាក់ដោយជោគជ័យ។`);
+          renderRoster(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
       } }, 'នាំចូល'),
     ]),
   ]);
 
   container.innerHTML = '';
-  container.append(card, addOne, bulk);
+  container.append(card, addOne, excelCard, bulk);
 }
 
 // ---------- Tests ----------

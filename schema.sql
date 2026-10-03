@@ -34,8 +34,10 @@ CREATE TABLE IF NOT EXISTS classes (
 CREATE TABLE IF NOT EXISTS students (
   id TEXT PRIMARY KEY,      -- the existing student id, e.g. "0109293"
   class_id INTEGER NOT NULL REFERENCES classes(id),
-  surname TEXT NOT NULL,    -- គោត្តនាម
-  first_name TEXT NOT NULL  -- នាម
+  surname TEXT NOT NULL,    -- គោត្តនាម (Family name / Surname)
+  first_name TEXT NOT NULL, -- នាម (First name / Given name)
+  gender TEXT,              -- ភេទ (optional: e.g. "ប្រុស", "ស្រី", "M", "F")
+  dob TEXT                  -- ថ្ងៃខែឆ្នាំកំណើត (optional: e.g. "YYYY-MM-DD")
 );
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
 

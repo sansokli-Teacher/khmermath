@@ -27,6 +27,8 @@ const ROUTES = [
   ['GET', '/api/classes/:classId/students', classes.listStudents],
   ['POST', '/api/classes/:classId/students', classes.addStudent],
   ['PUT', '/api/students/:studentId', classes.updateStudent],
+  ['DELETE', '/api/students/:studentId', classes.deleteStudent],
+  ['DELETE', '/api/classes/:classId/students/:studentId', classes.deleteStudent],
   ['POST', '/api/classes/:classId/students/bulk', classes.importRoster],
 
   ['GET', '/api/settings/pin', settings.getPinStatus],

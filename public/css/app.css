@@ -118,3 +118,48 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .pin-sheet { font-family: 'Kantumruy Pro', system-ui; }
 .pin-sheet table { font-size: 15px; }
 @media print { .no-print { display: none !important; } }
+
+
+/* Excel & Roster Management */
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  padding: 24px 16px;
+  text-align: center;
+  background: #fafbfc;
+  cursor: pointer;
+  transition: all .2s ease;
+  margin: 10px 0;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--brand);
+  background: #eef6ff;
+}
+.dropzone-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+  display: block;
+}
+.preview-box {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.badge-gender {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-gender.m { background: #e0f2fe; color: #0284c7; }
+.badge-gender.f { background: #fce7f3; color: #db2777; }
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+}
