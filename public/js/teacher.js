@@ -697,9 +697,14 @@ render.schedule = async function (preSelectedTestId = null) {
     sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : null,
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
-        h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
-        h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+        h('div', { class: 'row', style: 'gap:8px;align-items:center;flex-wrap:wrap;' }, [
+          h('strong', {}, `${s.test_title} — ${s.class_name}`),
+          h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+          (s.submitted_count > 0)
+            ? h('span', { class: 'badge ready' }, `✓ បានប្រគល់ ${s.submitted_count}/${s.total_students || 0} នាក់`)
+            : h('span', { class: 'badge draft' }, `មិនទាន់មានសិស្សប្រគល់`),
+        ]),
+        h('div', { class: 'muted', style: 'margin-top:4px;' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី)`),
       ]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => {
@@ -935,9 +940,14 @@ render.grading = async function () {
     sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : null,
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
-        h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
-        h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+        h('div', { class: 'row', style: 'gap:8px;align-items:center;flex-wrap:wrap;' }, [
+          h('strong', {}, `${s.test_title} — ${s.class_name}`),
+          h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+          (s.submitted_count > 0)
+            ? h('span', { class: 'badge ready' }, `✓ បានប្រគល់ ${s.submitted_count}/${s.total_students || 0} នាក់`)
+            : h('span', { class: 'badge draft' }, `មិនទាន់មានសិស្សប្រគល់`),
+        ]),
+        h('div', { class: 'muted', style: 'margin-top:4px;' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី)`),
       ]),
       h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = s.id; render.grading(); } }, 'បើកដាក់ពិន្ទុ'),
     ])),
@@ -966,7 +976,7 @@ async function renderGradingSession(container) {
           publishedCount > 0 ? h('span', { class: 'badge' }, `បានប្រកាសលទ្ធផល៖ ${publishedCount} នាក់`) : null,
         ].filter(Boolean)),
       ]),
-      h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់'),
+      h('button', { class: 'secondary', style: 'font-weight:600;padding:6px 12px;', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់ទៅជ្រើសរើសសម័យប្រឡង'),
     ]),
   ]);
 

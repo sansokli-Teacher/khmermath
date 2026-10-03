@@ -16,7 +16,9 @@ export async function listSessions(req, env) {
   await ensureColumns(env);
   const { results } = await env.DB.prepare(
     `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status,
-            c.name AS class_name, t.title AS test_title
+            c.name AS class_name, t.title AS test_title,
+            (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
+            (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
      FROM test_sessions ts
      JOIN classes c ON c.id = ts.class_id
      JOIN tests t ON t.id = ts.test_id
