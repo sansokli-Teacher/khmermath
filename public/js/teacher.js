@@ -100,7 +100,16 @@ render.classes = async function () {
     h('h2', {}, 'ថ្នាក់'),
     ...classes.map((c) => h('div', { class: 'list-item' }, [
       h('div', {}, [h('strong', {}, c.name), h('span', { class: 'muted' }, ` — ថ្នាក់ទី ${c.grade} — សិស្ស ${c.student_count} នាក់`)]),
-      h('button', { class: 'secondary', onclick: () => { selectedClassId = c.id; render.classes(); } }, 'មើលបញ្ជីសិស្ស'),
+      h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: 'secondary btn-sm', onclick: () => { selectedClassId = c.id; render.classes(); } }, 'មើលបញ្ជីសិស្ស'),
+        h('button', { class: 'danger btn-sm', onclick: async () => {
+          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបថ្នាក់ «${c.name}» និងទិន្នន័យសិស្សទាំងអស់ក្នុងថ្នាក់នេះឬ?`)) return;
+          try {
+            await api(`/api/classes/${c.id}`, { method: 'DELETE' });
+            render.classes();
+          } catch (e) { Exam.notify(e.message); }
+        } }, 'លុបថ្នាក់'),
+      ]),
     ])),
   ]);
   const addCard = h('div', { class: 'card' }, [
@@ -512,7 +521,16 @@ render.tests = async function () {
     h('h2', {}, 'តេស្ត'),
     ...tests.map((t) => h('div', { class: 'list-item' }, [
       h('div', {}, [h('strong', {}, t.title), h('span', { class: `badge ${t.status}` }, t.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'), h('span', { class: 'muted' }, ` ${t.question_count} សំណួរ`)]),
-      h('button', { class: 'secondary', onclick: () => { selectedTestId = t.id; render.tests(); } }, 'កែសម្រួល'),
+      h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: 'secondary btn-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, 'កែសម្រួល'),
+        h('button', { class: 'danger btn-sm', onclick: async () => {
+          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
+          try {
+            await api(`/api/tests/${t.id}`, { method: 'DELETE' });
+            render.tests();
+          } catch (e) { Exam.notify(e.message); }
+        } }, 'លុបតេស្ត'),
+      ]),
     ])),
   ]);
   const addCard = h('div', { class: 'card' }, [
@@ -624,8 +642,29 @@ render.schedule = async function () {
   const list = h('div', { class: 'card' }, [
     h('h2', {}, 'ការប្រឡងដែលបានកំណត់ពេល'),
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
-      h('div', {}, [h('strong', {}, `${s.test_title} — ${s.class_name}`), h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} · ${s.duration_minutes} នាទី`)]),
-      h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+      h('div', {}, [
+        h('strong', {}, `${s.test_title} — ${s.class_name}`),
+        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} · ${s.duration_minutes} នាទី · `),
+        h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+      ]),
+      h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: 'secondary btn-sm', onclick: () => {
+          selectedSessionId = s.id;
+          const tabs = document.querySelectorAll('.tabs button');
+          tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'grading'));
+          ['classes', 'tests', 'schedule', 'grading'].forEach((name) => {
+            document.getElementById(`tab-${name}`).hidden = name !== 'grading';
+          });
+          render.grading();
+        } }, 'ដាក់ពិន្ទុ'),
+        h('button', { class: 'danger btn-sm', onclick: async () => {
+          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបការកំណត់ពេលប្រឡង «${s.test_title} — ${s.class_name}» ឬ?`)) return;
+          try {
+            await api(`/api/sessions/${s.id}`, { method: 'DELETE' });
+            render.schedule();
+          } catch (e) { Exam.notify(e.message); }
+        } }, 'លុប'),
+      ]),
     ])),
   ]);
 
@@ -661,6 +700,55 @@ render.schedule = async function () {
 // ---------- Grading ----------
 let selectedSessionId = null;
 
+function exportSessionToExcel(session) {
+  if (typeof XLSX === 'undefined') {
+    Exam.notify('មិនទាន់ដំណើរការបណ្ណាល័យ Excel នៅឡើយទេ។');
+    return;
+  }
+  const headers = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម', 'នាម', 'ភេទ', 'ពិន្ទុ MCQ', 'ពិន្ទុសរសេរ', 'ពិន្ទុសរុប', 'ពិន្ទុអតិបរមា', 'ភាគរយ', 'និទ្ទេស'];
+  const rows = [headers];
+
+  session.roster.forEach((s, idx) => {
+    const mcq = s.submitted_at ? (s.mcq_score ?? 0) : 0;
+    const writing = s.writing_score != null ? s.writing_score : 0;
+    const writingMax = s.writing_max != null ? s.writing_max : 0;
+    const total = mcq + writing;
+    const maxTotal = (session.mcq_max || 0) + writingMax;
+    const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+
+    let grade = 'F';
+    if (pct >= 85) grade = 'A';
+    else if (pct >= 75) grade = 'B';
+    else if (pct >= 65) grade = 'C';
+    else if (pct >= 50) grade = 'D';
+    else if (pct >= 40) grade = 'E';
+
+    rows.push([
+      idx + 1,
+      s.id,
+      s.surname,
+      s.first_name,
+      s.gender || '—',
+      s.submitted_at ? mcq : 'អវត្តមាន',
+      s.writing_score != null ? writing : '—',
+      s.submitted_at || s.writing_score != null ? total : '—',
+      maxTotal,
+      (s.submitted_at || s.writing_score != null) ? `${pct}%` : '—',
+      (s.submitted_at || s.writing_score != null) ? grade : '—',
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 8 },
+    { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 8 }
+  ];
+  const wb = XLSX.utils.book_new();
+  const cleanTitle = (session.class_name || 'លទ្ធផល').replace(/[\\/:*?"<>|]/g, '_');
+  XLSX.utils.book_append_sheet(wb, ws, cleanTitle);
+  XLSX.writeFile(wb, `លទ្ធផល_${session.test_title}_${session.class_name}.xlsx`);
+}
+
 render.grading = async function () {
   const container = document.getElementById('tab-grading');
   container.innerHTML = '';
@@ -670,8 +758,12 @@ render.grading = async function () {
   const card = h('div', { class: 'card' }, [
     h('h2', {}, 'ជ្រើសរើសការប្រឡងសម្រាប់ដាក់ពិន្ទុ'),
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
-      h('div', {}, [h('strong', {}, `${s.test_title} — ${s.class_name}`), h('div', { class: 'muted' }, fmtDateTime(s.scheduled_start))]),
-      h('button', { class: 'secondary', onclick: () => { selectedSessionId = s.id; render.grading(); } }, 'បើក'),
+      h('div', {}, [
+        h('strong', {}, `${s.test_title} — ${s.class_name}`),
+        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} · `),
+        h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
+      ]),
+      h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = s.id; render.grading(); } }, 'បើកដាក់ពិន្ទុ'),
     ])),
   ]);
   container.append(card);
@@ -681,44 +773,138 @@ async function renderGradingSession(container) {
   const session = await api(`/api/sessions/${selectedSessionId}`);
   container.innerHTML = '';
 
-  const rows = session.roster.map((s) => {
+  const totalStudents = session.roster.length;
+  const participated = session.roster.filter((s) => s.submitted_at != null).length;
+  const publishedCount = session.roster.filter((s) => s.published_at != null).length;
+
+  const headerCard = h('div', { class: 'card' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start;' }, [
+      h('div', {}, [
+        h('h2', { style: 'margin-bottom:4px;' }, `${session.test_title} — ${session.class_name}`),
+        h('div', { class: 'muted' }, `សម័យប្រឡង៖ ${fmtDateTime(session.scheduled_start)} · ពិន្ទុពហុជ្រើសរើសអតិបរមា (MCQ Max): ${session.mcq_max} ពិន្ទុ`),
+        h('div', { class: 'row', style: 'margin-top:6px;gap:8px;' }, [
+          h('span', { class: 'badge draft' }, `សិស្សសរុប៖ ${totalStudents} នាក់`),
+          h('span', { class: 'badge ready' }, `បានប្រឡង៖ ${participated} នាក់`),
+          publishedCount > 0 ? h('span', { class: 'badge open' }, `បានប្រកាសលទ្ធផល៖ ${publishedCount} នាក់`) : null,
+        ].filter(Boolean)),
+      ]),
+      h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់'),
+    ]),
+  ]);
+
+  const toolsCard = h('div', { class: 'card' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;' }, [
+      h('div', { class: 'row', style: 'align-items:center;gap:8px;' }, [
+        h('label', { style: 'margin:0;font-weight:600;' }, 'ពិន្ទុសរសេរអតិបរមា (Max Writing Points):'),
+        h('input', { type: 'number', id: 'bulk-writing-max', placeholder: 'ឧ. 50', style: 'width:90px;' }),
+        h('button', { class: 'secondary btn-sm', onclick: () => {
+          const val = document.getElementById('bulk-writing-max').value.trim();
+          if (!val) return Exam.notify('សូមបញ្ចូលលេខពិន្ទុអតិបរមា។');
+          const maxInputs = tableCard.querySelectorAll('.writing-max-input');
+          maxInputs.forEach((inp) => { inp.value = val; });
+          Exam.notify(`បានអនុវត្តពិន្ទុអតិបរមា ${val} ដល់សិស្សទាំងអស់។`);
+        } }, 'អនុវត្តទាំងអស់'),
+      ]),
+      h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
+    ]),
+  ]);
+
+  const rows = session.roster.map((s, idx) => {
     const total = (s.mcq_score ?? 0) + (s.writing_score ?? 0);
+    const maxTotal = session.mcq_max + (s.writing_max ?? 0);
+    const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+
+    let grade = 'F';
+    if (pct >= 85) grade = 'A';
+    else if (pct >= 75) grade = 'B';
+    else if (pct >= 65) grade = 'C';
+    else if (pct >= 50) grade = 'D';
+    else if (pct >= 40) grade = 'E';
+
     return h('tr', {}, [
+      h('td', { class: 'muted' }, idx + 1),
+      h('td', {}, h('strong', {}, s.id)),
       h('td', {}, `${s.surname} ${s.first_name}`),
       h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, 'មិនបានប្រឡង')),
-      h('td', {}, h('input', { type: 'number', value: s.writing_score ?? '', 'data-student': s.id, class: 'writing-input' })),
-      h('td', {}, h('input', { type: 'number', value: s.writing_max ?? '', 'data-student-max': s.id, class: 'writing-max-input' })),
-      h('td', {}, s.submitted_at && s.writing_score != null ? String(total) : '—'),
-      h('td', {}, s.published_at ? h('span', { class: 'badge ready' }, 'បង្ហាញហើយ') : h('span', { class: 'muted' }, '—')),
+      h('td', {}, h('input', {
+        type: 'number',
+        value: s.writing_score ?? '',
+        'data-student': s.id,
+        class: 'writing-input',
+        placeholder: '0',
+        style: 'width:80px;padding:6px 8px;',
+      })),
+      h('td', {}, h('input', {
+        type: 'number',
+        value: s.writing_max ?? '',
+        'data-student-max': s.id,
+        class: 'writing-max-input',
+        placeholder: '50',
+        style: 'width:80px;padding:6px 8px;',
+      })),
+      h('td', {}, (s.submitted_at || s.writing_score != null) ? h('strong', {}, String(total)) : '—'),
+      h('td', {}, (s.submitted_at || s.writing_score != null) ? h('span', { class: `badge ${grade === 'F' ? 'closed' : 'ready'}` }, `${grade} (${pct}%)`) : '—'),
+      h('td', {}, s.published_at ? h('span', { class: 'badge ready' }, 'បង្ហាញហើយ') : h('span', { class: 'muted' }, 'សម្រាង')),
     ]);
   });
 
-  const card = h('div', { class: 'card' }, [
-    h('div', { class: 'row', style: 'justify-content:space-between' }, [
-      h('h2', {}, `${session.test_title} — ${session.class_name}`),
-      h('button', { class: 'secondary', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់'),
-    ]),
+  const tableCard = h('div', { class: 'card' }, [
     h('table', {}, [
-      h('thead', {}, h('tr', {}, [h('th', {}, 'សិស្ស'), h('th', {}, 'ពហុជ្រើសរើស'), h('th', {}, 'សរសេរ (ពិន្ទុ)'), h('th', {}, 'សរសេរ (ពិន្ទុខ្ពស់)'), h('th', {}, 'សរុប'), h('th', {}, 'ស្ថានភាព')])),
+      h('thead', {}, h('tr', {}, [
+        h('th', {}, 'ល.រ'),
+        h('th', {}, 'អត្តលេខ'),
+        h('th', {}, 'ឈ្មោះសិស្ស'),
+        h('th', {}, 'MCQ'),
+        h('th', {}, 'សរសេរដៃ (ពិន្ទុ)'),
+        h('th', {}, 'សរសេរ (អតិបរមា)'),
+        h('th', {}, 'សរុប'),
+        h('th', {}, 'និទ្ទេស'),
+        h('th', {}, 'ស្ថានភាព'),
+      ])),
       h('tbody', {}, rows),
     ]),
-    h('div', { class: 'row', style: 'margin-top:14px' }, [
+    h('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end;gap:10px;' }, [
       h('button', { onclick: async () => {
-        const inputs = card.querySelectorAll('.writing-input');
+        const inputs = tableCard.querySelectorAll('.writing-input');
+        const scores = [];
         for (const input of inputs) {
           const id = input.dataset.student;
-          const maxInput = card.querySelector(`.writing-max-input[data-student-max="${id}"]`);
-          if (input.value === '') continue;
-          await api(`/api/sessions/${selectedSessionId}/writing`, { method: 'POST', body: {
-            student_id: id, writing_score: Number(input.value), writing_max: Number(maxInput.value) || null,
-          } });
+          const maxInput = tableCard.querySelector(`.writing-max-input[data-student-max="${id}"]`);
+          if (input.value !== '') {
+            scores.push({
+              student_id: id,
+              writing_score: Number(input.value),
+              writing_max: maxInput && maxInput.value !== '' ? Number(maxInput.value) : null,
+            });
+          }
         }
-        renderGradingSession(container);
-      } }, 'រក្សាទុកពិន្ទុសរសេរ'),
-      h('button', { class: 'secondary', onclick: async () => { await api(`/api/sessions/${selectedSessionId}/publish`, { method: 'POST' }); renderGradingSession(container); } }, 'បង្ហាញលទ្ធផលដល់សិស្ស'),
+        if (scores.length === 0) return Exam.notify('មិនទាន់មានពិន្ទុសរសេរដែលត្រូវរក្សាទុកទេ។');
+        try {
+          const res = await api(`/api/sessions/${selectedSessionId}/writing-bulk`, {
+            method: 'POST',
+            body: { scores },
+          });
+          await Exam.notify(`បានរក្សាទុកពិន្ទុសរសេររបស់សិស្សចំនួន ${res.count} នាក់ដោយជោគជ័យ!`);
+          renderGradingSession(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
+      } }, '💾 រក្សាទុកពិន្ទុសរសេរទាំងអស់'),
+      h('button', { class: 'secondary', onclick: async () => {
+        if (!confirm('តើលោកគ្រូពិតជាចង់បង្ហាញលទ្ធផលពិន្ទុទាំងអស់ទៅកាន់សិស្សក្នុងថ្នាក់នេះឬ? (សិស្សអាចមើលឃើញពិន្ទុពេល Login)')) return;
+        try {
+          await api(`/api/sessions/${selectedSessionId}/publish`, { method: 'POST' });
+          await Exam.notify('បានប្រកាសលទ្ធផលពិន្ទុទៅកាន់សិស្សដោយជោគជ័យ!');
+          renderGradingSession(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
+      } }, '📢 បង្ហាញលទ្ធផលដល់សិស្ស'),
     ]),
   ]);
-  container.append(card);
+
+  container.append(headerCard, toolsCard, tableCard);
 }
+
 
 boot();

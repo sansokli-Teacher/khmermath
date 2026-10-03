@@ -44,7 +44,11 @@ export async function status(req, env) {
   const session = await requireStudent(req, env);
   if (!session) return err('Not logged in.', 401);
   const relevant = await findRelevantSession(env, session.classId);
-  if (!relevant) return json({ phase: 'none' });
+  const studentInfo = {
+    student_id: session.id,
+    student_name: session.name,
+  };
+  if (!relevant) return json({ phase: 'none', ...studentInfo });
 
   const result = await env.DB.prepare('SELECT mcq_score, mcq_max, writing_score, writing_max, submitted_at, published_at FROM results WHERE session_id = ?1 AND student_id = ?2')
     .bind(relevant.id, session.id).first();
@@ -55,18 +59,19 @@ export async function status(req, env) {
         phase: 'published', test_title: relevant.test_title,
         mcq_score: result.mcq_score, mcq_max: result.mcq_max,
         writing_score: result.writing_score, writing_max: result.writing_max,
+        ...studentInfo,
       });
     }
-    return json({ phase: 'submitted', test_title: relevant.test_title });
+    return json({ phase: 'submitted', test_title: relevant.test_title, ...studentInfo });
   }
 
   if (relevant.window.phase === 'open') {
-    return json({ phase: 'open', session_id: relevant.id, test_title: relevant.test_title, end_at: relevant.window.end });
+    return json({ phase: 'open', session_id: relevant.id, test_title: relevant.test_title, end_at: relevant.window.end, ...studentInfo });
   }
   if (relevant.window.phase === 'upcoming') {
-    return json({ phase: 'upcoming', test_title: relevant.test_title, scheduled_start: relevant.scheduled_start, duration_minutes: relevant.duration_minutes });
+    return json({ phase: 'upcoming', test_title: relevant.test_title, scheduled_start: relevant.scheduled_start, duration_minutes: relevant.duration_minutes, ...studentInfo });
   }
-  return json({ phase: 'missed', test_title: relevant.test_title });
+  return json({ phase: 'missed', test_title: relevant.test_title, ...studentInfo });
 }
 
 async function loadOpenSessionForStudent(env, studentSession) {

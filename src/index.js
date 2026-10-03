@@ -20,6 +20,7 @@ const ROUTES = [
   ['POST', '/api/teacher/setup', teacher.setup],
   ['POST', '/api/teacher/login', teacher.login],
   ['POST', '/api/teacher/logout', teacher.logout],
+  ['POST', '/api/teacher/change-password', teacher.changePassword],
   ['GET', '/api/teacher/me', teacher.me],
 
   ['GET', '/api/classes', classes.listClasses],
@@ -38,6 +39,7 @@ const ROUTES = [
   ['POST', '/api/tests', tests.createTest],
   ['GET', '/api/tests/:testId', tests.getTest],
   ['PUT', '/api/tests/:testId', tests.updateTest],
+  ['DELETE', '/api/tests/:testId', tests.deleteTest],
   ['POST', '/api/tests/:testId/questions', tests.addQuestion],
   ['PUT', '/api/questions/:questionId', tests.updateQuestion],
   ['DELETE', '/api/questions/:questionId', tests.deleteQuestion],
@@ -50,6 +52,8 @@ const ROUTES = [
   ['GET', '/api/sessions/:sessionId', sessions.getSession],
   ['POST', '/api/sessions/:sessionId/close', sessions.closeSession],
   ['POST', '/api/sessions/:sessionId/writing', sessions.setWritingScore],
+  ['POST', '/api/sessions/:sessionId/writing-bulk', sessions.setWritingScoresBulk],
+  ['DELETE', '/api/sessions/:sessionId', sessions.deleteSession],
   ['POST', '/api/sessions/:sessionId/publish', sessions.publishSession],
 
   ['POST', '/api/student/login', student.login],

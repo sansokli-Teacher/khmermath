@@ -42,3 +42,20 @@ export async function me(req, env) {
   if (!session) return err('Not logged in.', 401);
   return json({ username: session.username });
 }
+
+export async function changePassword(req, env) {
+  const session = await requireTeacher(req, env);
+  if (!session) return err('Not logged in.', 401);
+  const { current_password, new_password } = await req.json();
+  if (!new_password || new_password.length < 6) {
+    return err('ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។', 400);
+  }
+  const teacher = await env.DB.prepare('SELECT username, password_hash FROM teachers WHERE username = ?1')
+    .bind(session.username).first();
+  const ok = await verifySecretValue(current_password, teacher.username, env.SESSION_SECRET, teacher.password_hash);
+  if (!ok) return err('ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវទេ។', 401);
+
+  const newHash = await hashSecretValue(new_password, teacher.username, env.SESSION_SECRET);
+  await env.DB.prepare('UPDATE teachers SET password_hash = ?1 WHERE username = ?2').bind(newHash, teacher.username).run();
+  return json({ ok: true });
+}

@@ -25,8 +25,14 @@
 
 <div id="view-test" hidden>
   <div class="timer" id="timer-bar">
-    <span id="timer-title"></span>
-    <span id="timer-clock"></span>
+    <div>
+      <span id="timer-title" style="font-weight:700;"></span>
+      <div id="student-badge" class="muted" style="font-size:12px;"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="timer-clock"></span>
+      <button class="btn-sm secondary" id="student-logout-btn" style="padding:4px 8px;font-size:12px;">ចាកចេញ</button>
+    </div>
   </div>
   <div class="wrap">
     <div class="question-nav" id="question-nav"></div>

@@ -83,3 +83,34 @@ export async function publishSession(req, env, params) {
   await env.DB.prepare("UPDATE results SET published_at = datetime('now') WHERE session_id = ?1").bind(params.sessionId).run();
   return json({ ok: true });
 }
+
+export async function deleteSession(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await env.DB.prepare('DELETE FROM responses WHERE session_id = ?1').bind(params.sessionId).run();
+  await env.DB.prepare('DELETE FROM results WHERE session_id = ?1').bind(params.sessionId).run();
+  const result = await env.DB.prepare('DELETE FROM test_sessions WHERE id = ?1').bind(params.sessionId).run();
+  if (!result.meta.rows_written) return err('Session not found.', 404);
+  return json({ ok: true });
+}
+
+export async function setWritingScoresBulk(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { scores } = await req.json();
+  if (!Array.isArray(scores)) return err('scores array is required.', 400);
+
+  const statements = [];
+  for (const s of scores) {
+    if (!s.student_id) continue;
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, writing_score, writing_max)
+         VALUES (?1, ?2, 0, 0, ?3, ?4)
+         ON CONFLICT(session_id, student_id) DO UPDATE SET writing_score = ?3, writing_max = ?4`
+      ).bind(params.sessionId, s.student_id, s.writing_score ?? null, s.writing_max ?? null)
+    );
+  }
+  if (statements.length > 0) {
+    await env.DB.batch(statements);
+  }
+  return json({ ok: true, count: statements.length });
+}

@@ -96,3 +96,13 @@ export async function importRoster(req, env, params) {
   }
   return json({ students: created });
 }
+
+export async function deleteClass(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const classId = params.classId;
+  await env.DB.prepare('DELETE FROM students WHERE class_id = ?1').bind(classId).run();
+  await env.DB.prepare('DELETE FROM test_sessions WHERE class_id = ?1').bind(classId).run();
+  const result = await env.DB.prepare('DELETE FROM classes WHERE id = ?1').bind(classId).run();
+  if (!result.meta.rows_written) return err('Class not found.', 404);
+  return json({ ok: true });
+}

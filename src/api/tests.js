@@ -76,3 +76,12 @@ export async function deleteQuestion(req, env, params) {
   await env.DB.prepare('DELETE FROM test_questions WHERE id = ?1').bind(params.questionId).run();
   return json({ ok: true });
 }
+
+export async function deleteTest(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await env.DB.prepare('DELETE FROM test_questions WHERE test_id = ?1').bind(params.testId).run();
+  await env.DB.prepare('DELETE FROM test_sessions WHERE test_id = ?1').bind(params.testId).run();
+  const result = await env.DB.prepare('DELETE FROM tests WHERE id = ?1').bind(params.testId).run();
+  if (!result.meta.rows_written) return err('Test not found.', 404);
+  return json({ ok: true });
+}
