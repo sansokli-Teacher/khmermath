@@ -614,6 +614,13 @@
       el('line', { x1: c[0] - n[0] * 8, y1: c[1] - n[1] * 8, x2: c[0] + n[0] * 8, y2: c[1] + n[1] * 8, class: 'cx-tick' }, g);
     });
   }
+  function tick3(g, p, q) {
+    var m = mul(add(p, q), 0.5), u = unit(sub(q, p)), n = [u[1], -u[0]];
+    [-5, 0, 5].forEach(function (o) {
+      var c = add(m, mul(u, o));
+      el('line', { x1: c[0] - n[0] * 8, y1: c[1] - n[1] * 8, x2: c[0] + n[0] * 8, y2: c[1] + n[1] * 8, class: 'cx-tick' }, g);
+    });
+  }
 
   // The special angles on a ray Ox, with the compass and the ruler only (one page, a tab each).
   // 60°: an arc from O cuts Ox at A, the same opening from A cuts that arc at B, and OAB is an
@@ -2411,6 +2418,160 @@
       }
     },
     anim: function (f, i) {
+      return null;
+    }
+  };
+
+  // Grade 8, lesson 17, Medians and Centroid G (1. លក្ខណៈមេដ្យាននៃត្រីកោណ):
+  // Step-by-step interactive proof showing concurrency at centroid G,
+  // the reflection point D, auxiliary parallelogram BDCG, and 2:1 ratio.
+  CX['g8-l17-centroid'] = {
+    steps: 7,
+    start: { A: [280, 80], B: [100, 360], C: [500, 360] },
+    place: function (s, key, p) {
+      if (key === 'A') {
+        s.A = [Math.max(160, Math.min(440, p[0])), Math.max(60, Math.min(160, p[1]))];
+      } else if (key === 'B') {
+        s.B = [Math.max(50, Math.min(s.C[0] - 160, p[0])), Math.max(300, Math.min(400, p[1]))];
+      } else if (key === 'C') {
+        s.C = [Math.max(s.B[0] + 160, Math.min(590, p[0])), Math.max(300, Math.min(400, p[1]))];
+      }
+      return p;
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var A = s.A, B = s.B, C = s.C;
+      var Cp = mul(add(A, B), 0.5);      // Midpoint of AB
+      var Bp = mul(add(A, C), 0.5);      // Midpoint of AC
+      var Ap = mul(add(B, C), 0.5);      // Midpoint of BC
+      var G = mul(add(add(A, B), C), 1 / 3); // Centroid G
+      // Point D: reflection of A across G, so G is midpoint of AD
+      var D = add(G, sub(G, A));
+
+      var dAA = len(sub(Ap, A));
+      var dAG = len(sub(G, A));
+      var dGA = len(sub(Ap, G));
+      var cmAA = (Math.round(dAA / CM * 10) / 10).toFixed(1);
+      var cmAG = (Math.round(dAG / CM * 10) / 10).toFixed(1);
+      var cmGA = (Math.round(dGA / CM * 10) / 10).toFixed(1);
+
+      return {
+        meet: true, A: A, B: B, C: C,
+        Cp: Cp, Bp: Bp, Ap: Ap, G: G, D: D,
+        cmAA: cmAA, cmAG: cmAG, cmGA: cmGA
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var poly = function (g2, pts, attrs) {
+        var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+        return el('polygon', Object.assign({ points: pStr }, attrs), g2);
+      };
+
+      // Shaded triangle ABC
+      poly(ink, [f.A, f.B, f.C], { fill: 'rgba(46, 122, 112, 0.06)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+
+      // Midpoint tick marks on AB and AC
+      tick(marks, f.A, f.Cp); tick(marks, f.Cp, f.B);
+      tick2(marks, f.A, f.Bp); tick2(marks, f.Bp, f.C);
+
+      if (i === 0) {
+        says(marks, 0, 'លក្ខណៈមេដ្យាន និងទីប្រជុំទម្ងន់នៃត្រីកោណ ៖');
+        says(marks, 1, '• ត្រីកោណ ABC មាន C′ ជាចំណុចកណ្ដាលនៃ AB និង B′ ជាចំណុចកណ្ដាលនៃ AC');
+        says(marks, 2, '• មេដ្យាន BB′ និង CC′ ប្រសព្វគ្នាត្រង់ចំណុច G');
+        says(marks, 4, 'គោលដៅ ៖ បង្ហាញថាមេដ្យាន AA′ កាត់តាម G  ព្រមទាំង GA′ = ⅓ AA′ និង AG = ⅔ AA′');
+      }
+
+      // Step 1: Draw medians BB' and CC' intersecting at G
+      if (i >= 1) {
+        segLine(ink, f.B, f.Bp, 'cx-seg');
+        segLine(ink, f.C, f.Cp, 'cx-seg');
+        point(ink, f.G, 'G', [1.2, 0.2], 'cx-pt-m', null, 24);
+      }
+      if (i === 1) {
+        says(marks, 0, 'គូសមេដ្យាន BB′ និង CC′ កាត់គ្នាត្រង់ចំណុច G');
+        says(marks, 1, 'ចំណុចប្រសព្វ G នេះ ហៅថា «ទីប្រជុំទម្ងន់» (Centroid) នៃត្រីកោណ ABC');
+        says(marks, 3, 'ដើម្បីស្រាយបញ្ជាក់ យើងបង្កើតចំណុចឆ្លុះ D នៃកំពូល A ធៀបនឹង G');
+      }
+
+      // Step 2: Extend ray AG to D such that GD = AG
+      if (i >= 2) {
+        segLine(ink, f.A, f.D, 'cx-line cx-line-2');
+        point(ink, f.D, 'D', [0, 1.2], 'cx-pt-m', null, 24);
+        tick3(marks, f.A, f.G); tick3(marks, f.G, f.D);
+      }
+      if (i === 2) {
+        says(marks, 0, 'តាង D ជាចំណុចឆ្លុះនៃ A ធៀបនឹង G (បន្លាយកាំ AG ឱ្យបាន GD = AG)');
+        says(marks, 1, '⟹ G ជាចំណុចកណ្ដាលនៃអង្កត់ AD (AG = GD)');
+      }
+
+      // Step 3: Triangle ABD and CG || BD
+      if (i >= 3) {
+        segLine(ink, f.B, f.D, 'cx-seg');
+      }
+      if (i === 3) {
+        poly(marks, [f.A, f.B, f.D], { fill: 'rgba(232, 114, 92, 0.16)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.Cp, f.G), 0.5), unit(sub(f.G, f.Cp)));
+        arrowHead(marks, mul(add(f.B, f.D), 0.5), unit(sub(f.D, f.B)));
+        says(marks, 0, 'ក្នុងត្រីកោណ ABD (ពណ៌ផ្កាឈូក) ៖');
+        says(marks, 1, '• C′ ជាចំណុចកណ្ដាលនៃ AB និង G ជាចំណុចកណ្ដាលនៃ AD');
+        says(marks, 2, 'តាមទ្រឹស្ដីបទចំណុចកណ្ដាល ⟹ C′G ∥ BD ឬ CG ∥ BD   (១)');
+      }
+
+      // Step 4: Triangle ACD and BG || CD
+      if (i >= 4) {
+        segLine(ink, f.C, f.D, 'cx-seg');
+      }
+      if (i === 4) {
+        poly(marks, [f.A, f.C, f.D], { fill: 'rgba(201, 134, 43, 0.16)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.Bp, f.G), 0.5), unit(sub(f.G, f.Bp)));
+        arrowHead(marks, mul(add(f.C, f.D), 0.5), unit(sub(f.D, f.C)));
+        says(marks, 0, 'ក្នុងត្រីកោណ ACD (ពណ៌ទឹកក្រូច) ៖');
+        says(marks, 1, '• B′ ជាចំណុចកណ្ដាលនៃ AC និង G ជាចំណុចកណ្ដាលនៃ AD');
+        says(marks, 2, 'តាមទ្រឹស្ដីបទចំណុចកណ្ដាល ⟹ B′G ∥ CD ឬ BG ∥ CD   (២)');
+      }
+
+      // Step 5: Parallelogram BDCG and median AA'
+      if (i >= 5) {
+        poly(marks, [f.B, f.D, f.C, f.G], { fill: 'rgba(45, 106, 168, 0.14)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.B, f.D), 0.5), unit(sub(f.D, f.B)));
+        arrowHead(marks, mul(add(f.G, f.C), 0.5), unit(sub(f.C, f.G)));
+        arrowHead(marks, mul(add(f.C, f.D), 0.5), unit(sub(f.D, f.C)));
+        arrowHead(marks, mul(add(f.G, f.B), 0.5), unit(sub(f.B, f.G)));
+        point(ink, f.Ap, "A'", [0, 1.2], 'cx-pt-m');
+        tick2(marks, f.B, f.Ap); tick2(marks, f.Ap, f.C);
+      }
+      if (i === 5) {
+        says(marks, 0, 'តាម (១) និង (២) ៖ CG ∥ BD និង BG ∥ CD ⟹ ចតុកោណ BDCG ជាប្រលេឡូក្រាម');
+        says(marks, 1, 'អង្កត់ទ្រូងទាំងពីរ BC និង GD កាត់គ្នាត្រង់ចំណុចកណ្ដាលរួម A′');
+        says(marks, 2, '⟹ A′ ជាចំណុចកណ្ដាលនៃ BC ដូច្នេះបន្ទាត់ AG កាត់តាម A′');
+        says(marks, 3, 'សន្និដ្ឋាន ៖ មេដ្យានទី ៣ AA′ កាត់តាម G ដែរ ⟹ មេដ្យានទាំង ៣ ប្រសព្វគ្នាត្រង់ G តែមួយ!');
+      }
+
+      // Step 6: Ratio calculations and live measurement demo
+      if (i >= 6) {
+        segLine(ink, f.A, f.Ap, 'cx-seg');
+        poly(marks, [f.B, f.D, f.C, f.G], { fill: 'rgba(45, 106, 168, 0.10)', stroke: 'none' });
+        says(marks, 0, 'ទាញរកសមាមាត្រនៃទីប្រជុំទម្ងន់ G ៖');
+        says(marks, 1, '• ក្នុងប្រលេឡូក្រាម BDCG ៖ A′ ជាចំណុចកណ្ដាលនៃ GD ⟹ GD = 2 GA′');
+        says(marks, 2, '• ដោយ AG = GD នាំឱ្យ AG = 2 GA′ ⟹ AA′ = AG + GA′ = 3 GA′');
+        says(marks, 3, '• នាំឱ្យ GA′ = ⅓ AA′  និង  AG = ⅔ AA′  (បានសម្រាយបញ្ជាក់សព្វគ្រប់!)');
+        says(marks, 5, 'រង្វាស់ជាក់ស្ដែង ៖ AA′ = ' + f.cmAA + ' cm  |  AG = ' + f.cmAG + ' cm  |  GA′ = ' + f.cmGA + ' cm');
+      }
+
+      // Draggable vertices
+      point(ink, f.A, 'A', [0, -1], null, 'A', 22);
+      point(ink, f.B, 'B', [-1, 0.8], null, 'B', 22);
+      point(ink, f.C, 'C', [1, 0.8], null, 'C', 22);
+      point(ink, f.Cp, "C'", [-1.2, -0.2], 'cx-pt-m', null, 22);
+      point(ink, f.Bp, "B'", [1.2, -0.2], 'cx-pt-m', null, 22);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { rulers: [[f.B, f.Bp], [f.C, f.Cp]] };
+      if (i === 2) return { ruler: [f.A, f.D], cls: 'cx-line cx-line-2' };
+      if (i === 3) return { ruler: [f.B, f.D], cls: 'cx-seg' };
+      if (i === 4) return { ruler: [f.C, f.D], cls: 'cx-seg' };
+      if (i === 6) return { ruler: [f.A, f.Ap], cls: 'cx-seg' };
       return null;
     }
   };
