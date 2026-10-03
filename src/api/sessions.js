@@ -24,12 +24,12 @@ export async function listSessions(req, env) {
   ).all();
   const withPhase = results.map((s) => {
     const startMs = Date.parse(s.scheduled_start);
-    const endMs = startMs + s.duration_minutes * 60000;
+    const endMs = s.scheduled_end ? Date.parse(s.scheduled_end) : (startMs + s.duration_minutes * 60000);
     const computedEnd = s.scheduled_end || new Date(endMs).toISOString();
     return {
       ...s,
       scheduled_end: computedEnd,
-      phase: sessionWindow(s).phase,
+      phase: sessionWindow({ ...s, scheduled_end: computedEnd }).phase,
     };
   });
   return json({ sessions: withPhase });

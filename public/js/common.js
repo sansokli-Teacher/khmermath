@@ -53,8 +53,33 @@ Exam.fmtClock = function (ms) {
 };
 
 Exam.fmtDateTime = function (iso) {
-  const d = new Date(iso);
-  return d.toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' });
+  if (!iso) return '—';
+  let s = String(iso).trim();
+  if (!s.includes('T') && s.includes(' ')) {
+    s = s.replace(' ', 'T') + (s.includes('Z') ? '' : 'Z');
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return iso;
+  try {
+    return d.toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return d.toLocaleString();
+  }
+};
+
+Exam.fmtTimeOnly = function (iso) {
+  if (!iso) return '—';
+  let s = String(iso).trim();
+  if (!s.includes('T') && s.includes(' ')) {
+    s = s.replace(' ', 'T') + (s.includes('Z') ? '' : 'Z');
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return iso;
+  try {
+    return d.toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return d.toLocaleTimeString();
+  }
 };
 
 // In-page replacement for window.alert/confirm: native dialogs look out of

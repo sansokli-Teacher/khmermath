@@ -2,7 +2,7 @@
 // a student's phone clock must never be trusted for this.
 export function sessionWindow(session) {
   const start = Date.parse(session.scheduled_start);
-  const end = start + session.duration_minutes * 60000;
+  const end = session.scheduled_end ? Date.parse(session.scheduled_end) : (start + session.duration_minutes * 60000);
   const now = Date.now();
   let phase;
   if (session.status === 'closed') phase = 'closed';

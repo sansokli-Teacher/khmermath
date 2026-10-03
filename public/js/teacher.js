@@ -1,4 +1,4 @@
-const { h, api, showError, fmtDateTime } = Exam;
+const { h, api, showError, fmtDateTime, fmtTimeOnly } = Exam;
 
 // An element whose content is rendered through the math-typing engine
 // (js/mathtype.js) — plain Khmer text passes through unchanged, \( \)/\[ \]
@@ -698,7 +698,7 @@ render.schedule = async function (preSelectedTestId = null) {
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `កាលបរិច្ឆេទ៖ ${fmtDateTime(s.scheduled_start)} ដល់ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
+        h('div', { class: 'muted' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
         h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
       ]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
@@ -936,7 +936,7 @@ render.grading = async function () {
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} ដល់ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
+        h('div', { class: 'muted' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
         h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
       ]),
       h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = s.id; render.grading(); } }, 'បើកដាក់ពិន្ទុ'),
@@ -958,7 +958,7 @@ async function renderGradingSession(container) {
     h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start;' }, [
       h('div', {}, [
         h('h2', { style: 'margin-bottom:4px;' }, `${session.test_title} — ${session.class_name}`),
-        h('div', { class: 'muted' }, `សម័យប្រឡង៖ ${fmtDateTime(session.scheduled_start)} ដល់ ${session.scheduled_end ? fmtDateTime(session.scheduled_end) : '—'} · ពិន្ទុ MCQ អតិបរមា: ${session.mcq_max} ពិន្ទុ`),
+        h('div', { class: 'muted' }, `សម័យប្រឡង៖ ចាប់ផ្តើម ${fmtDateTime(session.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${session.scheduled_end ? fmtDateTime(session.scheduled_end) : '—'} (${session.duration_minutes} នាទី) · ពិន្ទុ MCQ អតិបរមា: ${session.mcq_max} ពិន្ទុ`),
         h('div', { class: 'row', style: 'margin-top:6px;gap:8px;' }, [
           h('span', { class: 'badge draft' }, `សិស្សសរុប៖ ${totalStudents} នាក់`),
           h('span', { class: 'badge ready' }, `បានប្រគល់៖ ${participated} នាក់`),
@@ -1037,8 +1037,8 @@ async function renderGradingSession(container) {
       h('td', { class: 'muted' }, idx + 1),
       h('td', {}, h('strong', {}, s.id)),
       h('td', {}, `${s.surname} ${s.first_name}`),
-      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.started_at ? (fmtDateTime(s.started_at).split(', ')[1] || fmtDateTime(s.started_at)) : h('span', { class: 'muted' }, '—')),
-      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.submitted_at ? (fmtDateTime(s.submitted_at).split(', ')[1] || fmtDateTime(s.submitted_at)) : (s.started_at ? h('span', { style: 'color:var(--brand);' }, 'កំពុងធ្វើ...') : h('span', { class: 'muted' }, '—'))),
+      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.started_at ? fmtTimeOnly(s.started_at) : h('span', { class: 'muted' }, '—')),
+      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.submitted_at ? fmtTimeOnly(s.submitted_at) : (s.started_at ? h('span', { style: 'color:var(--brand);' }, 'កំពុងធ្វើ...') : h('span', { class: 'muted' }, '—'))),
       h('td', {}, statusBadge),
       h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, '—')),
       h('td', {}, h('input', {
@@ -1126,3 +1126,5 @@ async function renderGradingSession(container) {
 
   container.append(headerCard, toolsCard, tableCard);
 }
+
+boot();

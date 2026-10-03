@@ -69,7 +69,14 @@ export async function status(req, env) {
     return json({ phase: 'open', session_id: relevant.id, test_title: relevant.test_title, end_at: relevant.window.end, ...studentInfo });
   }
   if (relevant.window.phase === 'upcoming') {
-    return json({ phase: 'upcoming', test_title: relevant.test_title, scheduled_start: relevant.scheduled_start, duration_minutes: relevant.duration_minutes, ...studentInfo });
+    return json({
+      phase: 'upcoming',
+      test_title: relevant.test_title,
+      scheduled_start: relevant.scheduled_start,
+      scheduled_end: relevant.scheduled_end || new Date(relevant.window.end).toISOString(),
+      duration_minutes: relevant.duration_minutes,
+      ...studentInfo,
+    });
   }
   return json({ phase: 'missed', test_title: relevant.test_title, ...studentInfo });
 }

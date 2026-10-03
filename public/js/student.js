@@ -1,4 +1,4 @@
-const { h, api, showError, fmtDateTime, fmtClock } = Exam;
+const { h, api, showError, fmtDateTime, fmtTimeOnly, fmtClock } = Exam;
 
 function mathEl(tag, attrs, text) {
   const el = h(tag, attrs);
@@ -84,7 +84,7 @@ function renderStatus(data) {
 
   const messages = {
     none: ['មិនមានការប្រឡងកំណត់ពេលទេ', 'បច្ចុប្បន្នមិនមានការប្រឡងកំណត់ពេលសម្រាប់ថ្នាក់របស់អ្នកនៅឡើយទេ។'],
-    upcoming: [data.test_title || 'ការប្រឡងនឹងមកដល់', `ការប្រឡងនឹងចាប់ផ្តើមនៅ ${fmtDateTime(data.scheduled_start)} (រយៈពេល ${data.duration_minutes} នាទី)`],
+    upcoming: [data.test_title || 'ការប្រឡងនឹងមកដល់', `ការប្រឡងចាប់ផ្តើមនៅ ${fmtDateTime(data.scheduled_start)} ដល់ ${data.scheduled_end ? fmtDateTime(data.scheduled_end) : '—'} (រយៈពេល ${data.duration_minutes} នាទី)`],
     submitted: [data.test_title || 'បានបញ្ជូនចម្លើយ', 'អ្នកបានបញ្ជូនចម្លើយរួចរាល់ហើយ។ សូមរង់ចាំលោកគ្រូប្រកាសលទ្ធផល។'],
     missed: [data.test_title || 'ការប្រឡងបានបញ្ចប់', 'ការប្រឡងនេះបានបិទ ហើយអ្នកមិនបានចូលរួមប្រឡងទេ។'],
   };
@@ -144,9 +144,11 @@ async function loadTest() {
 function startTimer() {
   clearInterval(timerInterval);
   const bar = document.getElementById('timer-bar');
+  const endFormatted = testState.end_at ? fmtTimeOnly(testState.end_at) : '';
   const tick = () => {
     const remaining = testState.end_at - Date.now();
-    document.getElementById('timer-clock').textContent = fmtClock(remaining);
+    const clockEl = document.getElementById('timer-clock');
+    clockEl.innerHTML = `<span style="font-size:12px;opacity:0.9;margin-right:6px;font-weight:normal;">ម៉ោងបញ្ចប់៖ <strong>${endFormatted}</strong> (នៅសល់៖</span><span style="font-weight:700;">${fmtClock(remaining)}</span><span style="font-size:12px;opacity:0.9;">)</span>`;
     bar.classList.toggle('low', remaining < 5 * 60 * 1000);
     if (remaining <= 0) {
       clearInterval(timerInterval);
