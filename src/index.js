@@ -55,6 +55,7 @@ const ROUTES = [
   ['POST', '/api/sessions/:sessionId/close', sessions.closeSession],
   ['POST', '/api/sessions/:sessionId/writing', sessions.setWritingScore],
   ['POST', '/api/sessions/:sessionId/writing-bulk', sessions.setWritingScoresBulk],
+  ['POST', '/api/sessions/:sessionId/reset-student', sessions.resetStudentSession],
   ['DELETE', '/api/sessions/:sessionId', sessions.deleteSession],
   ['POST', '/api/sessions/:sessionId/publish', sessions.publishSession],
 

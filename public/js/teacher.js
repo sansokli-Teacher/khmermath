@@ -649,6 +649,24 @@ function buildQuestionForm(test, container) {
 }
 
 // ---------- Schedule ----------
+function timeToMinutes(tStr) {
+  const clean = (tStr || '').trim().toLowerCase().replace(/[^0-9:]/g, '');
+  if (!clean) return 0;
+  if (clean.includes(':')) {
+    const parts = clean.split(':');
+    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+  }
+  return (parseInt(clean, 10) || 0) * 60;
+}
+
+function minutesToTime(mins) {
+  let m = mins % (24 * 60);
+  if (m < 0) m += 24 * 60;
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 function parseScheduleDateTime(dateVal, timeVal) {
   let hours = 8, minutes = 0;
   const t = (timeVal || '').trim().toLowerCase();
@@ -680,7 +698,7 @@ render.schedule = async function (preSelectedTestId = null) {
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} · ${s.duration_minutes} នាទី · `),
+        h('div', { class: 'muted' }, `កាលបរិច្ឆេទ៖ ${fmtDateTime(s.scheduled_start)} ដល់ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
         h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
       ]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
@@ -709,24 +727,57 @@ render.schedule = async function (preSelectedTestId = null) {
   const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const tomorrowYMD = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
-  let defH = now.getHours() + 1;
-  if (defH >= 24) defH = 8;
-  const defTime = `${pad(defH)}:00`;
+  let defStartH = now.getHours() + 1;
+  if (defStartH >= 24) defStartH = 8;
+  const defStartTime = `${pad(defStartH)}:00`;
+  const defEndTime = minutesToTime(timeToMinutes(defStartTime) + 120);
 
-  const dateInput = h('input', { type: 'date', id: 'sch-date', value: todayYMD, style: 'flex: 1; min-width: 150px;' });
-  const timeInput = h('input', { type: 'text', id: 'sch-time', value: defTime, placeholder: 'HH:mm ឧ. 08:00 ឬ 14:30', style: 'width: 180px; font-weight:600; font-family:monospace;' });
+  const dateInput = h('input', { type: 'date', id: 'sch-date', value: todayYMD, style: 'width: 100%;' });
+  const startTimeInput = h('input', {
+    type: 'text', id: 'sch-start-time', value: defStartTime, placeholder: '08:00',
+    style: 'font-weight:600; font-family:monospace;'
+  });
+  const endTimeInput = h('input', {
+    type: 'text', id: 'sch-end-time', value: defEndTime, placeholder: '10:00',
+    style: 'font-weight:600; font-family:monospace;'
+  });
+  const durationInput = h('input', { type: 'number', id: 'sch-duration', value: '120' });
 
-  const setDT = (dStr, tStr) => {
+  // Sync Start Time, End Time and Duration:
+  startTimeInput.addEventListener('input', () => {
+    const sMins = timeToMinutes(startTimeInput.value);
+    const dur = Number(durationInput.value) || 120;
+    endTimeInput.value = minutesToTime(sMins + dur);
+  });
+  durationInput.addEventListener('input', () => {
+    const sMins = timeToMinutes(startTimeInput.value);
+    const dur = Number(durationInput.value) || 0;
+    if (dur > 0) endTimeInput.value = minutesToTime(sMins + dur);
+  });
+  endTimeInput.addEventListener('input', () => {
+    const sMins = timeToMinutes(startTimeInput.value);
+    const eMins = timeToMinutes(endTimeInput.value);
+    let diff = eMins - sMins;
+    if (diff <= 0) diff += 24 * 60;
+    if (diff > 0 && diff <= 1440) durationInput.value = diff;
+  });
+
+  const setSchedulePreset = (dStr, sStr, eStr, dur) => {
     dateInput.value = dStr;
-    timeInput.value = tStr;
+    startTimeInput.value = sStr;
+    endTimeInput.value = eStr;
+    durationInput.value = dur;
   };
 
   const shortcuts = h('div', { class: 'time-shortcuts' }, [
-    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, `${pad(now.getHours())}:${pad(now.getMinutes())}`) }, '⚡ ឥឡូវនេះ (Now)'),
-    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, '08:00') }, 'ថ្ងៃនេះ 08:00 ព្រឹក'),
-    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, '14:00') }, 'ថ្ងៃនេះ 14:00 រសៀល'),
-    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(tomorrowYMD, '08:00') }, 'ថ្ងៃស្អែក 08:00 ព្រឹក'),
-    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(tomorrowYMD, '14:00') }, 'ថ្ងៃស្អែក 14:00 រសៀល'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => {
+      const curTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      setSchedulePreset(todayYMD, curTime, minutesToTime(timeToMinutes(curTime) + 120), 120);
+    } }, '⚡ ឥឡូវនេះ (120 នាទី)'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(todayYMD, '08:00', '10:00', 120) }, 'ថ្ងៃនេះ 08:00 — 10:00'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(todayYMD, '14:00', '16:00', 120) }, 'ថ្ងៃនេះ 14:00 — 16:00'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(tomorrowYMD, '08:00', '10:00', 120) }, 'ថ្ងៃស្អែក 08:00 — 10:00'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(tomorrowYMD, '14:00', '16:00', 120) }, 'ថ្ងៃស្អែក 14:00 — 16:00'),
   ]);
 
   const testOptions = tests.length === 0
@@ -745,12 +796,24 @@ render.schedule = async function (preSelectedTestId = null) {
     h('select', { id: 'sch-test' }, testOptions),
     h('label', {}, 'ថ្នាក់'),
     h('select', { id: 'sch-class' }, classes.map((c) => h('option', { value: c.id }, c.name))),
-    h('label', {}, 'ថ្ងៃ និងម៉ោងចាប់ផ្តើម (អាចវាយបញ្ចូលផ្ទាល់ ឬចុចប៊ូតុងខាងក្រោម)'),
-    h('div', { class: 'row', style: 'gap: 8px;' }, [dateInput, timeInput]),
+    h('label', {}, 'កាលបរិច្ឆេទប្រឡង (Date)'),
+    dateInput,
+    h('div', { class: 'row', style: 'gap: 12px; margin-top: 8px;' }, [
+      h('div', { style: 'flex: 1; min-width: 140px;' }, [
+        h('label', { style: 'margin-top:0;' }, 'ម៉ោងចាប់ផ្តើម (Start Time)'),
+        startTimeInput,
+      ]),
+      h('div', { style: 'flex: 1; min-width: 140px;' }, [
+        h('label', { style: 'margin-top:0;' }, 'ម៉ោងបញ្ចប់ (End Time)'),
+        endTimeInput,
+      ]),
+      h('div', { style: 'width: 130px;' }, [
+        h('label', { style: 'margin-top:0;' }, 'រយៈពេល (នាទី)'),
+        durationInput,
+      ]),
+    ]),
     shortcuts,
-    h('label', {}, 'រយៈពេល (នាទី)'),
-    h('input', { type: 'number', id: 'sch-duration', value: '120' }),
-    h('div', { class: 'row', style: 'margin-top:12px' }, [
+    h('div', { class: 'row', style: 'margin-top:16px' }, [
       h('button', { onclick: async () => {
         const testId = Number(document.getElementById('sch-test').value);
         const classId = Number(document.getElementById('sch-class').value);
@@ -758,10 +821,21 @@ render.schedule = async function (preSelectedTestId = null) {
         if (!classId) { await Exam.notify('សូមជ្រើសរើសថ្នាក់'); return; }
 
         const dateVal = dateInput.value.trim();
-        const timeVal = timeInput.value.trim();
-        if (!dateVal || !timeVal) { await Exam.notify('សូមបញ្ចូលថ្ងៃ និងម៉ោង'); return; }
-        const dt = parseScheduleDateTime(dateVal, timeVal);
-        if (isNaN(dt.getTime())) { await Exam.notify('ម៉ោងមិនត្រឹមត្រូវទេ។ ឧទាហរណ៍៖ 08:00 ឬ 14:30'); return; }
+        const startVal = startTimeInput.value.trim();
+        const endVal = endTimeInput.value.trim();
+        if (!dateVal || !startVal) { await Exam.notify('សូមបញ្ចូលថ្ងៃ និងម៉ោងចាប់ផ្តើម'); return; }
+
+        const startDt = parseScheduleDateTime(dateVal, startVal);
+        let endDt = endVal ? parseScheduleDateTime(dateVal, endVal) : new Date(startDt.getTime() + (Number(durationInput.value) || 120) * 60000);
+        if (endDt <= startDt) {
+          endDt = new Date(endDt.getTime() + 24 * 60 * 60 * 1000);
+        }
+        if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) {
+          await Exam.notify('ម៉ោងមិនត្រឹមត្រូវទេ។ ឧទាហរណ៍៖ 08:00 ឬ 14:30');
+          return;
+        }
+
+        const dur = Number(durationInput.value) || Math.round((endDt.getTime() - startDt.getTime()) / 60000) || 120;
 
         // If the selected test was a draft, promote it to ready so students can take it
         const targetTest = tests.find((t) => t.id === testId);
@@ -774,8 +848,9 @@ render.schedule = async function (preSelectedTestId = null) {
         await api('/api/sessions', { method: 'POST', body: {
           test_id: testId,
           class_id: classId,
-          scheduled_start: dt.toISOString(),
-          duration_minutes: Number(document.getElementById('sch-duration').value) || 120,
+          scheduled_start: startDt.toISOString(),
+          scheduled_end: endDt.toISOString(),
+          duration_minutes: dur,
         } });
         await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ!');
         render.schedule();
@@ -794,7 +869,7 @@ function exportSessionToExcel(session) {
     Exam.notify('មិនទាន់ដំណើរការបណ្ណាល័យ Excel នៅឡើយទេ។');
     return;
   }
-  const headers = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម', 'នាម', 'ភេទ', 'ពិន្ទុ MCQ', 'ពិន្ទុសរសេរ', 'ពិន្ទុសរុប', 'ពិន្ទុអតិបរមា', 'ភាគរយ', 'និទ្ទេស'];
+  const headers = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម', 'នាម', 'ភេទ', 'ពេលចូលប្រឡង', 'ពេលប្រគល់', 'របៀបប្រគល់', 'ពិន្ទុ MCQ', 'ពិន្ទុសរសេរ', 'ពិន្ទុសរុប', 'ពិន្ទុអតិបរមា', 'ភាគរយ', 'និទ្ទេស'];
   const rows = [headers];
 
   session.roster.forEach((s, idx) => {
@@ -812,13 +887,23 @@ function exportSessionToExcel(session) {
     else if (pct >= 50) grade = 'D';
     else if (pct >= 40) grade = 'E';
 
+    let submitLabel = 'មិនបានចូល';
+    if (s.submitted_at) {
+      submitLabel = s.submit_type === 'auto' ? 'ស្វ័យប្រវត្តិ (Auto-submit)' : 'ដាក់ផ្ទាល់ (Manual)';
+    } else if (s.started_at) {
+      submitLabel = `កំពុងប្រឡង (${s.answered_count || 0} សំណួរ)`;
+    }
+
     rows.push([
       idx + 1,
       s.id,
       s.surname,
       s.first_name,
       s.gender || '—',
-      s.submitted_at ? mcq : 'អវត្តមាន',
+      s.started_at ? fmtDateTime(s.started_at) : '—',
+      s.submitted_at ? fmtDateTime(s.submitted_at) : (s.started_at ? 'កំពុងប្រឡង' : '—'),
+      submitLabel,
+      s.submitted_at ? mcq : '—',
       s.writing_score != null ? writing : '—',
       s.submitted_at || s.writing_score != null ? total : '—',
       maxTotal,
@@ -830,10 +915,11 @@ function exportSessionToExcel(session) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
     { wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 8 },
-    { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 8 }
+    { wch: 18 }, { wch: 18 }, { wch: 22 },
+    { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 8 }
   ];
   const wb = XLSX.utils.book_new();
-  const cleanTitle = (session.class_name || 'លទ្ធផល').replace(/[\\/:*?"<>|]/g, '_');
+  const cleanTitle = (session.class_name || 'លទ្ធផល').replace(/[\/:*?"<>|]/g, '_');
   XLSX.utils.book_append_sheet(wb, ws, cleanTitle);
   XLSX.writeFile(wb, `លទ្ធផល_${session.test_title}_${session.class_name}.xlsx`);
 }
@@ -846,10 +932,11 @@ render.grading = async function () {
   const { sessions } = await api('/api/sessions');
   const card = h('div', { class: 'card' }, [
     h('h2', {}, 'ជ្រើសរើសការប្រឡងសម្រាប់ដាក់ពិន្ទុ'),
+    sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : null,
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('strong', {}, `${s.test_title} — ${s.class_name}`),
-        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} · `),
+        h('div', { class: 'muted' }, `${fmtDateTime(s.scheduled_start)} ដល់ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី) · `),
         h('span', { class: `badge ${s.phase}` }, s.phase === 'open' ? 'កំពុងប្រឡង' : s.phase === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ'),
       ]),
       h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = s.id; render.grading(); } }, 'បើកដាក់ពិន្ទុ'),
@@ -864,17 +951,19 @@ async function renderGradingSession(container) {
 
   const totalStudents = session.roster.length;
   const participated = session.roster.filter((s) => s.submitted_at != null).length;
+  const inProgress = session.roster.filter((s) => s.started_at != null && s.submitted_at == null).length;
   const publishedCount = session.roster.filter((s) => s.published_at != null).length;
 
   const headerCard = h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start;' }, [
       h('div', {}, [
         h('h2', { style: 'margin-bottom:4px;' }, `${session.test_title} — ${session.class_name}`),
-        h('div', { class: 'muted' }, `សម័យប្រឡង៖ ${fmtDateTime(session.scheduled_start)} · ពិន្ទុពហុជ្រើសរើសអតិបរមា (MCQ Max): ${session.mcq_max} ពិន្ទុ`),
+        h('div', { class: 'muted' }, `សម័យប្រឡង៖ ${fmtDateTime(session.scheduled_start)} ដល់ ${session.scheduled_end ? fmtDateTime(session.scheduled_end) : '—'} · ពិន្ទុ MCQ អតិបរមា: ${session.mcq_max} ពិន្ទុ`),
         h('div', { class: 'row', style: 'margin-top:6px;gap:8px;' }, [
           h('span', { class: 'badge draft' }, `សិស្សសរុប៖ ${totalStudents} នាក់`),
-          h('span', { class: 'badge ready' }, `បានប្រឡង៖ ${participated} នាក់`),
-          publishedCount > 0 ? h('span', { class: 'badge open' }, `បានប្រកាសលទ្ធផល៖ ${publishedCount} នាក់`) : null,
+          h('span', { class: 'badge ready' }, `បានប្រគល់៖ ${participated} នាក់`),
+          inProgress > 0 ? h('span', { class: 'badge open' }, `កំពុងប្រឡង៖ ${inProgress} នាក់`) : null,
+          publishedCount > 0 ? h('span', { class: 'badge' }, `បានប្រកាសលទ្ធផល៖ ${publishedCount} នាក់`) : null,
         ].filter(Boolean)),
       ]),
       h('button', { class: 'secondary btn-sm', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់'),
@@ -910,18 +999,55 @@ async function renderGradingSession(container) {
     else if (pct >= 50) grade = 'D';
     else if (pct >= 40) grade = 'E';
 
+    let statusBadge;
+    if (s.submitted_at) {
+      if (s.submit_type === 'auto') {
+        statusBadge = h('span', { class: 'badge warn', title: 'ប្រព័ន្ធបញ្ជូនស្វ័យប្រវត្តដោយសារអស់ម៉ោង' }, '⏱ ផុតម៉ោង (Auto)');
+      } else {
+        statusBadge = h('span', { class: 'badge ready', title: 'សិស្សបានចុចប្រគល់ដោយខ្លួនឯង' }, '✓ ដាក់ផ្ទាល់ (Manual)');
+      }
+    } else if (s.started_at) {
+      statusBadge = h('span', { class: 'badge open', title: 'សិស្សកំពុងស្ថិតក្នុងការប្រឡង' }, `⏳ កំពុងប្រឡង (${s.answered_count || 0})`);
+    } else {
+      statusBadge = h('span', { class: 'badge draft' }, '⚪ មិនទាន់ចូល');
+    }
+
+    const resetBtn = s.submitted_at ? h('button', {
+      class: 'secondary btn-sm',
+      style: 'color:var(--warn);border-color:var(--warn);padding:4px 8px;font-size:12px;',
+      title: 'អនុញ្ញាតឱ្យសិស្សចូលប្រឡងបន្តឡើងវិញ ប្រសិនបើសិស្សច្រឡំចុច Submit',
+      onclick: async () => {
+        if (!confirm(`តើលោកគ្រូពិតជាចង់អនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តឡើងវិញឬ?
+
+(ចម្លើយដែលសិស្សបានជ្រើសរើសពីមុន នៅតែរក្សាទុកដដែល ដោយសិស្សគ្រាន់តែចូលទៅធ្វើបន្ត)`)) return;
+        try {
+          await api(`/api/sessions/${selectedSessionId}/reset-student`, {
+            method: 'POST',
+            body: { student_id: s.id },
+          });
+          await Exam.notify(`បានអនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តជោគជ័យ!`);
+          renderGradingSession(container);
+        } catch (e) {
+          Exam.notify(e.message);
+        }
+      }
+    }, '🔄 Reset') : null;
+
     return h('tr', {}, [
       h('td', { class: 'muted' }, idx + 1),
       h('td', {}, h('strong', {}, s.id)),
       h('td', {}, `${s.surname} ${s.first_name}`),
-      h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, 'មិនបានប្រឡង')),
+      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.started_at ? (fmtDateTime(s.started_at).split(', ')[1] || fmtDateTime(s.started_at)) : h('span', { class: 'muted' }, '—')),
+      h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.submitted_at ? (fmtDateTime(s.submitted_at).split(', ')[1] || fmtDateTime(s.submitted_at)) : (s.started_at ? h('span', { style: 'color:var(--brand);' }, 'កំពុងធ្វើ...') : h('span', { class: 'muted' }, '—'))),
+      h('td', {}, statusBadge),
+      h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, '—')),
       h('td', {}, h('input', {
         type: 'number',
         value: s.writing_score ?? '',
         'data-student': s.id,
         class: 'writing-input',
         placeholder: '0',
-        style: 'width:80px;padding:6px 8px;',
+        style: 'width:65px;padding:6px 6px;',
       })),
       h('td', {}, h('input', {
         type: 'number',
@@ -929,26 +1055,29 @@ async function renderGradingSession(container) {
         'data-student-max': s.id,
         class: 'writing-max-input',
         placeholder: '50',
-        style: 'width:80px;padding:6px 8px;',
+        style: 'width:65px;padding:6px 6px;',
       })),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('strong', {}, String(total)) : '—'),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('span', { class: `badge ${grade === 'F' ? 'closed' : 'ready'}` }, `${grade} (${pct}%)`) : '—'),
-      h('td', {}, s.published_at ? h('span', { class: 'badge ready' }, 'បង្ហាញហើយ') : h('span', { class: 'muted' }, 'សម្រាង')),
+      h('td', {}, resetBtn || (s.published_at ? h('span', { class: 'badge ready' }, 'ផ្សាយហើយ') : h('span', { class: 'muted' }, 'សម្រាង'))),
     ]);
   });
 
-  const tableCard = h('div', { class: 'card' }, [
+  const tableCard = h('div', { class: 'card', style: 'overflow-x:auto;' }, [
     h('table', {}, [
       h('thead', {}, h('tr', {}, [
         h('th', {}, 'ល.រ'),
         h('th', {}, 'អត្តលេខ'),
         h('th', {}, 'ឈ្មោះសិស្ស'),
+        h('th', {}, 'ពេលចូល'),
+        h('th', {}, 'ពេលប្រគល់'),
+        h('th', {}, 'របៀបប្រគល់'),
         h('th', {}, 'MCQ'),
-        h('th', {}, 'សរសេរដៃ (ពិន្ទុ)'),
-        h('th', {}, 'សរសេរ (អតិបរមា)'),
+        h('th', {}, 'សរសេរដៃ'),
+        h('th', {}, 'សរសេរ (Max)'),
         h('th', {}, 'សរុប'),
         h('th', {}, 'និទ្ទេស'),
-        h('th', {}, 'ស្ថានភាព'),
+        h('th', {}, 'សកម្មភាព'),
       ])),
       h('tbody', {}, rows),
     ]),
@@ -978,22 +1107,22 @@ async function renderGradingSession(container) {
         } catch (e) {
           Exam.notify(e.message);
         }
-      } }, '💾 រក្សាទុកពិន្ទុសរសេរទាំងអស់'),
-      h('button', { class: 'secondary', onclick: async () => {
-        if (!confirm('តើលោកគ្រូពិតជាចង់បង្ហាញលទ្ធផលពិន្ទុទាំងអស់ទៅកាន់សិស្សក្នុងថ្នាក់នេះឬ? (សិស្សអាចមើលឃើញពិន្ទុពេល Login)')) return;
-        try {
-          await api(`/api/sessions/${selectedSessionId}/publish`, { method: 'POST' });
-          await Exam.notify('បានប្រកាសលទ្ធផលពិន្ទុទៅកាន់សិស្សដោយជោគជ័យ!');
-          renderGradingSession(container);
-        } catch (e) {
-          Exam.notify(e.message);
-        }
-      } }, '📢 បង្ហាញលទ្ធផលដល់សិស្ស'),
+      } }, '💾 រក្សាទុកពិន្ទុសរសេរ'),
+      session.phase === 'closed'
+        ? h('button', { class: 'secondary', onclick: async () => {
+            if (!confirm('តើអ្នកពិតជាចង់ផ្សព្វផ្សាយលទ្ធផលនេះឱ្យសិស្សមើលឃើញឬ?')) return;
+            await api(`/api/sessions/${selectedSessionId}/publish`, { method: 'POST' });
+            await Exam.notify('បានផ្សព្វផ្សាយលទ្ធផលប្រឡងជោគជ័យ!');
+            renderGradingSession(container);
+          } }, '📢 ផ្សព្វផ្សាយលទ្ធផល')
+        : h('button', { class: 'danger', onclick: async () => {
+            if (!confirm('តើអ្នកពិតជាចង់បិទការប្រឡងនេះមុនពេលកំណត់ឬ?')) return;
+            await api(`/api/sessions/${selectedSessionId}/close`, { method: 'POST' });
+            await Exam.notify('បានបិទការប្រឡងជោគជ័យ!');
+            renderGradingSession(container);
+          } }, '🔒 បិទការប្រឡងឥឡូវនេះ'),
     ]),
   ]);
 
   container.append(headerCard, toolsCard, tableCard);
 }
-
-
-boot();

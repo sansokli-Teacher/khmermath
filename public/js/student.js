@@ -214,11 +214,60 @@ async function selectAnswer(q, idx) {
 }
 
 function submitPrompt() {
-  const unanswered = testState.questions.filter((q) => q.selected_index == null).length;
-  const msg = unanswered > 0
-    ? `អ្នកនៅសល់សំណួរចំនួន ${unanswered} មិនទាន់ឆ្លើយ។ តើអ្នកពិតជាចង់បញ្ជូនចម្លើយឥឡូវនេះឬ?`
-    : 'តើអ្នកពិតជាចង់បញ្ជូនចម្លើយប្រឡងឥឡូវនេះឬ?';
-  if (confirm(msg)) doSubmit(false);
+  const remaining = testState ? testState.end_at - Date.now() : 0;
+  const unanswered = testState ? testState.questions.filter((q) => q.selected_index == null).length : 0;
+  const total = testState ? testState.questions.length : 0;
+  const answered = total - unanswered;
+
+  const oldModal = document.getElementById('submit-modal');
+  if (oldModal) oldModal.remove();
+
+  const remainingMins = Math.max(0, Math.floor(remaining / 60000));
+  const remainingSecs = Math.max(0, Math.floor((remaining % 60000) / 1000));
+  const timeText = `${remainingMins} នាទី ${remainingSecs} វិនាទី`;
+
+  const modal = h('div', {
+    id: 'submit-modal',
+    style: 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;'
+  });
+
+  const box = h('div', {
+    class: 'card',
+    style: 'max-width:440px;width:100%;border-radius:12px;padding:24px 20px;text-align:center;box-shadow:0 20px 25px -5px rgba(0,0,0,0.25);margin:0;background:#fff;'
+  }, [
+    h('div', { style: 'font-size:42px;margin-bottom:8px;' }, remaining > 60000 ? '⚠️' : '📝'),
+    h('h2', { style: 'margin:0 0 10px;font-size:20px;color:var(--ink);' }, 'បញ្ជាក់ការប្រគល់វិញ្ញាសា'),
+    remaining > 60000 ? h('div', {
+      style: 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
+    }, `⏱ ពេលវេលាប្រឡងនៅសល់៖ ${timeText} ទៀត!`) : null,
+    unanswered > 0 ? h('div', {
+      style: 'background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
+    }, `⚠️ ប្អូនឆ្លើយបាន ${answered}/${total} សំណួរ (នៅសល់ ${unanswered} សំណួរទៀតមិនទាន់បានឆ្លើយ)!`) : h('div', {
+      style: 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
+    }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
+    h('p', { class: 'muted', style: 'margin:12px 0 20px;font-size:14px;line-height:1.5;' },
+      'តើប្អូនពិតជាចង់បញ្ចប់ និងប្រគល់កិច្ចការប្រឡងឥឡូវនេះមែនឬ? នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែប្រែចម្លើយបានទៀតឡើយ។'
+    ),
+    h('div', { style: 'display:flex;flex-direction:column;gap:10px;' }, [
+      h('button', {
+        type: 'button',
+        style: 'width:100%;padding:12px;font-size:16px;background:var(--brand);font-weight:700;',
+        onclick: () => modal.remove()
+      }, '← បន្តធ្វើតេស្តទៀត (មិនទាន់ប្រគល់)'),
+      h('button', {
+        type: 'button',
+        class: 'danger',
+        style: 'width:100%;padding:10px;font-size:14px;',
+        onclick: () => {
+          modal.remove();
+          doSubmit(false);
+        }
+      }, 'ខ្ញុំយល់ព្រមប្រគល់វិញ្ញាសាបញ្ចប់'),
+    ]),
+  ]);
+
+  modal.append(box);
+  document.body.append(modal);
 }
 
 document.getElementById('submit-btn').addEventListener('click', submitPrompt);
@@ -226,7 +275,10 @@ document.getElementById('submit-btn').addEventListener('click', submitPrompt);
 async function doSubmit(auto) {
   clearInterval(timerInterval);
   try {
-    await api('/api/student/submit', { method: 'POST' });
+    await api('/api/student/submit', {
+      method: 'POST',
+      body: { submit_type: auto ? 'auto' : 'manual' },
+    });
   } catch (e) {
     if (!auto) await Exam.notify(e.message);
   }

@@ -53,7 +53,7 @@ export async function status(req, env) {
   const result = await env.DB.prepare('SELECT mcq_score, mcq_max, writing_score, writing_max, submitted_at, published_at FROM results WHERE session_id = ?1 AND student_id = ?2')
     .bind(relevant.id, session.id).first();
 
-  if (result) {
+  if (result && result.submitted_at) {
     if (result.published_at) {
       return json({
         phase: 'published', test_title: relevant.test_title,
@@ -88,6 +88,21 @@ export async function getTest(req, env) {
   if (!studentSession) return err('Not logged in.', 401);
   const relevant = await loadOpenSessionForStudent(env, studentSession);
   if (!relevant) return err('No test is open for you right now.', 403);
+
+  // Record student enrolled / started time if not already recorded
+  try {
+    const existing = await env.DB.prepare('SELECT id, started_at FROM results WHERE session_id = ?1 AND student_id = ?2')
+      .bind(relevant.id, studentSession.id).first();
+    if (!existing) {
+      await env.DB.prepare(
+        "INSERT INTO results (session_id, student_id, mcq_score, mcq_max, started_at) VALUES (?1, ?2, 0, 0, datetime('now'))"
+      ).bind(relevant.id, studentSession.id).run();
+    } else if (!existing.started_at) {
+      await env.DB.prepare(
+        "UPDATE results SET started_at = datetime('now') WHERE id = ?1"
+      ).bind(existing.id).run();
+    }
+  } catch {}
 
   const { results: questions } = await env.DB.prepare(
     'SELECT id, stem_text, image_key, options_json FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
@@ -130,6 +145,12 @@ export async function submit(req, env) {
   if (!relevant) return err('This test is not open anymore.', 403);
   if (Date.now() > relevant.window.end + SUBMIT_GRACE_MS) return err('Time is up.', 403);
 
+  let submitType = 'manual';
+  try {
+    const body = await req.json();
+    if (body && body.submit_type === 'auto') submitType = 'auto';
+  } catch {}
+
   const { results: questions } = await env.DB.prepare('SELECT id, correct_index, points FROM test_questions WHERE test_id = ?1')
     .bind(relevant.test_id).all();
   const { results: responses } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
@@ -144,9 +165,10 @@ export async function submit(req, env) {
   }
 
   await env.DB.prepare(
-    `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, submitted_at) VALUES (?1, ?2, ?3, ?4, datetime('now'))
-     ON CONFLICT(session_id, student_id) DO UPDATE SET mcq_score = ?3, mcq_max = ?4, submitted_at = datetime('now')`,
-  ).bind(relevant.id, studentSession.id, mcqScore, mcqMax).run();
+    `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, submitted_at, submit_type)
+     VALUES (?1, ?2, ?3, ?4, datetime('now'), ?5)
+     ON CONFLICT(session_id, student_id) DO UPDATE SET mcq_score = ?3, mcq_max = ?4, submitted_at = datetime('now'), submit_type = ?5`,
+  ).bind(relevant.id, studentSession.id, mcqScore, mcqMax, submitType).run();
 
-  return json({ ok: true, mcq_score: mcqScore, mcq_max: mcqMax });
+  return json({ ok: true, mcq_score: mcqScore, mcq_max: mcqMax, submit_type: submitType });
 }
