@@ -41,6 +41,7 @@
   var mul = function (a, k) { return [a[0] * k, a[1] * k]; };
   var len = function (a) { return Math.hypot(a[0], a[1]); };
   var unit = function (a) { var l = len(a) || 1; return [a[0] / l, a[1] / l]; };
+  var ease = function (t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
   var onCircle = function (c, r, t) { return [c[0] + r * Math.cos(t), c[1] + r * Math.sin(t)]; };
   function arcPath(c, r, t1, t2) {
     var p = onCircle(c, r, t1), q = onCircle(c, r, t2);
@@ -1799,6 +1800,489 @@
     return t.least >= 190 && Math.min.apply(null, t.angles) >= 0.56 && t.r >= 52;
   };
   var triStart = { A: [340, 100], B: [116, 380], C: [560, 380] };
+
+  // Grade 8, lesson 13, Exercise 6.a: construct parallelogram ABCD
+  // given AB = 6 cm, AD = 4 cm and angle A = 60°
+  CX['g8-l13-parallelogram'] = {
+    steps: 7,
+    start: { ang: 60, ab: 6, ad: 4 },
+    place: function (s, key, p) {
+      if (key === 'D') {
+        var A = [140, 360];
+        var v = sub(p, A);
+        var a = Math.atan2(-v[1], v[0]) * 180 / Math.PI;
+        s.ang = Math.round(Math.max(35, Math.min(85, a)));
+        return p;
+      }
+      return p;
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var A = [140, 360], ab = s.ab || 6, ad = s.ad || 4, ang = s.ang || 60;
+      var B = add(A, [ab * CM, 0]);
+      var d = prDir(RIGHT, ang);
+      var nr = [d[1], -d[0]];
+      var D = add(A, mul(d, ad * CM));
+      var C = add(D, [ab * CM, 0]);
+      var Ex = add(A, mul(d, (ad + 1.2) * CM));
+      var M = markAt(A, RIGHT, ang);
+      var rAB = ab * CM, rAD = ad * CM;
+      var tBC = -ang * Math.PI / 180;
+      return {
+        meet: true, A: A, B: B, C: C, D: D,
+        ab: ab, ad: ad, ang: ang, d: d, nr: nr, Ex: Ex, M: M,
+        arcD: { c: D, r: rAB, t1: 0.28, t2: -0.28 },
+        arcB: { c: B, r: rAD, t1: tBC + 0.28, t2: tBC - 0.28 },
+        rAB: rAB, rAD: rAD
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var poly = function (g2, pts, attrs) {
+        var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+        return el('polygon', Object.assign({ points: pStr }, attrs), g2);
+      };
+
+      given(ink, 'AB = ' + cmText(f.ab) + '    AD = ' + cmText(f.ad) + '    ∠A = ' + f.ang + '°');
+
+      if (i === 0) {
+        says(marks, 0, 'លំហាត់ ៦.ក ៖ សង់ប្រលេឡូក្រាម ABCD');
+        says(marks, 1, '• ជ្រុងបាត AB = ' + f.ab + ' cm');
+        says(marks, 2, '• ជ្រុងជាប់ AD = ' + f.ad + ' cm');
+        says(marks, 3, '• មុំរួម ∠A = ' + f.ang + '°');
+        says(marks, 5, 'ឧបករណ៍ ៖ បន្ទាត់ក្រិត · រ៉ាប់ទ័រ · ដែកឈាន · ខ្មៅដៃ');
+        return;
+      }
+
+      // Step 1: Draw base AB
+      if (i >= 1) {
+        segLine(ink, f.A, f.B, 'cx-seg');
+        point(ink, f.A, 'A', [-0.8, 0.8], null, null, 22);
+        point(ink, f.B, 'B', [0.8, 0.8], null, null, 22);
+        label(marks, [(f.A[0] + f.B[0]) / 2, f.A[1] + 22], cmText(f.ab), 'cx-note');
+      }
+      if (i === 1) {
+        drawCmRuler(tools, f.A, RIGHT, 7, DOWN);
+      }
+
+      // Step 2: Protractor at A, mark angle, draw ray Ax
+      if (i >= 2) {
+        dot(ink, f.M);
+        segLine(ink, f.A, f.Ex, 'cx-line cx-line-2');
+        label(ink, add(add(f.Ex, mul(f.d, -6)), mul(f.nr, 20)), 'x', 'cx-label');
+        wedge(marks, f.A, 0, -f.ang * Math.PI / 180, 36, 'a');
+        label(marks, add(f.A, mul(prDir(RIGHT, f.ang / 2), 58)), f.ang + '°', 'cx-note cx-r');
+      }
+      if (i === 2) {
+        drawProtractor(tools, f.A, RIGHT, f.ang);
+      }
+
+      // Step 3: Measure AD = 4 cm on ray Ax, mark point D
+      if (i >= 3) {
+        point(ink, f.D, 'D', [-0.9, -0.6], 'cx-pt-m', null, 24);
+        sideNote(marks, f.A, f.D, f.B, cmText(f.ad));
+      }
+      if (i === 3) {
+        drawCmRuler(tools, f.A, f.d, 5, f.nr);
+      }
+
+      // Step 4: Arc of radius 6 cm from D
+      if (i >= 4) {
+        arcDraw(ink, f.arcD);
+        if (i === 4) {
+          label(marks, [f.D[0] + 110, f.D[1] - 22], 'កាំ 6 cm (ស្មើ AB)', 'cx-note');
+        }
+      }
+
+      // Step 5: Arc of radius 4 cm from B intersecting at C
+      if (i >= 5) {
+        arcDraw(ink, f.arcB);
+        point(ink, f.C, 'C', [0.8, -0.8], 'cx-pt-m', null, 24);
+        if (i === 5) {
+          label(marks, [f.B[0] + 55, f.B[1] - 65], 'កាំ 4 cm (ស្មើ AD)', 'cx-note');
+        }
+      }
+
+      // Step 6: Connect DC and BC -> Complete Parallelogram ABCD!
+      if (i >= 6) {
+        segLine(ink, f.D, f.C, 'cx-line');
+        segLine(ink, f.B, f.C, 'cx-line');
+        poly(marks, [f.A, f.B, f.C, f.D], { fill: 'rgba(46, 122, 112, 0.14)', stroke: 'none' });
+
+        // Ticks on opposite sides
+        tick(marks, f.A, f.B); tick(marks, f.D, f.C);
+        tick2(marks, f.A, f.D); tick2(marks, f.B, f.C);
+
+        // Opposite angle marks
+        wedge(marks, f.C, Math.PI, -f.ang * Math.PI / 180, 36, 'a');
+        label(marks, add(f.C, mul(prDir(LEFT, -f.ang / 2), 58)), f.ang + '°', 'cx-note cx-r');
+
+        // Draggable handle at D
+        el('circle', { cx: f.D[0], cy: f.D[1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f.D[0], cy: f.D[1], r: 24, class: 'cx-grab', 'data-drag': 'D' }, ink);
+
+        says(marks, 0, 'ប្រលេឡូក្រាម ABCD ពេញលេញ ៖');
+        says(marks, 1, '• ជ្រុងឈមប៉ុនគ្នា ៖ AB = CD = ' + f.ab + ' cm  ,  AD = BC = ' + f.ad + ' cm');
+        says(marks, 2, '• ជ្រុងឈមស្របគ្នា ៖ AB ∥ CD  ,  AD ∥ BC');
+        says(marks, 3, '• មុំឈមប៉ុនគ្នា ៖ ∠A = ∠C = ' + f.ang + '°  ,  ∠B = ∠D = ' + (180 - f.ang) + '°');
+      }
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.ab, 7, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: protractorPhases(f.A, RIGHT, f.ang) };
+      if (i === 3) return { phases: [
+        { dur: 800, draw: function (t, drawn, tools) {
+          drawCmRuler(tools, add(f.A, mul(f.nr, 30 * (1 - t))), f.d, 5, f.nr, 0.25 + 0.75 * t);
+        } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          drawCmRuler(tools, f.A, f.d, 5, f.nr);
+          el('circle', { cx: f.D[0], cy: f.D[1], r: 5 * Math.min(1, t * 2), class: 'cx-pt cx-pt-m' }, drawn);
+          el('circle', { cx: f.D[0], cy: f.D[1], r: 4.2, class: 'cx-c-pencil', opacity: t < 0.85 ? 1 : 0 }, tools);
+        } },
+      ] };
+      if (i === 4) return { phases: [{ dur: 1000, draw: function (t, drawn, tools) {
+        var q = f.arcD, th = q.t1 + (q.t2 - q.t1) * t;
+        el('path', { d: arcPath(q.c, q.r, q.t1, th), class: 'cx-arc' }, drawn);
+        drawCompass(tools, q.c, onCircle(q.c, q.r, th));
+      } }] };
+      if (i === 5) return { phases: [{ dur: 1000, draw: function (t, drawn, tools) {
+        arcDraw(drawn, f.arcD);
+        var q = f.arcB, th = q.t1 + (q.t2 - q.t1) * t;
+        el('path', { d: arcPath(q.c, q.r, q.t1, th), class: 'cx-arc' }, drawn);
+        drawCompass(tools, q.c, onCircle(q.c, q.r, th));
+      } }] };
+      if (i === 6) return { phases: [
+        { dur: 900, draw: function (t, drawn, tools) {
+          drawRuler(tools, f.D, f.C);
+          segLine(drawn, f.D, add(f.D, mul(sub(f.C, f.D), t)), 'cx-line');
+        } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          segLine(drawn, f.D, f.C, 'cx-line');
+          drawRuler(tools, f.B, f.C);
+          segLine(drawn, f.B, add(f.B, mul(sub(f.C, f.B), t)), 'cx-line');
+        } }
+      ] };
+      return null;
+    }
+  };
+
+  // Grade 8, lesson 13, Mid-segment theorem of a triangle (Diagram 605):
+  // DE joins the midpoints D of AB and E of AC; then DE || BC and DE = 1/2 BC.
+  CX['g8-l13-midsegment'] = {
+    steps: 7,
+    start: { A: [280, 100], B: [120, 370], C: [480, 370] },
+    place: function (s, key, p) {
+      if (key === 'A') {
+        s.A = [Math.max(160, Math.min(440, p[0])), Math.max(60, Math.min(190, p[1]))];
+      } else if (key === 'B') {
+        s.B = [Math.max(50, Math.min(s.C[0] - 160, p[0])), Math.max(280, Math.min(420, p[1]))];
+      } else if (key === 'C') {
+        s.C = [Math.max(s.B[0] + 160, Math.min(590, p[0])), Math.max(280, Math.min(420, p[1]))];
+      }
+      return p;
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var A = s.A, B = s.B, C = s.C;
+      var D = mul(add(A, B), 0.5);
+      var E = mul(add(A, C), 0.5);
+      var vDE = sub(E, D);
+      var F = add(E, vDE);
+      var dBC = len(sub(C, B)), dDE = len(vDE);
+      var cmBC = (Math.round(dBC / CM * 10) / 10).toFixed(1);
+      var cmDE = (Math.round(dDE / CM * 10) / 10).toFixed(1);
+      return {
+        meet: true, A: A, B: B, C: C, D: D, E: E, F: F,
+        vDE: vDE, cmBC: cmBC, cmDE: cmDE
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var poly = function (g2, pts, attrs) {
+        var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+        return el('polygon', Object.assign({ points: pStr }, attrs), g2);
+      };
+
+      // Shaded triangle ABC
+      poly(ink, [f.A, f.B, f.C], { fill: 'rgba(45, 106, 168, 0.06)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+
+      // Midpoint tick marks on AB and AC
+      tick(marks, f.A, f.D); tick(marks, f.D, f.B);
+      tick2(marks, f.A, f.E); tick2(marks, f.E, f.C);
+
+      if (i === 0) {
+        says(marks, 0, 'ទ្រឹស្ដីបទអង្កត់មធ្យមនៃត្រីកោណ ៖');
+        says(marks, 1, '• ត្រីកោណ ABC មាន D ជាចំណុចកណ្ដាលនៃ AB (AD = DB)');
+        says(marks, 2, '• E ជាចំណុចកណ្ដាលនៃ AC (AE = EC)');
+        says(marks, 4, 'គោលដៅ ៖ ស្រាយបញ្ជាក់ថា DE ∥ BC  និង  DE = ½ BC');
+      }
+
+      // Step 1: Draw DE
+      if (i >= 1) {
+        segLine(ink, f.D, f.E, 'cx-seg');
+      }
+      if (i === 1) {
+        says(marks, 0, 'អង្កត់ DE ភ្ជាប់ចំណុចកណ្ដាលនៃជ្រុងទាំងពីរ');
+        says(marks, 1, 'ហៅថា «អង្កត់មធ្យម» (ឬបាតមធ្យម) នៃត្រីកោណ ABC');
+      }
+
+      // Step 2: Extend DE to F such that EF = DE
+      if (i >= 2) {
+        segLine(ink, f.E, f.F, 'cx-line cx-line-2');
+        tick(marks, f.D, f.E); tick(marks, f.E, f.F);
+        point(ink, f.F, 'F', [1, -0.6], 'cx-pt-m', null, 22);
+      }
+      if (i === 2) {
+        says(marks, 0, 'បន្លាយអង្កត់ DE ឱ្យបានអង្កត់ EF = DE');
+        says(marks, 1, 'ដៅចំណុច F ⟹ E ជាចំណុចកណ្ដាលនៃ DF');
+      }
+
+      // Step 3: Draw AF, FC, DC
+      if (i >= 3) {
+        el('line', { x1: f.A[0], y1: f.A[1], x2: f.F[0], y2: f.F[1], class: 'cx-equal' }, ink);
+        segLine(ink, f.F, f.C, 'cx-line');
+        el('line', { x1: f.D[0], y1: f.D[1], x2: f.C[0], y2: f.C[1], class: 'cx-equal' }, ink);
+      }
+      if (i === 3) {
+        says(marks, 0, 'ភ្ជាប់អង្កត់ AF, FC និង DC');
+        says(marks, 1, 'បង្កើតបានចតុកោណ ADCF ដែលមានអង្កត់ទ្រូង AC និង DF');
+      }
+
+      // Step 4: Parallelogram ADCF
+      if (i === 4) {
+        poly(marks, [f.A, f.D, f.C, f.F], { fill: 'rgba(232, 114, 92, 0.16)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.A, f.D), 0.5), unit(sub(f.A, f.D)));
+        arrowHead(marks, mul(add(f.F, f.C), 0.5), unit(sub(f.F, f.C)));
+        says(marks, 0, 'ចតុកោណ ADCF មានអង្កត់ទ្រូង AC និង DF កាត់គ្នាត្រង់ចំណុចកណ្ដាល E ៖');
+        says(marks, 1, '⟹ ADCF ជាប្រលេឡូក្រាម');
+        says(marks, 2, '⟹ CF ∥ AD  និង  CF = AD');
+      }
+
+      // Step 5: Parallelogram BDFC
+      if (i === 5) {
+        poly(marks, [f.B, f.D, f.F, f.C], { fill: 'rgba(46, 122, 112, 0.18)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.D, f.B), 0.5), unit(sub(f.D, f.B)));
+        arrowHead(marks, mul(add(f.F, f.C), 0.5), unit(sub(f.F, f.C)));
+        says(marks, 0, 'ដោយ AD = DB នាំឱ្យ CF = DB និង CF ∥ DB ៖');
+        says(marks, 1, '⟹ ចតុកោណ BDFC មានជ្រុងឈមមួយគូស្របគ្នាផងនិងស្មើគ្នាផង');
+        says(marks, 2, '⟹ BDFC ជាប្រលេឡូក្រាម  ⟹  DF ∥ BC  និង  DF = BC');
+      }
+
+      // Step 6: Conclusion
+      if (i >= 6) {
+        poly(marks, [f.B, f.D, f.F, f.C], { fill: 'rgba(46, 122, 112, 0.12)', stroke: 'none' });
+        arrowHead(marks, mul(add(f.D, f.E), 0.5), unit(sub(f.E, f.D)));
+        arrowHead(marks, mul(add(f.B, f.C), 0.5), unit(sub(f.C, f.B)));
+        says(marks, 0, 'សន្និដ្ឋាននៃទ្រឹស្ដីបទ ៖');
+        says(marks, 1, '• ដោយ DF ∥ BC  នាំឱ្យ  DE ∥ BC');
+        says(marks, 2, '• ដោយ DE = ½ DF  នាំឱ្យ  DE = ½ BC  (ពិត)');
+        says(marks, 4, 'ប្រវែងជាក់ស្ដែង ៖  BC = ' + f.cmBC + ' cm  ⟹  DE = ' + f.cmDE + ' cm  (= ½ BC)');
+      }
+
+      // Vertices with draggable grab handles
+      point(ink, f.A, 'A', [0, -1], null, 'A', 22);
+      point(ink, f.B, 'B', [-1, 0.8], null, 'B', 22);
+      point(ink, f.C, 'C', [1, 0.8], null, 'C', 22);
+      point(ink, f.D, 'D', [-1, 0], 'cx-pt-m', null, 22);
+      point(ink, f.E, 'E', [0.8, -0.6], 'cx-pt-m', null, 22);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { ruler: [f.D, f.E], cls: 'cx-seg' };
+      if (i === 2) return { ruler: [f.E, f.F], cls: 'cx-line cx-line-2' };
+      if (i === 3) return { rulers: [[f.A, f.F], [f.F, f.C], [f.D, f.C]] };
+      return null;
+    }
+  };
+
+  // Grade 8, lesson 13, Flowchart of Quadrilaterals (Diagram 64):
+  // Interactive morphing & hierarchy from General Quadrilateral to Square.
+  CX['g8-l13-quad-family'] = {
+    steps: 7,
+    start: {
+      step0: { A: [350, 150], B: [530, 130], C: [510, 350], D: [340, 320] },
+      step1: { A: [380, 150], B: [500, 150], C: [550, 350], D: [330, 350] },
+      step3: { A: [370, 150], B: [530, 150], C: [480, 340], D: [320, 340] },
+      step4: { A: [340, 160], B: [520, 160], C: [520, 330], D: [340, 330] },
+      step5: { A: [430, 130], B: [535, 240], C: [430, 350], D: [325, 240] },
+      step6: { A: [355, 160], B: [505, 160], C: [505, 310], D: [355, 310] }
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      return { meet: true, s: s };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var poly = function (g2, pts, attrs) {
+        var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+        return el('polygon', Object.assign({ points: pStr }, attrs), g2);
+      };
+
+      if (i === 0) {
+        // Step 0: General Quadrilateral
+        var A = f.s.step0.A, B = f.s.step0.B, C = f.s.step0.C, D = f.s.step0.D;
+        poly(ink, [A, B, C, D], { fill: 'rgba(45, 106, 168, 0.08)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+        point(ink, A, 'A', [-0.8, -0.8], null, null, 20);
+        point(ink, B, 'B', [0.8, -0.8], null, null, 20);
+        point(ink, C, 'C', [0.8, 0.8], null, null, 20);
+        point(ink, D, 'D', [-0.8, 0.8], null, null, 20);
+
+        says(marks, 0, '១. ចតុកោណទូទៅ (Quadrilateral) ៖');
+        says(marks, 1, '• ជាពហុកោណដែលមាន ៤ ជ្រុង និង ៤ មុំ');
+        says(marks, 2, '• ផលបូកមុំក្នុងទាំងបួន ៖ ∠A + ∠B + ∠C + ∠D = 360°');
+        says(marks, 4, 'ការវិវត្តបន្ត ៖');
+        says(marks, 5, '• បន្ថែមជ្រុងឈម ១ គូស្របគ្នា ⟹ ចតុកោណព្នាយ');
+        says(marks, 6, '• បន្ថែមជ្រុងឈម ២ គូស្របគ្នា ⟹ ប្រលេឡូក្រាម');
+      } else if (i === 1) {
+        // Step 1: Trapezoid
+        var A1 = f.s.step1.A, B1 = f.s.step1.B, C1 = f.s.step1.C, D1 = f.s.step1.D;
+        poly(ink, [A1, B1, C1, D1], { fill: 'rgba(46, 122, 112, 0.12)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+        point(ink, A1, 'A', [-0.8, -0.8], null, null, 20);
+        point(ink, B1, 'B', [0.8, -0.8], null, null, 20);
+        point(ink, C1, 'C', [0.8, 0.8], null, null, 20);
+        point(ink, D1, 'D', [-0.8, 0.8], null, null, 20);
+
+        // Parallel arrows on AB and DC
+        arrowHead(marks, mul(add(A1, B1), 0.5), unit(sub(B1, A1)));
+        arrowHead(marks, mul(add(D1, C1), 0.5), unit(sub(C1, D1)));
+
+        label(marks, [(A1[0] + B1[0]) / 2, A1[1] - 18], 'បាតតូច b', 'cx-note');
+        label(marks, [(D1[0] + C1[0]) / 2, D1[1] + 20], 'បាតធំ B', 'cx-note');
+
+        says(marks, 0, '២. ចតុកោណព្នាយ (Trapezoid) ៖');
+        says(marks, 1, '• មានជ្រុងឈមមួយគូស្របគ្នា ៖ AB ∥ CD');
+        says(marks, 2, '• AB ជាបាតតូច និង CD ជាបាតធំ');
+        says(marks, 3, '• មុំជាប់បាតបន្ថែមគ្នា ៖ ∠A + ∠D = 180°, ∠B + ∠C = 180°');
+        says(marks, 5, 'ផ្ទៃក្រឡា ៖  S = ½ (B + b) × h');
+      } else if (i === 2) {
+        // Step 2: Special Trapezoids (Isosceles & Right)
+        // Draw Isosceles Trapezoid
+        var tA = [330, 110], tB = [430, 110], tC = [460, 220], tD = [300, 220];
+        poly(ink, [tA, tB, tC, tD], { fill: 'rgba(46, 122, 112, 0.12)', stroke: '#2e7a70', 'stroke-width': '2.2' });
+        tick(marks, tA, tD); tick(marks, tB, tC);
+        label(marks, [380, 238], 'ចតុកោណព្នាយសមបាត', 'cx-label');
+
+        // Draw Right Trapezoid
+        var rA = [330, 270], rB = [440, 270], rC = [480, 380], rD = [330, 380];
+        poly(ink, [rA, rB, rC, rD], { fill: 'rgba(232, 114, 92, 0.12)', stroke: '#e8725c', 'stroke-width': '2.2' });
+        rightMark(marks, rD, [0, -1], [1, 0]);
+        rightMark(marks, rA, [1, 0], [0, 1]);
+        label(marks, [405, 398], 'ចតុកោណព្នាយកែង', 'cx-label');
+
+        says(marks, 0, '៣. ចតុកោណព្នាយពិសេស ៖');
+        says(marks, 1, 'ក. ចតុកោណព្នាយសមបាត ៖');
+        says(marks, 2, '• ជ្រុងទ្រេតប៉ុនគ្នា ៖ AD = BC');
+        says(marks, 3, '• មុំបាតប៉ុនគ្នា ៖ ∠D = ∠C , ∠A = ∠B');
+        says(marks, 4, '• អង្កត់ទ្រូងប៉ុនគ្នា ៖ AC = BD');
+        says(marks, 6, 'ខ. ចតុកោណព្នាយកែង ៖');
+        says(marks, 7, '• មានជ្រុងទ្រេតមួយកែងនឹងបាតទាំងពីរ');
+        says(marks, 8, '• មានមុំកែងពីរជាប់គ្នា (90°)');
+      } else if (i === 3) {
+        // Step 3: Parallelogram
+        var Ap = f.s.step3.A, Bp = f.s.step3.B, Cp = f.s.step3.C, Dp = f.s.step3.D;
+        poly(ink, [Ap, Bp, Cp, Dp], { fill: 'rgba(46, 122, 112, 0.14)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+        point(ink, Ap, 'A', [-0.8, -0.8], null, null, 20);
+        point(ink, Bp, 'B', [0.8, -0.8], null, null, 20);
+        point(ink, Cp, 'C', [0.8, 0.8], null, null, 20);
+        point(ink, Dp, 'D', [-0.8, 0.8], null, null, 20);
+
+        arrowHead(marks, mul(add(Ap, Bp), 0.5), unit(sub(Bp, Ap)));
+        arrowHead(marks, mul(add(Dp, Cp), 0.5), unit(sub(Cp, Dp)));
+        arrowHead(marks, mul(add(Ap, Dp), 0.5), unit(sub(Dp, Ap)));
+        arrowHead(marks, mul(add(Bp, Cp), 0.5), unit(sub(Cp, Bp)));
+
+        tick(marks, Ap, Bp); tick(marks, Dp, Cp);
+        tick2(marks, Ap, Dp); tick2(marks, Bp, Cp);
+
+        says(marks, 0, '៤. ប្រលេឡូក្រាម (Parallelogram) ៖');
+        says(marks, 1, '• ជ្រុងឈមស្របគ្នា ២ គូ ៖ AB ∥ CD  និង  AD ∥ BC');
+        says(marks, 2, '• ជ្រុងឈមប៉ុនគ្នា ៖ AB = CD  និង  AD = BC');
+        says(marks, 3, '• មុំឈមប៉ុនគ្នា ៖ ∠A = ∠C  និង  ∠B = ∠D');
+        says(marks, 4, '• អង្កត់ទ្រូងកាត់គ្នាត្រង់ចំណុចកណ្ដាល');
+        says(marks, 6, 'ផ្ទៃក្រឡា ៖  S = b × h');
+      } else if (i === 4) {
+        // Step 4: Rectangle
+        var Ar = f.s.step4.A, Br = f.s.step4.B, Cr = f.s.step4.C, Dr = f.s.step4.D;
+        poly(ink, [Ar, Br, Cr, Dr], { fill: 'rgba(45, 106, 168, 0.12)', stroke: '#2d6aa8', 'stroke-width': '2.5' });
+        point(ink, Ar, 'A', [-0.8, -0.8], null, null, 20);
+        point(ink, Br, 'B', [0.8, -0.8], null, null, 20);
+        point(ink, Cr, 'C', [0.8, 0.8], null, null, 20);
+        point(ink, Dr, 'D', [-0.8, 0.8], null, null, 20);
+
+        rightMark(marks, Ar, [1, 0], [0, 1]);
+        rightMark(marks, Br, [0, 1], [-1, 0]);
+        rightMark(marks, Cr, [-1, 0], [0, -1]);
+        rightMark(marks, Dr, [0, -1], [1, 0]);
+
+        // Diagonals drawn dashed
+        el('line', { x1: Ar[0], y1: Ar[1], x2: Cr[0], y2: Cr[1], class: 'cx-equal' }, marks);
+        el('line', { x1: Br[0], y1: Br[1], x2: Dr[0], y2: Dr[1], class: 'cx-equal' }, marks);
+
+        says(marks, 0, '៥. ចតុកោណកែង (Rectangle) ៖');
+        says(marks, 1, '• ជាប្រលេឡូក្រាមដែលមានមុំកែងមួយ');
+        says(marks, 2, '• មុំទាំង ៤ ជាមុំកែង ៖ ∠A = ∠B = ∠C = ∠D = 90°');
+        says(marks, 3, '• អង្កត់ទ្រូងទាំងពីរប៉ុនគ្នា ៖ AC = BD');
+        says(marks, 5, 'ផ្ទៃក្រឡា ៖  S = a × b  (បណ្ដោយ × ទទឹង)');
+      } else if (i === 5) {
+        // Step 5: Rhombus
+        var As = f.s.step5.A, Bs = f.s.step5.B, Cs = f.s.step5.C, Ds = f.s.step5.D;
+        poly(ink, [As, Bs, Cs, Ds], { fill: 'rgba(232, 114, 92, 0.12)', stroke: '#e8725c', 'stroke-width': '2.5' });
+        point(ink, As, 'A', [0, -1], null, null, 20);
+        point(ink, Bs, 'B', [1, 0], null, null, 20);
+        point(ink, Cs, 'C', [0, 1], null, null, 20);
+        point(ink, Ds, 'D', [-1, 0], null, null, 20);
+
+        tick(marks, As, Bs); tick(marks, Bs, Cs);
+        tick(marks, Cs, Ds); tick(marks, Ds, As);
+
+        // Perpendicular diagonals
+        segLine(marks, As, Cs, 'cx-equal');
+        segLine(marks, Bs, Ds, 'cx-equal');
+        var O = [(As[0] + Cs[0]) / 2, (Bs[1] + Ds[1]) / 2];
+        rightMark(marks, O, [0, -1], [1, 0]);
+
+        says(marks, 0, '៦. ចតុកោណស្មើ (Rhombus) ៖');
+        says(marks, 1, '• ជាប្រលេឡូក្រាមដែលមានជ្រុងទាំង ៤ ស្មើគ្នា');
+        says(marks, 2, '• ជ្រុងទាំង ៤ ប៉ុនគ្នា ៖ AB = BC = CD = DA');
+        says(marks, 3, '• អង្កត់ទ្រូងទាំងពីរកែងគ្នា ៖ AC ⊥ BD');
+        says(marks, 4, '• អង្កត់ទ្រូងជាកន្លះបន្ទាត់ពុះមុំ');
+        says(marks, 6, 'ផ្ទៃក្រឡា ៖  S = ½ × d₁ × d₂');
+      } else if (i === 6) {
+        // Step 6: Square
+        var Aq = f.s.step6.A, Bq = f.s.step6.B, Cq = f.s.step6.C, Dq = f.s.step6.D;
+        poly(ink, [Aq, Bq, Cq, Dq], { fill: 'rgba(46, 122, 112, 0.18)', stroke: '#2e7a70', 'stroke-width': '2.6' });
+        point(ink, Aq, 'A', [-0.8, -0.8], null, null, 20);
+        point(ink, Bq, 'B', [0.8, -0.8], null, null, 20);
+        point(ink, Cq, 'C', [0.8, 0.8], null, null, 20);
+        point(ink, Dq, 'D', [-0.8, 0.8], null, null, 20);
+
+        // All 4 right marks
+        rightMark(marks, Aq, [1, 0], [0, 1]);
+        rightMark(marks, Bq, [0, 1], [-1, 0]);
+        rightMark(marks, Cq, [-1, 0], [0, -1]);
+        rightMark(marks, Dq, [0, -1], [1, 0]);
+
+        // All 4 sides equal
+        tick(marks, Aq, Bq); tick(marks, Bq, Cq);
+        tick(marks, Cq, Dq); tick(marks, Dq, Aq);
+
+        // Diagonals equal AND perpendicular
+        segLine(marks, Aq, Cq, 'cx-equal');
+        segLine(marks, Bq, Dq, 'cx-equal');
+        var Oq = [(Aq[0] + Cq[0]) / 2, (Aq[1] + Cq[1]) / 2];
+        rightMark(marks, Oq, [1, 1], [-1, 1]);
+
+        says(marks, 0, '៧. ការេ (Square) — កំពូលគ្រួសារចតុកោណ ៖');
+        says(marks, 1, '• ជាចតុកោណកែងផង និងជាចតុកោណស្មើផង');
+        says(marks, 2, '• ជ្រុងទាំង ៤ ប៉ុនគ្នា ៖ AB = BC = CD = DA');
+        says(marks, 3, '• មុំទាំង ៤ សុទ្ធតែកែង ៖ 90°');
+        says(marks, 4, '• អង្កត់ទ្រូងប៉ុនគ្នាផង និងកែងគ្នាផង (AC = BD, AC ⊥ BD)');
+        says(marks, 6, 'ផ្ទៃក្រឡា ៖  S = a²');
+      }
+    },
+    anim: function (f, i) {
+      return null;
+    }
+  };
 
   // Grade 8, lesson 14, visual proof of the Pythagorean theorem:
   // Four copies of a right-angled triangle with legs a, b and hypotenuse c
