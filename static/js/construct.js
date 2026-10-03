@@ -2023,6 +2023,128 @@
     },
   });
 
+  // ===== The protractor (Grade 7, lesson 13 §2.1), one page with two tabs =============================
+  // #measure: the protractor goes on the vertex O, is turned until Ox lies on its 0, and Oy cuts the scale
+  // where the measure is. #a150: the ray yx, the protractor with its 0 on yx, a pencil mark at the number,
+  // the ray yz through the mark. In both the slider is the angle (5° to 175°), the book's own 50° and 150°
+  // to begin with. The protractor has two scales; the numbers are read on the one that starts from 0 on the
+  // first ray, so the 0 on the right is lit.
+  var PT = { V: [320, 400], R: 190, L: 246 };               // the vertex, the radius of the protractor, the length of the rays
+  var ptDir = function (a) { return prDir(RIGHT, a); };
+  var ptAt = function (a, r) { return add(PT.V, mul(ptDir(a), r)); };
+  var angleKind = function (a) { return a < 90 ? 'មុំស្រួច' : a === 90 ? 'មុំកែង' : 'មុំទាល'; };
+  var angleWords = function (a) { return a < 90 ? 'មុំស្រួច  (0° < ∠ < 90°)' : a === 90 ? 'មុំកែង  (∠ = 90°)' : 'មុំទាល  (90° < ∠ < 180°)'; };
+  var DEG = Math.PI / 180;
+  // the protractor, centre c, turned by `turn` degrees (clockwise): the outer scale from 0 on the right, the
+  // inner one from 0 on the left; `lit` lists degrees to mark on the outer scale
+  function drawProt(g, c, turn, alpha, lit) {
+    var R = PT.R, d, u, rim, low;
+    var grp = el('g', { opacity: alpha == null ? 1 : alpha, transform: turn ? 'rotate(' + turn.toFixed(2) + ' ' + c[0] + ' ' + c[1] + ')' : null }, g);
+    var half = function (r) { return 'M' + (c[0] + r) + ' ' + c[1] + 'A' + r + ' ' + r + ' 0 0 0 ' + (c[0] - r) + ' ' + c[1]; };
+    el('path', { d: half(R) + 'Z', class: 'cx-pr' }, grp);
+    el('path', { d: half(R - 42), class: 'cx-pr-line' }, grp);
+    el('path', { d: half(16), class: 'cx-pr-line' }, grp);
+    for (d = 0; d <= 180; d++) {
+      u = ptDir(d); rim = add(c, mul(u, R));
+      segLine(grp, rim, add(rim, mul(u, d % 10 === 0 ? -14 : d % 5 === 0 ? -10 : -6)), d % 5 ? 'cx-pr-tick cx-pr-t1' : 'cx-pr-tick');
+      if (d % 30 === 0) {
+        low = d % 180 ? [0, 0] : [0, -9];                     // 0 and 180 clear of the line they lie on
+        label(grp, add(add(c, mul(u, R - 28)), low), String(d), 'cx-pr-num');
+        label(grp, add(add(c, mul(u, R - 56)), low), String(180 - d), 'cx-pr-num cx-pr-num2');
+      }
+    }
+    el('circle', { cx: c[0], cy: c[1], r: 3.2, class: 'cx-pr-c' }, grp);
+    (lit || []).forEach(function (a) { segLine(grp, add(c, mul(ptDir(a), R - 16)), add(c, mul(ptDir(a), R + 4)), 'cx-pr-mark'); });
+  }
+  // the protractor comes down on the vertex, a little askew, and is then turned to lie on the first ray
+  var protDown = function (V) { return { dur: 900, draw: function (t, drawn, tools) { drawProt(tools, add(V, [0, -40 * (1 - t)]), 22, 0.25 + 0.75 * t); } }; };
+  var protTurn = function (V) { return { dur: 900, draw: function (t, drawn, tools) { drawProt(tools, V, 22 * (1 - t), 1, t === 1 ? [0] : null); } }; };
+  var protKText = function (name, extra) {
+    return function (s) { return '∠' + name + ' = ' + s.k + '°  →  ' + angleKind(s.k) + (extra ? extra(s.k) : ''); };
+  };
+
+  CX['protractor-measure'] = {
+    steps: 5,
+    start: { k: 50 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: protKText('xOy'),
+    fill: function (s) { return { a: String(s.k) }; },
+    figure: function (s) { return { meet: true, a: s.k, V: PT.V, X: ptAt(0, PT.L), Y: ptAt(s.k, PT.L) }; },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, V = f.V, t = f.a * DEG;
+      if (i === 4) { given(ink, '∠xOy = ' + f.a + '°'); says(ink, 1, angleWords(f.a)); }
+      else given(ink, 'ចូររង្វាស់ ∠xOy');
+      segLine(ink, V, f.X, 'cx-seg');
+      segLine(ink, V, f.Y, 'cx-line');
+      if (i < 3) {
+        el('path', { d: arcPath(V, 46, 0, -t), class: 'cx-arc' }, ink);
+        label(marks, ptAt(f.a / 2, 74), '?', 'cx-note cx-r');
+      } else wedge(marks, V, 0, -t, 58, 'a');
+      point(ink, V, 'O', [-0.6, 0.9], 'cx-pt-m', null, 22);
+      point(ink, f.X, 'x', [0.85, -0.55], null, null, 22);
+      point(ink, f.Y, 'y', ptDir(f.a), null, null, 22);
+      if (i === 1) drawProt(tools, V, 22);
+      if (i >= 2) drawProt(tools, V, 0, 1, i === 2 ? [0] : [0, f.a]);
+      if (i === 2) label(marks, add(V, [PT.R + 24, -14]), '0°', 'cx-note cx-r');
+      if (i === 3) label(marks, add(ptAt(f.a, PT.R + 20), mul(ptDir(f.a + 90), 22)), f.a + '°', 'cx-note cx-r');   // beside the ray, clear of its end
+      if (i === 4) label(marks, ptAt(f.a / 2, 84), f.a + '°', 'cx-note cx-r');
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: [protDown(f.V)] };
+      if (i === 2) return { phases: [protTurn(f.V)] };
+      if (i === 3) return { phases: [{ dur: 1300, draw: function (t, drawn, tools) {   // the lit stroke runs from 0 up to the reading
+        var a = f.a * t;
+        if (a > 0.5) wedge(drawn, f.V, 0, -a * DEG, 58, 'a');
+        drawProt(tools, f.V, 0, 1, [0, a]);
+      } }] };
+      return null;
+    },
+  };
+
+  CX['protractor-150'] = {
+    steps: 6,
+    start: { k: 150 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: protKText('xyz', function (a) { return '  ·  មុំជាប់គ្នា ' + (180 - a) + '°'; }),
+    fill: function (s) { return { a: String(s.k), b: String(180 - s.k) }; },
+    figure: function (s) {
+      return { meet: true, a: s.k, V: PT.V, X: ptAt(0, PT.L), Z: ptAt(s.k, PT.L), M: ptAt(s.k, PT.R + 8) };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools, V = f.V, t = f.a * DEG;
+      given(ink, (i === 5 ? '' : 'សង់ ') + '∠xyz = ' + f.a + '°');
+      if (i === 5) says(ink, 1, 'មុំជាប់គ្នា៖ 180° − ' + f.a + '° = ' + (180 - f.a) + '°');
+      if (i >= 1) segLine(ink, V, f.X, 'cx-seg');
+      if (i >= 4) segLine(ink, V, f.Z, 'cx-line');
+      if (i >= 3) dot(ink, f.M);
+      if (i === 5) {
+        segLine(ink, V, ptAt(180, PT.L), 'cx-ext');             // yx carried on the other side of y
+        wedge(marks, V, 0, -t, 52, 'a');
+        label(marks, ptAt(f.a / 2, 80), f.a + '°', 'cx-note cx-r');
+        wedge(marks, V, -t, -(Math.PI - t), 36, 'b');
+        label(marks, ptAt((f.a + 180) / 2, 62), (180 - f.a) + '°', 'cx-note');
+      }
+      point(ink, V, 'y', [-0.6, 0.9], 'cx-pt-m', null, 22);
+      if (i >= 1) point(ink, f.X, 'x', [0.85, -0.55], null, null, 22);
+      if (i >= 4) point(ink, f.Z, 'z', ptDir(f.a), null, null, 22);
+      if (i === 2) { drawProt(tools, V, 0, 1, [0]); label(marks, add(V, [PT.R + 24, -14]), '0°', 'cx-note cx-r'); }
+      if (i === 3) { drawProt(tools, V, 0, 1, [0, f.a]); label(marks, ptAt(f.a, PT.R + 34), f.a + '°', 'cx-note cx-r'); }
+    },
+    anim: function (f, i) {
+      if (i === 1) return { ruler: [f.V, f.X], cls: 'cx-seg' };
+      if (i === 2) return { phases: [protDown(f.V), protTurn(f.V)] };
+      if (i === 3) return { phases: [{ dur: 900, draw: function (t, drawn, tools) {   // the pencil presses the paper at the number
+        drawProt(tools, f.V, 0, 1, [0, f.a]);
+        dot(drawn, f.M, 3.4 * Math.min(1, t * 2));
+        el('circle', { cx: f.M[0], cy: f.M[1], r: 4.2, class: 'cx-c-pencil', opacity: t < 0.85 ? 1 : 0 }, tools);
+      } }] };
+      if (i === 4) return { ruler: [f.V, f.Z], cls: 'cx-line' };
+      return null;
+    },
+  };
+
   function label(g, at, text, cls) {
     var t = el('text', { x: at[0], y: at[1], class: cls || 'cx-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
     t.textContent = text;

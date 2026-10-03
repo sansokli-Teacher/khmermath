@@ -205,3 +205,9 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-disc { fill: rgba(46, 122, 112, .14); stroke: #2e7a70; stroke-width: 2.4; }
 .cx-trace { stroke: #e8725c; stroke-width: 5; stroke-linecap: round; fill: none; }
 .cx-sector-line { stroke: #2e7a70; stroke-width: 1.4; stroke-linejoin: round; }
+
+/* the protractor: the second scale, the lines between the scales, the degree strokes */
+.cx-pr-line { fill: none; stroke: #2d6aa8; stroke-width: 1; pointer-events: none; }
+.cx-pr-t1 { stroke-width: .6; opacity: .75; }
+.cx-pr-num2 { font-size: 9px; fill: #6a7a8e; }
+@media (max-width: 640px) { .cx-pr-num2 { font-size: 13px; } }
