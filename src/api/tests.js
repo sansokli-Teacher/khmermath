@@ -85,3 +85,24 @@ export async function deleteTest(req, env, params) {
   if (!result.meta.rows_written) return err('Test not found.', 404);
   return json({ ok: true });
 }
+
+export async function duplicateTest(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const test = await env.DB.prepare('SELECT title FROM tests WHERE id = ?1').bind(params.testId).first();
+  if (!test) return err('Test not found.', 404);
+  const newTitle = `${test.title} (ចម្លង)`;
+  const { meta } = await env.DB.prepare('INSERT INTO tests (title, status) VALUES (?1, ?2)').bind(newTitle, 'draft').run();
+  const newTestId = meta.last_row_id;
+
+  const { results: questions } = await env.DB.prepare(
+    'SELECT order_no, stem_text, image_key, options_json, correct_index, points FROM test_questions WHERE test_id = ?1 ORDER BY order_no'
+  ).bind(params.testId).all();
+
+  for (const q of questions) {
+    await env.DB.prepare(
+      'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, points) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)'
+    ).bind(newTestId, q.order_no, q.stem_text, q.image_key, q.options_json, q.correct_index, q.points).run();
+  }
+
+  return json({ id: newTestId, title: newTitle });
+}

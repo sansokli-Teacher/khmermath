@@ -523,14 +523,30 @@ render.tests = async function () {
       h('div', {}, [h('strong', {}, t.title), h('span', { class: `badge ${t.status}` }, t.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'), h('span', { class: 'muted' }, ` ${t.question_count} សំណួរ`)]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, 'កែសម្រួល'),
+        t.status === 'ready' ? h('button', { class: 'secondary btn-sm', style: 'color:var(--good);border-color:var(--good);', onclick: () => {
+          // Switch to schedule tab with this test pre-selected
+          const tabs = document.querySelectorAll('.tabs button');
+          tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'schedule'));
+          ['classes', 'tests', 'schedule', 'grading'].forEach((name) => {
+            document.getElementById(`tab-${name}`).hidden = name !== 'schedule';
+          });
+          render.schedule(t.id);
+        } }, '📅 ចាត់តាំងប្រឡង') : null,
+        h('button', { class: 'secondary btn-sm', onclick: async () => {
+          try {
+            const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' });
+            await Exam.notify(`បានចម្លងតេស្តជា «${copy.title}» រួចរាល់!`);
+            render.tests();
+          } catch (e) { Exam.notify(e.message); }
+        } }, '📋 ចម្លងតេស្ត'),
         h('button', { class: 'danger btn-sm', onclick: async () => {
           if (!confirm(`តើលោកគ្រូពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
           try {
             await api(`/api/tests/${t.id}`, { method: 'DELETE' });
             render.tests();
           } catch (e) { Exam.notify(e.message); }
-        } }, 'លុបតេស្ត'),
-      ]),
+        } }, 'លុប'),
+      ].filter(Boolean)),
     ])),
   ]);
   const addCard = h('div', { class: 'card' }, [
@@ -633,7 +649,7 @@ function buildQuestionForm(test, container) {
 }
 
 // ---------- Schedule ----------
-render.schedule = async function () {
+render.schedule = async function (preSelectedTestId = null) {
   const container = document.getElementById('tab-schedule');
   container.innerHTML = '';
   const [{ tests }, { classes }, { sessions }] = await Promise.all([api('/api/tests'), api('/api/classes'), api('/api/sessions')]);
@@ -672,7 +688,7 @@ render.schedule = async function () {
     h('h3', {}, 'កំណត់ពេលប្រឡងថ្មី'),
     readyTests.length === 0 ? h('p', { class: 'muted' }, 'សូមបង្កើតតេស្ត ១ ហើយសម្គាល់ថារួចរាល់ជាមុនសិន។') : null,
     h('label', {}, 'តេស្ត'),
-    h('select', { id: 'sch-test' }, readyTests.map((t) => h('option', { value: t.id }, t.title))),
+    h('select', { id: 'sch-test' }, readyTests.map((t) => h('option', { value: t.id, selected: preSelectedTestId ? t.id === preSelectedTestId : null }, t.title))),
     h('label', {}, 'ថ្នាក់'),
     h('select', { id: 'sch-class' }, classes.map((c) => h('option', { value: c.id }, c.name))),
     h('label', {}, 'ថ្ងៃ និងម៉ោងចាប់ផ្តើម'),
