@@ -40,7 +40,7 @@ h3 { font-size: 15px; margin: 0 0 8px; color: var(--muted); }
 .muted { color: var(--muted); font-size: 14px; }
 
 label { display: block; font-size: 14px; margin: 10px 0 4px; color: var(--muted); }
-input[type=text], input[type=password], input[type=number], input[type=datetime-local], textarea, select {
+input[type=text], input[type=password], input[type=number], input[type=datetime-local], input[type=date], input[type=time], textarea, select {
   width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
   font-family: inherit; font-size: 16px; background: #fff; color: var(--ink);
 }
@@ -92,9 +92,32 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 
 /* math-typing toolbar + live preview (see js/mathtype.js) */
 .mathbar { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; padding: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
-.mk { min-width: 36px; height: 34px; padding: 0 8px; display: inline-grid; place-items: center; font-size: 16px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font-weight: 400; }
-.mk:hover { border-color: var(--brand); background: #f1f8fd; }
-.mk sup { font-size: 0.7em; }
+.mk {
+  min-width: 36px;
+  height: 34px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .15s ease;
+  user-select: none;
+}
+.mk:hover { border-color: var(--brand); background: #f1f8fd; color: var(--brand); }
+.mk:active { transform: scale(0.97); }
+.mk i { font-style: italic; font-family: 'Times New Roman', serif; font-size: 1.05em; }
+.mk sup { font-size: 0.72em; vertical-align: super; line-height: 0; }
+.mk sub { font-size: 0.72em; vertical-align: sub; line-height: 0; }
+.time-shortcuts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.time-pill { font-size: 13px; padding: 5px 12px; border-radius: 16px; background: #eef3f7; color: var(--ink); border: 1px solid var(--line); cursor: pointer; transition: all .15s; font-family: inherit; font-weight: 500; }
+.time-pill:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
 .mk-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 11px; line-height: 1.05; }
 .mk-frac i:first-child { border-bottom: 1px solid currentColor; padding: 0 2px; font-style: normal; }
 .mk-frac i { font-style: normal; }

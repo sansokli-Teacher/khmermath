@@ -523,7 +523,7 @@ render.tests = async function () {
       h('div', {}, [h('strong', {}, t.title), h('span', { class: `badge ${t.status}` }, t.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'), h('span', { class: 'muted' }, ` ${t.question_count} សំណួរ`)]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, 'កែសម្រួល'),
-        t.status === 'ready' ? h('button', { class: 'secondary btn-sm', style: 'color:var(--good);border-color:var(--good);', onclick: () => {
+        h('button', { class: 'secondary btn-sm', style: 'color:var(--good);border-color:var(--good);', onclick: () => {
           // Switch to schedule tab with this test pre-selected
           const tabs = document.querySelectorAll('.tabs button');
           tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'schedule'));
@@ -531,7 +531,7 @@ render.tests = async function () {
             document.getElementById(`tab-${name}`).hidden = name !== 'schedule';
           });
           render.schedule(t.id);
-        } }, '📅 ចាត់តាំងប្រឡង') : null,
+        } }, '📅 ចាត់តាំងប្រឡង'),
         h('button', { class: 'secondary btn-sm', onclick: async () => {
           try {
             const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' });
@@ -649,14 +649,34 @@ function buildQuestionForm(test, container) {
 }
 
 // ---------- Schedule ----------
+function parseScheduleDateTime(dateVal, timeVal) {
+  let hours = 8, minutes = 0;
+  const t = (timeVal || '').trim().toLowerCase();
+  const isPm = t.includes('pm') || t.includes('រសៀល') || t.includes('ល្ងាច');
+  const isAm = t.includes('am') || t.includes('ព្រឹក');
+  const clean = t.replace(/[^0-9:]/g, '');
+  if (clean.includes(':')) {
+    const parts = clean.split(':');
+    hours = parseInt(parts[0], 10) || 0;
+    minutes = parseInt(parts[1], 10) || 0;
+  } else if (clean.length > 0) {
+    hours = parseInt(clean, 10) || 0;
+  }
+  if (isPm && hours < 12) hours += 12;
+  if (isAm && hours === 12) hours = 0;
+  const hStr = String(hours).padStart(2, '0');
+  const mStr = String(minutes).padStart(2, '0');
+  return new Date(`${dateVal}T${hStr}:${mStr}:00`);
+}
+
 render.schedule = async function (preSelectedTestId = null) {
   const container = document.getElementById('tab-schedule');
   container.innerHTML = '';
   const [{ tests }, { classes }, { sessions }] = await Promise.all([api('/api/tests'), api('/api/classes'), api('/api/sessions')]);
-  const readyTests = tests.filter((t) => t.status === 'ready');
 
   const list = h('div', { class: 'card' }, [
     h('h2', {}, 'ការប្រឡងដែលបានកំណត់ពេល'),
+    sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : null,
     ...sessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('strong', {}, `${s.test_title} — ${s.class_name}`),
@@ -684,27 +704,80 @@ render.schedule = async function (preSelectedTestId = null) {
     ])),
   ]);
 
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowYMD = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+  let defH = now.getHours() + 1;
+  if (defH >= 24) defH = 8;
+  const defTime = `${pad(defH)}:00`;
+
+  const dateInput = h('input', { type: 'date', id: 'sch-date', value: todayYMD, style: 'flex: 1; min-width: 150px;' });
+  const timeInput = h('input', { type: 'text', id: 'sch-time', value: defTime, placeholder: 'HH:mm ឧ. 08:00 ឬ 14:30', style: 'width: 180px; font-weight:600; font-family:monospace;' });
+
+  const setDT = (dStr, tStr) => {
+    dateInput.value = dStr;
+    timeInput.value = tStr;
+  };
+
+  const shortcuts = h('div', { class: 'time-shortcuts' }, [
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, `${pad(now.getHours())}:${pad(now.getMinutes())}`) }, '⚡ ឥឡូវនេះ (Now)'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, '08:00') }, 'ថ្ងៃនេះ 08:00 ព្រឹក'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(todayYMD, '14:00') }, 'ថ្ងៃនេះ 14:00 រសៀល'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(tomorrowYMD, '08:00') }, 'ថ្ងៃស្អែក 08:00 ព្រឹក'),
+    h('button', { type: 'button', class: 'time-pill', onclick: () => setDT(tomorrowYMD, '14:00') }, 'ថ្ងៃស្អែក 14:00 រសៀល'),
+  ]);
+
+  const testOptions = tests.length === 0
+    ? [h('option', { value: '', disabled: true, selected: true }, 'គ្មានតេស្តនៅឡើយទេ — សូមបង្កើតតេស្តជាមុនសិន')]
+    : tests.map((t) => {
+        const isSel = preSelectedTestId ? Number(t.id) === Number(preSelectedTestId) : false;
+        const qCount = t.question_count != null ? `(${t.question_count} សំណួរ)` : '';
+        const statusText = t.status === 'ready' ? '✓ រួចរាល់' : '✎ ព្រាង';
+        return h('option', { value: t.id, selected: isSel ? true : null }, `${t.title} ${qCount} — ${statusText}`);
+      });
+
   const form = h('div', { class: 'card' }, [
     h('h3', {}, 'កំណត់ពេលប្រឡងថ្មី'),
-    readyTests.length === 0 ? h('p', { class: 'muted' }, 'សូមបង្កើតតេស្ត ១ ហើយសម្គាល់ថារួចរាល់ជាមុនសិន។') : null,
-    h('label', {}, 'តេស្ត'),
-    h('select', { id: 'sch-test' }, readyTests.map((t) => h('option', { value: t.id, selected: preSelectedTestId ? t.id === preSelectedTestId : null }, t.title))),
+    tests.length === 0 ? h('p', { class: 'muted' }, 'សូមបង្កើតតេស្ត ១ នៅផ្ទាំង «តេស្ត» ជាមុនសិន។') : null,
+    h('label', {}, 'តេស្ត (ជ្រើសរើសតេស្តចាស់ ឬតេស្តថ្មីដែលបានបង្កើត)'),
+    h('select', { id: 'sch-test' }, testOptions),
     h('label', {}, 'ថ្នាក់'),
     h('select', { id: 'sch-class' }, classes.map((c) => h('option', { value: c.id }, c.name))),
-    h('label', {}, 'ថ្ងៃ និងម៉ោងចាប់ផ្តើម'),
-    h('input', { type: 'datetime-local', id: 'sch-start' }),
+    h('label', {}, 'ថ្ងៃ និងម៉ោងចាប់ផ្តើម (អាចវាយបញ្ចូលផ្ទាល់ ឬចុចប៊ូតុងខាងក្រោម)'),
+    h('div', { class: 'row', style: 'gap: 8px;' }, [dateInput, timeInput]),
+    shortcuts,
     h('label', {}, 'រយៈពេល (នាទី)'),
     h('input', { type: 'number', id: 'sch-duration', value: '120' }),
     h('div', { class: 'row', style: 'margin-top:12px' }, [
       h('button', { onclick: async () => {
-        const startLocal = document.getElementById('sch-start').value;
-        if (!startLocal) { await Exam.notify('សូមជ្រើសរើសថ្ងៃ និងម៉ោង'); return; }
+        const testId = Number(document.getElementById('sch-test').value);
+        const classId = Number(document.getElementById('sch-class').value);
+        if (!testId) { await Exam.notify('សូមជ្រើសរើសតេស្ត'); return; }
+        if (!classId) { await Exam.notify('សូមជ្រើសរើសថ្នាក់'); return; }
+
+        const dateVal = dateInput.value.trim();
+        const timeVal = timeInput.value.trim();
+        if (!dateVal || !timeVal) { await Exam.notify('សូមបញ្ចូលថ្ងៃ និងម៉ោង'); return; }
+        const dt = parseScheduleDateTime(dateVal, timeVal);
+        if (isNaN(dt.getTime())) { await Exam.notify('ម៉ោងមិនត្រឹមត្រូវទេ។ ឧទាហរណ៍៖ 08:00 ឬ 14:30'); return; }
+
+        // If the selected test was a draft, promote it to ready so students can take it
+        const targetTest = tests.find((t) => t.id === testId);
+        if (targetTest && targetTest.status !== 'ready') {
+          try {
+            await api(`/api/tests/${testId}`, { method: 'PATCH', body: { status: 'ready' } });
+          } catch {}
+        }
+
         await api('/api/sessions', { method: 'POST', body: {
-          test_id: Number(document.getElementById('sch-test').value),
-          class_id: Number(document.getElementById('sch-class').value),
-          scheduled_start: new Date(startLocal).toISOString(),
-          duration_minutes: Number(document.getElementById('sch-duration').value),
+          test_id: testId,
+          class_id: classId,
+          scheduled_start: dt.toISOString(),
+          duration_minutes: Number(document.getElementById('sch-duration').value) || 120,
         } });
+        await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ!');
         render.schedule();
       } }, 'កំណត់ពេល'),
     ]),
