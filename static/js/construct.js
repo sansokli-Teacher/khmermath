@@ -1800,6 +1800,138 @@
   };
   var triStart = { A: [340, 100], B: [116, 380], C: [560, 380] };
 
+  // Grade 8, lesson 14, visual proof of the Pythagorean theorem:
+  // Four copies of a right-angled triangle with legs a, b and hypotenuse c
+  // fit inside a large square of side (a+b), enclosing an inner tilted square IJKL of side c.
+  CX['g8-l14-pythagoras'] = {
+    steps: 6,
+    start: { t: 0.36 },
+    place: function (s, key, p) {
+      if (key === 'I') {
+        var x0 = 380, S = 210;
+        var clampedX = Math.max(x0 + 35, Math.min(x0 + S - 35, p[0]));
+        var frac = (x0 + S - clampedX) / S;
+        s.t = Math.max(0.18, Math.min(0.65, frac));
+        return [x0 + S * (1 - s.t), 325];
+      }
+      return p;
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var x0 = 380, y0 = 115, S = 210;
+      var t = s.t || 0.36;
+      var a = t * S, b = (1 - t) * S;
+      var c = Math.hypot(a, b);
+      var BL = [x0, y0 + S], BR = [x0 + S, y0 + S], TR = [x0 + S, y0], TL = [x0, y0];
+      var I = [x0 + b, y0 + S];
+      var J = [x0 + S, y0 + S - b];
+      var K = [x0 + a, y0];
+      var L = [x0, y0 + b];
+      return { x0: x0, y0: y0, S: S, a: a, b: b, c: c, t: t,
+        BL: BL, BR: BR, TR: TR, TL: TL,
+        I: I, J: J, K: K, L: L };
+    },
+    draw: function (f, i, svg, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      var poly = function (g, pts, attrs) {
+        var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+        var a = Object.assign({ points: pStr }, attrs);
+        return el('polygon', a, g);
+      };
+
+      if (i === 0) {
+        // Step 0: Single right triangle with legs a, b, hypotenuse c on the right side
+        var O = [395, 305], P = [395 + f.b, 305], Q = [395 + f.b, 305 - f.a];
+        poly(ink, [O, P, Q], { fill: 'rgba(46, 122, 112, 0.22)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+        rightMark(marks, P, [-1, 0], [0, -1]);
+        label(marks, [(O[0] + P[0]) / 2, O[1] + 24], 'b', 'cx-label');
+        label(marks, [P[0] + 18, (P[1] + Q[1]) / 2], 'a', 'cx-label');
+        label(marks, [(O[0] + Q[0]) / 2 - 14, (O[1] + Q[1]) / 2 - 12], 'c', 'cx-label');
+
+        says(marks, 0, 'ត្រីកោណកែងមួយមាន ៖');
+        says(marks, 1, '• ជ្រុងមុំកែងពីរមានរង្វាស់ a និង b');
+        says(marks, 2, '• អ៊ីប៉ូតេនុសមានរង្វាស់ c');
+        says(marks, 4, 'គោលដៅ ៖ ស្រាយបញ្ជាក់ថា c² = a² + b²');
+        return;
+      }
+
+      // Step 1+: Outer square (a+b) x (a+b)
+      poly(ink, [f.TL, f.TR, f.BR, f.BL], { fill: 'rgba(45, 106, 168, 0.05)', stroke: '#2e7a70', 'stroke-width': '2.5' });
+
+      says(marks, 0, 'ការេធំមួយមានរង្វាស់ជ្រុង (a + b)');
+      says(marks, 1, 'ផ្ទៃការេធំ = (a + b)²');
+      says(marks, 2, '             = a² + b² + 2ab');
+
+      if (i >= 2) {
+        // Step 2+: Mark points I, J, K, L and segment labels a, b
+        point(marks, f.I, 'I', [0, 1], 'cx-pt-m', 'I', 18);
+        point(marks, f.J, 'J', [1, 0], 'cx-pt-m', null, 18);
+        point(marks, f.K, 'K', [0, -1], 'cx-pt-m', null, 18);
+        point(marks, f.L, 'L', [-1, 0], 'cx-pt-m', null, 18);
+
+        label(marks, [(f.BL[0] + f.I[0]) / 2, f.BL[1] + 16], 'b', 'cx-note cx-r');
+        label(marks, [(f.I[0] + f.BR[0]) / 2, f.BR[1] + 16], 'a', 'cx-note cx-r');
+
+        label(marks, [f.BR[0] + 16, (f.BR[1] + f.J[1]) / 2], 'b', 'cx-note cx-r');
+        label(marks, [f.TR[0] + 16, (f.J[1] + f.TR[1]) / 2], 'a', 'cx-note cx-r');
+
+        label(marks, [(f.TR[0] + f.K[0]) / 2, f.TR[1] - 14], 'b', 'cx-note cx-r');
+        label(marks, [(f.K[0] + f.TL[0]) / 2, f.TL[1] - 14], 'a', 'cx-note cx-r');
+
+        label(marks, [f.TL[0] - 16, (f.TL[1] + f.L[1]) / 2], 'b', 'cx-note cx-r');
+        label(marks, [f.BL[0] - 16, (f.L[1] + f.BL[1]) / 2], 'a', 'cx-note cx-r');
+      }
+
+      if (i >= 3) {
+        // Step 3+: Draw the 4 right triangles in the corners
+        var triAttr = { fill: 'rgba(46, 122, 112, 0.25)', stroke: '#2e7a70', 'stroke-width': '2' };
+        poly(ink, [f.I, f.BR, f.J], triAttr);
+        poly(ink, [f.J, f.TR, f.K], triAttr);
+        poly(ink, [f.K, f.TL, f.L], triAttr);
+        poly(ink, [f.L, f.BL, f.I], triAttr);
+
+        rightMark(marks, f.BR, [-1, 0], [0, -1]);
+        rightMark(marks, f.TR, [0, 1], [-1, 0]);
+        rightMark(marks, f.TL, [1, 0], [0, 1]);
+        rightMark(marks, f.BL, [0, -1], [1, 0]);
+
+        says(marks, 4, 'ត្រីកោណកែង ៤ ប៉ុនគ្នានៅតាមជ្រុង ៖');
+        says(marks, 5, 'ផ្ទៃត្រីកោណទាំង ៤ = 4 × (½ab) = 2ab');
+      }
+
+      if (i >= 4) {
+        // Step 4+: Inner square IJKL
+        poly(ink, [f.I, f.J, f.K, f.L], { fill: 'rgba(201, 134, 43, 0.32)', stroke: '#c9862b', 'stroke-width': '2.5' });
+
+        label(marks, [(f.I[0] + f.J[0]) / 2 - 10, (f.I[1] + f.J[1]) / 2 - 10], 'c', 'cx-label');
+        label(marks, [(f.J[0] + f.K[0]) / 2 - 10, (f.J[1] + f.K[1]) / 2 + 10], 'c', 'cx-label');
+        label(marks, [(f.K[0] + f.L[0]) / 2 + 10, (f.K[1] + f.L[1]) / 2 + 10], 'c', 'cx-label');
+        label(marks, [(f.L[0] + f.I[0]) / 2 + 10, (f.L[1] + f.I[1]) / 2 - 10], 'c', 'cx-label');
+
+        label(marks, [(f.x0 + f.S / 2), (f.y0 + f.S / 2)], 'IJKL (c²)', 'cx-label');
+        says(marks, 7, 'ចតុកោណ IJKL ជាការេជ្រុង c ៖');
+        says(marks, 8, 'ផ្ទៃការេ IJKL = c²');
+      }
+
+      if (i >= 5) {
+        // Step 5: Full algebraic proof and dynamic live values
+        says(marks, 10, 'ផ្ទៃការេ IJKL = ផ្ទៃការេធំ − ផ្ទៃត្រីកោណទាំង ៤');
+        says(marks, 11, 'c² = (a² + b² + 2ab) − 2ab');
+        says(marks, 12, '⟹  c² = a² + b²  (ទ្រឹស្តីបទពីតាក័រ)');
+
+        var aN = Math.round(f.a / 21);
+        var bN = Math.round(f.b / 21);
+        var c2N = aN * aN + bN * bN;
+        var cN = Math.sqrt(c2N).toFixed(2);
+        says(marks, 14, 'សាកល្បង៖ a = ' + aN + ', b = ' + bN + ' ⟹ c² = ' + aN + '² + ' + bN + '² = ' + c2N + ' (c ≈ ' + cN + ')');
+      }
+    },
+    anim: function (f, i) {
+      return null;
+    }
+  };
+
+
   // ===== The circle (Grade 7, lesson 17), one page with three tabs ====================================
   // #parts: draw a circle and name its parts. #pi: a disc rolled once along a ruler: the circumference
   // is a little more than three diameters. #area: a disc cut in n equal sectors that are laid head to
@@ -2220,7 +2352,7 @@
       step = Math.max(0, Math.min(def.steps - 1, i));
       caption();
       var f = def.figure(state);
-      var a = animate && !reduce ? def.anim(f, step) : null;
+      var a = animate && !reduce && def.anim ? def.anim(f, step) : null;
       if (!a) { render(step); return Promise.resolve(); }
       render(step - 1);
       clear(marks); clear(tools);                         // the previous step's hints go
