@@ -6,6 +6,7 @@ import { ensureColumns } from '../lib/schema.js';
 import { authTeacher, needAdmin, needClass, needTest, needLicense, isAdmin, accessibleClasses, accessibleTests } from '../lib/access.js';
 import { allow } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
+import { notifyOwner } from '../lib/notify.js';
 
 const INVITE_DAYS = 7;
 
@@ -243,6 +244,7 @@ export async function redeemCode(req, env) {
   if (!claim.meta.rows_written) return err('កូដនេះត្រូវបានប្រើរួចហើយ។', 409);
   await env.DB.prepare("UPDATE teachers SET plan = 'full', license_until = ?1 WHERE id = ?2").bind(until, t.id).run();
   await audit(env, t, 'license.redeem', `${c} → ${until || 'lifetime'}`);
+  await notifyOwner(env, `🔓 ${t.display_name} (@${t.username}) បានដោះសោដោយកូដ ${c} — ${until ? `ដល់ ${until.slice(0, 10)}` : 'ពេញមួយជីវិត'}`);
   return json({ ok: true, license_until: until });
 }
 
@@ -267,9 +269,9 @@ export async function setLicense(req, env, params) {
 // Owner: settings (open sign-up on/off, contact text shown to locked teachers).
 export async function getAdminSettings(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
-  const rows = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('signup_open', 'contact_text')").all();
+  const rows = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('signup_open', 'contact_text', 'telegram_token', 'telegram_chat_id')").all();
   const m = Object.fromEntries(rows.results.map((r) => [r.key, r.value]));
-  return json({ signup_open: m.signup_open !== '0', contact_text: m.contact_text || '' });
+  return json({ signup_open: m.signup_open !== '0', contact_text: m.contact_text || '', telegram_set: !!m.telegram_token, telegram_chat_id: m.telegram_chat_id || '' });
 }
 
 export async function setAdminSettings(req, env) {
@@ -279,6 +281,8 @@ export async function setAdminSettings(req, env) {
   const stmts = [];
   if (b.signup_open !== undefined) stmts.push(put('signup_open', b.signup_open ? '1' : '0'));
   if (b.contact_text !== undefined) stmts.push(put('contact_text', String(b.contact_text).slice(0, 200)));
+  if (b.telegram_token) stmts.push(put('telegram_token', String(b.telegram_token).trim().slice(0, 200)));     // write-only: never sent back
+  if (b.telegram_chat_id !== undefined) stmts.push(put('telegram_chat_id', String(b.telegram_chat_id).trim().slice(0, 40)));
   if (stmts.length) await env.DB.batch(stmts);
   return json({ ok: true });
 }
@@ -319,4 +323,10 @@ export async function exportData(req, env) {
   const questions = await q(
     `SELECT test_id, order_no, kind, stem_text, options_json, correct_index, points, topic, level, solution_text FROM test_questions WHERE test_id IN (${ph(testIds)}) ORDER BY test_id, order_no`, ...testIds);
   return json({ exported_at: new Date().toISOString(), teacher: t.display_name, classes, students, sessions, results, assessments, manual_scores: manual, tests, questions });
+}
+
+export async function telegramTest(req, env) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const ok = await notifyOwner(env, '✅ ការជូនដំណឹង Telegram ដំណើរការ — ប្រព័ន្ធប្រឡងគណិតវិទ្យា');
+  return ok ? json({ ok: true }) : err('ផ្ញើមិនបានទេ។ សូមពិនិត្យ Bot token និង Chat ID (ហើយបាន /start ជាមួយ Bot ជាមុន)។', 400);
 }

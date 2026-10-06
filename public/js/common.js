@@ -130,3 +130,8 @@ Exam.gradeOf = function (pct) {
   if (p >= 40) return { grade: 'E', label: 'ខ្សោយ', color: '#ea580c' };
   return { grade: 'F', label: 'ធ្លាក់', color: '#dc2626' };
 };
+
+// Installable app: register the (tiny) service worker.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

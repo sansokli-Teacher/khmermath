@@ -36,6 +36,7 @@ const ROUTES = [
   ['GET', '/api/admin/settings', admin.getAdminSettings],
   ['POST', '/api/admin/settings', admin.setAdminSettings],
   ['GET', '/api/admin/audit', admin.listAudit],
+  ['POST', '/api/admin/telegram-test', admin.telegramTest],
   ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
   ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
   ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],

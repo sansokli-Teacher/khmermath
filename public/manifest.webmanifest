@@ -1,0 +1,16 @@
+{
+  "name": "ប្រព័ន្ធប្រឡងគណិតវិទ្យា",
+  "short_name": "ប្រឡងគណិត",
+  "description": "ប្រព័ន្ធប្រឡងប្រចាំខែ — សិស្ស និងគ្រូបង្រៀន",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6fb",
+  "theme_color": "#2260d6",
+  "lang": "km",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

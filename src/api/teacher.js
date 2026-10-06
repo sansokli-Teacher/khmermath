@@ -5,6 +5,7 @@ import { ensureColumns } from '../lib/schema.js';
 import { authTeacher } from '../lib/access.js';
 import { allow, clientIp } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
+import { notifyOwner } from '../lib/notify.js';
 
 export async function setupStatus(req, env) {
   const { results } = await env.DB.prepare('SELECT COUNT(*) AS n FROM teachers').all();
@@ -77,6 +78,7 @@ export async function signup(req, env) {
     "INSERT INTO teachers (username, password_hash, role, display_name, plan, contact, created_at, last_login) VALUES (?1, ?2, 'teacher', ?3, 'trial', ?4, datetime('now'), datetime('now'))",
   ).bind(uname, hash, name, String(contact || '').trim().slice(0, 80)).run();
   await audit(env, null, 'signup', `${uname} (${name})`);
+  await notifyOwner(env, `🆕 គ្រូចុះឈ្មោះថ្មី៖ ${name} (@${uname})${contact ? ` · ${contact}` : ''}`);
   const cookie = await createSessionCookie({ role: 'teacher', username: uname }, env.SESSION_SECRET);
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }

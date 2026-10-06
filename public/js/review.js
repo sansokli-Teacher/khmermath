@@ -183,12 +183,12 @@ function practice(questions) {
     });
     const fb = h('div', { style: 'font-weight:700;margin:8px 0;min-height:24px;' });
     const next = h('button', { hidden: 'hidden', onclick: () => { i++; show(); } }, i + 1 < questions.length ? 'សំណួរបន្ទាប់ →' : 'មើលលទ្ធផល');
-    box.append(
+    box.append(...[
       h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('b', {}, `ហាត់ ${i + 1} / ${questions.length}`), h('button', { class: 'secondary btn-sm', onclick: () => back.remove() }, '✕')]),
       mathEl('div', { class: 'rp-stem', style: 'font-size:18px;margin:10px 0;' }, q.stem_text),
       q.image_key ? h('img', { src: `/api/images/${q.image_key}`, style: 'max-width:100%;max-height:220px;display:block;margin:6px 0;' }) : null,
       opts, fb, next,
-    );
+    ].filter(Boolean));
   }
   show();
 }

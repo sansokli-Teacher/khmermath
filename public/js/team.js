@@ -258,6 +258,8 @@ async function settingsCard() {
   const st = await api('/api/admin/settings');
   const open = h('input', { type: 'checkbox', checked: st.signup_open ? 'checked' : null, style: 'width:18px;height:18px;' });
   const contact = h('input', { type: 'text', value: st.contact_text, placeholder: 'ឧ. Telegram @yourname · 012 345 678', style: 'flex:1;min-width:220px;' });
+  const tgToken = h('input', { type: 'password', placeholder: st.telegram_set ? '•••••• (បានកំណត់ — វាយថ្មីដើម្បីប្តូរ)' : 'Bot token ពី @BotFather', style: 'flex:1;min-width:200px;', autocomplete: 'off' });
+  const tgChat = h('input', { type: 'text', value: st.telegram_chat_id, placeholder: 'Chat ID របស់អ្នក', style: 'width:170px;' });
   return h('div', { class: 'card' }, [
     h('h2', {}, '⚙ ការកំណត់'),
     h('label', { class: 'setup-check', style: 'margin:0 0 12px;' }, [open, ' អនុញ្ញាតឱ្យគ្រូចុះឈ្មោះដោយខ្លួនឯង (បង្កើតគណនីសាកល្បង)']),
@@ -266,6 +268,16 @@ async function settingsCard() {
       await api('/api/admin/settings', { method: 'POST', body: { signup_open: open.checked, contact_text: contact.value } });
       Exam.notify('បានរក្សាទុក។');
     } }, 'រក្សាទុក')]),
+    h('h3', { style: 'margin-top:18px;' }, '🔔 ការជូនដំណឹងតាម Telegram (ជម្រើស)'),
+    h('p', { class: 'muted' }, 'ទទួលសារពេលមានគ្រូចុះឈ្មោះថ្មី ឬដោះសោដោយកូដ។ បង្កើត Bot ជាមួយ @BotFather, ផ្ញើ /start ទៅ Bot, ហើយយក Chat ID ពី @userinfobot។'),
+    h('div', { class: 'row' }, [tgToken, tgChat,
+      h('button', { onclick: async () => {
+        await api('/api/admin/settings', { method: 'POST', body: { telegram_token: tgToken.value, telegram_chat_id: tgChat.value } });
+        tgToken.value = '';
+        Exam.notify('បានរក្សាទុក។ ចុច «សាកល្បងផ្ញើ» ដើម្បីពិនិត្យ។');
+      } }, 'រក្សាទុក'),
+      h('button', { class: 'secondary', onclick: async () => { try { await api('/api/admin/telegram-test', { method: 'POST' }); Exam.notify('✅ បានផ្ញើសារសាកល្បងហើយ។'); } catch (e) { Exam.notify(e.message); } } }, 'សាកល្បងផ្ញើ'),
+    ]),
   ]);
 }
 
