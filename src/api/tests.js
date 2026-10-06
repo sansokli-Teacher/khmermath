@@ -105,7 +105,7 @@ export async function updateQuestion(req, env, params) {
   if (b.topic !== undefined) put('topic', b.topic ? String(b.topic).trim().slice(0, 60) : null);
   if (b.grade !== undefined) put('grade', cleanGrade(b.grade));
   if (b.lesson !== undefined) put('lesson', cleanLesson(b.lesson));
-  if (b.level !== undefined) put('level', ['easy', 'medium', 'hard'].includes(b.level) ? b.level : null);
+  if (b.level !== undefined) put('level', ['easy', 'medium', 'hard', 'pisa'].includes(b.level) ? b.level : null);
   if (!isWriting) {
     const options = b.options !== undefined ? b.options : JSON.parse(cur.options_json);
     if (!Array.isArray(options) || options.length < 2 || options.some((o) => !String(o).trim())) return err('At least two non-empty options are required.', 400);
@@ -294,7 +294,7 @@ export async function generateTest(req, env) {
     .filter((q) => !Array.isArray(lessons) || !lessons.length || lessons.includes(q.lesson));
   const shuffle = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
   const picked = []; const shortage = {};
-  for (const lvl of ['easy', 'medium', 'hard']) {
+  for (const lvl of ['easy', 'medium', 'hard', 'pisa']) {
     const want = Math.min(Math.max(Number(counts && counts[lvl]) || 0, 0), 100);
     const pool = shuffle(bank.filter((q) => q.level === lvl));
     picked.push(...pool.slice(0, want));
@@ -328,7 +328,7 @@ export async function bulkAdd(req, env, params) {
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
     ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(0.25, Math.round((Number(q.points) || (writing ? 5 : 1)) * 100) / 100),
       writing ? 'writing' : 'mcq', q.solution_text ? String(q.solution_text) : null, q.topic ? String(q.topic).slice(0, 60) : null,
-      ['easy', 'medium', 'hard'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0), cleanGrade(q.grade), cleanLesson(q.lesson)));
+      ['easy', 'medium', 'hard', 'pisa'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0), cleanGrade(q.grade), cleanLesson(q.lesson)));
   });
   if (stmts.length) await env.DB.batch(stmts);
   await audit(env, g.t, 'questions.import', `test ${params.testId}: ${stmts.length} added, ${bad.length} skipped`);
@@ -374,7 +374,7 @@ export async function tagQuestions(req, env) {
     const sets = []; const vals = [];
     if (gr !== undefined) { sets.push(`grade = ?${sets.length + 1}`); vals.push(gr); }
     if (ls !== undefined) { sets.push(`lesson = ?${sets.length + 1}`); vals.push(ls); }
-    if (b.level !== undefined) { sets.push(`level = ?${sets.length + 1}`); vals.push(['easy', 'medium', 'hard'].includes(b.level) ? b.level : null); }
+    if (b.level !== undefined) { sets.push(`level = ?${sets.length + 1}`); vals.push(['easy', 'medium', 'hard', 'pisa'].includes(b.level) ? b.level : null); }
     if (!sets.length) continue;
     stmts.push(env.DB.prepare(`UPDATE test_questions SET ${sets.join(', ')} WHERE id = ?${sets.length + 1}`).bind(...vals, q.id));
   }

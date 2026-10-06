@@ -204,7 +204,7 @@
   // Template 2 ("Pre-test", NGS summer-course style)
   // =====================================================================================
   const LATIN = ['A', 'B', 'C', 'D', 'E', 'F'];
-  const LVL = [['easy', 'កម្រិត ១៖ ចំណេះដឹងមូលដ្ឋាន'], ['medium', 'កម្រិត ២៖ ការគណនា និងអនុវត្ត'], ['hard', 'កម្រិត ៣៖ ការវិភាគ និងដោះស្រាយបញ្ហា']];
+  const LVL = [['easy', 'កម្រិត ១៖ ចំណេះដឹងមូលដ្ឋាន'], ['medium', 'កម្រិត ២៖ ការគណនា និងអនុវត្ត'], ['hard', 'កម្រិត ៣៖ ការវិភាគ និងដោះស្រាយបញ្ហា'], ['pisa', 'កម្រិត ៤៖ សំណួរបែប PISA']];
   const visLen = (t) => String(t).replace(/\\[A-Za-z]+/g, 'x').replace(/[\\{}()$^_]/g, '').length;
   const TW = 9638;                                   // text width (A4, 2 cm margins)
 
@@ -358,7 +358,7 @@
           return [p1.length ? `ផ្នែកទី ១ សំណួរទី ${p1.map(kh).join(', ')}` : '', p2.length ? `ផ្នែកទី ២ សំណួរទី ${p2.map(kh).join(', ')}` : ''].filter(Boolean).join(' · ');
         };
         body.push(para(runF(FT.title, 'ផែនទីកម្រិតលំបាកសម្រាប់គ្រូបង្រៀន', { b: 1, sz: 26 }), { align: 'center', shade: 'EEEEEE', box: 1, before: 200, after: 80, keep: 1 }));
-        [['easy', 'កម្រិតងាយស្រួល (Easy)'], ['medium', 'កម្រិតមធ្យម (Medium)'], ['hard', 'កម្រិតលំបាក (Hard)']].forEach(([lv, label]) => {
+        [['easy', 'កម្រិតងាយស្រួល (Easy)'], ['medium', 'កម្រិតមធ្យម (Medium)'], ['hard', 'កម្រិតលំបាក (Hard)'], ['pisa', 'សំណួរបែប PISA']].forEach(([lv, label]) => {
           const list = test.questions.filter((q) => q.level === lv);
           if (list.length) body.push(para(run('•  ', { sz: 22 }) + run(`${label}៖ `, { b: 1, sz: 22 }) + run(`${kh(list.length)} សំណួរ — ${num(list)}`, { sz: 22 }), { left: 454, hanging: 340, after: 40 }));
         });

@@ -1,5 +1,5 @@
 // Question bank: grade → lesson → questions. Reuse, tag, add new, import, or build a random test from a lesson.
-const LEVEL_KH = { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក' };
+const LEVEL_KH = { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'PISA' };
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
 const khNum = (n) => String(n).replace(/\d/g, (d) => KH_DIGITS[d]);
 const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
@@ -67,7 +67,7 @@ render.bank = async function () {
       return h('button', { class: `lesson-btn${S.lesson === val ? ' on' : ''}`, onclick: () => { S.lesson = val; reload(); } }, [
         h('span', { class: 'lesson-name' }, label),
         h('span', { class: 'lesson-n' }, qs.length ? `${qs.length}` : '—'),
-        qs.length ? h('span', { class: 'lesson-lv' }, `ង ${lv('easy')} · ម ${lv('medium')} · ព ${lv('hard')}`) : null,
+        qs.length ? h('span', { class: 'lesson-lv' }, `ង ${lv('easy')} · ម ${lv('medium')} · ព ${lv('hard')} · PISA ${lv('pisa')}`) : null,
       ]);
     };
     const gq = questions.filter(inGrade);
@@ -106,7 +106,7 @@ render.bank = async function () {
   } }, '🏷 ដាក់ក្នុងមេរៀន');
   const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), tagBtn, targetSel, addBtn]);
 
-  const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
+  const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'PISA']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
   const fKind = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v, selected: S.kind === v ? 'selected' : null }, l)));
   const fTopic = topics.length ? h('select', { style: 'width:auto;' }, [h('option', { value: '' }, 'គ្រប់ប្រធានបទ'), ...topics.map((t) => h('option', { value: t, selected: S.topic === t ? 'selected' : null }, t))]) : null;
   const fQ = h('input', { type: 'text', placeholder: '🔍 ស្វែងរក…', value: S.q, style: 'max-width:200px;' });
@@ -149,7 +149,7 @@ render.bank = async function () {
             x.grade && S.grade === '' ? h('span', { class: 'chip chip-plain' }, GRADE_KH(x.grade)) : null,
             x.lesson && !(showLessons && S.lesson === x.lesson) ? h('span', { class: 'chip chip-plain' }, x.lesson) : null,
             x.topic ? h('span', { class: 'chip chip-plain' }, x.topic) : null,
-            x.level ? h('span', { class: `chip ${x.level === 'hard' ? 'chip-closed' : 'chip-open'}` }, LEVEL_KH[x.level]) : null,
+            x.level ? h('span', { class: `chip ${x.level === 'hard' ? 'chip-closed' : x.level === 'pisa' ? 'chip-soon' : 'chip-open'}` }, LEVEL_KH[x.level]) : null,
             x.image_key ? h('span', { class: 'chip chip-plain' }, '🖼 រូបភាព') : null,
             h('span', { class: 'chip chip-plain' }, `${x.points} ពិន្ទុ`),
             h('span', { class: 'muted', style: 'font-size:12px;' }, x.test_title),
@@ -169,7 +169,7 @@ render.bank = async function () {
   const gen = (() => {
     const title = h('input', { type: 'text', placeholder: 'ចំណងជើងតេស្តថ្មី ឧ. ប្រឡងមេរៀន ១៣–១៩ ថ្នាក់ទី ៧', style: 'flex:1;min-width:240px;' });
     const num = (v) => h('input', { type: 'number', min: '0', max: '100', value: String(v), style: 'width:80px;' });
-    const nEasy = num(4), nMed = num(12), nHard = num(4);
+    const nEasy = num(4), nMed = num(12), nHard = num(4), nPisa = num(0);
     const kind = h('select', { style: 'width:auto;' }, [h('option', { value: 'mcq' }, 'ពហុជ្រើសរើសប៉ុណ្ណោះ'), h('option', { value: 'all' }, 'ទាំងពហុជ្រើសរើស និងសរសេរ')]);
     const chosen = new Set(showLessons && S.lesson && S.lesson !== '-' ? [S.lesson] : []);
     const chips = showLessons ? h('div', { class: 'filter-bar', style: 'margin-top:8px;' }, lessonsOf(S.grade).filter((n) => count((q) => q.grade === S.grade && q.lesson === n)).map((n) => {
@@ -178,12 +178,12 @@ render.bank = async function () {
     return h('details', { class: 'card' }, [
       h('summary', { style: 'cursor:pointer;font-weight:700;' }, `🎲 បង្កើតតេស្តចៃដន្យពីធនាគារ${S.grade && S.grade !== '-' ? ` (${GRADE_KH(S.grade)})` : ''}`),
       h('div', { class: 'row', style: 'margin-top:10px;' }, [title]),
-      h('div', { class: 'row', style: 'margin-top:10px;' }, [h('span', {}, 'ងាយ'), nEasy, h('span', {}, 'មធ្យម'), nMed, h('span', {}, 'ពិបាក'), nHard, kind]),
+      h('div', { class: 'row', style: 'margin-top:10px;' }, [h('span', {}, 'ងាយ'), nEasy, h('span', {}, 'មធ្យម'), nMed, h('span', {}, 'ពិបាក'), nHard, h('span', {}, 'PISA'), nPisa, kind]),
       showLessons ? h('div', {}, [h('label', {}, 'ជ្រើសមេរៀន (មិនជ្រើស = ទាំងអស់ក្នុងថ្នាក់នេះ)'), chips]) : h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ខាងលើ ដើម្បីជ្រើសតាមមេរៀន។'),
       h('div', { class: 'row', style: 'margin-top:12px;' }, [h('button', { onclick: async () => {
         if (!title.value.trim()) return title.focus();
         try {
-          const r = await api('/api/bank/generate', { method: 'POST', body: { title: title.value, counts: { easy: Number(nEasy.value), medium: Number(nMed.value), hard: Number(nHard.value) }, grade: showLessons ? S.grade : '', lessons: [...chosen], kind: kind.value } });
+          const r = await api('/api/bank/generate', { method: 'POST', body: { title: title.value, counts: { easy: Number(nEasy.value), medium: Number(nMed.value), hard: Number(nHard.value), pisa: Number(nPisa.value) }, grade: showLessons ? S.grade : '', lessons: [...chosen], kind: kind.value } });
           const short = Object.entries(r.shortage).map(([l, n]) => `${LEVEL_KH[l]} ខ្វះ ${n}`).join(' · ');
           await Exam.notify(`✅ បានបង្កើតតេស្តព្រាងមាន ${r.picked} សំណួរ។${short ? `\nចំណាំ៖ ${short}` : ''}`);
           selectedTestId = r.id;
@@ -207,7 +207,7 @@ const KH_LETTERS = { 'ក': 0, 'ខ': 1, 'គ': 2, 'ឃ': 3, 'ង': 4, 'ច': 5 
 function importQuestionsCard(test, container, onDone) {
   const status = h('div', { class: 'muted', style: 'margin-top:8px;' });
   const file = h('input', { type: 'file', accept: '.xlsx,.xls,.csv' });
-  const levelOf = (v) => { const s = String(v || '').trim().toLowerCase(); return { 'ងាយ': 'easy', easy: 'easy', 'មធ្យម': 'medium', medium: 'medium', 'ពិបាក': 'hard', hard: 'hard' }[s] || null; };
+  const levelOf = (v) => { const s = String(v || '').trim().toLowerCase(); return { 'ងាយ': 'easy', easy: 'easy', 'មធ្យម': 'medium', medium: 'medium', 'ពិបាក': 'hard', hard: 'hard', pisa: 'pisa' }[s] || null; };
   const pick = (r, ...names) => { for (const k of Object.keys(r)) { const nk = k.trim().toLowerCase(); if (names.includes(nk)) return r[k]; } return ''; };
   function toQuestion(r) {
     const writing = /writing|សរសេរ/i.test(String(pick(r, 'kind', 'type', 'ប្រភេទ')));

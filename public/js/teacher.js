@@ -773,7 +773,7 @@ async function renderTestBuilder(container) {
     h('h3', {}, `សំណួរ (${test.questions.length}) — ពហុជ្រើសរើស ${mcqQs.length} សំណួរ ${sum(mcqQs)} ពិន្ទុ · សរសេរ ${wQs.length} សំណួរ ${sum(wQs)} ពិន្ទុ · សរុប ${sum(test.questions)} ពិន្ទុ`),
     ...test.questions.map((q, i) => h('div', { class: 'question-card' }, [
       h('div', { class: 'row', style: 'justify-content:space-between' }, [
-        h('div', {}, [h('strong', {}, `${i + 1}.`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.lesson ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, `${q.grade ? 'ថ្នាក់ ' + q.grade + ' · ' : ''}${q.lesson}`) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
+        h('div', {}, [h('strong', {}, `${i + 1}.`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.lesson ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, `${q.grade ? 'ថ្នាក់ ' + q.grade + ' · ' : ''}${q.lesson}`) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'PISA' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
         h('div', { class: 'row', style: 'gap:6px;' }, [
           h('button', { class: 'secondary btn-sm', onclick: () => openQuestionEditor(q, test, container) }, '✏️ កែ'),
           h('button', { class: 'danger btn-sm', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
@@ -824,7 +824,7 @@ async function buildQuestionForm(test, container, opts = {}) {
   const mathBar = Exam.mathBar(() => mathTarget);
 
   const topicInput = h('input', { type: 'text', list: 'topic-list', placeholder: 'ឧ. ប្រភាគ' });
-  const levelInput = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក']].map(([v, l]) => h('option', { value: v }, l)));
+  const levelInput = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'PISA']].map(([v, l]) => h('option', { value: v }, l)));
   const shuffleInput = h('input', { type: 'checkbox', style: 'width:18px;height:18px;' });
   const kindSelect = h('select', { id: 'q-kind' }, [
     h('option', { value: 'mcq' }, 'ពហុជ្រើសរើស (ផ្នែក ក — ប្រព័ន្ធដាក់ពិន្ទុដោយស្វ័យប្រវត្តិ)'),
@@ -1684,7 +1684,7 @@ async function openQuestionEditor(q, test, container, onDone) {
   const alt = h('select', {}, [h('option', { value: '' }, '— គ្មាន —'), ...optInputs.map((_, i) => h('option', { value: i, selected: q.alt_correct_index === i ? 'selected' : null }, `ជម្រើស ${letters[i] || i + 1}`))]);
   const points = h('input', { type: 'number', value: q.points, style: 'width:90px;' });
   const topic = h('input', { type: 'text', list: 'topic-list', placeholder: 'ឧ. ប្រភាគ', value: q.topic || '' });
-  const level = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក']].map(([v, l]) => h('option', { value: v, selected: (q.level || '') === v ? 'selected' : null }, l)));
+  const level = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'PISA']].map(([v, l]) => h('option', { value: v, selected: (q.level || '') === v ? 'selected' : null }, l)));
   const shuffle = h('input', { type: 'checkbox', checked: q.shuffle ? 'checked' : null, style: 'width:18px;height:18px;' });
   const cancelled = h('input', { type: 'checkbox', checked: q.cancelled ? 'checked' : null, style: 'width:18px;height:18px;' });
   const solution = h('textarea', { style: 'min-height:70px;' }); solution.value = q.solution_text || '';
