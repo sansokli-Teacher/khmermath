@@ -12,8 +12,8 @@
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var STEP = reduce ? 60 : 340;
 
-  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, picked = -1, skips = 0;
-  var cells = [], ac = null, dirEl = document.getElementById('bk-dir');
+  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, skips = 0, handMode = true, release = null, handN = 0;
+  var cells = [], arrs = [], ac = null, handEl = null;
 
   function owner(i) { return i < 5 ? 0 : 1; }
   function nameOf(p) { return p === 0 ? 'អ្នកលេងទី ១' : (mode === 'ai' ? 'កុំព្យូទ័រ' : 'អ្នកលេងទី ២'); }
@@ -51,16 +51,38 @@
   /* ---- drawing ---- */
   function build() {
     boardEl.textContent = '';
-    cells = [];
+    cells = []; arrs = [];
     [[9, 8, 7, 6, 5], [0, 1, 2, 3, 4]].forEach(function (row) {
       row.forEach(function (i) {
+        var w = document.createElement('div'); w.className = 'bk-cell';
         var b = document.createElement('button');
         b.type = 'button'; b.className = 'bk-hole' + (i === 4 || i === 9 ? ' chi' : '');
         b.innerHTML = '<span class="bk-seeds"></span><span class="bk-n"></span>';
-        b.addEventListener('click', function () { choose(i); });
-        boardEl.appendChild(b); cells[i] = b;
+        b.addEventListener('click', function () { if (release && pendingI === i) { var r = release; release = null; r(); } });
+        w.appendChild(b);
+        arrs[i] = [-1, 1].map(function (side) {
+          var a = document.createElement('button');
+          a.type = 'button'; a.className = 'bk-arr ' + (side < 0 ? 'l' : 'r');
+          a.textContent = side < 0 ? '◀' : '▶';
+          a.setAttribute('aria-label', 'ចាក់គ្រាប់ទៅ' + (side < 0 ? 'ឆ្វេង' : 'ស្ដាំ'));
+          /* the ring runs 0→9 left to right along the bottom and right to left along the top */
+          a.addEventListener('click', function () { choose(i, i < 5 ? side : -side); });
+          w.appendChild(a); return a;
+        });
+        boardEl.appendChild(w); cells[i] = b;
       });
     });
+    handEl = document.createElement('div');
+    handEl.className = 'bk-hand'; handEl.hidden = true;
+    handEl.innerHTML = '<span class="bk-hand-ic" aria-hidden="true">✋</span><b class="bk-hand-n"></b>';
+    boardEl.appendChild(handEl);
+  }
+  var pendingI = -1;
+  function handTo(i, n) {
+    var br = boardEl.getBoundingClientRect(), cr = cells[i].getBoundingClientRect();
+    handEl.hidden = false;
+    handEl.style.transform = 'translate(' + (cr.left - br.left + cr.width * 0.5) + 'px,' + (cr.top - br.top + cr.height * 0.45) + 'px)';
+    handEl.querySelector('.bk-hand-n').textContent = n > 0 ? km(n) : '';
   }
   function seedHTML(n) {
     var s = '', k = Math.min(n, 16);
@@ -77,8 +99,8 @@
       c.querySelector('.bk-n').textContent = km(n);
       var can = !busy && !over && owner(i) === turn && n > 0 && (mode === 'two' || turn === 0);
       c.classList.toggle('can', can);
-      c.classList.toggle('sel', i === picked);
-      c.disabled = !can;
+      c.disabled = !c.classList.contains('next');
+      arrs[i][0].hidden = arrs[i][1].hidden = !can;
       c.setAttribute('aria-label', 'រន្ធ ' + km((i % 5) + 1) + (i === 4 || i === 9 ? ' (ក្បាលឈីមឿង)' : '') + ' មានគ្រាប់ ' + km(n));
     }
     root.querySelector('[data-score="0"]').textContent = km(score[0]);
@@ -105,20 +127,37 @@
 
   /* ---- a turn ---- */
   async function run(i, dir) {
-    var my = token, r = sim(holes, i, dir);
-    busy = true; picked = -1; dirEl.hidden = true;
-    var who = turn;
+    var my = token, r = sim(holes, i, dir), who = turn;
+    var manual = handMode && (mode === 'two' || who === 0);
+    busy = true; handN = 0; draw();
     say(nameOf(who) + ' កំពុងចាក់គ្រាប់…');
     for (var k = 0; k < r.ev.length; k++) {
       var e = r.ev[k], c = cells[e.i];
-      if (e.t === 'take') { holes[e.i] = 0; tone(300, .12); c.classList.add('hit'); }
-      else if (e.t === 'drop') { holes[e.i]++; tone(520 + (holes[e.i] % 5) * 40, .1); c.classList.add('hit'); }
-      else { score[who] += e.n; holes[e.i] = 0; tone(760, .35); c.classList.add('cap'); say(nameOf(who) + ' ចាប់បានគ្រាប់ ' + km(e.n) + '!'); }
+      handTo(e.i, handN);
+      await sleep(STEP * 0.6);
+      if (my !== token) return;
+      if (e.t === 'take') {
+        handN = holes[e.i]; holes[e.i] = 0; tone(300, .12); c.classList.add('hit');
+        handTo(e.i, handN);
+      } else if (e.t === 'drop') {
+        if (manual) {
+          say('ចុចរន្ធដែលភ្លឺ ដើម្បីដាក់គ្រាប់ ១ ពីក្នុងដៃ (នៅសល់ ' + km(handN) + ')។');
+          pendingI = e.i; c.classList.add('next'); c.disabled = false;
+          await new Promise(function (res) { release = res; });
+          pendingI = -1; c.classList.remove('next');
+          if (my !== token) return;
+        }
+        holes[e.i]++; handN--; tone(520 + (holes[e.i] % 5) * 40, .1); c.classList.add('hit');
+        handTo(e.i, handN);
+      } else {
+        score[who] += e.n; holes[e.i] = 0; tone(760, .35); c.classList.add('cap'); say(nameOf(who) + ' ចាប់បានគ្រាប់ ' + km(e.n) + '!');
+      }
       draw();
-      await sleep(e.t === 'cap' ? STEP * 2 : STEP);
+      await sleep(e.t === 'cap' ? STEP * 2 : STEP * 0.6);
       if (my !== token) return;
       c.classList.remove('hit', 'cap');
     }
+    handEl.hidden = true;
     holes = r.holes.slice();
     turn = 1 - turn; busy = false;
     if (!legal(holes, turn).length) {
@@ -133,7 +172,7 @@
   }
   function next(pre) {
     draw();
-    say((pre || '') + (mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ជ្រើសរន្ធមួយនៅខាងអ្នក ដែលមានគ្រាប់។'));
+    say((pre || '') + (mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ចុចព្រួញលើរន្ធមួយនៅខាងអ្នក ដើម្បីជ្រើសរន្ធ និងទិស។'));
     if (mode === 'ai' && turn === 1) {
       var my = token; busy = true; draw();
       sleep(reduce ? 100 : 900).then(function () { if (my === token) { busy = false; var m = aiMove(holes); run(m[0], m[1]); } });
@@ -148,17 +187,17 @@
         (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
     tone(660, .5);
   }
-  function choose(i) {
+  function choose(i, dir) {
     if (busy || over || owner(i) !== turn || !holes[i]) return;
     if (mode === 'ai' && turn === 1) return;
-    picked = i; draw();
-    dirEl.hidden = false;
-    say('ជ្រើសទិសដែលត្រូវចាក់គ្រាប់។');
+    run(i, dir);
   }
   function start() {
     token++;
-    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; picked = -1; skips = 0;
-    dirEl.hidden = true;
+    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; skips = 0; pendingI = -1;
+    if (release) { var r = release; release = null; r(); }
+    if (handEl) handEl.hidden = true;
+    cells.forEach(function (c) { c.classList.remove('next', 'hit', 'cap'); });
     turn = Math.random() < 0.5 ? 0 : 1;   /* the draw: who plays first */
     next('ចាប់ឆ្នោតបាន ' + nameOf(turn) + ' លេងមុន។ ');
   }
@@ -170,8 +209,9 @@
       start();
     });
   });
-  dirEl.querySelectorAll('[data-dir]').forEach(function (b) {
-    b.addEventListener('click', function () { if (picked >= 0 && !busy) run(picked, +b.dataset.dir); });
+  var hb = root.querySelector('[data-act="hand"]');
+  hb.addEventListener('click', function () {
+    handMode = !handMode; hb.setAttribute('aria-pressed', handMode); hb.textContent = 'ដាក់គ្រាប់៖ ' + (handMode ? 'ដោយដៃខ្លួនឯង' : 'ស្វ័យប្រវត្តិ');
   });
   root.querySelector('[data-act="new"]').addEventListener('click', start);
   var sb = root.querySelector('[data-act="sound"]');
