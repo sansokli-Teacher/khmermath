@@ -84,8 +84,12 @@ render.year = async function () {
   const measures = yearMeasures(data.assessments);
 
   if (!data.readOnly) {
-    container.append(setupCard(data));
-    container.append(scoreTable(data));
+    const ro = data.my_role === 'reviewer';
+    if (ro) container.append(h('div', { class: 'notice' }, '👁 អ្នកជាអ្នកពិនិត្យ — មើលបានតែមិនអាចកែពិន្ទុបានទេ។'));
+    else container.append(setupCard(data));
+    const table = scoreTable(data);
+    if (ro) { table.querySelectorAll('input').forEach((i) => { i.disabled = true; }); table.querySelectorAll('button').forEach((b) => { if (!/បោះពុម្ព/.test(b.textContent)) b.remove(); }); }
+    container.append(table);
   }
   container.append(statsCard(data, measures));
 };
@@ -136,7 +140,7 @@ function setupCard(data) {
       h('span', { style: 'margin-left:10px;' }, 'ឆមាស = មធ្យមខែ'), mw, h('span', {}, '% + ប្រឡងឆមាស'), ew, h('span', {}, '%'),
       h('button', { onclick: async () => {
         try {
-          await api('/api/year/config', { method: 'POST', body: { label: label.value, monthly_weight: mw.value, exam_weight: ew.value } });
+          await api('/api/year/config', { method: 'POST', body: { class_id: data.class.id, label: label.value, monthly_weight: mw.value, exam_weight: ew.value } });
           await Exam.notify('បានរក្សាទុក។');
           render.year();
         } catch (e) { Exam.notify(e.message); }

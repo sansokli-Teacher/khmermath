@@ -2,8 +2,8 @@
 // semester exam and the final). Pre-test and monthly tests are read from the exam
 // sessions they are linked to; the semester exam and final are typed in by hand.
 import { json, err } from '../lib/http.js';
-import { requireTeacher } from '../lib/session.js';
 import { finalizeIfClosed, ensureColumns } from './sessions.js';
+import { needClass, classAccess } from '../lib/access.js';
 
 let ready = false;
 async function ensureYear(env) {
@@ -43,8 +43,10 @@ const DEFAULTS = [
 ];
 const DEFAULT_CONFIG = { label: '២០២៦–២០២៧', monthly_weight: 50, exam_weight: 50 };
 
-async function getConfig(env) {
-  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'year_config'").first();
+// Weights and year label are per class owner; the original shared setting is the fallback.
+async function getConfig(env, ownerId) {
+  const row = (ownerId != null && await env.DB.prepare('SELECT value FROM settings WHERE key = ?1').bind(`year_config_${ownerId}`).first())
+    || await env.DB.prepare("SELECT value FROM settings WHERE key = 'year_config'").first();
   try { return { ...DEFAULT_CONFIG, ...(row ? JSON.parse(row.value) : {}) }; } catch { return { ...DEFAULT_CONFIG }; }
 }
 
@@ -137,11 +139,11 @@ async function loadData(env, assessments, studentIds) {
 
 // ---- teacher
 export async function getYear(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needClass(req, env, params.classId, 'view'); if (g.resp) return g.resp;
   const classId = Number(params.classId);
-  const cls = await env.DB.prepare('SELECT id, name, grade FROM classes WHERE id = ?1').bind(classId).first();
+  const cls = await env.DB.prepare('SELECT id, name, grade, owner_id FROM classes WHERE id = ?1').bind(classId).first();
   if (!cls) return err('Class not found.', 404);
-  const cfg = await getConfig(env);
+  const cfg = await getConfig(env, cls.owner_id);
   const assessments = await loadAssessments(env, classId);
   const { results: students } = await env.DB.prepare(
     'SELECT id, surname, first_name, gender FROM students WHERE class_id = ?1 ORDER BY surname, first_name',
@@ -152,18 +154,18 @@ export async function getYear(req, env, params) {
      WHERE ts.class_id = ?1 ORDER BY ts.scheduled_start DESC`,
   ).bind(classId).all();
   return json({
-    class: cls, config: cfg, sessions,
+    class: cls, config: cfg, sessions, my_role: g.acc,
     assessments: assessments.map((a) => ({ id: a.id, key: a.key, title: a.title, month_label: a.month_label, kind: a.kind, session_id: a.session_id, max_score: a.max_score, in_monthly: a.in_monthly, published: a.published })),
     students: students.map((s) => ({ ...s, ...compute(assessments, s.id, data, cfg, true) })),
   });
 }
 
 export async function updateAssessment(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureYear(env);
   const b = await req.json();
   const a = await env.DB.prepare('SELECT * FROM assessments WHERE id = ?1').bind(params.id).first();
   if (!a) return err('Assessment not found.', 404);
+  const g = await needClass(req, env, a.class_id, 'edit'); if (g.resp) return g.resp;
   const max = b.max_score == null ? a.max_score : Number(b.max_score);
   if (!(max > 0)) return err('max_score must be above 0.', 400);
   await env.DB.prepare(
@@ -177,9 +179,9 @@ export async function updateAssessment(req, env, params) {
 }
 
 export async function saveScores(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureYear(env);
   const a = await env.DB.prepare('SELECT * FROM assessments WHERE id = ?1').bind(params.id).first();
+  if (a) { const g = await needClass(req, env, a.class_id, 'edit'); if (g.resp) return g.resp; }
   if (!a || a.kind !== 'manual') return err('This assessment does not take typed scores.', 400);
   const { scores } = await req.json();
   if (!Array.isArray(scores)) return err('scores array is required.', 400);
@@ -201,8 +203,9 @@ export async function saveScores(req, env, params) {
 }
 
 export async function setConfig(req, env) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   const b = await req.json();
+  const g = await needClass(req, env, b.class_id, 'own'); if (g.resp) return g.resp;
+  const cls = await env.DB.prepare('SELECT owner_id FROM classes WHERE id = ?1').bind(Number(b.class_id)).first();
   const cfg = {
     label: String(b.label ?? DEFAULT_CONFIG.label).trim() || DEFAULT_CONFIG.label,
     monthly_weight: Math.max(0, Number(b.monthly_weight) || 0),
@@ -210,14 +213,15 @@ export async function setConfig(req, env) {
   };
   if (cfg.monthly_weight + cfg.exam_weight <= 0) return err('Weights must add up to more than 0.', 400);
   await env.DB.prepare(
-    "INSERT INTO settings (key, value) VALUES ('year_config', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1",
-  ).bind(JSON.stringify(cfg)).run();
+    'INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = ?2',
+  ).bind(`year_config_${cls.owner_id}`, JSON.stringify(cfg)).run();
   return json({ ok: true, config: cfg });
 }
 
 // ---- student: only scores the teacher has released
 export async function studentYear(env, student) {
-  const cfg = await getConfig(env);
+  const own = await env.DB.prepare('SELECT owner_id FROM classes WHERE id = ?1').bind(student.classId).first();
+  const cfg = await getConfig(env, own ? own.owner_id : null);
   const assessments = await loadAssessments(env, student.classId);
   const data = await loadData(env, assessments);
   const c = compute(assessments, student.id, data, cfg, false);

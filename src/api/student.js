@@ -1,5 +1,6 @@
 import { json, err } from '../lib/http.js';
-import { createSessionCookie, clearSessionCookie, requireStudent, requireTeacher } from '../lib/session.js';
+import { createSessionCookie, clearSessionCookie, requireStudent } from '../lib/session.js';
+import { needSession } from '../lib/access.js';
 import { sessionWindow } from '../lib/time.js';
 import { ensureColumns } from './sessions.js';
 import { studentYear } from './year.js';
@@ -296,7 +297,7 @@ export async function review(req, env) {
 }
 
 export async function teacherReview(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   const { error, review: r } = await buildReview(env, Number(params.sessionId), params.studentId, { onlyIfPublished: false });
   return error || json(r);
 }

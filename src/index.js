@@ -8,6 +8,7 @@ import * as images from './api/images.js';
 import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
+import * as admin from './api/admin.js';
 import * as settings from './api/settings.js';
 
 function compile(pattern) {
@@ -20,16 +21,28 @@ const ROUTES = [
   ['GET', '/api/teacher/setup-status', teacher.setupStatus],
   ['POST', '/api/teacher/setup', teacher.setup],
   ['POST', '/api/teacher/login', teacher.login],
-  ['POST', '/api/teacher/reset-password', teacher.resetPassword],
   ['POST', '/api/teacher/logout', teacher.logout],
   ['POST', '/api/teacher/change-password', teacher.changePassword],
   ['GET', '/api/teacher/me', teacher.me],
+
+  ['GET', '/api/admin/teachers', admin.listTeachers],
+  ['POST', '/api/admin/invites', admin.createInvite],
+  ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
+  ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
+  ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],
+  ['GET', '/api/invite/:token', admin.inviteInfo],
+  ['POST', '/api/invite/:token/accept', admin.acceptInvite],
+  ['GET', '/api/teachers/search', admin.searchTeachers],
+  ['GET', '/api/shares', admin.listShares],
+  ['POST', '/api/shares', admin.setShare],
+  ['POST', '/api/shares/remove', admin.removeShare],
 
   ['GET', '/api/classes', classes.listClasses],
   ['POST', '/api/classes', classes.createClass],
   ['GET', '/api/classes/:classId/students', classes.listStudents],
   ['POST', '/api/classes/:classId/students', classes.addStudent],
   ['PUT', '/api/students/:studentId', classes.updateStudent],
+  ['DELETE', '/api/classes/:classId', classes.deleteClass],
   ['DELETE', '/api/students/:studentId', classes.deleteStudent],
   ['DELETE', '/api/classes/:classId/students/:studentId', classes.deleteStudent],
   ['POST', '/api/classes/:classId/students/bulk', classes.importRoster],
@@ -46,6 +59,9 @@ const ROUTES = [
   ['POST', '/api/tests/:testId/questions', tests.addQuestion],
   ['PUT', '/api/questions/:questionId', tests.updateQuestion],
   ['DELETE', '/api/questions/:questionId', tests.deleteQuestion],
+  ['POST', '/api/questions/:questionId/notes', tests.addNote],
+  ['POST', '/api/notes/:noteId/resolve', tests.resolveNote],
+  ['DELETE', '/api/notes/:noteId', tests.deleteNote],
 
   ['POST', '/api/images', images.upload],
   ['GET', '/api/images/:key', images.serve],

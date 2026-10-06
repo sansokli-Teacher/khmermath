@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ការអញ្ជើញគ្រូ</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="auth-screen">
+  <div class="auth-card" id="card" style="text-align:left;">
+    <div class="brand-mark" style="margin-left:auto;margin-right:auto;">∑</div>
+    <h1 id="title" style="text-align:center;">ការអញ្ជើញចូលប្រើប្រព័ន្ធ</h1>
+    <p class="muted" id="intro" style="text-align:center;">កំពុងពិនិត្យតំណភ្ជាប់…</p>
+    <div id="form" hidden>
+      <div id="f-name-wrap"><label for="f-name">ឈ្មោះរបស់អ្នក (បង្ហាញដល់គ្រូផ្សេង)</label>
+      <input type="text" id="f-name" placeholder="ឧ. គ្រូ សុភា" autocomplete="name"></div>
+      <div id="f-user-wrap"><label for="f-user">ឈ្មោះអ្នកប្រើ (សម្រាប់ចូលប្រព័ន្ធ)</label>
+      <input type="text" id="f-user" placeholder="ឧ. sopha" autocomplete="username" autocapitalize="none"></div>
+      <label for="f-pass">ពាក្យសម្ងាត់ (យ៉ាងតិច ៦ តួ)</label>
+      <input type="password" id="f-pass" autocomplete="new-password">
+      <label for="f-pass2">វាយពាក្យសម្ងាត់ម្តងទៀត</label>
+      <input type="password" id="f-pass2" autocomplete="new-password">
+      <button id="f-go" class="btn-block" style="margin-top:16px;">បង្កើតគណនី</button>
+    </div>
+    <a href="index.html" class="back-link" style="display:block;text-align:center;">← ទំព័រដើម</a>
+  </div>
+</div>
+<script src="js/common.js"></script>
+<script>
+const { api, showError } = Exam;
+const token = new URLSearchParams(location.search).get('token') || '';
+const card = document.getElementById('card');
+(async () => {
+  try {
+    const info = await api(`/api/invite/${encodeURIComponent(token)}`);
+    document.getElementById('form').hidden = false;
+    if (info.purpose === 'reset') {
+      document.getElementById('title').textContent = 'កំណត់ពាក្យសម្ងាត់ថ្មី';
+      document.getElementById('intro').textContent = `សួស្តី ${info.teacher_name || ''} — សូមជ្រើសរើសពាក្យសម្ងាត់ថ្មី។`;
+      document.getElementById('f-name-wrap').hidden = true;
+      document.getElementById('f-user-wrap').hidden = true;
+      document.getElementById('f-go').textContent = 'រក្សាទុកពាក្យសម្ងាត់ថ្មី';
+    } else {
+      document.getElementById('intro').textContent = info.note ? `អ្នកត្រូវបានអញ្ជើញជា «${info.note}» — សូមបង្កើតគណនីរបស់អ្នក។` : 'អ្នកត្រូវបានអញ្ជើញជាគ្រូបង្រៀន — សូមបង្កើតគណនីរបស់អ្នក។';
+    }
+  } catch (e) {
+    document.getElementById('intro').textContent = '';
+    showError(card, e.message);
+  }
+})();
+document.getElementById('f-go').addEventListener('click', async () => {
+  const pass = document.getElementById('f-pass').value, pass2 = document.getElementById('f-pass2').value;
+  if (pass.length < 6) return showError(card, 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។');
+  if (pass !== pass2) return showError(card, 'ពាក្យសម្ងាត់ទាំងពីរមិនដូចគ្នាទេ។');
+  try {
+    await api(`/api/invite/${encodeURIComponent(token)}/accept`, { method: 'POST', body: {
+      username: document.getElementById('f-user').value.trim(), display_name: document.getElementById('f-name').value.trim(), password: pass,
+    } });
+    location.href = 'teacher.html';
+  } catch (e) { showError(card, e.message); }
+});
+</script>
+</body>
+</html>

@@ -1,19 +1,9 @@
 import { json, err } from '../lib/http.js';
-import { requireTeacher } from '../lib/session.js';
+import { ensureColumns } from '../lib/schema.js';
+import { authTeacher, needClass, needSession, needTest, accessibleClasses } from '../lib/access.js';
 import { sessionWindow } from '../lib/time.js';
 
-let columnsChecked = false;
-export async function ensureColumns(env) {
-  if (columnsChecked) return;
-  try { await env.DB.prepare("ALTER TABLE results ADD COLUMN started_at TEXT").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE results ADD COLUMN submit_type TEXT").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN scheduled_end TEXT").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN pin TEXT").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE test_questions ADD COLUMN kind TEXT NOT NULL DEFAULT 'mcq'").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE test_questions ADD COLUMN solution_text TEXT").run(); } catch {}
-  try { await env.DB.prepare("ALTER TABLE results ADD COLUMN tab_switches INTEGER NOT NULL DEFAULT 0").run(); } catch {}
-  columnsChecked = true;
-}
+export { ensureColumns };
 
 // A student who never pressed Submit (closed the browser, phone died, time ran
 // out while offline) has saved answers but no score. Once the session is over,
@@ -39,10 +29,12 @@ export async function finalizeSession(env, sessionId, endIso) {
 }
 
 export async function listSessions(req, env) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
   await ensureColumns(env);
+  const mine = await accessibleClasses(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
+    `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
             c.name AS class_name, t.title AS test_title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students,
@@ -53,7 +45,9 @@ export async function listSessions(req, env) {
      JOIN tests t ON t.id = ts.test_id
      ORDER BY ts.scheduled_start DESC`,
   ).all();
+  for (let i = results.length - 1; i >= 0; i--) if (!mine.has(results[i].class_id)) results.splice(i, 1);
   for (const s of results) {
+    s.my_role = mine.get(s.class_id);
     const endIso = s.scheduled_end || new Date(Date.parse(s.scheduled_start) + s.duration_minutes * 60000).toISOString();
     if (sessionWindow({ ...s, scheduled_end: endIso }).phase === 'closed' && s.pending_count > 0) {
       await finalizeSession(env, s.id, endIso);
@@ -74,9 +68,11 @@ export async function listSessions(req, env) {
 }
 
 export async function createSession(req, env) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const body = await req.json();
+  const g1 = await needClass(req, env, body.class_id, 'edit'); if (g1.resp) return g1.resp;
+  const g2 = await needTest(req, env, body.test_id, 'view'); if (g2.resp) return g2.resp;
   await ensureColumns(env);
-  const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin } = await req.json();
+  const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin } = body;
   if (!test_id || !class_id || !scheduled_start || !duration_minutes) {
     return err('test_id, class_id, scheduled_start, and duration_minutes are required.', 400);
   }
@@ -91,7 +87,7 @@ export async function createSession(req, env) {
 }
 
 export async function getSession(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const session = await env.DB.prepare(
     `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
@@ -100,6 +96,7 @@ export async function getSession(req, env, params) {
      WHERE ts.id = ?1`,
   ).bind(params.sessionId).first();
   if (!session) return err('Session not found.', 404);
+  session.my_role = g.acc;
   session.phase = sessionWindow(session).phase;
 
   const startMs = Date.parse(session.scheduled_start);
@@ -128,13 +125,13 @@ export async function getSession(req, env, params) {
 }
 
 export async function closeSession(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await env.DB.prepare("UPDATE test_sessions SET status = 'closed' WHERE id = ?1").bind(params.sessionId).run();
   return json({ ok: true });
 }
 
 export async function setWritingScore(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const { student_id, writing_score, writing_max } = await req.json();
   if (!student_id) return err('student_id is required.', 400);
@@ -152,7 +149,7 @@ export async function setWritingScore(req, env, params) {
 }
 
 export async function publishSession(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const ses = await env.DB.prepare('SELECT * FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
   if (!ses) return err('Session not found.', 404);
@@ -163,7 +160,7 @@ export async function publishSession(req, env, params) {
 }
 
 export async function deleteSession(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await env.DB.prepare('DELETE FROM responses WHERE session_id = ?1').bind(params.sessionId).run();
   await env.DB.prepare('DELETE FROM results WHERE session_id = ?1').bind(params.sessionId).run();
   const result = await env.DB.prepare('DELETE FROM test_sessions WHERE id = ?1').bind(params.sessionId).run();
@@ -172,7 +169,7 @@ export async function deleteSession(req, env, params) {
 }
 
 export async function setWritingScoresBulk(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const { scores } = await req.json();
   if (!Array.isArray(scores)) return err('scores array is required.', 400);
@@ -195,7 +192,7 @@ export async function setWritingScoresBulk(req, env, params) {
 }
 
 export async function resetStudentSession(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const { student_id } = await req.json();
   if (!student_id) return err('student_id is required.', 400);
@@ -211,7 +208,7 @@ export async function resetStudentSession(req, env, params) {
 
 // Per-question statistics and every student's answers, for the teacher's review.
 export async function sessionAnalysis(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const ses = await env.DB.prepare('SELECT id, test_id FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
   if (!ses) return err('Session not found.', 404);
@@ -238,10 +235,12 @@ export async function sessionAnalysis(req, env, params) {
 
 // One row per session with class-level statistics, for the "all classes" page.
 export async function overview(req, env) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
   await ensureColumns(env);
+  const mine = await accessibleClasses(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT ts.id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
+    `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
             c.name AS class_name, t.id AS test_id, t.title AS test_title,
             (SELECT COALESCE(SUM(points), 0) FROM test_questions q WHERE q.test_id = t.id AND q.kind <> 'writing') AS mcq_max,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
@@ -253,7 +252,7 @@ export async function overview(req, env) {
   ).all();
   const bySession = {};
   for (const r of rs) (bySession[r.session_id] ||= []).push(r);
-  const sessions = results.map((s) => {
+  const sessions = results.filter((s) => mine.has(s.class_id)).map((s) => {
     const endIso = s.scheduled_end || new Date(Date.parse(s.scheduled_start) + s.duration_minutes * 60000).toISOString();
     const phase = sessionWindow({ ...s, scheduled_end: endIso }).phase;
     const pcts = (bySession[s.id] || []).map((r) => {
@@ -273,7 +272,7 @@ export async function overview(req, env) {
 }
 
 export async function updateSessionPin(req, env, params) {
-  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const { pin } = await req.json();
   const clean = String(pin ?? '').trim();

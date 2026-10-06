@@ -324,3 +324,11 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .writing-card { border-left: 5px solid #e9c46a; }
 .preview-banner { background: #17212e; color: #fff; text-align: center; padding: 8px 14px; font-size: 14px; font-weight: 600; }
 .preview-banner a { color: #9fc4ff; margin-left: 8px; }
+
+/* ---------- Notes + read-only ---------- */
+.notes { margin-top: 8px; }
+.note { background: #fff8e6; border-left: 4px solid #e9c46a; border-radius: 0 10px 10px 0; padding: 8px 12px; margin-top: 6px; font-size: 14px; }
+.note.done { background: #f1f6f2; border-left-color: var(--good); opacity: .8; }
+.note-del { background: transparent; color: var(--bad); border: none; padding: 4px 8px; font-size: 13px; }
+.note-del:hover { background: var(--bad-soft); }
+.readonly table button, .readonly table .btn { display: none; }
