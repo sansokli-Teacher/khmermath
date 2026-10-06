@@ -62,7 +62,8 @@ export async function getTest(req, env, params) {
 
 export async function updateTest(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
-  const { title, status } = await req.json();
+  let { title, status } = await req.json();
+  if (title !== undefined && title !== null) { title = String(title).trim().slice(0, 150); if (!title) return err('title is required.', 400); }
   await env.DB.prepare('UPDATE tests SET title = COALESCE(?1, title), status = COALESCE(?2, status) WHERE id = ?3')
     .bind(title ?? null, status ?? null, params.testId).run();
   return json({ ok: true });

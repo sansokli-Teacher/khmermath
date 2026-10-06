@@ -737,9 +737,22 @@ async function renderTestBuilder(container) {
   const test = await api(`/api/tests/${selectedTestId}`);
   container.innerHTML = '';
 
+  const mayRename = (test.my_role === 'owner' || test.my_role === 'editor') && ME.licensed;
+  const rename = async () => {
+    const inp = h('input', { type: 'text', value: test.title, maxlength: '150' });
+    const back = h('div', { class: 'modal-back', onclick: (e) => { if (e.target === back) back.remove(); } });
+    const save = async () => {
+      if (!inp.value.trim()) return inp.focus();
+      try { await api(`/api/tests/${test.id}`, { method: 'PUT', body: { title: inp.value.trim() } }); back.remove(); renderTestBuilder(container); } catch (e) { Exam.notify(e.message); }
+    };
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    back.append(h('div', { class: 'modal-box', style: 'text-align:left;max-width:520px;' }, [h('h2', {}, '✏️ ប្តូរឈ្មោះតេស្ត'), inp,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px;' }, [h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'), h('button', { onclick: save }, 'រក្សាទុក')])]));
+    document.body.append(back); inp.focus(); inp.select();
+  };
   const header = h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between' }, [
-      h('h2', {}, test.title),
+      h('h2', {}, [test.title, mayRename ? h('button', { class: 'secondary btn-sm', style: 'margin-left:10px;vertical-align:middle;', title: 'ប្តូរឈ្មោះតេស្ត', onclick: rename }, '✏️ ប្តូរឈ្មោះ') : null]),
       h('button', { class: 'secondary', onclick: () => { selectedTestId = null; render.tests(); } }, '← ត្រឡប់'),
     ]),
     h('div', { class: 'row' }, [
