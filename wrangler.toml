@@ -17,4 +17,4 @@ database_id = "e2c4bb28-e80c-430d-bbd5-36af9696563e"
 
 # Weekly backup of the whole system (see src/lib/backup.js)
 [triggers]
-crons = ["0 20 * * 0"]
+crons = ["0 20 * * SUN"]
