@@ -12,22 +12,22 @@
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var STEP = reduce ? 60 : 340;
 
-  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0;
-  var cells = [], ac = null;
+  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, picked = -1, skips = 0;
+  var cells = [], ac = null, dirEl = document.getElementById('bk-dir');
 
   function owner(i) { return i < 5 ? 0 : 1; }
   function nameOf(p) { return p === 0 ? 'អ្នកលេងទី ១' : (mode === 'ai' ? 'កុំព្យូទ័រ' : 'អ្នកលេងទី ២'); }
 
   /* ---- rules: one whole turn, as a list of events ---- */
-  function sim(h0, start) {
+  function sim(h0, start, dir) {
     var h = h0.slice(), ev = [], gain = 0, n = h[start], pos = start, guard = 0;
     h[start] = 0; ev.push({ t: 'take', i: start });
     for (;;) {
-      while (n > 0) { pos = (pos + 1) % 10; h[pos]++; n--; ev.push({ t: 'drop', i: pos }); }
+      while (n > 0) { pos = (pos + dir + 10) % 10; h[pos]++; n--; ev.push({ t: 'drop', i: pos }); }
       if (++guard > 200) break;
-      var nx = (pos + 1) % 10;
+      var nx = (pos + dir + 10) % 10;
       if (h[nx] > 0) { n = h[nx]; h[nx] = 0; pos = nx; ev.push({ t: 'take', i: nx }); continue; }
-      var nn = (nx + 1) % 10;
+      var nn = (nx + dir + 10) % 10;
       if (h[nn] > 0) { gain = h[nn]; h[nn] = 0; ev.push({ t: 'cap', i: nn, n: gain }); }
       break;
     }
@@ -36,12 +36,14 @@
   function legal(h, p) { var r = []; for (var i = p * 5; i < p * 5 + 5; i++) if (h[i] > 0) r.push(i); return r; }
 
   function aiMove(h) {
-    var best = -1e9, pick = -1;
+    var best = -1e9, pick = null;
     legal(h, 1).forEach(function (m) {
-      var r = sim(h, m), opp = 0;
-      legal(r.holes, 0).forEach(function (m2) { opp = Math.max(opp, sim(r.holes, m2).gain); });
-      var v = r.gain - opp + Math.random() * 0.5;
-      if (v > best) { best = v; pick = m; }
+      [1, -1].forEach(function (d) {
+        var r = sim(h, m, d), opp = 0;
+        legal(r.holes, 0).forEach(function (m2) { [1, -1].forEach(function (d2) { opp = Math.max(opp, sim(r.holes, m2, d2).gain); }); });
+        var v = r.gain - opp + Math.random() * 0.5;
+        if (v > best) { best = v; pick = [m, d]; }
+      });
     });
     return pick;
   }
@@ -75,6 +77,7 @@
       c.querySelector('.bk-n').textContent = km(n);
       var can = !busy && !over && owner(i) === turn && n > 0 && (mode === 'two' || turn === 0);
       c.classList.toggle('can', can);
+      c.classList.toggle('sel', i === picked);
       c.disabled = !can;
       c.setAttribute('aria-label', 'រន្ធ ' + km((i % 5) + 1) + (i === 4 || i === 9 ? ' (ក្បាលឈីមឿង)' : '') + ' មានគ្រាប់ ' + km(n));
     }
@@ -101,9 +104,9 @@
   }
 
   /* ---- a turn ---- */
-  async function run(i) {
-    var my = token, r = sim(holes, i);
-    busy = true;
+  async function run(i, dir) {
+    var my = token, r = sim(holes, i, dir);
+    busy = true; picked = -1; dirEl.hidden = true;
     var who = turn;
     say(nameOf(who) + ' កំពុងចាក់គ្រាប់…');
     for (var k = 0; k < r.ev.length; k++) {
@@ -118,15 +121,22 @@
     }
     holes = r.holes.slice();
     turn = 1 - turn; busy = false;
-    if (!legal(holes, turn).length) return finish();
+    if (!legal(holes, turn).length) {
+      /* a side with no seeds cannot move: the other player moves again, until seeds arrive */
+      if (!legal(holes, 1 - turn).length || ++skips > 15) return finish();
+      turn = 1 - turn;
+      next('ខាង' + nameOf(1 - turn) + 'គ្មានគ្រាប់ ' + nameOf(turn) + ' ត្រូវលេងម្ដងទៀត។ ');
+      return;
+    }
+    skips = 0;
     next();
   }
-  function next() {
+  function next(pre) {
     draw();
-    say(mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ជ្រើសរន្ធមួយនៅខាងអ្នក ដែលមានគ្រាប់។');
+    say((pre || '') + (mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ជ្រើសរន្ធមួយនៅខាងអ្នក ដែលមានគ្រាប់។'));
     if (mode === 'ai' && turn === 1) {
       var my = token; busy = true; draw();
-      sleep(reduce ? 100 : 900).then(function () { if (my === token) { busy = false; run(aiMove(holes)); } });
+      sleep(reduce ? 100 : 900).then(function () { if (my === token) { busy = false; var m = aiMove(holes); run(m[0], m[1]); } });
     }
   }
   function finish() {
@@ -141,12 +151,16 @@
   function choose(i) {
     if (busy || over || owner(i) !== turn || !holes[i]) return;
     if (mode === 'ai' && turn === 1) return;
-    run(i);
+    picked = i; draw();
+    dirEl.hidden = false;
+    say('ជ្រើសទិសដែលត្រូវចាក់គ្រាប់។');
   }
   function start() {
     token++;
-    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; turn = 0; busy = false; over = false;
-    next();
+    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; picked = -1; skips = 0;
+    dirEl.hidden = true;
+    turn = Math.random() < 0.5 ? 0 : 1;   /* the draw: who plays first */
+    next('ចាប់ឆ្នោតបាន ' + nameOf(turn) + ' លេងមុន។ ');
   }
 
   root.querySelectorAll('[data-mode]').forEach(function (b) {
@@ -155,6 +169,9 @@
       root.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
       start();
     });
+  });
+  dirEl.querySelectorAll('[data-dir]').forEach(function (b) {
+    b.addEventListener('click', function () { if (picked >= 0 && !busy) run(picked, +b.dataset.dir); });
   });
   root.querySelector('[data-act="new"]').addEventListener('click', start);
   var sb = root.querySelector('[data-act="sound"]');

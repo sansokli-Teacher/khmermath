@@ -49,3 +49,6 @@
   .bk-pl { padding: 8px 10px; }
   .bk-n { font-size: 13px; min-width: 24px; line-height: 22px; }
 }
+.bk-dir { display: flex; flex-wrap: wrap; gap: 10px; }
+.bk-dir[hidden] { display: none; }
+.bk-hole.sel { box-shadow: inset 0 4px 10px rgba(0,0,0,.6), 0 0 0 6px #fff; animation: none; }
