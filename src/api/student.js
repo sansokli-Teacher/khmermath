@@ -28,10 +28,34 @@ const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight whe
 // ---------- login (ID only; optionally ID + date of birth, per class) ----------
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
 const toAscii = (s) => String(s || '').replace(/[០-៩]/g, (d) => String(KH_DIGITS.indexOf(d)));
-function dobKey(s) {
-  const nums = (toAscii(s).match(/\d+/g) || []).map(Number);
-  return nums.length >= 3 ? nums.slice(0, 3).sort((a, b) => a - b).join('-') : '';
+// All the (year, day, month) readings a typed or stored date could have. Day and month are
+// compared as an unordered pair, so 10/03/2012 and 03/10/2012 both match.
+function dobKeys(input) {
+  const raw = toAscii(input).trim();
+  const keys = new Set();
+  const add = (y, a, b) => {
+    y = Number(y); a = Number(a); b = Number(b);
+    if (y < 100) y += y > 40 ? 1900 : 2000;
+    if (y < 1900 || y > 2100 || a < 1 || b < 1 || a > 31 || b > 31) return;
+    keys.add(`${y}-${Math.min(a, b)}-${Math.max(a, b)}`);
+  };
+  const groups = raw.match(/\d+/g) || [];
+  if (groups.length >= 3) {
+    const [x, y, z] = groups;
+    if (x.length === 4 || Number(x) > 31) add(x, y, z);       // 2012-03-10
+    else add(z, x, y);                                        // 10/03/2012, 10-03-12
+  } else if (groups.length >= 1) {
+    const d = groups.join('');                                  // 10102010 or '1010 2010'
+    if (d.length === 8) { add(d.slice(4), d.slice(0, 2), d.slice(2, 4)); add(d.slice(0, 4), d.slice(4, 6), d.slice(6)); }   // 10032012 or 20120310
+    else if (d.length === 6) add(d.slice(4), d.slice(0, 2), d.slice(2, 4));                                                  // 100312
+    else if (d.length === 5 && Number(d) > 20000 && Number(d) < 80000) {                                                      // Excel date number
+      const dt = new Date(Math.round((Number(d) - 25569) * 86400000));
+      add(dt.getUTCFullYear(), dt.getUTCDate(), dt.getUTCMonth() + 1);
+    }
+  }
+  return keys;
 }
+const dobMatches = (typed, stored) => { const t = dobKeys(typed); for (const k of dobKeys(stored)) if (t.has(k)) return true; return false; };
 
 export async function login(req, env) {
   await ensureColumns(env);
@@ -41,10 +65,10 @@ export async function login(req, env) {
     'SELECT s.id, s.surname, s.first_name, s.class_id, s.dob, c.require_dob FROM students s JOIN classes c ON c.id = s.class_id WHERE s.id = ?1',
   ).bind(String(id).trim()).first();
   if (!student) return err('រកមិនឃើញអត្តលេខនេះទេ។ សូមពិនិត្យម្តងទៀត។', 401);
-  if (student.require_dob && dobKey(student.dob)) {
+  if (student.require_dob && dobKeys(student.dob).size) {
     if (!dob) return json({ error: 'សូមបញ្ចូលថ្ងៃខែឆ្នាំកំណើតរបស់អ្នក។', need_dob: true }, 401);
     if (!(await allow(env, `dob:${student.id}`, 8, 600))) return err('ព្យាយាមច្រើនដងពេក។ សូមរង់ចាំ ១០ នាទី។', 429);
-    if (dobKey(dob) !== dobKey(student.dob)) return json({ error: 'ថ្ងៃខែឆ្នាំកំណើតមិនត្រឹមត្រូវទេ។', need_dob: true }, 401);
+    if (!dobMatches(dob, student.dob)) return json({ error: 'ថ្ងៃខែឆ្នាំកំណើតមិនត្រឹមត្រូវទេ។', need_dob: true }, 401);
   }
   const fullName = `${student.surname} ${student.first_name}`;
   const cookie = await createSessionCookie(
