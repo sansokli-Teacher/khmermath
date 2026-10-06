@@ -521,6 +521,8 @@ async function renderRoster(container) {
 
 // ---------- Tests ----------
 let selectedTestId = null;
+let testFilter = 'all';
+let testSearch = '';
 
 render.tests = async function () {
   const container = document.getElementById('tab-tests');
@@ -528,52 +530,115 @@ render.tests = async function () {
   if (selectedTestId) return renderTestBuilder(container);
 
   const { tests } = await api('/api/tests');
-  const card = h('div', { class: 'card' }, [
-    h('h2', {}, 'តេស្ត'),
-    ...tests.map((t) => h('div', { class: 'list-item' }, [
-      h('div', {}, [h('strong', {}, t.title), h('span', { class: `badge ${t.status}`, style: 'margin-left:6px;' }, t.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'),
-        t.owner_id !== ME.id ? h('span', { class: `badge ${t.my_role === 'reviewer' ? 'draft' : 'upcoming'}`, style: 'margin-left:6px;' }, `${t.my_role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : roleLabel(t.my_role)} · ${t.owner_name || ''}`) : null,
-        t.open_notes ? h('span', { class: 'badge warn', style: 'margin-left:6px;' }, `💬 ${t.open_notes} ចំណាំ`) : null, h('span', { class: 'muted' }, ` ${t.question_count - (t.writing_count || 0)} ពហុជ្រើសរើស${t.writing_count ? ` + ${t.writing_count} សរសេរ` : ''}`)]),
-      h('div', { class: 'row', style: 'gap:6px;' }, [
-        h('button', { class: 'secondary btn-sm', title: 'មើលតេស្តដូចសិស្សឃើញ', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁 មើលជាសិស្ស'),
-        h('button', { class: 'secondary btn-sm', title: 'បោះពុម្ព ឬរក្សាទុកជា PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄 PDF'),
-        h('button', { class: 'secondary btn-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, t.my_role === 'reviewer' ? 'មើល / ពិនិត្យ' : 'កែសម្រួល'),
-        t.my_role === 'owner' ? h('button', { class: 'secondary btn-sm', onclick: () => openShareDialog('test', t.id, t.title) }, '👥 ចែករំលែក') : null,
-        h('button', { class: 'secondary btn-sm', style: 'color:var(--good);border-color:var(--good);', onclick: () => {
-          // Switch to schedule tab with this test pre-selected
-          const tabs = document.querySelectorAll('.tabs button');
-          tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'schedule'));
-          document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-schedule'; });
-          render.schedule(t.id);
-        } }, '📅 ចាត់តាំងប្រឡង'),
-        h('button', { class: 'secondary btn-sm', onclick: async () => {
-          try {
-            const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' });
-            await Exam.notify(`បានចម្លងតេស្តជា «${copy.title}» រួចរាល់!`);
-            render.tests();
-          } catch (e) { Exam.notify(e.message); }
-        } }, '📋 ចម្លងតេស្ត'),
-        t.my_role !== 'owner' ? null : h('button', { class: 'danger btn-sm', onclick: async () => {
-          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
-          try {
-            await api(`/api/tests/${t.id}`, { method: 'DELETE' });
-            render.tests();
-          } catch (e) { Exam.notify(e.message); }
-        } }, 'លុប'),
-      ].filter(Boolean)),
-    ])),
-  ]);
-  const addCard = h('div', { class: 'card' }, [
-    h('h3', {}, 'បង្កើតតេស្តថ្មី'),
-    h('div', { class: 'row' }, [
-      h('input', { type: 'text', id: 'new-test-title', placeholder: 'ចំណងជើងតេស្ត', style: 'flex:1' }),
-      h('button', { onclick: async () => {
-        const t = await api('/api/tests', { method: 'POST', body: { title: document.getElementById('new-test-title').value.trim() } });
-        selectedTestId = t.id; render.tests();
-      } }, 'បង្កើត'),
+
+  const goSchedule = (id) => {
+    document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === 'schedule'));
+    document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-schedule'; });
+    render.schedule(id);
+  };
+  const closeMenus = () => document.querySelectorAll('.menu-pop').forEach((m) => m.remove());
+  document.addEventListener('click', closeMenus, { once: true });
+
+  function testCard(t) {
+    const mcq = t.question_count - (t.writing_count || 0);
+    const shared = t.owner_id !== ME.id;
+    const canEdit = t.my_role === 'owner' || t.my_role === 'editor';
+
+    const menuBtn = h('button', { class: 'icon-btn', title: 'ជម្រើសផ្សេងទៀត', 'aria-label': 'ជម្រើសផ្សេងទៀត' }, '⋯');
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menuBtn.parentElement.querySelector('.menu-pop');
+      closeMenus();
+      if (open) return;
+      const item = (label, fn, cls = '') => h('button', { class: `menu-item ${cls}`, onclick: (ev) => { ev.stopPropagation(); closeMenus(); fn(); } }, label);
+      const pop = h('div', { class: 'menu-pop' }, [
+        item('📋 ចម្លងតេស្តនេះ', async () => {
+          try { const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' }); await Exam.notify(`បានចម្លងជា «${copy.title}»`); render.tests(); }
+          catch (er) { Exam.notify(er.message); }
+        }),
+        t.my_role === 'owner' ? item('👥 ចែករំលែកជាមួយគ្រូ', () => openShareDialog('test', t.id, t.title)) : null,
+        t.my_role === 'owner' ? h('div', { class: 'menu-sep' }) : null,
+        t.my_role === 'owner' ? item('🗑 លុបតេស្ត', async () => {
+          if (!confirm(`តើពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
+          try { await api(`/api/tests/${t.id}`, { method: 'DELETE' }); render.tests(); } catch (er) { Exam.notify(er.message); }
+        }, 'danger') : null,
+      ]);
+      menuBtn.parentElement.append(pop);
+    });
+
+    return h('div', { class: `test-card${t.status === 'ready' ? '' : ' is-draft'}` }, [
+      h('div', { class: 'test-icon' }, t.writing_count ? '📝' : '✅'),
+      h('div', { class: 'test-main' }, [
+        h('div', { class: 'test-title' }, t.title),
+        h('div', { class: 'test-chips' }, [
+          h('span', { class: `chip ${t.status === 'ready' ? 'chip-open' : 'chip-closed'}` }, t.status === 'ready' ? '● រួចរាល់' : '○ សម្រាង'),
+          h('span', { class: 'chip chip-plain' }, `${mcq} ពហុជ្រើសរើស`),
+          t.writing_count ? h('span', { class: 'chip chip-plain' }, `✎ ${t.writing_count} សរសេរ`) : null,
+          h('span', { class: 'chip chip-plain' }, `${t.total_points} ពិន្ទុ`),
+          t.session_count ? h('span', { class: 'chip chip-plain' }, `📅 បានប្រឡង ${t.session_count} ដង`) : null,
+          shared ? h('span', { class: `chip ${t.my_role === 'reviewer' ? 'chip-closed' : 'chip-soon'}` }, t.my_role === 'owner' ? `👤 ដោយ ${t.owner_name || ''}` : `👥 ${roleLabel(t.my_role)} · ${t.owner_name || ''}`) : null,
+          t.open_notes ? h('span', { class: 'chip chip-soon' }, `💬 ${t.open_notes} ចំណាំ`) : null,
+        ]),
+      ]),
+      h('div', { class: 'test-actions' }, [
+        h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : '🔍 ពិនិត្យ'),
+        h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង'),
+        h('button', { class: 'icon-btn', title: 'មើលជាសិស្ស', 'aria-label': 'មើលជាសិស្ស', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁'),
+        h('button', { class: 'icon-btn', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
+        h('div', { class: 'menu-wrap' }, [menuBtn]),
+      ]),
+    ]);
+  }
+
+  // header: title, search, filter tabs, new-test button
+  const search = h('input', { type: 'text', placeholder: '🔍 ស្វែងរកតេស្ត…', class: 'tests-search', value: testSearch });
+  const listBox = h('div', { class: 'test-list' });
+  const filters = [['all', 'ទាំងអស់'], ['ready', 'រួចរាល់'], ['draft', 'សម្រាង'], ['mine', 'របស់ខ្ញុំ'], ['shared', ME.role === 'owner' ? 'របស់គ្រូផ្សេង' : 'ចែករំលែកជាមួយខ្ញុំ']];
+  const filterBar = h('div', { class: 'filter-bar' });
+
+  function draw() {
+    const q = testSearch.trim().toLowerCase();
+    const list = tests.filter((t) => {
+      if (q && !t.title.toLowerCase().includes(q)) return false;
+      if (testFilter === 'ready') return t.status === 'ready';
+      if (testFilter === 'draft') return t.status !== 'ready';
+      if (testFilter === 'mine') return t.owner_id === ME.id;
+      if (testFilter === 'shared') return t.owner_id !== ME.id;
+      return true;
+    });
+    filterBar.innerHTML = '';
+    for (const [k, label] of filters) {
+      const n = tests.filter((t) => (k === 'all' ? true : k === 'ready' ? t.status === 'ready' : k === 'draft' ? t.status !== 'ready' : k === 'mine' ? t.owner_id === ME.id : t.owner_id !== ME.id)).length;
+      if (k === 'shared' && !tests.some((t) => t.owner_id !== ME.id)) continue;
+      if (k === 'mine' && !tests.some((t) => t.owner_id !== ME.id)) continue;
+      filterBar.append(h('button', { class: `filter-pill${testFilter === k ? ' on' : ''}`, onclick: () => { testFilter = k; draw(); } }, [label, h('span', { class: 'pill-n' }, String(n))]));
+    }
+    listBox.innerHTML = '';
+    if (!list.length) {
+      listBox.append(h('div', { class: 'empty-card' }, [h('div', { class: 'empty-icon' }, '🗂'), h('div', { class: 'muted' }, tests.length ? 'រកមិនឃើញតេស្តដែលត្រូវនឹងការស្វែងរកទេ។' : 'មិនទាន់មានតេស្តទេ — ចុច «＋ តេស្តថ្មី» ដើម្បីចាប់ផ្តើម។')]));
+    }
+    list.forEach((t) => listBox.append(testCard(t)));
+  }
+  search.addEventListener('input', () => { testSearch = search.value; draw(); });
+
+  const newTitle = h('input', { type: 'text', placeholder: 'ចំណងជើងតេស្តថ្មី ឧ. ប្រឡងប្រចាំខែវិច្ឆិកា ថ្នាក់ទី ៧', style: 'flex:1;min-width:220px;' });
+  const createNew = async () => {
+    if (!newTitle.value.trim()) return newTitle.focus();
+    const t = await api('/api/tests', { method: 'POST', body: { title: newTitle.value.trim() } });
+    selectedTestId = t.id; render.tests();
+  };
+  newTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') createNew(); });
+  const newRow = h('div', { class: 'new-test-row', hidden: 'hidden' }, [newTitle, h('button', { onclick: createNew }, 'បង្កើត'), h('button', { class: 'secondary', onclick: () => { newRow.hidden = true; } }, 'បោះបង់')]);
+
+  container.append(h('div', { class: 'card tests-head' }, [
+    h('div', { class: 'tests-head-top' }, [
+      h('div', {}, [h('h2', { style: 'margin:0;' }, 'តេស្ត'), h('div', { class: 'muted' }, `សរុប ${tests.length} តេស្ត`)]),
+      h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { newRow.hidden = false; newTitle.focus(); } }, '＋ តេស្តថ្មី')]),
     ]),
-  ]);
-  container.append(card, addCard);
+    newRow,
+    filterBar,
+  ]), listBox);
+  draw();
 };
 
 async function renderTestBuilder(container) {

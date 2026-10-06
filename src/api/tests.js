@@ -9,6 +9,8 @@ export async function listTests(req, env) {
   const { results } = await env.DB.prepare(
     `SELECT x.id, x.title, x.status, x.owner_id, COALESCE(o.display_name, o.username) AS owner_name,
             COUNT(q.id) AS question_count, SUM(CASE WHEN q.kind = 'writing' THEN 1 ELSE 0 END) AS writing_count,
+            COALESCE(SUM(q.points), 0) AS total_points,
+            (SELECT COUNT(*) FROM test_sessions s WHERE s.test_id = x.id) AS session_count,
             (SELECT COUNT(*) FROM question_notes n JOIN test_questions nq ON nq.id = n.question_id WHERE nq.test_id = x.id AND n.resolved = 0) AS open_notes
      FROM tests x LEFT JOIN test_questions q ON q.test_id = x.id LEFT JOIN teachers o ON o.id = x.owner_id
      GROUP BY x.id ORDER BY x.created_at DESC`,
