@@ -12,7 +12,7 @@
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var STEP = reduce ? 60 : 340;
 
-  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, skips = 0, handMode = true, release = null, handN = 0;
+  var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, skips = 0, handMode = true, release = null, handN = 0, grabbed = null;
   var cells = [], arrs = [], ac = null, handEl = null;
 
   function owner(i) { return i < 5 ? 0 : 1; }
@@ -58,7 +58,9 @@
         var b = document.createElement('button');
         b.type = 'button'; b.className = 'bk-hole' + (i === 4 || i === 9 ? ' chi' : '');
         b.innerHTML = '<span class="bk-seeds"></span><span class="bk-n"></span>';
-        b.addEventListener('click', function () { if (release && pendingI === i) { var r = release; release = null; r(); } });
+        b.addEventListener('click', function () {
+          if (release && pendingI === i) { var r = release; release = null; r(); } else holeTap(i);
+        });
         w.appendChild(b);
         arrs[i] = [-1, 1].map(function (side) {
           var a = document.createElement('button');
@@ -97,10 +99,12 @@
       var c = cells[i], n = holes[i];
       c.querySelector('.bk-seeds').innerHTML = seedHTML(n);
       c.querySelector('.bk-n').textContent = km(n);
-      var can = !busy && !over && owner(i) === turn && n > 0 && (mode === 'two' || turn === 0);
+      var mine = !busy && !over && owner(i) === turn && (mode === 'two' || turn === 0);
+      var can = mine && n > 0 && !grabbed;
+      var held = mine && grabbed && grabbed.i === i;
       c.classList.toggle('can', can);
-      c.disabled = !c.classList.contains('next');
-      arrs[i][0].hidden = arrs[i][1].hidden = !can;
+      c.disabled = !(c.classList.contains('next') || can || held);
+      arrs[i][0].hidden = arrs[i][1].hidden = !held;
       c.setAttribute('aria-label', 'រន្ធ ' + km((i % 5) + 1) + (i === 4 || i === 9 ? ' (ក្បាលឈីមឿង)' : '') + ' មានគ្រាប់ ' + km(n));
     }
     root.querySelector('[data-score="0"]').textContent = km(score[0]);
@@ -126,12 +130,12 @@
   }
 
   /* ---- a turn ---- */
-  async function run(i, dir) {
-    var my = token, r = sim(holes, i, dir), who = turn;
+  async function run(i, dir, g) {
+    var my = token, r = sim(g ? g.base : holes, i, dir), who = turn;
     var manual = handMode && (mode === 'two' || who === 0);
-    busy = true; handN = 0; draw();
+    busy = true; handN = g ? g.n : 0; draw();
     say(nameOf(who) + ' កំពុងចាក់គ្រាប់…');
-    for (var k = 0; k < r.ev.length; k++) {
+    for (var k = g ? 1 : 0; k < r.ev.length; k++) {
       var e = r.ev[k], c = cells[e.i];
       handTo(e.i, handN);
       await sleep(STEP * 0.6);
@@ -172,7 +176,7 @@
   }
   function next(pre) {
     draw();
-    say((pre || '') + (mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ចុចព្រួញលើរន្ធមួយនៅខាងអ្នក ដើម្បីជ្រើសរន្ធ និងទិស។'));
+    say((pre || '') + (mode === 'ai' && turn === 1 ? 'កុំព្យូទ័រកំពុងគិត…' : 'ដល់វេន' + nameOf(turn) + '។ ចុចរន្ធមួយនៅខាងអ្នក ដើម្បីឱ្យដៃចាប់យកគ្រាប់។'));
     if (mode === 'ai' && turn === 1) {
       var my = token; busy = true; draw();
       sleep(reduce ? 100 : 900).then(function () { if (my === token) { busy = false; var m = aiMove(holes); run(m[0], m[1]); } });
@@ -187,14 +191,31 @@
         (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
     tone(660, .5);
   }
+  async function holeTap(i) {
+    if (busy || over || owner(i) !== turn || (mode === 'ai' && turn === 1)) return;
+    if (grabbed) {                    /* tap the held hole again: put the seeds back */
+      if (grabbed.i !== i) return;
+      holes[i] = grabbed.n; grabbed = null; handEl.hidden = true; tone(300, .1); draw();
+      return say('ដាក់គ្រាប់ត្រឡប់វិញហើយ។ ជ្រើសរន្ធមួយទៀត។');
+    }
+    if (!holes[i]) return;
+    var my = token, n = holes[i], base = holes.slice();
+    busy = true; draw();
+    handTo(i, 0);
+    await sleep(STEP * 0.7);
+    if (my !== token) return;
+    holes[i] = 0; grabbed = { i: i, n: n, base: base }; busy = false;
+    tone(300, .12); handTo(i, n); draw();
+    say('ដៃកាន់គ្រាប់ ' + km(n) + ' ហើយ។ ចុចព្រួញ ◀ ឬ ▶ ដើម្បីជ្រើសទិស (ចុចរន្ធម្ដងទៀតដើម្បីដាក់ត្រឡប់វិញ)។');
+  }
   function choose(i, dir) {
-    if (busy || over || owner(i) !== turn || !holes[i]) return;
-    if (mode === 'ai' && turn === 1) return;
-    run(i, dir);
+    if (busy || over || !grabbed || grabbed.i !== i) return;
+    var g = grabbed; grabbed = null;
+    run(i, dir, g);
   }
   function start() {
     token++;
-    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; skips = 0; pendingI = -1;
+    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; skips = 0; pendingI = -1; grabbed = null;
     if (release) { var r = release; release = null; r(); }
     if (handEl) handEl.hidden = true;
     cells.forEach(function (c) { c.classList.remove('next', 'hit', 'cap'); });
