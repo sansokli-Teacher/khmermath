@@ -76,6 +76,16 @@ async function doLogin() {
 }
 document.getElementById('login-submit').addEventListener('click', doLogin);
 document.getElementById('login-id').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+// Typing only digits shows them as dd/mm/yyyy (10102010 -> 10/10/2010); Khmer digits are converted too.
+function formatDob(raw) {
+  const digits = String(raw).replace(/[០-៩]/g, (d) => '០១២៣៤៥៦៧៨៩'.indexOf(d)).replace(/\D/g, '').slice(0, 8);
+  let out = digits.slice(0, 2);
+  if (digits.length > 2) out += `/${digits.slice(2, 4)}`;
+  if (digits.length > 4) out += `/${digits.slice(4)}`;
+  return out;
+}
+document.getElementById('login-dob').addEventListener('input', (e) => { e.target.value = formatDob(e.target.value); });
+document.getElementById('login-dob').setAttribute('maxlength', '10');
 document.getElementById('login-dob').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 
 async function logoutStudent() {
