@@ -1,3 +1,4 @@
+import { GRADES, loadCurriculum } from '../lib/curriculum.js';
 import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
 import { rescoreSession } from '../lib/scoring.js';
@@ -7,6 +8,7 @@ import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessible
 export async function listTests(req, env) {
   const t = await authTeacher(req, env);
   if (!t) return err('Not logged in.', 401);
+  await ensureColumns(env);
   const mine = await accessibleTests(env, t);
   const { results } = await env.DB.prepare(
     `SELECT x.id, x.title, x.status, x.owner_id, x.is_sample, COALESCE(o.display_name, o.username) AS owner_name,
@@ -15,6 +17,7 @@ export async function listTests(req, env) {
             (SELECT COUNT(*) FROM test_sessions s WHERE s.test_id = x.id) AS session_count,
             (SELECT COUNT(*) FROM question_notes n JOIN test_questions nq ON nq.id = n.question_id WHERE nq.test_id = x.id AND n.resolved = 0) AS open_notes
      FROM tests x LEFT JOIN test_questions q ON q.test_id = x.id LEFT JOIN teachers o ON o.id = x.owner_id
+     WHERE x.is_bank = 0
      GROUP BY x.id ORDER BY x.created_at DESC`,
   ).all();
   return json({ tests: results.filter((x) => mine.has(x.id)).map((x) => ({ ...x, my_role: mine.get(x.id) })) });
@@ -35,7 +38,7 @@ export async function getTest(req, env, params) {
   const test = await env.DB.prepare('SELECT id, title, status FROM tests WHERE id = ?1').bind(params.testId).first();
   if (!test) return err('Test not found.', 404);
   const { results } = await env.DB.prepare(
-    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, shuffle, topic, level, points, kind, solution_text FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, shuffle, topic, level, grade, lesson, points, kind, solution_text FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
   ).bind(params.testId).all();
   const { results: notes } = await env.DB.prepare(
     `SELECT n.id, n.question_id, n.body, n.resolved, n.created_at, n.teacher_id, COALESCE(t.display_name, t.username) AS author
@@ -68,7 +71,7 @@ export async function updateTest(req, env, params) {
 export async function addQuestion(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
-  const { stem_text, options, correct_index, points, image_key, kind, solution_text, topic, level, shuffle } = await req.json();
+  const { stem_text, options, correct_index, points, image_key, kind, solution_text, topic, level, shuffle, grade, lesson } = await req.json();
   const isWriting = kind === 'writing';
   if (!stem_text) return err('stem_text is required.', 400);
   if (!isWriting) {
@@ -81,8 +84,8 @@ export async function addQuestion(req, env, params) {
     .bind(params.testId).all();
   const orderNo = results[0].m + 1;
   const { meta } = await env.DB.prepare(
-    'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, points, kind, solution_text, topic, level, shuffle) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)',
-  ).bind(params.testId, orderNo, stem_text, image_key || null, JSON.stringify(isWriting ? [] : options), isWriting ? 0 : correct_index, points || 1, isWriting ? 'writing' : 'mcq', solution_text || null, topic || null, level || null, shuffle ? 1 : 0).run();
+    'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)',
+  ).bind(params.testId, orderNo, stem_text, image_key || null, JSON.stringify(isWriting ? [] : options), isWriting ? 0 : correct_index, points || 1, isWriting ? 'writing' : 'mcq', solution_text || null, topic || null, level || null, shuffle ? 1 : 0, cleanGrade(grade), cleanLesson(lesson)).run();
   return json({ id: meta.last_row_id, order_no: orderNo });
 }
 
@@ -99,6 +102,8 @@ export async function updateQuestion(req, env, params) {
   if (b.solution_text !== undefined) put('solution_text', b.solution_text ? String(b.solution_text) : null);
   if (b.image_key !== undefined) put('image_key', b.image_key || null);        // null/'' removes the picture
   if (b.topic !== undefined) put('topic', b.topic ? String(b.topic).trim().slice(0, 60) : null);
+  if (b.grade !== undefined) put('grade', cleanGrade(b.grade));
+  if (b.lesson !== undefined) put('lesson', cleanLesson(b.lesson));
   if (b.level !== undefined) put('level', ['easy', 'medium', 'hard'].includes(b.level) ? b.level : null);
   if (!isWriting) {
     const options = b.options !== undefined ? b.options : JSON.parse(cur.options_json);
@@ -162,13 +167,13 @@ export async function duplicateTest(req, env, params) {
   const newTestId = meta.last_row_id;
 
   const { results: questions } = await env.DB.prepare(
-    'SELECT order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle FROM test_questions WHERE test_id = ?1 ORDER BY order_no'
+    'SELECT order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson FROM test_questions WHERE test_id = ?1 ORDER BY order_no'
   ).bind(params.testId).all();
 
   for (const q of questions) {
     await env.DB.prepare(
-      'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)'
-    ).bind(newTestId, q.order_no, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle).run();
+      'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)'
+    ).bind(newTestId, q.order_no, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade, q.lesson).run();
   }
 
   return json({ id: newTestId, title: newTitle });
@@ -233,7 +238,7 @@ async function bankRows(env, t, { dedupe = true } = {}) {
   const ph = ids.map(() => '?').join(',');
   const { results } = await env.DB.prepare(
     `SELECT q.id, q.test_id, x.title AS test_title, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind,
-            q.topic, q.level, q.shuffle, q.solution_text, q.cancelled
+            q.topic, q.level, q.grade, q.lesson, q.shuffle, q.solution_text, q.cancelled
      FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ph}) ORDER BY q.test_id DESC, q.order_no`,
   ).bind(...ids).all();
   if (!dedupe) return results.filter((q) => !q.cancelled);
@@ -243,7 +248,8 @@ async function bankRows(env, t, { dedupe = true } = {}) {
     if (q.cancelled) continue;
     const k = `${q.kind}|${q.stem_text}|${q.options_json}`;
     const cur = byKey.get(k);
-    if (!cur || ((!cur.topic || !cur.level) && (q.topic || q.level) && (q.topic ? 1 : 0) + (q.level ? 1 : 0) > (cur.topic ? 1 : 0) + (cur.level ? 1 : 0))) byKey.set(k, q);
+    const sc = (x) => (x.topic ? 1 : 0) + (x.level ? 1 : 0) + (x.grade ? 2 : 0) + (x.lesson ? 2 : 0);
+    if (!cur || sc(q) > sc(cur)) byKey.set(k, q);
   }
   return [...byKey.values()];
 }
@@ -258,9 +264,9 @@ export async function listBank(req, env) {
 async function copyInto(env, testId, q) {
   const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(testId).all();
   await env.DB.prepare(
-    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
-  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle).run();
+    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null).run();
 }
 
 // copy chosen questions into a test
@@ -279,10 +285,12 @@ export async function copyQuestions(req, env, params) {
 export async function generateTest(req, env) {
   const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
   await ensureColumns(env);
-  const { title, counts, topics, kind } = await req.json();
+  const { title, counts, topics, kind, grade, lessons } = await req.json();
   if (!title || !String(title).trim()) return err('title is required.', 400);
   const bank = (await bankRows(env, g0.t)).filter((q) => (kind === 'writing' ? q.kind === 'writing' : kind === 'all' ? true : q.kind !== 'writing'))
-    .filter((q) => !topics || !topics.length || topics.includes(q.topic));
+    .filter((q) => !topics || !topics.length || topics.includes(q.topic))
+    .filter((q) => !grade || q.grade === String(grade))
+    .filter((q) => !Array.isArray(lessons) || !lessons.length || lessons.includes(q.lesson));
   const shuffle = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
   const picked = []; const shortage = {};
   for (const lvl of ['easy', 'medium', 'hard']) {
@@ -315,13 +323,73 @@ export async function bulkAdd(req, env, params) {
     if (!stem || (!writing && (opts.length < 2 || !Number.isInteger(q.correct_index) || q.correct_index < 0 || q.correct_index >= opts.length))) { bad.push(i + 1); return; }
     order += 1;
     stmts.push(env.DB.prepare(
-      `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`,
+      `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
     ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(0.25, Math.round((Number(q.points) || (writing ? 5 : 1)) * 100) / 100),
       writing ? 'writing' : 'mcq', q.solution_text ? String(q.solution_text) : null, q.topic ? String(q.topic).slice(0, 60) : null,
-      ['easy', 'medium', 'hard'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0)));
+      ['easy', 'medium', 'hard'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0), cleanGrade(q.grade), cleanLesson(q.lesson)));
   });
   if (stmts.length) await env.DB.batch(stmts);
   await audit(env, g.t, 'questions.import', `test ${params.testId}: ${stmts.length} added, ${bad.length} skipped`);
   return json({ ok: true, added: stmts.length, skipped: bad });
+}
+
+const cleanGrade = (g) => (GRADES.includes(String(g || '').trim()) ? String(g).trim() : null);
+const cleanLesson = (l) => (l ? String(l).trim().slice(0, 120) || null : null);
+
+// lesson list per grade (defaults + this teacher's own additions)
+export async function getCurriculum(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const { lessons } = await loadCurriculum(env, g0.t.id);
+  return json({ grades: GRADES, lessons });
+}
+
+export async function addLesson(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const { grade, name } = await req.json();
+  const gr = cleanGrade(grade); const nm = cleanLesson(name);
+  if (!gr || !nm) return err('grade and name are required.', 400);
+  const { extra, lessons } = await loadCurriculum(env, g0.t.id);
+  if (!lessons[gr].includes(nm)) (extra[gr] ||= []).push(nm);
+  await env.DB.prepare('INSERT INTO settings (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = ?2').bind(`curriculum_${g0.t.id}`, JSON.stringify(extra)).run();
+  return json({ ok: true });
+}
+
+// put many bank questions into a grade / lesson (also tags identical copies in the teacher's other tests)
+export async function tagQuestions(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  await ensureColumns(env);
+  const b = await req.json();
+  if (!Array.isArray(b.question_ids) || !b.question_ids.length) return err('question_ids is required.', 400);
+  const bank = await bankRows(env, g0.t, { dedupe: false });
+  const byId = new Map(bank.map((q) => [q.id, q]));
+  const keyOf = (q) => `${q.kind}|${q.stem_text}|${q.options_json}`;
+  const wanted = new Set(b.question_ids.slice(0, 500).map(Number).filter((id) => byId.has(id)).map((id) => keyOf(byId.get(id))));
+  const gr = b.grade === undefined ? undefined : cleanGrade(b.grade);
+  const ls = b.lesson === undefined ? undefined : cleanLesson(b.lesson);
+  const stmts = [];
+  for (const q of bank) {
+    if (!wanted.has(keyOf(q))) continue;
+    const sets = []; const vals = [];
+    if (gr !== undefined) { sets.push(`grade = ?${sets.length + 1}`); vals.push(gr); }
+    if (ls !== undefined) { sets.push(`lesson = ?${sets.length + 1}`); vals.push(ls); }
+    if (b.level !== undefined) { sets.push(`level = ?${sets.length + 1}`); vals.push(['easy', 'medium', 'hard'].includes(b.level) ? b.level : null); }
+    if (!sets.length) continue;
+    stmts.push(env.DB.prepare(`UPDATE test_questions SET ${sets.join(', ')} WHERE id = ?${sets.length + 1}`).bind(...vals, q.id));
+  }
+  for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  await audit(env, g0.t, 'bank.tag', `${wanted.size} questions → grade ${b.grade ?? '-'} / ${b.lesson ?? '-'}`);
+  return json({ ok: true, tagged: wanted.size });
+}
+
+// Each teacher has one hidden "bank" test that holds questions written straight into the question bank.
+export async function bankHome(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  await ensureColumns(env);
+  let row = await env.DB.prepare('SELECT id FROM tests WHERE owner_id = ?1 AND is_bank = 1').bind(g0.t.id).first();
+  if (!row) {
+    const { meta } = await env.DB.prepare("INSERT INTO tests (title, owner_id, is_bank, status) VALUES ('🗂 ឃ្លាំងសំណួរ', ?1, 1, 'draft')").bind(g0.t.id).run();
+    row = { id: meta.last_row_id };
+  }
+  return json({ id: row.id });
 }

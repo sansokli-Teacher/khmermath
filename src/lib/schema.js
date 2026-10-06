@@ -25,6 +25,7 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN contact TEXT',
     'ALTER TABLE teachers ADD COLUMN created_at TEXT',
     'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE tests ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE invites ADD COLUMN months INTEGER',
     // scoring rules + question metadata
     'ALTER TABLE test_questions ADD COLUMN alt_correct_index INTEGER',
@@ -32,6 +33,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE test_questions ADD COLUMN shuffle INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE test_questions ADD COLUMN topic TEXT',
     'ALTER TABLE test_questions ADD COLUMN level TEXT',
+    'ALTER TABLE test_questions ADD COLUMN grade TEXT',
+    'ALTER TABLE test_questions ADD COLUMN lesson TEXT',
     // exam-day controls
     'ALTER TABLE results ADD COLUMN extra_minutes INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE results ADD COLUMN device_id TEXT',

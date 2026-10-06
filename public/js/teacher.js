@@ -760,7 +760,7 @@ async function renderTestBuilder(container) {
     h('h3', {}, `សំណួរ (${test.questions.length}) — ពហុជ្រើសរើស ${mcqQs.length} សំណួរ ${sum(mcqQs)} ពិន្ទុ · សរសេរ ${wQs.length} សំណួរ ${sum(wQs)} ពិន្ទុ · សរុប ${sum(test.questions)} ពិន្ទុ`),
     ...test.questions.map((q, i) => h('div', { class: 'question-card' }, [
       h('div', { class: 'row', style: 'justify-content:space-between' }, [
-        h('div', {}, [h('strong', {}, `${i + 1}.`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
+        h('div', {}, [h('strong', {}, `${i + 1}.`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.lesson ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, `${q.grade ? 'ថ្នាក់ ' + q.grade + ' · ' : ''}${q.lesson}`) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
         h('div', { class: 'row', style: 'gap:6px;' }, [
           h('button', { class: 'secondary btn-sm', onclick: () => openQuestionEditor(q, test, container) }, '✏️ កែ'),
           h('button', { class: 'danger btn-sm', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
@@ -789,10 +789,13 @@ async function renderTestBuilder(container) {
   const topics = [...new Set(test.questions.map((q) => q.topic).filter(Boolean))];
   const dl = h('datalist', { id: 'topic-list' }, topics.map((t) => h('option', { value: t })));
   const warn = test.submissions ? h('div', { class: 'callout warn', style: 'margin-bottom:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ — ការកែសំណួរ ឬចម្លើយអាចប៉ះពាល់ពិន្ទុ។`) : null;
-  container.append(warn, dl, header, list, buildQuestionForm(test, container), importQuestionsCard(test, container));
+  container.append(warn, dl, header, list, await buildQuestionForm(test, container), importQuestionsCard(test, container));
 }
 
-function buildQuestionForm(test, container) {
+async function buildQuestionForm(test, container, opts = {}) {
+  const done = opts.onDone || (() => renderTestBuilder(container));
+  const curr = await loadCurr();
+  const gl = gradeLessonPicker(opts.grade, opts.lesson, curr);
   const optionInputs = [0, 1, 2, 3].map((i) => h('input', { type: 'text', placeholder: `ជម្រើស ${i + 1}`, 'data-opt': i }));
   const correctSelect = h('select', { id: 'q-correct' }, optionInputs.map((_, i) => h('option', { value: i }, `ជម្រើស ${i + 1} ត្រឹមត្រូវ`)));
   const stemInput = h('textarea', { id: 'q-stem', placeholder: 'ឧ. បើ x + 3 = 7 តម្លៃ x គឺ? (សរសេរធម្មតា ដូចជា x^2, 3/4, √20 ឬបិទភ្ជាប់ LaTeX ក្នុង \\( \\))' });
@@ -843,6 +846,7 @@ function buildQuestionForm(test, container) {
       h('div', {}, [h('label', {}, 'កម្រិត'), levelInput]),
       h('label', { style: 'display:flex;gap:8px;align-items:center;color:var(--ink);' }, [shuffleInput, 'លាយជម្រើសចម្លើយ']),
     ]),
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]), h('div', { style: 'flex:1;min-width:200px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])]),
     h('div', { class: 'row', style: 'margin-top:12px' }, [
       h('button', { onclick: async () => {
         const isWriting = kindSelect.value === 'writing';
@@ -859,9 +863,9 @@ function buildQuestionForm(test, container) {
           stem_text: stemInput.value.trim(), options, correct_index: Number(correctSelect.value),
           points: Number(pointsInput.value) || 1, image_key,
           kind: isWriting ? 'writing' : 'mcq', solution_text: isWriting ? solutionInput.value.trim() : null,
-          topic: topicInput.value.trim(), level: levelInput.value, shuffle: shuffleInput.checked && !isWriting,
+          topic: topicInput.value.trim(), level: levelInput.value, shuffle: shuffleInput.checked && !isWriting, ...gl.get(),
         } });
-        renderTestBuilder(container);
+        done();
       } }, 'បញ្ចូលសំណួរ'),
     ]),
   ]);
@@ -1654,7 +1658,10 @@ async function openWritingMarks(session, student, done) {
 }
 
 // ---- edit an existing question (stem, options, answer key, tags, picture)
-function openQuestionEditor(q, test, container) {
+async function openQuestionEditor(q, test, container, onDone) {
+  const done = onDone || (() => renderTestBuilder(container));
+  const curr = await loadCurr();
+  const gl = gradeLessonPicker(q.grade, q.lesson, curr);
   const isWriting = q.kind === 'writing';
   const stem = h('textarea', { style: 'min-height:90px;' }); stem.value = q.stem_text;
   const optInputs = (q.options || []).map((o) => { const i = h('input', { type: 'text' }); i.value = o; return i; });
@@ -1692,13 +1699,14 @@ function openQuestionEditor(q, test, container) {
       h('div', { style: 'flex:1;min-width:140px;' }, [h('label', {}, 'មុខវិជ្ជា / ប្រធានបទ'), topic]),
       h('div', {}, [h('label', {}, 'កម្រិត'), level]),
     ]),
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]), h('div', { style: 'flex:1;min-width:200px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])]),
     !isWriting ? h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:12px;color:#a52a2a;' }, [cancelled, 'បោះបង់សំណួរនេះ — ឱ្យពិន្ទុដល់សិស្សទាំងអស់']) : null,
     test.submissions ? h('div', { class: 'callout warn', style: 'margin-top:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ។ បើប្តូរចម្លើយត្រឹមត្រូវ ប្រព័ន្ធនឹងសួរឱ្យរាប់ពិន្ទុឡើងវិញ។`) : null,
     h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:16px;' }, [
       h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'),
       h('button', { onclick: async () => {
         try {
-          const body = { stem_text: stem.value, points: Number(points.value), topic: topic.value, level: level.value };
+          const body = { stem_text: stem.value, points: Number(points.value), topic: topic.value, level: level.value, grade: gl.grade.value || null, lesson: gl.lesson.value.trim() || null };
           if (isWriting) body.solution_text = solution.value;
           else {
             const options = optInputs.map((i) => i.value.trim());
@@ -1718,7 +1726,7 @@ function openQuestionEditor(q, test, container) {
             const rs = await api(`/api/tests/${test.id}/rescore`, { method: 'POST' });
             await Exam.notify(`បានគណនាឡើងវិញ៖ ពិន្ទុរបស់សិស្ស ${rs.changed} នាក់ត្រូវបានកែ។`);
           }
-          renderTestBuilder(container);
+          done();
         } catch (e) { Exam.notify(e.message); }
       } }, 'រក្សាទុក'),
     ]),
