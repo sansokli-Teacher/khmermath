@@ -8,6 +8,7 @@ export async function ensureColumns(env) {
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN started_at TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN submit_type TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN scheduled_end TEXT").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN pin TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN tab_switches INTEGER NOT NULL DEFAULT 0").run(); } catch {}
   columnsChecked = true;
 }
@@ -39,7 +40,7 @@ export async function listSessions(req, env) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureColumns(env);
   const { results } = await env.DB.prepare(
-    `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status,
+    `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
             c.name AS class_name, t.title AS test_title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students,
@@ -73,22 +74,25 @@ export async function listSessions(req, env) {
 export async function createSession(req, env) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureColumns(env);
-  const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end } = await req.json();
+  const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin } = await req.json();
   if (!test_id || !class_id || !scheduled_start || !duration_minutes) {
     return err('test_id, class_id, scheduled_start, and duration_minutes are required.', 400);
   }
   const endIso = scheduled_end || new Date(Date.parse(scheduled_start) + Number(duration_minutes) * 60000).toISOString();
+  const cleanPin = String(pin ?? '').trim();
+  if (cleanPin && !/^[0-9A-Za-z]{3,12}$/.test(cleanPin)) return err('PIN must be 3–12 letters or digits.', 400);
+  const finalPin = cleanPin || String(Math.floor(1000 + Math.random() * 9000));
   const { meta } = await env.DB.prepare(
-    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes, scheduled_end) VALUES (?1, ?2, ?3, ?4, ?5)',
-  ).bind(test_id, class_id, scheduled_start, duration_minutes, endIso).run();
-  return json({ id: meta.last_row_id });
+    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin) VALUES (?1, ?2, ?3, ?4, ?5, ?6)',
+  ).bind(test_id, class_id, scheduled_start, duration_minutes, endIso, finalPin).run();
+  return json({ id: meta.last_row_id, pin: finalPin });
 }
 
 export async function getSession(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureColumns(env);
   const session = await env.DB.prepare(
-    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status,
+    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
             c.name AS class_name, t.title AS test_title
      FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
      WHERE ts.id = ?1`,
@@ -262,4 +266,14 @@ export async function overview(req, env) {
     };
   });
   return json({ sessions });
+}
+
+export async function updateSessionPin(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await ensureColumns(env);
+  const { pin } = await req.json();
+  const clean = String(pin ?? '').trim();
+  if (!/^[0-9A-Za-z]{3,12}$/.test(clean)) return err('PIN must be 3–12 letters or digits.', 400);
+  await env.DB.prepare('UPDATE test_sessions SET pin = ?1 WHERE id = ?2').bind(clean, params.sessionId).run();
+  return json({ ok: true, pin: clean });
 }

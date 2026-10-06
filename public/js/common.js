@@ -26,7 +26,7 @@ Exam.h = function (tag, attrs = {}, children = []) {
   }
   for (const child of [].concat(children)) {
     if (child === null || child === undefined) continue;
-    el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    el.appendChild(child instanceof Node ? child : document.createTextNode(String(child)));
   }
   return el;
 };

@@ -3,42 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>សិស្ស — Exam Khmer</title>
+<title>សិស្ស — ប្រព័ន្ធប្រឡង</title>
 <link rel="stylesheet" href="css/app.css">
 <script src="katex/katex.min.js"></script>
 <script src="katex/contrib/auto-render.min.js"></script>
 </head>
-<body>
+<body class="student-body">
 
-<div id="view-login" class="wrap" hidden>
-  <div class="card" style="margin-top:40px;">
-    <h2>ចូលធ្វើតេស្ត</h2>
-    <label>លេខសម្គាល់សិស្ស</label>
-    <input type="text" id="login-id" autocomplete="off" inputmode="numeric">
-    <label>កូដសម្ងាត់ (PIN)</label>
-    <input type="text" id="login-pin" autocomplete="off" inputmode="numeric">
-    <div class="row" style="margin-top:14px;"><button id="login-submit" style="width:100%">ចូល</button></div>
+<!-- 1. Sign in with the student ID only -->
+<div id="view-login" class="auth-screen" hidden>
+  <div class="auth-card">
+    <div class="brand-mark">∑</div>
+    <h1>ប្រព័ន្ធប្រឡងគណិតវិទ្យា</h1>
+    <p class="muted">សូមបញ្ចូលអត្តលេខរបស់អ្នក ដើម្បីមើលលទ្ធផល និងការប្រឡងខាងមុខ។</p>
+    <label for="login-id">អត្តលេខសិស្ស</label>
+    <input type="text" id="login-id" class="big-input" autocomplete="off" inputmode="numeric" placeholder="ឧ. 0109293">
+    <button id="login-submit" class="btn-block">ចូល</button>
+    <a href="index.html" class="back-link">← ទំព័រដើម</a>
   </div>
 </div>
 
-<div id="view-status" class="wrap center-screen" style="flex-direction:column" hidden></div>
+<!-- 2. Home: upcoming tests + past scores -->
+<div id="view-home" hidden>
+  <header class="topbar">
+    <div class="topbar-in">
+      <div>
+        <div class="topbar-name" id="home-name"></div>
+        <div class="topbar-sub" id="home-sub"></div>
+      </div>
+      <button class="secondary btn-sm" id="home-logout">ចាកចេញ</button>
+    </div>
+  </header>
+  <main class="wrap" id="home-body"></main>
+</div>
 
+<!-- 3. Waiting for the start time -->
+<div id="view-wait" class="auth-screen" hidden>
+  <div class="auth-card">
+    <div class="wait-icon">⏳</div>
+    <h1 id="wait-title"></h1>
+    <p class="muted">PIN ត្រឹមត្រូវ។ សូមរង់ចាំដល់ម៉ោងចាប់ផ្តើម — ការប្រឡងនឹងបើកដោយស្វ័យប្រវត្តិ។</p>
+    <div class="countdown" id="wait-count">--:--:--</div>
+    <div class="muted" id="wait-start"></div>
+    <button class="secondary btn-block" id="wait-cancel" style="margin-top:18px;">← ត្រឡប់ក្រោយ</button>
+  </div>
+</div>
+
+<!-- 4. Taking the test -->
 <div id="view-test" hidden>
   <div class="timer" id="timer-bar">
-    <div>
-      <span id="timer-title" style="font-weight:700;"></span>
+    <div style="min-width:0;">
+      <div id="timer-title" class="timer-title"></div>
       <div id="student-badge" class="muted" style="font-size:12px;"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span id="timer-clock"></span>
-      <button class="btn-sm secondary" id="student-logout-btn" style="padding:4px 8px;font-size:12px;">ចាកចេញ</button>
-    </div>
+    <div id="timer-clock" class="timer-clock"></div>
   </div>
   <div class="wrap">
+    <div class="progress"><div class="progress-fill" id="progress-fill"></div></div>
     <div class="question-nav" id="question-nav"></div>
     <div id="question-area"></div>
     <div class="row" style="justify-content:center;margin-top:10px;">
-      <button id="submit-btn">បញ្ជូនចម្លើយ</button>
+      <button id="submit-btn" class="good">បញ្ជូនចម្លើយ ✓</button>
     </div>
   </div>
 </div>

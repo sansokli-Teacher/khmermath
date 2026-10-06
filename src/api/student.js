@@ -1,19 +1,19 @@
 import { json, err } from '../lib/http.js';
-import { verifySecretValue } from '../lib/crypto.js';
 import { createSessionCookie, clearSessionCookie, requireStudent } from '../lib/session.js';
 import { sessionWindow } from '../lib/time.js';
 import { ensureColumns } from './sessions.js';
 
 const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight when the clock hit zero
 
+// Students sign in with their ID alone. The PIN lives on each test session and
+// is asked for when the student starts that test.
 export async function login(req, env) {
-  const { id, pin } = await req.json();
-  if (!id || !pin) return err('id and pin are required.', 400);
-  const student = await env.DB.prepare('SELECT id, surname, first_name, class_id FROM students WHERE id = ?1').bind(String(id)).first();
-  if (!student) return err('Incorrect ID or PIN.', 401);
-  const pinRow = await env.DB.prepare("SELECT value FROM settings WHERE key = 'student_pin_hash'").first();
-  const ok = pinRow && (await verifySecretValue(pin, 'student_pin', env.SESSION_SECRET, pinRow.value));
-  if (!ok) return err('Incorrect ID or PIN.', 401);
+  const { id } = await req.json();
+  if (!id) return err('សូមបញ្ចូលអត្តលេខសិស្ស។', 400);
+  const student = await env.DB.prepare(
+    'SELECT s.id, s.surname, s.first_name, s.class_id FROM students s WHERE s.id = ?1',
+  ).bind(String(id).trim()).first();
+  if (!student) return err('រកមិនឃើញអត្តលេខនេះទេ។ សូមពិនិត្យម្តងទៀត។', 401);
   const fullName = `${student.surname} ${student.first_name}`;
   const cookie = await createSessionCookie(
     { role: 'student', id: student.id, name: fullName, classId: student.class_id }, env.SESSION_SECRET,
@@ -25,113 +25,110 @@ export async function logout() {
   return json({ ok: true }, 200, { 'Set-Cookie': clearSessionCookie('student') });
 }
 
-// Picks the one session a student currently cares about: an open one first,
-// otherwise the soonest upcoming one, otherwise the most recently closed one.
-async function findRelevantSession(env, classId) {
-  const { results } = await env.DB.prepare(
-    `SELECT ts.*, t.title AS test_title FROM test_sessions ts JOIN tests t ON t.id = ts.test_id
-     WHERE ts.class_id = ?1 ORDER BY ts.scheduled_start DESC`,
-  ).bind(classId).all();
-  if (results.length === 0) return null;
-  const withWindow = results.map((s) => ({ ...s, window: sessionWindow(s) }));
-  return (
-    withWindow.find((s) => s.window.phase === 'open') ||
-    withWindow.filter((s) => s.window.phase === 'upcoming').sort((a, b) => a.window.start - b.window.start)[0] ||
-    withWindow[0]
-  );
+function endOf(s) {
+  return s.scheduled_end ? Date.parse(s.scheduled_end) : Date.parse(s.scheduled_start) + s.duration_minutes * 60000;
 }
 
+// Everything the student's home page needs: what is coming up, and past scores.
 export async function status(req, env) {
   const session = await requireStudent(req, env);
   if (!session) return err('Not logged in.', 401);
-  const relevant = await findRelevantSession(env, session.classId);
-  const studentInfo = {
-    student_id: session.id,
-    student_name: session.name,
-  };
-  if (!relevant) return json({ phase: 'none', ...studentInfo });
+  await ensureColumns(env);
+  const cls = await env.DB.prepare('SELECT name FROM classes WHERE id = ?1').bind(session.classId).first();
+  const { results: rows } = await env.DB.prepare(
+    `SELECT ts.id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
+            t.title AS test_title,
+            r.mcq_score, r.mcq_max, r.writing_score, r.writing_max, r.started_at, r.submitted_at, r.published_at
+     FROM test_sessions ts
+     JOIN tests t ON t.id = ts.test_id
+     LEFT JOIN results r ON r.session_id = ts.id AND r.student_id = ?2
+     WHERE ts.class_id = ?1
+     ORDER BY ts.scheduled_start DESC`,
+  ).bind(session.classId, session.id).all();
 
-  const result = await env.DB.prepare('SELECT mcq_score, mcq_max, writing_score, writing_max, submitted_at, published_at FROM results WHERE session_id = ?1 AND student_id = ?2')
-    .bind(relevant.id, session.id).first();
-
-  if (result && result.submitted_at) {
-    if (result.published_at) {
-      return json({
-        phase: 'published', test_title: relevant.test_title,
-        mcq_score: result.mcq_score, mcq_max: result.mcq_max,
-        writing_score: result.writing_score, writing_max: result.writing_max,
-        ...studentInfo,
-      });
+  const upcoming = [];
+  const history = [];
+  for (const r of rows) {
+    const phase = sessionWindow(r).phase;
+    const base = {
+      session_id: r.id, test_title: r.test_title,
+      scheduled_start: r.scheduled_start, scheduled_end: new Date(endOf(r)).toISOString(),
+      duration_minutes: r.duration_minutes,
+    };
+    if (r.submitted_at && r.published_at) {
+      history.push({ ...base, state: 'published', mcq_score: r.mcq_score, mcq_max: r.mcq_max, writing_score: r.writing_score, writing_max: r.writing_max });
+    } else if (r.submitted_at || (phase === 'closed' && r.started_at)) {
+      history.push({ ...base, state: 'pending' });
+    } else if (phase === 'closed') {
+      history.push({ ...base, state: 'missed' });
+    } else {
+      upcoming.push({ ...base, phase, started: !!r.started_at });
     }
-    return json({ phase: 'submitted', test_title: relevant.test_title, ...studentInfo });
   }
-
-  if (relevant.window.phase === 'open') {
-    return json({ phase: 'open', session_id: relevant.id, test_title: relevant.test_title, end_at: relevant.window.end, ...studentInfo });
-  }
-  if (relevant.window.phase === 'upcoming') {
-    return json({
-      phase: 'upcoming',
-      test_title: relevant.test_title,
-      scheduled_start: relevant.scheduled_start,
-      scheduled_end: relevant.scheduled_end || new Date(relevant.window.end).toISOString(),
-      duration_minutes: relevant.duration_minutes,
-      ...studentInfo,
-    });
-  }
-  return json({ phase: 'missed', test_title: relevant.test_title, ...studentInfo });
+  upcoming.sort((a, b) => Date.parse(a.scheduled_start) - Date.parse(b.scheduled_start));
+  return json({
+    student_id: session.id, student_name: session.name, class_name: cls ? cls.name : '',
+    server_now: Date.now(), upcoming, history,
+  });
 }
 
-async function loadOpenSessionForStudent(env, studentSession) {
-  const relevant = await findRelevantSession(env, studentSession.classId);
-  if (!relevant || relevant.window.phase !== 'open') return null;
-  const already = await env.DB.prepare('SELECT id FROM results WHERE session_id = ?1 AND student_id = ?2 AND submitted_at IS NOT NULL')
-    .bind(relevant.id, studentSession.id).first();
-  if (already) return null;
-  return relevant;
+// The session a student is allowed to be answering right now: it must belong to
+// their class, be open, have been unlocked with its PIN, and not be submitted.
+async function loadActiveSession(env, studentSession, sessionId, graceMs = 0) {
+  if (!sessionId) return null;
+  const ses = await env.DB.prepare(
+    `SELECT ts.*, t.title AS test_title FROM test_sessions ts JOIN tests t ON t.id = ts.test_id
+     WHERE ts.id = ?1 AND ts.class_id = ?2`,
+  ).bind(sessionId, studentSession.classId).first();
+  if (!ses) return null;
+  const window = sessionWindow(ses);
+  const inGrace = graceMs > 0 && ses.status !== 'closed' && Date.now() < window.end + graceMs;
+  if (window.phase !== 'open' && !inGrace) return null;
+  const result = await env.DB.prepare(
+    'SELECT started_at, submitted_at FROM results WHERE session_id = ?1 AND student_id = ?2',
+  ).bind(ses.id, studentSession.id).first();
+  if (!result || !result.started_at || result.submitted_at) return null;
+  return { ...ses, window };
 }
 
-export async function getTest(req, env) {
+// Student types the test's PIN. Wrong PIN -> error. Before the start time ->
+// "waiting". Once open (and PIN right) the test is unlocked for this student.
+export async function start(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
-  const relevant = await loadOpenSessionForStudent(env, studentSession);
-  if (!relevant) return err('No test is open for you right now.', 403);
+  await ensureColumns(env);
+  const { session_id, pin } = await req.json();
+  const ses = await env.DB.prepare(
+    'SELECT * FROM test_sessions WHERE id = ?1 AND class_id = ?2',
+  ).bind(session_id, studentSession.classId).first();
+  if (!ses) return err('រកមិនឃើញការប្រឡងនេះទេ។', 404);
 
-  // Record student enrolled / started time if not already recorded
-  try {
-    const existing = await env.DB.prepare('SELECT id, started_at FROM results WHERE session_id = ?1 AND student_id = ?2')
-      .bind(relevant.id, studentSession.id).first();
-    if (!existing) {
-      await env.DB.prepare(
-        "INSERT INTO results (session_id, student_id, mcq_score, mcq_max, started_at) VALUES (?1, ?2, 0, 0, datetime('now'))"
-      ).bind(relevant.id, studentSession.id).run();
-    } else if (!existing.started_at) {
-      await env.DB.prepare(
-        "UPDATE results SET started_at = datetime('now') WHERE id = ?1"
-      ).bind(existing.id).run();
-    }
-  } catch {}
+  const result = await env.DB.prepare(
+    'SELECT id, started_at, submitted_at FROM results WHERE session_id = ?1 AND student_id = ?2',
+  ).bind(ses.id, studentSession.id).first();
+  if (result && result.submitted_at) return err('អ្នកបានប្រគល់ការប្រឡងនេះរួចហើយ។', 403);
 
-  const { results: orderedQuestions } = await env.DB.prepare(
-    'SELECT id, stem_text, image_key, options_json FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
-  ).bind(relevant.test_id).all();
-  // Each student sees the questions in their own fixed order (same every time
-  // they reload), so neighbours cannot copy by question number.
-  const questions = seededShuffle(orderedQuestions, `${relevant.id}:${studentSession.id}`);
+  const window = sessionWindow(ses);
+  // A student who already entered the PIN (e.g. refreshed the page or the phone
+  // restarted) may resume without typing it again.
+  const alreadyUnlocked = result && result.started_at;
+  if (!alreadyUnlocked) {
+    const expected = ses.pin == null ? '' : String(ses.pin).trim().toLowerCase();
+    if (expected && String(pin ?? '').trim().toLowerCase() !== expected) return err('PIN មិនត្រឹមត្រូវទេ។ សូមសួរលោកគ្រូ។', 401);
+  }
+  if (window.phase === 'closed') return err('ការប្រឡងនេះបានបិទហើយ។', 403);
+  if (window.phase === 'upcoming') {
+    return json({ ok: true, waiting: true, start_at: window.start, server_now: Date.now() });
+  }
 
-  const { results: saved } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
-    .bind(relevant.id, studentSession.id).all();
-  const savedByQuestion = Object.fromEntries(saved.map((r) => [r.question_id, r.selected_index]));
-
-  return json({
-    session_id: relevant.id,
-    test_title: relevant.test_title,
-    end_at: relevant.window.end,
-    questions: questions.map((q) => ({
-      id: q.id, stem_text: q.stem_text, image_key: q.image_key,
-      options: JSON.parse(q.options_json), selected_index: savedByQuestion[q.id] ?? null,
-    })),
-  });
+  if (!result) {
+    await env.DB.prepare(
+      "INSERT INTO results (session_id, student_id, mcq_score, mcq_max, started_at) VALUES (?1, ?2, 0, 0, datetime('now'))",
+    ).bind(ses.id, studentSession.id).run();
+  } else if (!result.started_at) {
+    await env.DB.prepare("UPDATE results SET started_at = datetime('now') WHERE id = ?1").bind(result.id).run();
+  }
+  return json({ ok: true, waiting: false, server_now: Date.now() });
 }
 
 function seededShuffle(items, seedText) {
@@ -146,50 +143,78 @@ function seededShuffle(items, seedText) {
   return a;
 }
 
+export async function getTest(req, env) {
+  const studentSession = await requireStudent(req, env);
+  if (!studentSession) return err('Not logged in.', 401);
+  const sessionId = Number(new URL(req.url).searchParams.get('session_id'));
+  const active = await loadActiveSession(env, studentSession, sessionId);
+  if (!active) return err('No test is open for you right now.', 403);
+
+  const { results: orderedQuestions } = await env.DB.prepare(
+    'SELECT id, stem_text, image_key, options_json FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+  ).bind(active.test_id).all();
+  // Each student sees the questions in their own fixed order (same every time
+  // they reload), so neighbours cannot copy by question number.
+  const questions = seededShuffle(orderedQuestions, `${active.id}:${studentSession.id}`);
+
+  const { results: saved } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
+    .bind(active.id, studentSession.id).all();
+  const savedByQuestion = Object.fromEntries(saved.map((r) => [r.question_id, r.selected_index]));
+
+  return json({
+    session_id: active.id,
+    test_title: active.test_title,
+    end_at: active.window.end,
+    server_now: Date.now(),
+    questions: questions.map((q) => ({
+      id: q.id, stem_text: q.stem_text, image_key: q.image_key,
+      options: JSON.parse(q.options_json), selected_index: savedByQuestion[q.id] ?? null,
+    })),
+  });
+}
+
 // The student's page reports each time it was left (tab switch, app switch).
 export async function leftPage(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
-  const relevant = await loadOpenSessionForStudent(env, studentSession);
-  if (!relevant) return json({ ok: true });
+  const { session_id } = await req.json().catch(() => ({}));
+  const active = await loadActiveSession(env, studentSession, Number(session_id));
+  if (!active) return json({ ok: true });
   await ensureColumns(env);
   await env.DB.prepare('UPDATE results SET tab_switches = tab_switches + 1 WHERE session_id = ?1 AND student_id = ?2')
-    .bind(relevant.id, studentSession.id).run();
+    .bind(active.id, studentSession.id).run();
   return json({ ok: true });
 }
 
 export async function answer(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
-  const relevant = await loadOpenSessionForStudent(env, studentSession);
-  if (!relevant) return err('This test is not open anymore.', 403);
-  const { question_id, selected_index } = await req.json();
-  const question = await env.DB.prepare('SELECT id FROM test_questions WHERE id = ?1 AND test_id = ?2').bind(question_id, relevant.test_id).first();
+  const { session_id, question_id, selected_index } = await req.json();
+  const active = await loadActiveSession(env, studentSession, Number(session_id));
+  if (!active) return err('This test is not open anymore.', 403);
+  const question = await env.DB.prepare('SELECT id FROM test_questions WHERE id = ?1 AND test_id = ?2').bind(question_id, active.test_id).first();
   if (!question) return err('That question is not part of this test.', 400);
   await env.DB.prepare(
     `INSERT INTO responses (session_id, student_id, question_id, selected_index) VALUES (?1, ?2, ?3, ?4)
      ON CONFLICT(session_id, student_id, question_id) DO UPDATE SET selected_index = ?4, answered_at = datetime('now')`,
-  ).bind(relevant.id, studentSession.id, question_id, selected_index).run();
+  ).bind(active.id, studentSession.id, question_id, selected_index).run();
   return json({ ok: true });
 }
 
 export async function submit(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
-  const relevant = await loadOpenSessionForStudent(env, studentSession);
-  if (!relevant) return err('This test is not open anymore.', 403);
-  if (Date.now() > relevant.window.end + SUBMIT_GRACE_MS) return err('Time is up.', 403);
-
-  let submitType = 'manual';
-  try {
-    const body = await req.json();
-    if (body && body.submit_type === 'auto') submitType = 'auto';
-  } catch {}
+  await ensureColumns(env);
+  let body = {};
+  try { body = await req.json(); } catch {}
+  const active = await loadActiveSession(env, studentSession, Number(body.session_id), SUBMIT_GRACE_MS);
+  if (!active) return err('This test is not open anymore.', 403);
+  const submitType = body.submit_type === 'auto' ? 'auto' : 'manual';
 
   const { results: questions } = await env.DB.prepare('SELECT id, correct_index, points FROM test_questions WHERE test_id = ?1')
-    .bind(relevant.test_id).all();
+    .bind(active.test_id).all();
   const { results: responses } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
-    .bind(relevant.id, studentSession.id).all();
+    .bind(active.id, studentSession.id).all();
   const selectedByQuestion = Object.fromEntries(responses.map((r) => [r.question_id, r.selected_index]));
 
   let mcqScore = 0;
@@ -203,7 +228,7 @@ export async function submit(req, env) {
     `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, submitted_at, submit_type)
      VALUES (?1, ?2, ?3, ?4, datetime('now'), ?5)
      ON CONFLICT(session_id, student_id) DO UPDATE SET mcq_score = ?3, mcq_max = ?4, submitted_at = datetime('now'), submit_type = ?5`,
-  ).bind(relevant.id, studentSession.id, mcqScore, mcqMax, submitType).run();
+  ).bind(active.id, studentSession.id, mcqScore, mcqMax, submitType).run();
 
-  return json({ ok: true, mcq_score: mcqScore, mcq_max: mcqMax, submit_type: submitType });
+  return json({ ok: true, submit_type: submitType });
 }

@@ -33,9 +33,10 @@ document.getElementById('setup-submit').addEventListener('click', async () => {
       password: document.getElementById('setup-password').value,
     } });
     location.reload();
-  } catch (e) { showError(viewSetup.querySelector('.card'), e.message); }
+  } catch (e) { showError(viewSetup.querySelector('.auth-card'), e.message); }
 });
 
+document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('login-submit').click(); });
 document.getElementById('login-submit').addEventListener('click', async () => {
   try {
     await api('/api/teacher/login', { method: 'POST', body: {
@@ -43,7 +44,7 @@ document.getElementById('login-submit').addEventListener('click', async () => {
       password: document.getElementById('login-password').value,
     } });
     location.reload();
-  } catch (e) { showError(viewLogin.querySelector('.card'), e.message); }
+  } catch (e) { showError(viewLogin.querySelector('.auth-card'), e.message); }
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -93,7 +94,6 @@ render.classes = async function () {
   container.innerHTML = '';
   if (selectedClassId) return renderRoster(container);
 
-  container.append(await renderPinCard());
 
   const { classes } = await api('/api/classes');
   const card = h('div', { class: 'card' }, [
@@ -705,6 +705,16 @@ render.schedule = async function (preSelectedTestId = null) {
             : h('span', { class: 'badge draft' }, `មិនទាន់មានសិស្សប្រគល់`),
         ]),
         h('div', { class: 'muted', style: 'margin-top:4px;' }, `📅 ចាប់ផ្តើម៖ ${fmtDateTime(s.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${s.scheduled_end ? fmtDateTime(s.scheduled_end) : '—'} (${s.duration_minutes} នាទី)`),
+        h('div', { style: 'margin-top:6px;' }, [
+          h('span', { class: 'muted' }, 'PIN សម្រាប់សិស្ស៖ '),
+          s.pin ? h('span', { class: 'pin-chip' }, [s.pin]) : h('span', { class: 'badge draft' }, 'មិនមាន PIN'),
+          h('button', { class: 'secondary btn-sm', style: 'margin-left:8px;', onclick: async () => {
+            const next = prompt('PIN ថ្មី (អក្សរ ឬលេខ ៣–១២ តួ)៖', s.pin || '');
+            if (next == null) return;
+            try { await api(`/api/sessions/${s.id}/pin`, { method: 'POST', body: { pin: next } }); render.schedule(); }
+            catch (e) { Exam.notify(e.message); }
+          } }, 'ប្តូរ PIN'),
+        ]),
       ]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => {
@@ -785,6 +795,9 @@ render.schedule = async function (preSelectedTestId = null) {
     h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(tomorrowYMD, '14:00', '16:00', 120) }, 'ថ្ងៃស្អែក 14:00 — 16:00'),
   ]);
 
+  const randomPin = () => String(Math.floor(1000 + Math.random() * 9000));
+  const pinInput = h('input', { type: 'text', id: 'sch-pin', value: randomPin(), maxlength: '12', style: 'font-weight:700;font-family:monospace;letter-spacing:3px;font-size:18px;' });
+
   const testOptions = tests.length === 0
     ? [h('option', { value: '', disabled: true, selected: true }, 'គ្មានតេស្តនៅឡើយទេ — សូមបង្កើតតេស្តជាមុនសិន')]
     : tests.map((t) => {
@@ -818,6 +831,11 @@ render.schedule = async function (preSelectedTestId = null) {
       ]),
     ]),
     shortcuts,
+    h('label', {}, 'PIN សម្រាប់ការប្រឡងនេះ (សិស្សវាយ PIN នេះដើម្បីចូលប្រឡង)'),
+    h('div', { class: 'row', style: 'flex-wrap:nowrap;' }, [
+      pinInput,
+      h('button', { type: 'button', class: 'secondary', title: 'ចៃដន្យ', onclick: () => { pinInput.value = randomPin(); } }, '🎲 ថ្មី'),
+    ]),
     h('div', { class: 'row', style: 'margin-top:16px' }, [
       h('button', { onclick: async () => {
         const testId = Number(document.getElementById('sch-test').value);
@@ -846,7 +864,7 @@ render.schedule = async function (preSelectedTestId = null) {
         const targetTest = tests.find((t) => t.id === testId);
         if (targetTest && targetTest.status !== 'ready') {
           try {
-            await api(`/api/tests/${testId}`, { method: 'PATCH', body: { status: 'ready' } });
+            await api(`/api/tests/${testId}`, { method: 'PUT', body: { status: 'ready' } });
           } catch {}
         }
 
@@ -856,8 +874,9 @@ render.schedule = async function (preSelectedTestId = null) {
           scheduled_start: startDt.toISOString(),
           scheduled_end: endDt.toISOString(),
           duration_minutes: dur,
+          pin: pinInput.value.trim(),
         } });
-        await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ!');
+        await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ! សូមប្រាប់សិស្សពី PIN: ' + pinInput.value.trim());
         render.schedule();
       } }, 'កំណត់ពេល'),
     ]),
@@ -1070,6 +1089,7 @@ async function renderGradingSession(container) {
         h('h2', { style: 'margin-bottom:4px;' }, `${session.test_title} — ${session.class_name}`),
         h('div', { class: 'muted' }, `សម័យប្រឡង៖ ចាប់ផ្តើម ${fmtDateTime(session.scheduled_start)} ➔ ម៉ោងបញ្ចប់៖ ${session.scheduled_end ? fmtDateTime(session.scheduled_end) : '—'} (${session.duration_minutes} នាទី) · ពិន្ទុ MCQ អតិបរមា: ${session.mcq_max} ពិន្ទុ`),
         h('div', { class: 'row', style: 'margin-top:6px;gap:8px;' }, [
+          session.pin ? h('span', { class: 'pin-chip no-print' }, [`PIN ${session.pin}`]) : null,
           h('span', { class: 'badge draft' }, `សិស្សសរុប៖ ${totalStudents} នាក់`),
           h('span', { class: 'badge ready' }, `បានប្រគល់៖ ${participated} នាក់`),
           inProgress > 0 ? h('span', { class: 'badge open' }, `កំពុងប្រឡង៖ ${inProgress} នាក់`) : null,

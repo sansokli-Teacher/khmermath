@@ -6,136 +6,229 @@ function mathEl(tag, attrs, text) {
   return el;
 }
 
-const viewLogin = document.getElementById('view-login');
-const viewStatus = document.getElementById('view-status');
-const viewTest = document.getElementById('view-test');
+// The phone's own clock may be wrong; every countdown uses server time.
+let clockSkew = 0;
+const now = () => Date.now() + clockSkew;
+const syncClock = (serverNow) => { if (serverNow) clockSkew = serverNow - Date.now(); };
 
+const views = ['login', 'home', 'wait', 'test'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
 function showView(name) {
-  viewLogin.hidden = name !== 'login';
-  viewStatus.hidden = name !== 'status';
-  viewTest.hidden = name !== 'test';
+  for (const [n, el] of Object.entries(views)) el.hidden = n !== name;
+  window.scrollTo(0, 0);
 }
 
 let currentStudent = null;
+let testState = null;
+let timerInterval = null;
+let waitInterval = null;
+let homeRefresh = null;
 
+function computeGrade(pct) {
+  if (pct >= 85) return { grade: 'A', label: 'ល្អប្រសើរ', color: '#16a34a' };
+  if (pct >= 75) return { grade: 'B', label: 'ល្អណាស់', color: '#2563eb' };
+  if (pct >= 65) return { grade: 'C', label: 'ល្អ', color: '#0891b2' };
+  if (pct >= 50) return { grade: 'D', label: 'មធ្យម', color: '#d97706' };
+  if (pct >= 40) return { grade: 'E', label: 'ខ្សោយ', color: '#ea580c' };
+  return { grade: 'F', label: 'ធ្លាក់', color: '#dc2626' };
+}
+
+// ---------- Sign in ----------
 async function boot() {
+  clearInterval(homeRefresh);
   try {
     const data = await api('/api/student/status');
+    syncClock(data.server_now);
     currentStudent = { id: data.student_id, name: data.student_name };
-    renderStatus(data);
+    renderHome(data);
   } catch {
     showView('login');
+    document.getElementById('login-id').focus();
   }
 }
 
-document.getElementById('login-submit').addEventListener('click', async () => {
+async function doLogin() {
   const id = document.getElementById('login-id').value.trim();
-  const pin = document.getElementById('login-pin').value.trim();
-  if (!id || !pin) {
-    showError(viewLogin.querySelector('.card'), 'សូមបញ្ចូលលេខសម្គាល់សិស្ស និង PIN។');
-    return;
-  }
+  const card = views.login.querySelector('.auth-card');
+  if (!id) return showError(card, 'សូមបញ្ចូលអត្តលេខរបស់អ្នក។');
   try {
-    await api('/api/student/login', { method: 'POST', body: { id, pin } });
+    await api('/api/student/login', { method: 'POST', body: { id } });
     boot();
   } catch (e) {
-    showError(viewLogin.querySelector('.card'), e.message);
+    showError(card, e.message);
   }
-});
+}
+document.getElementById('login-submit').addEventListener('click', doLogin);
+document.getElementById('login-id').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 
 async function logoutStudent() {
-  try {
-    await api('/api/student/logout', { method: 'POST' });
-  } catch {}
+  try { await api('/api/student/logout', { method: 'POST' }); } catch {}
   currentStudent = null;
   testState = null;
   clearInterval(timerInterval);
+  clearInterval(waitInterval);
+  clearInterval(homeRefresh);
+  document.getElementById('login-id').value = '';
   showView('login');
 }
+document.getElementById('home-logout').onclick = logoutStudent;
 
-const logoutBtn = document.getElementById('student-logout-btn');
-if (logoutBtn) logoutBtn.onclick = logoutStudent;
+// ---------- Home ----------
+function renderHome(data) {
+  clearInterval(timerInterval);
+  clearInterval(waitInterval);
+  showView('home');
+  document.getElementById('home-name').textContent = data.student_name;
+  document.getElementById('home-sub').textContent = `អត្តលេខ ${data.student_id}${data.class_name ? ` · ថ្នាក់ ${data.class_name}` : ''}`;
+  const body = document.getElementById('home-body');
+  body.innerHTML = '';
 
-function computeGrade(pct) {
-  if (pct >= 85) return { grade: 'A', label: 'ល្អប្រសើរ (A)', color: '#16a34a' };
-  if (pct >= 75) return { grade: 'B', label: 'ល្អណាស់ (B)', color: '#2563eb' };
-  if (pct >= 65) return { grade: 'C', label: 'ល្អ (C)', color: '#0891b2' };
-  if (pct >= 50) return { grade: 'D', label: 'មធ្យម (D)', color: '#d97706' };
-  if (pct >= 40) return { grade: 'E', label: 'ខ្សោយ (E)', color: '#ea580c' };
-  return { grade: 'F', label: 'ធ្លាក់ (F)', color: '#dc2626' };
+  // --- upcoming / open tests
+  body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));
+  if (data.upcoming.length === 0) {
+    body.append(h('div', { class: 'empty-card' }, [
+      h('div', { class: 'empty-icon' }, '📭'),
+      h('div', { style: 'font-weight:600;' }, 'មិនទាន់មានការប្រឡងនៅឡើយទេ'),
+      h('div', { class: 'muted' }, 'នៅពេលលោកគ្រូកំណត់ការប្រឡង វានឹងបង្ហាញនៅទីនេះ។'),
+    ]));
+  }
+  for (const s of data.upcoming) body.append(examCard(s));
+
+  // --- past results
+  body.append(h('h2', { class: 'section-title', style: 'margin-top:28px;' }, 'លទ្ធផលពីមុន'));
+  if (data.history.length === 0) {
+    body.append(h('div', { class: 'empty-card' }, [
+      h('div', { class: 'empty-icon' }, '📊'),
+      h('div', { class: 'muted' }, 'មិនទាន់មានលទ្ធផលនៅឡើយទេ។'),
+    ]));
+  }
+  for (const s of data.history) body.append(historyCard(s));
+
+  // Refresh the list when a test is about to start / results get published.
+  homeRefresh = setInterval(async () => {
+    if (views.home.hidden || document.hidden || body.querySelector('input:focus')) return;
+    try { const d = await api('/api/student/status'); syncClock(d.server_now); renderHome(d); } catch {}
+  }, 30000);
 }
 
-function renderStatus(data) {
-  if (data.phase === 'open') return loadTest();
-
-  showView('status');
-  viewStatus.innerHTML = '';
-
-  const studentInfoBox = data.student_name ? h('div', {
-    style: 'background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;width:100%;max-width:480px;'
-  }, [
-    h('div', {}, [
-      h('div', { class: 'muted', style: 'font-size:13px;' }, 'គណនីសិស្ស'),
-      h('strong', { style: 'font-size:16px;' }, data.student_name),
-      h('span', { class: 'muted', style: 'font-size:13px;' }, ` (អត្តលេខ: ${data.student_id})`),
+function examCard(s) {
+  const isOpen = s.phase === 'open';
+  const pinInput = h('input', {
+    type: 'text', class: 'pin-input', placeholder: 'PIN', autocomplete: 'off', maxlength: '12',
+    inputmode: 'text', 'aria-label': 'PIN ការប្រឡង',
+  });
+  const card = h('div', { class: `exam-card${isOpen ? ' is-open' : ''}` }, [
+    h('div', { class: 'exam-card-head' }, [
+      h('div', { class: 'exam-title' }, s.test_title),
+      isOpen
+        ? h('span', { class: 'chip chip-open' }, '● កំពុងបើក')
+        : h('span', { class: 'chip chip-soon' }, 'នឹងមកដល់'),
     ]),
-    h('button', { class: 'secondary btn-sm', onclick: logoutStudent }, 'ចាកចេញ'),
-  ]) : null;
+    h('div', { class: 'exam-meta' }, [
+      h('span', {}, `📅 ${fmtDateTime(s.scheduled_start)}`),
+      h('span', {}, `⏱ ${s.duration_minutes} នាទី`),
+      h('span', {}, `🏁 បញ្ចប់ ${fmtTimeOnly(s.scheduled_end)}`),
+    ]),
+  ]);
 
-  const messages = {
-    none: ['មិនមានការប្រឡងកំណត់ពេលទេ', 'បច្ចុប្បន្នមិនមានការប្រឡងកំណត់ពេលសម្រាប់ថ្នាក់របស់អ្នកនៅឡើយទេ។'],
-    upcoming: [data.test_title || 'ការប្រឡងនឹងមកដល់', `ការប្រឡងចាប់ផ្តើមនៅ ${fmtDateTime(data.scheduled_start)} ដល់ ${data.scheduled_end ? fmtDateTime(data.scheduled_end) : '—'} (រយៈពេល ${data.duration_minutes} នាទី)`],
-    submitted: [data.test_title || 'បានបញ្ជូនចម្លើយ', 'អ្នកបានបញ្ជូនចម្លើយរួចរាល់ហើយ។ សូមរង់ចាំលោកគ្រូប្រកាសលទ្ធផល។'],
-    missed: [data.test_title || 'ការប្រឡងបានបញ្ចប់', 'ការប្រឡងនេះបានបិទ ហើយអ្នកមិនបានចូលរួមប្រឡងទេ។'],
+  const go = async (withPin) => {
+    showError(card, '');
+    try {
+      const res = await api('/api/student/start', { method: 'POST', body: { session_id: s.session_id, pin: withPin } });
+      syncClock(res.server_now);
+      if (res.waiting) return showWaiting(s, withPin, res.start_at);
+      loadTest(s.session_id);
+    } catch (e) { showError(card, e.message); }
   };
 
-  const card = h('div', { class: 'card', style: 'max-width:480px;width:100%;text-align:center;padding:24px 16px;' });
-
-  if (data.phase === 'published') {
-    const total = data.mcq_score + (data.writing_score ?? 0);
-    const max = data.mcq_max + (data.writing_max ?? 0);
-    const pct = max > 0 ? Math.round((total / max) * 100) : 0;
-    const g = computeGrade(pct);
-
-    card.append(
-      h('h2', { style: 'margin-bottom:6px;' }, data.test_title),
-      h('div', { class: 'muted', style: 'margin-bottom:14px;' }, 'លទ្ធផលពិន្ទុរបស់អ្នក'),
-      h('div', { class: 'big-score' }, `${total} / ${max}`),
-      h('div', { style: `font-size:16px;font-weight:700;color:${g.color};margin:6px 0 14px;` }, `និទ្ទេស ${g.label} (${pct}%)`),
-      h('div', { style: 'background:var(--bg);border-radius:8px;padding:12px;margin:12px 0;text-align:left;font-size:15px;' }, [
-        h('div', { class: 'list-item' }, [h('span', {}, 'ពិន្ទុពហុជ្រើសរើស (MCQ):'), h('strong', {}, `${data.mcq_score} / ${data.mcq_max}`)]),
-        data.writing_score != null ? h('div', { class: 'list-item' }, [h('span', {}, 'ពិន្ទុសរសេរដៃ (Writing):'), h('strong', {}, `${data.writing_score} / ${data.writing_max}`)]): null,
-      ].filter(Boolean)),
-      h('div', { class: 'row', style: 'justify-content:center;margin-top:16px;' }, [
-        h('button', { class: 'secondary', onclick: logoutStudent }, 'ចាកចេញពីគណនី'),
-      ])
-    );
+  if (s.started && isOpen) {
+    card.append(h('button', { class: 'btn-block', onclick: () => go('') }, 'បន្តការប្រឡង →'));
   } else {
-    const [title, sub] = messages[data.phase] || ['', ''];
-    card.append(
-      h('h2', {}, title),
-      h('p', { class: 'muted', style: 'margin:12px 0 20px;' }, sub),
-      data.phase === 'upcoming' ? h('button', { onclick: () => location.reload() }, '🔄 ពិនិត្យឡើងវិញ') : null,
-    );
+    card.append(h('div', { class: 'pin-row' }, [
+      pinInput,
+      h('button', { onclick: () => go(pinInput.value) }, isOpen ? 'ចូលប្រឡង' : 'បញ្ចូល PIN'),
+    ]));
+    pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(pinInput.value); });
+    card.append(h('div', { class: 'muted pin-hint' }, isOpen
+      ? 'សូមសួរ PIN ពីលោកគ្រូ រួចបញ្ចូលដើម្បីចាប់ផ្តើម។'
+      : 'អាចបញ្ចូល PIN ទុកជាមុន — ការប្រឡងនឹងបើកដោយខ្លួនឯងពេលដល់ម៉ោង។'));
   }
-
-  if (studentInfoBox) viewStatus.append(studentInfoBox);
-  viewStatus.append(card);
+  return card;
 }
 
-// ---------- Taking the test ----------
-let testState = null;
-let timerInterval = null;
-
-async function loadTest() {
-  const data = await api('/api/student/test');
-  testState = { ...data, current: 0 };
-  showView('test');
-  document.getElementById('timer-title').textContent = data.test_title;
-  const badgeEl = document.getElementById('student-badge');
-  if (badgeEl && currentStudent) {
-    badgeEl.textContent = `${currentStudent.name} (${currentStudent.id})`;
+function historyCard(s) {
+  const head = h('div', { class: 'exam-card-head' }, [
+    h('div', { class: 'exam-title' }, s.test_title),
+    h('span', { class: 'muted', style: 'white-space:nowrap;' }, fmtDateTime(s.scheduled_start)),
+  ]);
+  if (s.state === 'published') {
+    const total = s.mcq_score + (s.writing_score ?? 0);
+    const max = s.mcq_max + (s.writing_max ?? 0);
+    const pct = max > 0 ? Math.round((total / max) * 100) : 0;
+    const g = computeGrade(pct);
+    return h('div', { class: 'score-card' }, [
+      head,
+      h('div', { class: 'score-row' }, [
+        h('div', { class: 'score-big' }, [h('span', {}, String(total)), h('span', { class: 'score-max' }, ` / ${max}`)]),
+        h('div', { class: 'grade-pill', style: `background:${g.color}1a;color:${g.color};` }, [
+          h('div', { class: 'grade-letter' }, g.grade), h('div', { class: 'grade-label' }, g.label),
+        ]),
+      ]),
+      h('div', { class: 'bar' }, h('div', { class: 'bar-fill', style: `width:${pct}%;background:${g.color};` })),
+      h('div', { class: 'score-detail' }, [
+        h('span', {}, `${pct}%`),
+        h('span', {}, `ពហុជ្រើសរើស ${s.mcq_score}/${s.mcq_max}`),
+        s.writing_score != null ? h('span', {}, `សរសេរ ${s.writing_score}/${s.writing_max}`) : null,
+      ]),
+    ]);
   }
+  const text = s.state === 'pending' ? ['⏳ បានប្រគល់ — រង់ចាំលោកគ្រូប្រកាសលទ្ធផល', 'chip-soon'] : ['អវត្តមាន — មិនបានចូលប្រឡង', 'chip-closed'];
+  return h('div', { class: 'score-card' }, [head, h('div', { style: 'margin-top:8px;' }, h('span', { class: `chip ${text[1]}` }, text[0]))]);
+}
+
+// ---------- Waiting for the start time ----------
+function showWaiting(s, pin, startAt) {
+  showView('wait');
+  document.getElementById('wait-title').textContent = s.test_title;
+  document.getElementById('wait-start').textContent = `ចាប់ផ្តើម៖ ${fmtDateTime(new Date(startAt).toISOString())}`;
+  const countEl = document.getElementById('wait-count');
+  clearInterval(waitInterval);
+  let starting = false;
+  const tick = async () => {
+    const left = startAt - now();
+    countEl.textContent = fmtClock(left);
+    if (left <= 0 && !starting) {
+      starting = true;
+      try {
+        const res = await api('/api/student/start', { method: 'POST', body: { session_id: s.session_id, pin } });
+        syncClock(res.server_now);
+        if (!res.waiting) { clearInterval(waitInterval); return loadTest(s.session_id); }
+      } catch (e) {
+        clearInterval(waitInterval);
+        await Exam.notify(e.message);
+        return boot();
+      }
+      starting = false; // clock skew: server said "not yet" — try again next tick
+    }
+  };
+  tick();
+  waitInterval = setInterval(tick, 1000);
+}
+document.getElementById('wait-cancel').onclick = () => { clearInterval(waitInterval); boot(); };
+
+// ---------- Taking the test ----------
+async function loadTest(sessionId) {
+  clearInterval(waitInterval);
+  try {
+    const data = await api(`/api/student/test?session_id=${sessionId}`);
+    syncClock(data.server_now);
+    testState = { ...data, current: 0 };
+  } catch (e) {
+    await Exam.notify(e.message);
+    return boot();
+  }
+  showView('test');
+  document.getElementById('timer-title').textContent = testState.test_title;
+  document.getElementById('student-badge').textContent = `${currentStudent.name} (${currentStudent.id})`;
   renderNav();
   renderQuestion();
   startTimer();
@@ -144,10 +237,10 @@ async function loadTest() {
 // Warn and log when the student leaves the test page (other tab or app).
 let leftCount = 0;
 document.addEventListener('visibilitychange', () => {
-  if (!testState || document.getElementById('view-test').hidden) return;
+  if (!testState || views.test.hidden) return;
   if (document.hidden) {
     leftCount++;
-    api('/api/student/left-page', { method: 'POST' }).catch(() => {});
+    api('/api/student/left-page', { method: 'POST', body: { session_id: testState.session_id } }).catch(() => {});
   } else {
     Exam.notify(`⚠️ ប្អូនបានចាកចេញពីទំព័រប្រឡង (${leftCount} ដង)។ លោកគ្រូនឹងឃើញការកត់ត្រានេះ។ សូមកុំបើកកម្មវិធីផ្សេងពេលកំពុងប្រឡង។`);
   }
@@ -156,11 +249,10 @@ document.addEventListener('visibilitychange', () => {
 function startTimer() {
   clearInterval(timerInterval);
   const bar = document.getElementById('timer-bar');
-  const endFormatted = testState.end_at ? fmtTimeOnly(testState.end_at) : '';
+  const clockEl = document.getElementById('timer-clock');
   const tick = () => {
-    const remaining = testState.end_at - Date.now();
-    const clockEl = document.getElementById('timer-clock');
-    clockEl.innerHTML = `<span style="font-size:12px;opacity:0.9;margin-right:6px;font-weight:normal;">ម៉ោងបញ្ចប់៖ <strong>${endFormatted}</strong> (នៅសល់៖</span><span style="font-weight:700;">${fmtClock(remaining)}</span><span style="font-size:12px;opacity:0.9;">)</span>`;
+    const remaining = testState.end_at - now();
+    clockEl.textContent = fmtClock(remaining);
     bar.classList.toggle('low', remaining < 5 * 60 * 1000);
     if (remaining <= 0) {
       clearInterval(timerInterval);
@@ -175,13 +267,18 @@ function startTimer() {
 function renderNav() {
   const nav = document.getElementById('question-nav');
   nav.innerHTML = '';
+  let answered = 0;
   testState.questions.forEach((q, i) => {
+    if (q.selected_index != null) answered++;
     nav.append(h('button', {
       class: `${q.selected_index != null ? 'answered ' : ''}${i === testState.current ? 'current' : ''}`,
       onclick: () => { testState.current = i; renderQuestion(); renderNav(); },
     }, String(i + 1)));
   });
+  document.getElementById('progress-fill').style.width = `${(answered / testState.questions.length) * 100}%`;
 }
+
+const LETTERS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
 
 function renderQuestion() {
   const area = document.getElementById('question-area');
@@ -193,14 +290,15 @@ function renderQuestion() {
 
   const card = h('div', { class: 'question-card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:8px;' }, [
-      h('span', { class: 'muted', style: 'font-weight:600;' }, `សំណួរទី ${currQ} / ${totalQ}`),
+      h('span', { class: 'q-count' }, `សំណួរទី ${currQ} / ${totalQ}`),
       q.selected_index != null
-        ? h('span', { class: 'badge ready', style: 'font-size:11px;' }, '✓ បានឆ្លើយ')
-        : h('span', { class: 'badge draft', style: 'font-size:11px;' }, 'មិនទាន់ឆ្លើយ'),
+        ? h('span', { class: 'chip chip-open' }, '✓ បានឆ្លើយ')
+        : h('span', { class: 'chip chip-closed' }, 'មិនទាន់ឆ្លើយ'),
     ]),
-    mathEl('div', { style: 'font-size:17px;font-weight:500;margin:6px 0 12px;' }, q.stem_text),
+    mathEl('div', { class: 'q-stem' }, q.stem_text),
     q.image_key ? h('div', { style: 'text-align:center;margin:10px 0;' }, [h('img', { src: `/api/images/${q.image_key}`, style: 'max-height:300px;border-radius:8px;' })]) : null,
     h('div', { class: 'radio-list' }, q.options.map((opt, idx) => h('label', { class: `radio-opt${q.selected_index === idx ? ' selected' : ''}` }, [
+      h('span', { class: 'opt-letter' }, LETTERS[idx] || String(idx + 1)),
       h('input', { type: 'radio', name: 'opt', checked: q.selected_index === idx ? 'checked' : null, onchange: () => selectAnswer(q, idx) }),
       mathEl('span', { class: 'opt-body' }, opt),
     ]))),
@@ -211,8 +309,8 @@ function renderQuestion() {
       ? h('button', { class: 'secondary', onclick: () => { testState.current--; renderQuestion(); renderNav(); } }, '← សំណួរមុន')
       : h('span', {}),
     testState.current < totalQ - 1
-      ? h('button', { onclick: () => { testState.current++; renderQuestion(); renderNav(); } }, 'សំណួរខាងមុខ →')
-      : h('button', { style: 'background:var(--good);', onclick: submitPrompt }, 'បញ្ជូនចម្លើយ ✓'),
+      ? h('button', { onclick: () => { testState.current++; renderQuestion(); renderNav(); } }, 'សំណួរបន្ទាប់ →')
+      : h('button', { class: 'good', onclick: submitPrompt }, 'បញ្ជូនចម្លើយ ✓'),
   ]);
 
   area.append(card, navRow);
@@ -223,12 +321,12 @@ async function selectAnswer(q, idx) {
   renderQuestion();
   renderNav();
   try {
-    await api('/api/student/answer', { method: 'POST', body: { question_id: q.id, selected_index: idx } });
+    await api('/api/student/answer', { method: 'POST', body: { session_id: testState.session_id, question_id: q.id, selected_index: idx } });
   } catch {}
 }
 
 function submitPrompt() {
-  const remaining = testState ? testState.end_at - Date.now() : 0;
+  const remaining = testState ? testState.end_at - now() : 0;
   const unanswered = testState ? testState.questions.filter((q) => q.selected_index == null).length : 0;
   const total = testState ? testState.questions.length : 0;
   const answered = total - unanswered;
@@ -238,48 +336,21 @@ function submitPrompt() {
 
   const remainingMins = Math.max(0, Math.floor(remaining / 60000));
   const remainingSecs = Math.max(0, Math.floor((remaining % 60000) / 1000));
-  const timeText = `${remainingMins} នាទី ${remainingSecs} វិនាទី`;
 
-  const modal = h('div', {
-    id: 'submit-modal',
-    style: 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;'
-  });
-
-  const box = h('div', {
-    class: 'card',
-    style: 'max-width:440px;width:100%;border-radius:12px;padding:24px 20px;text-align:center;box-shadow:0 20px 25px -5px rgba(0,0,0,0.25);margin:0;background:#fff;'
-  }, [
-    h('div', { style: 'font-size:42px;margin-bottom:8px;' }, remaining > 60000 ? '⚠️' : '📝'),
-    h('h2', { style: 'margin:0 0 10px;font-size:20px;color:var(--ink);' }, 'បញ្ជាក់ការប្រគល់វិញ្ញាសា'),
-    remaining > 60000 ? h('div', {
-      style: 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
-    }, `⏱ ពេលវេលាប្រឡងនៅសល់៖ ${timeText} ទៀត!`) : null,
-    unanswered > 0 ? h('div', {
-      style: 'background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
-    }, `⚠️ ប្អូនឆ្លើយបាន ${answered}/${total} សំណួរ (នៅសល់ ${unanswered} សំណួរទៀតមិនទាន់បានឆ្លើយ)!`) : h('div', {
-      style: 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:8px 12px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:12px;'
-    }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
-    h('p', { class: 'muted', style: 'margin:12px 0 20px;font-size:14px;line-height:1.5;' },
-      'តើប្អូនពិតជាចង់បញ្ចប់ និងប្រគល់កិច្ចការប្រឡងឥឡូវនេះមែនឬ? នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែប្រែចម្លើយបានទៀតឡើយ។'
-    ),
+  const modal = h('div', { id: 'submit-modal', class: 'modal-back' });
+  const box = h('div', { class: 'modal-box' }, [
+    h('div', { style: 'font-size:42px;margin-bottom:8px;' }, unanswered > 0 ? '⚠️' : '📝'),
+    h('h2', { style: 'margin:0 0 10px;' }, 'បញ្ជាក់ការប្រគល់វិញ្ញាសា'),
+    remaining > 60000 ? h('div', { class: 'callout warn' }, `⏱ ពេលវេលានៅសល់៖ ${remainingMins} នាទី ${remainingSecs} វិនាទី`) : null,
+    unanswered > 0
+      ? h('div', { class: 'callout bad' }, `ប្អូនឆ្លើយបាន ${answered}/${total} — នៅសល់ ${unanswered} សំណួរមិនទាន់ឆ្លើយ!`)
+      : h('div', { class: 'callout good' }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
+    h('p', { class: 'muted', style: 'margin:12px 0 18px;' }, 'នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែចម្លើយបានទៀតទេ។'),
     h('div', { style: 'display:flex;flex-direction:column;gap:10px;' }, [
-      h('button', {
-        type: 'button',
-        style: 'width:100%;padding:12px;font-size:16px;background:var(--brand);font-weight:700;',
-        onclick: () => modal.remove()
-      }, '← បន្តធ្វើតេស្តទៀត (មិនទាន់ប្រគល់)'),
-      h('button', {
-        type: 'button',
-        class: 'danger',
-        style: 'width:100%;padding:10px;font-size:14px;',
-        onclick: () => {
-          modal.remove();
-          doSubmit(false);
-        }
-      }, 'ខ្ញុំយល់ព្រមប្រគល់វិញ្ញាសាបញ្ចប់'),
+      h('button', { class: 'btn-block', onclick: () => modal.remove() }, '← បន្តធ្វើតេស្តទៀត'),
+      h('button', { class: 'danger btn-block', onclick: () => { modal.remove(); doSubmit(false); } }, 'ខ្ញុំយល់ព្រមប្រគល់វិញ្ញាសា'),
     ]),
   ]);
-
   modal.append(box);
   document.body.append(modal);
 }
@@ -288,14 +359,13 @@ document.getElementById('submit-btn').addEventListener('click', submitPrompt);
 
 async function doSubmit(auto) {
   clearInterval(timerInterval);
+  const sessionId = testState && testState.session_id;
   try {
-    await api('/api/student/submit', {
-      method: 'POST',
-      body: { submit_type: auto ? 'auto' : 'manual' },
-    });
+    await api('/api/student/submit', { method: 'POST', body: { session_id: sessionId, submit_type: auto ? 'auto' : 'manual' } });
   } catch (e) {
     if (!auto) await Exam.notify(e.message);
   }
+  testState = null;
   boot();
 }
 
