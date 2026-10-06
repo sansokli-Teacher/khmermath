@@ -56,9 +56,7 @@ function initDashboard() {
   const tabs = document.querySelectorAll('.tabs button');
   tabs.forEach((btn) => btn.addEventListener('click', () => {
     tabs.forEach((b) => b.classList.toggle('active', b === btn));
-    ['classes', 'tests', 'schedule', 'grading', 'overview'].forEach((name) => {
-      document.getElementById(`tab-${name}`).hidden = name !== btn.dataset.tab;
-    });
+    document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== `tab-${btn.dataset.tab}`; });
     render[btn.dataset.tab]();
   }));
   render.classes();
@@ -721,9 +719,7 @@ render.schedule = async function (preSelectedTestId = null) {
           selectedSessionId = s.id;
           const tabs = document.querySelectorAll('.tabs button');
           tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === 'grading'));
-          ['classes', 'tests', 'schedule', 'grading'].forEach((name) => {
-            document.getElementById(`tab-${name}`).hidden = name !== 'grading';
-          });
+          document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-grading'; });
           render.grading();
         } }, 'ដាក់ពិន្ទុ'),
         h('button', { class: 'danger btn-sm', onclick: async () => {

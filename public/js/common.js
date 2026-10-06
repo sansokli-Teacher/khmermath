@@ -104,3 +104,17 @@ Exam.modal = function (message, { okOnly = false } = {}) {
 };
 Exam.confirm = (message) => Exam.modal(message);
 Exam.notify = (message) => Exam.modal(message, { okOnly: true });
+
+// One grading scale for the whole site (A ≥ 85 … F < 40), used for single exams,
+// semester scores and the yearly statistics.
+Exam.GRADES = ['A', 'B', 'C', 'D', 'E', 'F'];
+Exam.gradeOf = function (pct) {
+  if (pct == null || isNaN(pct)) return null;
+  const p = Math.round(pct);
+  if (p >= 85) return { grade: 'A', label: 'ល្អប្រសើរ', color: '#16a34a' };
+  if (p >= 75) return { grade: 'B', label: 'ល្អណាស់', color: '#2563eb' };
+  if (p >= 65) return { grade: 'C', label: 'ល្អ', color: '#0891b2' };
+  if (p >= 50) return { grade: 'D', label: 'មធ្យម', color: '#d97706' };
+  if (p >= 40) return { grade: 'E', label: 'ខ្សោយ', color: '#ea580c' };
+  return { grade: 'F', label: 'ធ្លាក់', color: '#dc2626' };
+};

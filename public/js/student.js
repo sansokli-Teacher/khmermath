@@ -23,14 +23,7 @@ let timerInterval = null;
 let waitInterval = null;
 let homeRefresh = null;
 
-function computeGrade(pct) {
-  if (pct >= 85) return { grade: 'A', label: 'ល្អប្រសើរ', color: '#16a34a' };
-  if (pct >= 75) return { grade: 'B', label: 'ល្អណាស់', color: '#2563eb' };
-  if (pct >= 65) return { grade: 'C', label: 'ល្អ', color: '#0891b2' };
-  if (pct >= 50) return { grade: 'D', label: 'មធ្យម', color: '#d97706' };
-  if (pct >= 40) return { grade: 'E', label: 'ខ្សោយ', color: '#ea580c' };
-  return { grade: 'F', label: 'ធ្លាក់', color: '#dc2626' };
-}
+const computeGrade = (pct) => Exam.gradeOf(pct);
 
 // ---------- Sign in ----------
 async function boot() {
@@ -82,6 +75,8 @@ function renderHome(data) {
   const body = document.getElementById('home-body');
   body.innerHTML = '';
 
+  if (data.year) body.append(yearCard(data.year));
+
   // --- upcoming / open tests
   body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));
   if (data.upcoming.length === 0) {
@@ -108,6 +103,42 @@ function renderHome(data) {
     if (views.home.hidden || document.hidden || body.querySelector('input:focus')) return;
     try { const d = await api('/api/student/status'); syncClock(d.server_now); renderHome(d); } catch {}
   }, 30000);
+}
+
+function yearCard(y) {
+  const pill = (v) => {
+    const g = computeGrade(v);
+    return g ? h('span', { class: 'chip', style: `background:${g.color}1a;color:${g.color};` }, `${g.grade} · ${g.label}`) : null;
+  };
+  const steps = y.assessments.map((a) => {
+    const has = a.pct != null;
+    return h('div', { class: `year-step${has ? '' : ' is-empty'}` }, [
+      h('div', { class: 'year-month' }, `ខែ${a.month_label}`),
+      h('div', { class: 'year-title' }, a.title),
+      h('div', { class: 'year-score', style: has ? `color:${computeGrade(a.pct).color};` : '' }, has ? String(Math.round(a.pct * 10) / 10) : '—'),
+      has ? pill(a.pct) : h('span', { class: 'muted', style: 'font-size:12px;' }, 'មិនទាន់មាន'),
+    ]);
+  });
+  const tile = (label, v, alt) => {
+    const g = computeGrade(v);
+    return h('div', { class: `year-sum-tile${alt ? ' alt' : ''}${v == null ? ' is-empty' : ''}` }, [
+      h('div', { class: 'lbl' }, label),
+      h('div', { class: 'val' }, v == null ? '—' : String(Math.round(v * 10) / 10)),
+      h('div', { class: 'gr' }, g ? `${g.grade} · ${g.label}` : 'មិនទាន់មាន'),
+    ]);
+  };
+  return h('div', { class: 'year-card', style: 'margin-bottom:8px;' }, [
+    h('div', { class: 'year-head' }, [
+      h('h2', { style: 'margin:0;' }, `📈 ពិន្ទុឆ្នាំសិក្សា ${y.label}`),
+      h('span', { class: 'muted' }, `ឆមាស = មធ្យមខែ ${y.monthly_weight}% + ប្រឡងឆមាស ${y.exam_weight}%`),
+    ]),
+    h('div', { class: 'year-steps' }, steps),
+    h('div', { class: 'year-sum' }, [
+      tile('មធ្យមភាគប្រចាំខែ', y.monthly_avg),
+      tile('ពិន្ទុឆមាសទី១', y.semester1),
+      tile('មធ្យមភាគប្រចាំឆ្នាំ', y.year_avg, true),
+    ]),
+  ]);
 }
 
 function examCard(s) {

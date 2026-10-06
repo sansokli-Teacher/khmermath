@@ -16,7 +16,7 @@ export async function ensureColumns(env) {
 // A student who never pressed Submit (closed the browser, phone died, time ran
 // out while offline) has saved answers but no score. Once the session is over,
 // score those answers on the server so the teacher always sees a result.
-async function finalizeSession(env, sessionId, endIso) {
+export async function finalizeSession(env, sessionId, endIso) {
   await env.DB.prepare(
     `INSERT INTO results (session_id, student_id, mcq_score, mcq_max)
      SELECT DISTINCT session_id, student_id, 0, 0 FROM responses WHERE session_id = ?1
@@ -276,4 +276,13 @@ export async function updateSessionPin(req, env, params) {
   if (!/^[0-9A-Za-z]{3,12}$/.test(clean)) return err('PIN must be 3–12 letters or digits.', 400);
   await env.DB.prepare('UPDATE test_sessions SET pin = ?1 WHERE id = ?2').bind(clean, params.sessionId).run();
   return json({ ok: true, pin: clean });
+}
+
+// Score unsubmitted students if the session is over (used by the yearly gradebook).
+export async function finalizeIfClosed(env, sessionId) {
+  await ensureColumns(env);
+  const ses = await env.DB.prepare('SELECT * FROM test_sessions WHERE id = ?1').bind(sessionId).first();
+  if (!ses) return;
+  const endIso = ses.scheduled_end || new Date(Date.parse(ses.scheduled_start) + ses.duration_minutes * 60000).toISOString();
+  if (sessionWindow({ ...ses, scheduled_end: endIso }).phase === 'closed') await finalizeSession(env, ses.id, endIso);
 }

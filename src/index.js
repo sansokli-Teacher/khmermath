@@ -7,6 +7,7 @@ import * as tests from './api/tests.js';
 import * as images from './api/images.js';
 import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
+import * as year from './api/year.js';
 import * as settings from './api/settings.js';
 
 function compile(pattern) {
@@ -60,6 +61,11 @@ const ROUTES = [
   ['POST', '/api/sessions/:sessionId/reset-student', sessions.resetStudentSession],
   ['DELETE', '/api/sessions/:sessionId', sessions.deleteSession],
   ['POST', '/api/sessions/:sessionId/publish', sessions.publishSession],
+
+  ['GET', '/api/year/class/:classId', year.getYear],
+  ['POST', '/api/year/assessment/:id', year.updateAssessment],
+  ['POST', '/api/year/assessment/:id/scores', year.saveScores],
+  ['POST', '/api/year/config', year.setConfig],
 
   ['POST', '/api/student/login', student.login],
   ['POST', '/api/student/logout', student.logout],

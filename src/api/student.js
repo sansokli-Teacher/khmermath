@@ -2,6 +2,7 @@ import { json, err } from '../lib/http.js';
 import { createSessionCookie, clearSessionCookie, requireStudent } from '../lib/session.js';
 import { sessionWindow } from '../lib/time.js';
 import { ensureColumns } from './sessions.js';
+import { studentYear } from './year.js';
 
 const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight when the clock hit zero
 
@@ -69,6 +70,7 @@ export async function status(req, env) {
   return json({
     student_id: session.id, student_name: session.name, class_name: cls ? cls.name : '',
     server_now: Date.now(), upcoming, history,
+    year: await studentYear(env, session).catch(() => null),
   });
 }
 

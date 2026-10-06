@@ -283,3 +283,36 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
   font-size: 13px;
   border-radius: 6px;
 }
+
+/* ---------- Yearly gradebook ---------- */
+.grade-dot { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; color: #fff; font-weight: 800; }
+.gbar { display: flex; height: 16px; background: #eef2f8; border-radius: 99px; overflow: hidden; }
+.gbar-g { background: #ec6aa8; } .gbar-b { background: #4aa3e0; } .gbar-o { background: #a9b6c6; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0 16px; }
+.stat-tile { background: var(--brand-soft); border-radius: 12px; padding: 10px 14px; }
+.stat-val { font-size: 21px; font-weight: 700; }
+.print-only { display: none; }
+@media print { .print-only { display: block; } }
+
+/* Student: yearly progress */
+.year-card { background: linear-gradient(160deg, #fff 0%, #f3f8ff 100%); border: 1px solid #c9dafb; border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.year-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.year-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+.year-step { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; text-align: center; }
+.year-step.is-empty { background: #f7f9fc; border-style: dashed; color: var(--muted); }
+.year-month { font-size: 12.5px; color: var(--muted); }
+.year-title { font-size: 12.5px; font-weight: 600; min-height: 20px; }
+.year-score { font-size: 26px; font-weight: 700; line-height: 1.3; }
+.year-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+.year-sum-tile { border-radius: 14px; padding: 12px 14px; color: #fff; background: linear-gradient(135deg, #1747a8, #2260d6); }
+.year-sum-tile.alt { background: linear-gradient(135deg, #0f6e47, #16895a); }
+.year-sum-tile .lbl { font-size: 13px; opacity: .9; }
+.year-sum-tile .val { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.year-sum-tile .gr { font-size: 14px; font-weight: 700; }
+.year-sum-tile.is-empty { background: #e7edf5; color: var(--muted); }
+.setup-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.setup-row:last-of-type { border-bottom: none; }
+.setup-field label { margin: 0 0 3px; font-size: 12.5px; }
+.setup-kind { align-self: center; }
+.setup-check { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; color: var(--ink); font-size: 14px; white-space: nowrap; }
+.setup-check input { width: 18px; height: 18px; accent-color: var(--brand); }
