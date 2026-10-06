@@ -1,13 +1,13 @@
 import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
-import { authTeacher, needTest, needQuestion, accessibleTests } from '../lib/access.js';
+import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessibleTests, lockedResponse } from '../lib/access.js';
 
 export async function listTests(req, env) {
   const t = await authTeacher(req, env);
   if (!t) return err('Not logged in.', 401);
   const mine = await accessibleTests(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT x.id, x.title, x.status, x.owner_id, COALESCE(o.display_name, o.username) AS owner_name,
+    `SELECT x.id, x.title, x.status, x.owner_id, x.is_sample, COALESCE(o.display_name, o.username) AS owner_name,
             COUNT(q.id) AS question_count, SUM(CASE WHEN q.kind = 'writing' THEN 1 ELSE 0 END) AS writing_count,
             COALESCE(SUM(q.points), 0) AS total_points,
             (SELECT COUNT(*) FROM test_sessions s WHERE s.test_id = x.id) AS session_count,
@@ -19,8 +19,8 @@ export async function listTests(req, env) {
 }
 
 export async function createTest(req, env) {
-  const t = await authTeacher(req, env);
-  if (!t) return err('Not logged in.', 401);
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const t = g0.t;
   const { title } = await req.json();
   if (!title) return err('title is required.', 400);
   const { meta } = await env.DB.prepare('INSERT INTO tests (title, owner_id) VALUES (?1, ?2)').bind(title, t.id).run();
@@ -40,7 +40,12 @@ export async function getTest(req, env, params) {
      FROM question_notes n JOIN test_questions q ON q.id = n.question_id LEFT JOIN teachers t ON t.id = n.teacher_id
      WHERE q.test_id = ?1 ORDER BY n.id`,
   ).bind(params.testId).all();
-  test.questions = results.map((q) => ({ ...q, options: JSON.parse(q.options_json), options_json: undefined, notes: notes.filter((n) => n.question_id === q.id) }));
+  const showcase = g.acc === 'sample';   // sample tests never reveal the answer key
+  test.questions = results.map((q) => ({
+    ...q, options: JSON.parse(q.options_json), options_json: undefined,
+    correct_index: showcase ? null : q.correct_index, solution_text: showcase ? null : q.solution_text,
+    notes: showcase ? [] : notes.filter((n) => n.question_id === q.id),
+  }));
   test.my_role = g.acc;
   test.my_id = g.t.id;
   return json(test);
@@ -111,6 +116,7 @@ export async function deleteTest(req, env, params) {
 
 export async function duplicateTest(req, env, params) {
   const g = await needTest(req, env, params.testId, 'view'); if (g.resp) return g.resp;
+  if (!g.t.licensed) return lockedResponse(g.t);
   await ensureColumns(env);
   const test = await env.DB.prepare('SELECT title FROM tests WHERE id = ?1').bind(params.testId).first();
   if (!test) return err('Test not found.', 404);
@@ -171,5 +177,13 @@ export async function deleteNote(req, env, params) {
   const g = await needTest(req, env, n.test_id, 'view'); if (g.resp) return g.resp;
   if (n.teacher_id !== t.id && g.acc !== 'owner') return err('អ្នកមិនមានសិទ្ធិទេ។', 403);
   await env.DB.prepare('DELETE FROM question_notes WHERE id = ?1').bind(n.id).run();
+  return json({ ok: true });
+}
+
+// Owner only: mark a test as a showcase "sample" visible (read-only) to every teacher.
+export async function setSample(req, env, params) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const { is_sample } = await req.json();
+  await env.DB.prepare('UPDATE tests SET is_sample = ?1 WHERE id = ?2').bind(is_sample ? 1 : 0, params.testId).run();
   return json({ ok: true });
 }

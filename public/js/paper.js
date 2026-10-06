@@ -75,7 +75,8 @@ function render() {
     });
   }
 
-  if (showKey) {
+  const hasKey = mcq.every((q) => q.correct_index != null);
+  if (showKey && hasKey) {
     sheet.append(h('div', { class: 'p-pagebreak' }), h('div', { class: 'p-title' }, `ចម្លើយ — ${test.title}`));
     if (mcq.length) {
       sheet.append(h('div', { class: 'p-part' }, 'ផ្នែក ក · ចម្លើយពហុជ្រើសរើស'));
@@ -115,6 +116,7 @@ async function init() {
   if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
   for (const id of ['opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
   document.getElementById('print-btn').onclick = () => window.print();
+  if (!test.questions.every((q) => q.kind === 'writing' || q.correct_index != null)) document.getElementById('opt-key').closest('label').hidden = true;
   render();
 }
 init();

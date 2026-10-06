@@ -1,33 +1,54 @@
 // Who may see or change what. Every teacher-facing endpoint goes through here.
-//   admin  (teachers.role = 'owner')   — everything
+//   admin  (teachers.role = 'owner')   — everything, never locked
 //   owner  of a class/test              — everything on it, can share it
 //   editor (shared)                      — view + change
 //   reviewer (shared)                    — view only (+ can leave notes on questions)
-import { err } from './http.js';
+//   sample                               — the owner's showcase tests: view only, answers hidden
+// On top of that, a teacher whose account is not unlocked (trial, or licence
+// expired) is limited to *viewing*: any change is refused with HTTP 402.
+import { json, err } from './http.js';
 import { requireTeacher } from './session.js';
 import { ensureColumns } from './schema.js';
+
+function nowStamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
 
 export async function authTeacher(req, env) {
   const session = await requireTeacher(req, env);
   if (!session) return null;
   await ensureColumns(env);
   const row = await env.DB.prepare(
-    'SELECT id, username, role, display_name, active FROM teachers WHERE username = ?1',
+    'SELECT id, username, role, display_name, active, plan, license_until FROM teachers WHERE username = ?1',
   ).bind(session.username).first();
   if (!row || !row.active) return null;
-  return { id: row.id, username: row.username, role: row.role, display_name: row.display_name || row.username };
+  const owner = row.role === 'owner';
+  const inDate = !row.license_until || row.license_until > nowStamp();
+  const licensed = owner || (row.plan === 'full' && inDate);
+  const status = owner ? 'owner' : licensed ? 'full' : row.plan === 'trial' ? 'trial' : 'expired';
+  return {
+    id: row.id, username: row.username, role: row.role, display_name: row.display_name || row.username,
+    plan: row.plan, license_until: row.license_until, licensed, status,
+  };
 }
 
 export const isAdmin = (t) => t.role === 'owner';
 
-const RANK = { reviewer: 1, editor: 2, owner: 3 };
+const RANK = { sample: 1, reviewer: 1, editor: 2, owner: 3 };
+const NEED = { view: 1, edit: 2, own: 3 };
 
-async function accessTo(env, t, type, id, ownerId) {
+export function lockedResponse(t) {
+  const msg = t && t.status === 'expired'
+    ? 'ការប្រើប្រាស់របស់អ្នកបានផុតកំណត់ — អ្នកអាចមើលទិន្នន័យបាន តែមិនអាចកែប្រែបានទេ។ សូមបញ្ចូលកូដថ្មីដើម្បីបន្ត។'
+    : 'គណនីសាកល្បង — មុខងារនេះត្រូវការកូដដោះសោពីម្ចាស់ប្រព័ន្ធ។';
+  return json({ error: msg, locked: true, status: t ? t.status : 'trial' }, 402);
+}
+
+async function accessTo(env, t, type, id, ownerId, isSample = 0) {
   if (isAdmin(t) || ownerId === t.id) return 'owner';
   const sh = await env.DB.prepare(
     'SELECT role FROM shares WHERE resource_type = ?1 AND resource_id = ?2 AND teacher_id = ?3',
   ).bind(type, id, t.id).first();
-  return sh ? sh.role : null;
+  if (sh) return sh.role;
+  return isSample ? 'sample' : null;
 }
 
 export async function classAccess(env, t, classId) {
@@ -37,34 +58,45 @@ export async function classAccess(env, t, classId) {
 }
 
 export async function testAccess(env, t, testId) {
-  const x = await env.DB.prepare('SELECT id, owner_id FROM tests WHERE id = ?1').bind(testId).first();
+  const x = await env.DB.prepare('SELECT id, owner_id, is_sample FROM tests WHERE id = ?1').bind(testId).first();
   if (!x) return null;
-  return accessTo(env, t, 'test', x.id, x.owner_id);
+  return accessTo(env, t, 'test', x.id, x.owner_id, x.is_sample);
 }
 
-// level: 'view' | 'edit' | 'own'
-const NEED = { view: 1, edit: 2, own: 3 };
-function check(acc, level) {
-  return acc != null && RANK[acc] >= NEED[level];
-}
 function denied(acc) {
   if (acc == null) return err('រកមិនឃើញ ឬអ្នកមិនមានសិទ្ធិចូលមើលទេ។', 404);
+  if (acc === 'sample') return err('នេះជាតេស្តគំរូ — មើលបានតែប៉ុណ្ណោះ។', 403);
   return err('អ្នកមានសិទ្ធិមើលតែប៉ុណ្ណោះ (អ្នកពិនិត្យ) មិនអាចកែប្រែបានទេ។', 403);
 }
 
-// Each helper resolves to {t, acc} on success or {resp} (a ready Response) on failure.
+// Returns a ready Response when the request must be refused, else null.
+function gate(t, acc, level) {
+  if (acc == null || RANK[acc] < NEED[level]) return denied(acc);
+  if (NEED[level] > 1 && !t.licensed) return lockedResponse(t);
+  return null;
+}
+
+export async function needLicense(req, env) {
+  const t = await authTeacher(req, env);
+  if (!t) return { resp: err('Not logged in.', 401) };
+  if (!t.licensed) return { resp: lockedResponse(t) };
+  return { t };
+}
+
 export async function needClass(req, env, classId, level) {
   const t = await authTeacher(req, env);
   if (!t) return { resp: err('Not logged in.', 401) };
   const acc = await classAccess(env, t, Number(classId));
-  return check(acc, level) ? { t, acc } : { resp: denied(acc) };
+  const r = gate(t, acc, level);
+  return r ? { resp: r } : { t, acc };
 }
 
 export async function needTest(req, env, testId, level) {
   const t = await authTeacher(req, env);
   if (!t) return { resp: err('Not logged in.', 401) };
   const acc = await testAccess(env, t, Number(testId));
-  return check(acc, level) ? { t, acc } : { resp: denied(acc) };
+  const r = gate(t, acc, level);
+  return r ? { resp: r } : { t, acc };
 }
 
 export async function needSession(req, env, sessionId, level) {
@@ -73,8 +105,8 @@ export async function needSession(req, env, sessionId, level) {
   const ses = await env.DB.prepare('SELECT id, class_id, test_id FROM test_sessions WHERE id = ?1').bind(Number(sessionId)).first();
   if (!ses) return { resp: err('Session not found.', 404) };
   const acc = await classAccess(env, t, ses.class_id);
-  // Running a session needs 'edit' on the class; just reading it needs 'view'.
-  return check(acc, level) ? { t, acc, ses } : { resp: denied(acc) };
+  const r = gate(t, acc, level);
+  return r ? { resp: r } : { t, acc, ses };
 }
 
 export async function needQuestion(req, env, questionId, level) {
@@ -83,7 +115,10 @@ export async function needQuestion(req, env, questionId, level) {
   const q = await env.DB.prepare('SELECT id, test_id FROM test_questions WHERE id = ?1').bind(Number(questionId)).first();
   if (!q) return { resp: err('Question not found.', 404) };
   const acc = await testAccess(env, t, q.test_id);
-  return check(acc, level) ? { t, acc, q } : { resp: denied(acc) };
+  // Notes are for real co-teachers; sample viewers cannot write them.
+  if (acc === 'sample' && level !== 'view') return { resp: denied(acc) };
+  const r = acc === 'sample' && level === 'view' ? denied(acc) : gate(t, acc, level);
+  return r ? { resp: r } : { t, acc, q };
 }
 
 export async function needStudent(req, env, studentId, level) {
@@ -92,7 +127,8 @@ export async function needStudent(req, env, studentId, level) {
   const s = await env.DB.prepare('SELECT id, class_id FROM students WHERE id = ?1').bind(String(studentId)).first();
   if (!s) return { resp: err('Student not found.', 404) };
   const acc = await classAccess(env, t, s.class_id);
-  return check(acc, level) ? { t, acc, s } : { resp: denied(acc) };
+  const r = gate(t, acc, level);
+  return r ? { resp: r } : { t, acc, s };
 }
 
 export async function needAdmin(req, env) {
@@ -117,11 +153,11 @@ export async function accessibleClasses(env, t) {
 
 export async function accessibleTests(env, t) {
   const { results } = await env.DB.prepare(
-    `SELECT x.id, x.owner_id, (SELECT role FROM shares s WHERE s.resource_type='test' AND s.resource_id=x.id AND s.teacher_id=?1) AS shared_role FROM tests x`,
+    `SELECT x.id, x.owner_id, x.is_sample, (SELECT role FROM shares s WHERE s.resource_type='test' AND s.resource_id=x.id AND s.teacher_id=?1) AS shared_role FROM tests x`,
   ).bind(t.id).all();
   const map = new Map();
   for (const x of results) {
-    const acc = isAdmin(t) || x.owner_id === t.id ? 'owner' : x.shared_role;
+    const acc = isAdmin(t) || x.owner_id === t.id ? 'owner' : x.shared_role || (x.is_sample ? 'sample' : null);
     if (acc) map.set(x.id, acc);
   }
   return map;

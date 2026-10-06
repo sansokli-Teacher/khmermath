@@ -1,5 +1,5 @@
 import { json, err } from '../lib/http.js';
-import { authTeacher, needClass, needStudent, classAccess, accessibleClasses } from '../lib/access.js';
+import { authTeacher, needClass, needStudent, needLicense, classAccess, accessibleClasses } from '../lib/access.js';
 
 export async function listClasses(req, env) {
   const t = await authTeacher(req, env);
@@ -15,8 +15,8 @@ export async function listClasses(req, env) {
 }
 
 export async function createClass(req, env) {
-  const t = await authTeacher(req, env);
-  if (!t) return err('Not logged in.', 401);
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const t = g0.t;
   const { name, grade } = await req.json();
   if (!name || !grade) return err('name and grade are required.', 400);
   const { meta } = await env.DB.prepare('INSERT INTO classes (name, grade, owner_id) VALUES (?1, ?2, ?3)').bind(name, grade, t.id).run();

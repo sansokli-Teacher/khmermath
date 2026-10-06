@@ -120,6 +120,16 @@ export async function start(req, env) {
     if (expected && String(pin ?? '').trim().toLowerCase() !== expected) return err('PIN មិនត្រឹមត្រូវទេ។ សូមសួរលោកគ្រូ។', 401);
   }
   if (window.phase === 'closed') return err('ការប្រឡងនេះបានបិទហើយ។', 403);
+  if (!alreadyUnlocked) {
+    // The class owner's licence must be active to start a *new* attempt.
+    const owner = await env.DB.prepare(
+      `SELECT t.role, t.plan, t.license_until FROM classes c JOIN teachers t ON t.id = c.owner_id WHERE c.id = ?1`,
+    ).bind(ses.class_id).first();
+    const stamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    if (owner && owner.role !== 'owner' && !(owner.plan === 'full' && (!owner.license_until || owner.license_until > stamp))) {
+      return err('ការប្រឡងនេះត្រូវបានផ្អាកជាបណ្តោះអាសន្ន។ សូមប្រាប់លោកគ្រូអ្នកគ្រូ។', 403);
+    }
+  }
   if (window.phase === 'upcoming') {
     return json({ ok: true, waiting: true, start_at: window.start, server_now: Date.now() });
   }

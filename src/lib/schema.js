@@ -19,6 +19,13 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN last_login TEXT',
     'ALTER TABLE classes ADD COLUMN owner_id INTEGER',
     'ALTER TABLE tests ADD COLUMN owner_id INTEGER',
+    // licensing: existing accounts stay 'full'; self-signups are created as 'trial'
+    "ALTER TABLE teachers ADD COLUMN plan TEXT NOT NULL DEFAULT 'full'",
+    'ALTER TABLE teachers ADD COLUMN license_until TEXT',
+    'ALTER TABLE teachers ADD COLUMN contact TEXT',
+    'ALTER TABLE teachers ADD COLUMN created_at TEXT',
+    'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE invites ADD COLUMN months INTEGER',
   ];
   for (const sql of alters) { try { await env.DB.prepare(sql).run(); } catch {} }
 
@@ -34,6 +41,31 @@ export async function ensureColumns(env) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       expires_at TEXT NOT NULL,
       used_at TEXT
+    )`),
+    // Unlock codes the owner generates and hands out.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS license_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      months INTEGER NOT NULL DEFAULT 0,         -- 0 = lifetime
+      note TEXT,
+      created_by INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      used_by INTEGER,
+      used_at TEXT
+    )`),
+    // Simple fixed-window rate limiting (login, sign-up, codes, PIN guesses).
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT PRIMARY KEY,
+      count INTEGER NOT NULL,
+      window_start INTEGER NOT NULL
+    )`),
+    // Who changed what (scores, answer keys, licences).
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL DEFAULT (datetime('now')),
+      teacher_id INTEGER,
+      action TEXT NOT NULL,
+      detail TEXT
     )`),
     // A class or test shared with another teacher.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS shares (

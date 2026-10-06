@@ -1,5 +1,5 @@
 import { json, err } from '../lib/http.js';
-import { authTeacher } from '../lib/access.js';
+import { needLicense } from '../lib/access.js';
 import { randomKey } from '../lib/crypto.js';
 
 const EXT_BY_TYPE = {
@@ -28,7 +28,7 @@ function base64ToBytes(b64) {
 // this scale, and avoids the one-time "enable R2" step in the Cloudflare
 // dashboard that isn't done on this account yet.
 export async function upload(req, env) {
-  if (!(await authTeacher(req, env))) return err('Not logged in.', 401);
+  { const g = await needLicense(req, env); if (g.resp) return g.resp; }
   const contentType = req.headers.get('Content-Type') || '';
   const ext = EXT_BY_TYPE[contentType];
   if (!ext) return err('Unsupported image type — use PNG, JPEG, WEBP, or SVG.', 400);

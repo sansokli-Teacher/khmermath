@@ -15,7 +15,7 @@ const viewLogin = document.getElementById('view-login');
 const viewDashboard = document.getElementById('view-dashboard');
 
 let ME = null;
-const roleLabel = (r) => (r === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : r === 'editor' ? 'អ្នកកែសម្រួល' : r === 'reviewer' ? 'អ្នកពិនិត្យ' : 'គ្រូ');
+const roleLabel = (r) => (r === 'sample' ? 'តេស្តគំរូ' : r === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : r === 'editor' ? 'អ្នកកែសម្រួល' : r === 'reviewer' ? 'អ្នកពិនិត្យ' : 'គ្រូ');
 
 async function boot() {
   try {
@@ -55,9 +55,66 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   location.reload();
 });
 
+// ---------- licence: lock bar + lock screens ----------
+function codeBox(onDone) {
+  const input = h('input', { type: 'text', placeholder: 'XXXX-XXXX-XXXX', class: 'code-input', maxlength: '20', autocomplete: 'off' });
+  const go = async () => {
+    if (!input.value.trim()) return input.focus();
+    try {
+      await api('/api/license/redeem', { method: 'POST', body: { code: input.value } });
+      await Exam.notify('🎉 ដោះសោជោគជ័យ! អ្នកអាចប្រើមុខងារទាំងអស់បានហើយ។');
+      location.reload();
+    } catch (e) { Exam.notify(e.message); }
+  };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+  return h('div', { class: 'code-row' }, [input, h('button', { onclick: go }, '🔓 ដោះសោ')]);
+}
+
+function licenseBar() {
+  const trial = ME.status === 'trial';
+  const until = ME.license_until ? fmtDateTime(ME.license_until) : '';
+  const bar = h('div', { class: `license-bar ${trial ? 'trial' : 'expired'}` }, [
+    h('div', { class: 'license-text' }, [
+      h('b', {}, trial ? '🔒 គណនីសាកល្បង' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
+      h('span', {}, trial
+        ? ' — អ្នកអាចមើលតេស្តគំរូតែប៉ុណ្ណោះ។ បញ្ចូលកូដដើម្បីដោះសោមុខងារទាំងអស់។'
+        : ` (${until}) — មើលទិន្នន័យបាន តែមិនអាចកែប្រែ ឬរៀបចំប្រឡងថ្មីបានទេ។`),
+      ME.contact_text ? h('div', { class: 'license-contact' }, `📞 ស្នើសុំកូដ៖ ${ME.contact_text}`) : null,
+    ]),
+    codeBox(),
+  ]);
+  return bar;
+}
+
+const LOCK_INFO = {
+  classes: ['ថ្នាក់ និងសិស្ស', 'បង្កើតថ្នាក់ បញ្ចូលបញ្ជីសិស្សពី Excel និងគ្រប់គ្រងសិស្ស។'],
+  schedule: ['កំណត់ពេលប្រឡង', 'កំណត់ម៉ោង PIN និងរៀបចំប្រឡងឱ្យថ្នាក់ម្នាក់ៗនៅម៉ោងខុសគ្នា។'],
+  grading: ['ដាក់ពិន្ទុ & លទ្ធផល', 'មើលលទ្ធផលផ្ទាល់ ដាក់ពិន្ទុសរសេរ ផ្សព្វផ្សាយ និងវិភាគសំណួរ។'],
+  year: ['ពិន្ទុប្រចាំឆ្នាំ', 'ពិន្ទុបុរេតេស្ត ប្រចាំខែ ឆមាស និងស្ថិតិ A-F តាមភេទ។'],
+  overview: ['សង្ខេបគ្រប់ថ្នាក់', 'ប្រៀបធៀបលទ្ធផលថ្នាក់ផ្សេងៗ។'],
+};
+function showLocked(tab) {
+  const [title, desc] = LOCK_INFO[tab] || ['', ''];
+  const box = document.getElementById(`tab-${tab}`);
+  box.innerHTML = '';
+  box.append(h('div', { class: 'lock-card' }, [
+    h('div', { class: 'lock-icon' }, '🔒'),
+    h('h2', {}, title),
+    h('p', { class: 'muted' }, desc),
+    h('p', {}, 'មុខងារនេះត្រូវការគណនីពេញលេញ។ សូមបញ្ចូលកូដដែលអ្នកទទួលបានពីម្ចាស់ប្រព័ន្ធ៖'),
+    codeBox(),
+    ME.contact_text ? h('p', { class: 'muted', style: 'margin-top:12px;' }, `📞 ស្នើសុំកូដ៖ ${ME.contact_text}`) : null,
+  ]));
+}
+
 function initDashboard() {
+  if (ME.status === 'trial') for (const k of Object.keys(LOCK_INFO)) render[k] = () => showLocked(k);
+  if (ME.status === 'trial' || ME.status === 'expired') {
+    const dash = document.getElementById('view-dashboard');
+    dash.insertBefore(licenseBar(), dash.querySelector('.tabs'));
+  }
   const badge = document.getElementById('teacher-username-badge');
-  if (badge) badge.textContent = `${ME.display_name} · ${ME.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : 'គ្រូ'}`;
+  if (badge) badge.textContent = `${ME.display_name} · ${ME.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : ME.status === 'trial' ? 'សាកល្បង 🔒' : ME.status === 'expired' ? 'ផុតកំណត់ ⏰' : `គ្រូ${ME.license_until ? ` · ដល់ ${fmtDateTime(ME.license_until).split(',')[0]}` : ''}`}`;
   if (ME.role !== 'owner') { const tb = document.querySelector('[data-tab="teachers"]'); if (tb) tb.hidden = true; }
   const tabs = document.querySelectorAll('.tabs button');
   tabs.forEach((btn) => btn.addEventListener('click', () => {
@@ -65,7 +122,7 @@ function initDashboard() {
     document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== `tab-${btn.dataset.tab}`; });
     render[btn.dataset.tab]();
   }));
-  render.classes();
+  if (ME.status === 'trial') document.querySelector('[data-tab=tests]').click(); else render.classes();
 }
 
 const render = {};
@@ -542,7 +599,9 @@ render.tests = async function () {
   function testCard(t) {
     const mcq = t.question_count - (t.writing_count || 0);
     const shared = t.owner_id !== ME.id;
-    const canEdit = t.my_role === 'owner' || t.my_role === 'editor';
+    const canEdit = (t.my_role === 'owner' || t.my_role === 'editor') && ME.licensed;
+    const isSample = t.my_role === 'sample' || t.is_sample;
+    const licensed = ME.licensed;
 
     const menuBtn = h('button', { class: 'icon-btn', title: 'ជម្រើសផ្សេងទៀត', 'aria-label': 'ជម្រើសផ្សេងទៀត' }, '⋯');
     menuBtn.addEventListener('click', (e) => {
@@ -552,13 +611,16 @@ render.tests = async function () {
       if (open) return;
       const item = (label, fn, cls = '') => h('button', { class: `menu-item ${cls}`, onclick: (ev) => { ev.stopPropagation(); closeMenus(); fn(); } }, label);
       const pop = h('div', { class: 'menu-pop' }, [
-        item('📋 ចម្លងតេស្តនេះ', async () => {
+        licensed || ME.role === 'owner' ? item('📋 ចម្លងតេស្តនេះ', async () => {
           try { const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' }); await Exam.notify(`បានចម្លងជា «${copy.title}»`); render.tests(); }
           catch (er) { Exam.notify(er.message); }
-        }),
-        t.my_role === 'owner' ? item('👥 ចែករំលែកជាមួយគ្រូ', () => openShareDialog('test', t.id, t.title)) : null,
-        t.my_role === 'owner' ? h('div', { class: 'menu-sep' }) : null,
-        t.my_role === 'owner' ? item('🗑 លុបតេស្ត', async () => {
+        }) : null,
+        ME.role === 'owner' ? item(t.is_sample ? '⭐ ដកចេញពីតេស្តគំរូ' : '⭐ កំណត់ជាតេស្តគំរូ (គ្រូទាំងអស់ឃើញ)', async () => {
+          await api(`/api/tests/${t.id}/sample`, { method: 'POST', body: { is_sample: !t.is_sample } }); render.tests();
+        }) : null,
+        t.my_role === 'owner' && ME.licensed ? item('👥 ចែករំលែកជាមួយគ្រូ', () => openShareDialog('test', t.id, t.title)) : null,
+        t.my_role === 'owner' && ME.licensed ? h('div', { class: 'menu-sep' }) : null,
+        t.my_role === 'owner' && ME.licensed ? item('🗑 លុបតេស្ត', async () => {
           if (!confirm(`តើពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
           try { await api(`/api/tests/${t.id}`, { method: 'DELETE' }); render.tests(); } catch (er) { Exam.notify(er.message); }
         }, 'danger') : null,
@@ -576,13 +638,14 @@ render.tests = async function () {
           t.writing_count ? h('span', { class: 'chip chip-plain' }, `✎ ${t.writing_count} សរសេរ`) : null,
           h('span', { class: 'chip chip-plain' }, `${t.total_points} ពិន្ទុ`),
           t.session_count ? h('span', { class: 'chip chip-plain' }, `📅 បានប្រឡង ${t.session_count} ដង`) : null,
-          shared ? h('span', { class: `chip ${t.my_role === 'reviewer' ? 'chip-closed' : 'chip-soon'}` }, t.my_role === 'owner' ? `👤 ដោយ ${t.owner_name || ''}` : `👥 ${roleLabel(t.my_role)} · ${t.owner_name || ''}`) : null,
+          isSample ? h('span', { class: 'chip chip-soon' }, '⭐ តេស្តគំរូ') : null,
+          shared && !isSample ? h('span', { class: `chip ${t.my_role === 'reviewer' ? 'chip-closed' : 'chip-soon'}` }, t.my_role === 'owner' ? `👤 ដោយ ${t.owner_name || ''}` : `👥 ${roleLabel(t.my_role)} · ${t.owner_name || ''}`) : null,
           t.open_notes ? h('span', { class: 'chip chip-soon' }, `💬 ${t.open_notes} ចំណាំ`) : null,
         ]),
       ]),
       h('div', { class: 'test-actions' }, [
-        h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : '🔍 ពិនិត្យ'),
-        h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង'),
+        h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : isSample ? '⭐ មើលតេស្តគំរូ' : t.my_role === 'owner' ? '🔍 មើល' : '🔍 ពិនិត្យ'),
+        licensed && !isSample || ME.role === 'owner' ? h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង') : null,
         h('button', { class: 'icon-btn', title: 'មើលជាសិស្ស', 'aria-label': 'មើលជាសិស្ស', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁'),
         h('button', { class: 'icon-btn', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
         h('div', { class: 'menu-wrap' }, [menuBtn]),
@@ -615,7 +678,7 @@ render.tests = async function () {
     }
     listBox.innerHTML = '';
     if (!list.length) {
-      listBox.append(h('div', { class: 'empty-card' }, [h('div', { class: 'empty-icon' }, '🗂'), h('div', { class: 'muted' }, tests.length ? 'រកមិនឃើញតេស្តដែលត្រូវនឹងការស្វែងរកទេ។' : 'មិនទាន់មានតេស្តទេ — ចុច «＋ តេស្តថ្មី» ដើម្បីចាប់ផ្តើម។')]));
+      listBox.append(h('div', { class: 'empty-card' }, [h('div', { class: 'empty-icon' }, '🗂'), h('div', { class: 'muted' }, tests.length ? 'រកមិនឃើញតេស្តដែលត្រូវនឹងការស្វែងរកទេ។' : ME.licensed ? 'មិនទាន់មានតេស្តទេ — ចុច «＋ តេស្តថ្មី» ដើម្បីចាប់ផ្តើម។' : 'មិនទាន់មានតេស្តគំរូទេ។ សូមរង់ចាំម្ចាស់ប្រព័ន្ធបន្ថែម។')]));
     }
     list.forEach((t) => listBox.append(testCard(t)));
   }
@@ -633,7 +696,7 @@ render.tests = async function () {
   container.append(h('div', { class: 'card tests-head' }, [
     h('div', { class: 'tests-head-top' }, [
       h('div', {}, [h('h2', { style: 'margin:0;' }, 'តេស្ត'), h('div', { class: 'muted' }, `សរុប ${tests.length} តេស្ត`)]),
-      h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { newRow.hidden = false; newTitle.focus(); } }, '＋ តេស្តថ្មី')]),
+      h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { if (!ME.licensed) return Exam.notify('🔒 ត្រូវដោះសោគណនីសិន ទើបអាចបង្កើតតេស្តបាន។ សូមបញ្ចូលកូដពីម្ចាស់ប្រព័ន្ធ។'); newRow.hidden = false; newTitle.focus(); } }, ME.licensed ? '＋ តេស្តថ្មី' : '🔒 តេស្តថ្មី')]),
     ]),
     newRow,
     filterBar,
@@ -682,9 +745,10 @@ async function renderTestBuilder(container) {
     ])),
   ]);
 
-  const canEdit = test.my_role === 'owner' || test.my_role === 'editor';
+  const canEdit = (test.my_role === 'owner' || test.my_role === 'editor') && ME.licensed;
   if (!canEdit) {
-    container.append(h('div', { class: 'notice' }, '👁 អ្នកជាអ្នកពិនិត្យ — អាចមើល សាកល្បងជាសិស្ស និងសរសេរចំណាំលើសំណួរបាន តែមិនអាចកែប្រែបានទេ។'), header, list);
+    container.append(h('div', { class: 'notice' }, test.my_role === 'sample' ? '⭐ នេះជាតេស្តគំរូ — សាកល្បងជាសិស្ស និងមើលទម្រង់វិញ្ញាសាបាន (ចម្លើយត្រឹមត្រូវត្រូវបានលាក់)។' : '👁 អ្នកជាអ្នកពិនិត្យ — អាចមើល សាកល្បងជាសិស្ស និងសរសេរចំណាំលើសំណួរបាន តែមិនអាចកែប្រែបានទេ។'), header, list);
+    if (test.my_role === 'sample') list.querySelectorAll('.notes').forEach((n) => n.parentElement.remove());
     list.querySelectorAll('button.danger').forEach((b) => b.remove());
     header.querySelectorAll('button').forEach((b) => { if (/សម្រាង|រួចរាល់/.test(b.textContent)) b.remove(); });
     return;

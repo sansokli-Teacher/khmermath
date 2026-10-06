@@ -29,15 +29,17 @@ render.teachers = async function () {
   const { teachers, invites } = await api('/api/admin/teachers');
 
   const note = h('input', { type: 'text', placeholder: 'ឈ្មោះគ្រូ ឬកំណត់សម្គាល់ (មិនចាំបាច់) ឧ. គ្រូ សុភា ថ្នាក់ទី ៩', style: 'flex:1;min-width:220px;' });
+  const inviteMonths = monthsSelect('ការប្រើប្រាស់ពេញលេញ', true);
   const linkSlot = h('div', {});
   const inviteCard = h('div', { class: 'card' }, [
     h('h2', {}, '➕ អញ្ជើញគ្រូថ្មី'),
     h('p', { class: 'muted' }, 'បង្កើតតំណអញ្ជើញ ១ ដង ផ្ញើទៅគ្រូ ហើយគ្រូជ្រើសរើសឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់ដោយខ្លួនឯង។ មិនត្រូវការអ៊ីមែលទេ។ មានតែអ្នកដែលអ្នកអញ្ជើញប៉ុណ្ណោះដែលអាចចូលបាន។'),
     h('div', { class: 'row' }, [
       note,
+      inviteMonths,
       h('button', { onclick: async () => {
         try {
-          const inv = await api('/api/admin/invites', { method: 'POST', body: { note: note.value } });
+          const inv = await api('/api/admin/invites', { method: 'POST', body: { note: note.value, months: Number(inviteMonths.value) } });
           linkSlot.innerHTML = '';
           linkSlot.append(linkBox(inviteUrl(inv.token), '✅ តំណអញ្ជើញរួចរាល់'));
           setTimeout(() => refreshPending(), 0);
@@ -72,14 +74,20 @@ render.teachers = async function () {
     const list = teachers.filter((t) => !q || `${t.display_name || ''} ${t.username}`.toLowerCase().includes(q));
     rowsBox.innerHTML = '';
     rowsBox.append(h('table', {}, [
-      h('thead', {}, h('tr', {}, ['ឈ្មោះ', 'ឈ្មោះអ្នកប្រើ', 'ថ្នាក់', 'តេស្ត', 'ចូលចុងក្រោយ', 'ស្ថានភាព', ''].map((x) => h('th', {}, x)))),
+      h('thead', {}, h('tr', {}, ['ឈ្មោះ', 'ឈ្មោះអ្នកប្រើ', 'ការប្រើប្រាស់', 'ថ្នាក់', 'តេស្ត', 'ចូលចុងក្រោយ', 'ស្ថានភាព', ''].map((x) => h('th', {}, x)))),
       h('tbody', {}, list.map((t) => h('tr', {}, [
         h('td', {}, [h('strong', {}, t.display_name || t.username), t.role === 'owner' ? h('span', { class: 'badge upcoming', style: 'margin-left:6px;' }, 'ម្ចាស់') : null]),
-        h('td', { class: 'muted' }, t.username),
+        h('td', { class: 'muted' }, [t.username, t.contact ? h('div', { style: 'font-size:12px;' }, `📞 ${t.contact}`) : null]),
+        h('td', {}, licenseChip(t)),
         h('td', {}, t.class_count), h('td', {}, t.test_count),
         h('td', { class: 'muted', style: 'white-space:nowrap;' }, t.last_login ? fmtDateTime(t.last_login) : '—'),
         h('td', {}, h('span', { class: `badge ${t.active ? 'ready' : 'closed'}` }, t.active ? 'ប្រើបាន' : 'ត្រូវបានបិទ')),
-        h('td', {}, t.role === 'owner' ? null : h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap;' }, [
+        h('td', {}, t.role === 'owner' ? null : h('div', { class: 'row', style: 'gap:4px;flex-wrap:wrap;min-width:150px;' }, [
+          h('button', { class: 'secondary btn-sm', title: 'ផ្តល់ ឬបន្ថែមការប្រើប្រាស់', onclick: () => grantDialog(t) }, '🔓 ដោះសោ'),
+          t.plan === 'full' ? h('button', { class: 'secondary btn-sm', title: 'ចាក់សោវិញ', onclick: async () => {
+            if (!(await Exam.confirm(`ចាក់សោគណនី ${t.display_name || t.username} វិញ? គាត់នឹងត្រឡប់ទៅជាគណនីសាកល្បង (ទិន្នន័យនៅរក្សាទុក)។`))) return;
+            await api(`/api/admin/teachers/${t.id}/license`, { method: 'POST', body: { action: 'lock' } }); render.teachers();
+          } }, '🔒') : null,
           h('button', { class: 'secondary btn-sm', title: 'បង្កើតតំណកំណត់ពាក្យសម្ងាត់ថ្មី', onclick: async () => {
             const r = await api(`/api/admin/teachers/${t.id}/reset-link`, { method: 'POST' });
             const box = linkBox(inviteUrl(r.token), `តំណកំណត់ពាក្យសម្ងាត់ថ្មីសម្រាប់ ${t.display_name || t.username}`);
@@ -97,10 +105,10 @@ render.teachers = async function () {
   }
   search.addEventListener('input', drawRows);
   drawRows();
-  container.append(inviteCard, h('div', { class: 'card' }, [
+  container.append(codesCard(), inviteCard, h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('h2', { style: 'margin:0;' }, `គ្រូបង្រៀន (${teachers.length})`), search]),
     rowsBox,
-  ]));
+  ]), await settingsCard(), await auditCard());
 };
 
 // ---------- Share a class or a test with another teacher ----------
@@ -155,4 +163,120 @@ async function openShareDialog(type, id, title) {
   );
   runSearch();
   drawCurrent();
+}
+
+
+// ---------- licence helpers (owner) ----------
+const MONTH_LABELS = { 1: '១ ខែ', 3: '៣ ខែ', 6: '៦ ខែ', 12: '១២ ខែ (១ ឆ្នាំ)', 24: '២៤ ខែ (២ ឆ្នាំ)', 0: 'មិនកំណត់ (ពេញមួយជីវិត)' };
+function monthsSelect(lifetimeLabel, withLifetime = true) {
+  const opts = [1, 3, 6, 12, 24].map((m) => h('option', { value: m }, MONTH_LABELS[m]));
+  if (withLifetime) opts.push(h('option', { value: 0 }, lifetimeLabel === 'ការប្រើប្រាស់ពេញលេញ' ? MONTH_LABELS[0] : lifetimeLabel));
+  const sel = h('select', { style: 'width:auto;min-width:170px;' }, opts);
+  sel.value = '12';
+  return sel;
+}
+
+function licenseChip(t) {
+  if (t.role === 'owner') return h('span', { class: 'chip chip-open' }, '★ ម្ចាស់');
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  if (t.plan !== 'full') return h('span', { class: 'chip chip-closed' }, '🔒 សាកល្បង');
+  if (t.license_until && t.license_until <= now) return h('span', { class: 'chip', style: 'background:#fdeaea;color:#a52a2a;' }, `⏰ ផុត ${fmtDateTime(t.license_until).split(',')[0]}`);
+  return h('span', { class: 'chip chip-open' }, t.license_until ? `🔓 ដល់ ${fmtDateTime(t.license_until).split(',')[0]}` : '🔓 ពេញមួយជីវិត');
+}
+
+async function grantDialog(t) {
+  const back = h('div', { class: 'modal-back', onclick: (e) => { if (e.target === back) back.remove(); } });
+  const sel = monthsSelect('', true);
+  back.append(h('div', { class: 'modal-box', style: 'text-align:left;max-width:420px;' }, [
+    h('h2', {}, `🔓 ដោះសោ — ${t.display_name || t.username}`),
+    h('p', { class: 'muted' }, 'រយៈពេលនឹងត្រូវបន្ថែមពីថ្ងៃផុតកំណត់បច្ចុប្បន្ន (បើនៅមានសុពលភាព)។'),
+    sel,
+    h('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end;' }, [
+      h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'),
+      h('button', { onclick: async () => {
+        await api(`/api/admin/teachers/${t.id}/license`, { method: 'POST', body: { action: 'grant', months: Number(sel.value) } });
+        back.remove(); render.teachers();
+      } }, 'យល់ព្រម'),
+    ]),
+  ]));
+  document.body.append(back);
+}
+
+function codesCard() {
+  const sel = monthsSelect('', true);
+  const count = h('input', { type: 'number', value: '1', min: '1', max: '30', style: 'width:80px;' });
+  const note = h('input', { type: 'text', placeholder: 'កំណត់សម្គាល់ (ឧ. គ្រូ សុភា)', style: 'flex:1;min-width:160px;' });
+  const fresh = h('div', {});
+  const table = h('div', { style: 'overflow-x:auto;margin-top:12px;' });
+
+  async function loadCodes() {
+    const { codes } = await api('/api/admin/codes');
+    table.innerHTML = '';
+    if (!codes.length) return;
+    table.append(h('table', {}, [
+      h('thead', {}, h('tr', {}, ['កូដ', 'រយៈពេល', 'កំណត់សម្គាល់', 'ស្ថានភាព', ''].map((x) => h('th', {}, x)))),
+      h('tbody', {}, codes.map((c) => h('tr', {}, [
+        h('td', {}, h('span', { class: 'pin-chip', style: c.used_at ? 'opacity:.45;' : '' }, c.code)),
+        h('td', {}, MONTH_LABELS[c.months] || `${c.months} ខែ`),
+        h('td', { class: 'muted' }, c.note || ''),
+        h('td', {}, c.used_at ? h('span', { class: 'chip chip-closed' }, `បានប្រើ · ${c.used_by_name} · ${fmtDateTime(c.used_at).split(',')[0]}`) : h('span', { class: 'chip chip-open' }, 'មិនទាន់ប្រើ')),
+        h('td', {}, c.used_at ? null : h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap;' }, [
+          h('button', { class: 'secondary btn-sm', onclick: async (e) => { await copyText(c.code); e.target.textContent = '✓'; } }, '📋'),
+          h('button', { class: 'danger btn-sm', onclick: async () => { await api(`/api/admin/codes/${c.id}`, { method: 'DELETE' }); loadCodes(); } }, 'លុប'),
+        ])),
+      ]))),
+    ]));
+  }
+
+  const card = h('div', { class: 'card' }, [
+    h('h2', {}, '🎟 កូដដោះសោ'),
+    h('p', { class: 'muted' }, 'បង្កើតកូដឱ្យគ្រូដែលបានទិញ។ កូដនីមួយៗប្រើបានតែម្តង ហើយដោះសោគណនីគ្រូតាមរយៈពេលដែលបានជ្រើស។'),
+    h('div', { class: 'row' }, [
+      sel, h('span', { class: 'muted' }, 'ចំនួន'), count, note,
+      h('button', { onclick: async () => {
+        try {
+          const r = await api('/api/admin/codes', { method: 'POST', body: { months: Number(sel.value), count: Number(count.value), note: note.value } });
+          fresh.innerHTML = '';
+          const text = r.codes.join('\n');
+          fresh.append(h('div', { class: 'notice' }, [
+            h('div', { style: 'font-weight:600;margin-bottom:6px;' }, `✅ បានបង្កើត ${r.codes.length} កូដ (${MONTH_LABELS[r.months]})`),
+            ...r.codes.map((c) => h('div', {}, h('span', { class: 'pin-chip' }, c))),
+            h('button', { style: 'margin-top:8px;', onclick: async (e) => { await copyText(text); e.target.textContent = '✓ បានចម្លង'; } }, '📋 ចម្លងទាំងអស់'),
+          ]));
+          note.value = '';
+          loadCodes();
+        } catch (e) { Exam.notify(e.message); }
+      } }, '＋ បង្កើតកូដ'),
+    ]),
+    fresh, table,
+  ]);
+  loadCodes();
+  return card;
+}
+
+async function settingsCard() {
+  const st = await api('/api/admin/settings');
+  const open = h('input', { type: 'checkbox', checked: st.signup_open ? 'checked' : null, style: 'width:18px;height:18px;' });
+  const contact = h('input', { type: 'text', value: st.contact_text, placeholder: 'ឧ. Telegram @yourname · 012 345 678', style: 'flex:1;min-width:220px;' });
+  return h('div', { class: 'card' }, [
+    h('h2', {}, '⚙ ការកំណត់'),
+    h('label', { class: 'setup-check', style: 'margin:0 0 12px;' }, [open, ' អនុញ្ញាតឱ្យគ្រូចុះឈ្មោះដោយខ្លួនឯង (បង្កើតគណនីសាកល្បង)']),
+    h('label', {}, 'ព័ត៌មានទំនាក់ទំនងដើម្បីស្នើសុំកូដ (បង្ហាញដល់គ្រូដែលមិនទាន់ដោះសោ)'),
+    h('div', { class: 'row' }, [contact, h('button', { onclick: async () => {
+      await api('/api/admin/settings', { method: 'POST', body: { signup_open: open.checked, contact_text: contact.value } });
+      Exam.notify('បានរក្សាទុក។');
+    } }, 'រក្សាទុក')]),
+  ]);
+}
+
+async function auditCard() {
+  const { log } = await api('/api/admin/audit');
+  const body = h('div', { hidden: 'hidden', style: 'overflow-x:auto;margin-top:10px;' }, h('table', {}, [
+    h('thead', {}, h('tr', {}, ['ពេលវេលា', 'អ្នកធ្វើ', 'សកម្មភាព', 'ព័ត៌មាន'].map((x) => h('th', {}, x)))),
+    h('tbody', {}, log.map((r) => h('tr', {}, [h('td', { class: 'muted', style: 'white-space:nowrap;' }, fmtDateTime(r.at)), h('td', {}, r.who || '—'), h('td', {}, h('code', {}, r.action)), h('td', { class: 'muted' }, r.detail || '')]))),
+  ]));
+  return h('div', { class: 'card' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('h2', { style: 'margin:0;' }, `🧾 កំណត់ហេតុសកម្មភាព (${log.length})`), h('button', { class: 'secondary btn-sm', onclick: () => { body.hidden = !body.hidden; } }, 'បង្ហាញ/លាក់')]),
+    body,
+  ]);
 }
