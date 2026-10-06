@@ -55,7 +55,7 @@ function initDashboard() {
   const tabs = document.querySelectorAll('.tabs button');
   tabs.forEach((btn) => btn.addEventListener('click', () => {
     tabs.forEach((b) => b.classList.toggle('active', b === btn));
-    ['classes', 'tests', 'schedule', 'grading'].forEach((name) => {
+    ['classes', 'tests', 'schedule', 'grading', 'overview'].forEach((name) => {
       document.getElementById(`tab-${name}`).hidden = name !== btn.dataset.tab;
     });
     render[btn.dataset.tab]();
@@ -955,6 +955,44 @@ render.grading = async function () {
   container.append(card);
 };
 
+render.overview = async function () {
+  const container = document.getElementById('tab-overview');
+  container.innerHTML = '';
+  const { sessions } = await api('/api/overview');
+  if (sessions.length === 0) {
+    container.append(h('div', { class: 'card' }, h('p', { class: 'muted' }, 'មិនទាន់មានការប្រឡងនៅឡើយទេ។')));
+    return;
+  }
+  const byTest = {};
+  for (const s of sessions) (byTest[s.test_title] ||= []).push(s);
+  const phaseLabel = (p) => (p === 'open' ? 'កំពុងប្រឡង' : p === 'upcoming' ? 'នឹងមកដល់' : 'បានបិទ');
+  for (const [title, list] of Object.entries(byTest)) {
+    const tot = list.reduce((a, s) => a + s.submitted, 0);
+    const avgAll = tot ? Math.round(list.reduce((a, s) => a + (s.avg_pct || 0) * s.submitted, 0) / tot) : null;
+    container.append(h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+      h('h2', {}, title),
+      h('div', { class: 'muted', style: 'margin-bottom:8px;' }, avgAll == null ? 'មិនទាន់មានលទ្ធផល' : `មធ្យមភាគរួម ${avgAll}% (សិស្សបានប្រគល់ ${tot} នាក់)`),
+      h('table', {}, [
+        h('thead', {}, h('tr', {}, ['ថ្នាក់', 'ពេលប្រឡង', 'ស្ថានភាព', 'ប្រគល់', 'មធ្យមភាគ', 'ខ្ពស់បំផុត', 'ទាបបំផុត', 'ជាប់ (≥50%)', ''].map((t) => h('th', {}, t)))),
+        h('tbody', {}, list.map((s) => h('tr', {}, [
+          h('td', {}, h('strong', {}, s.class_name)),
+          h('td', { style: 'white-space:nowrap;' }, fmtDateTime(s.scheduled_start)),
+          h('td', {}, h('span', { class: `badge ${s.phase}` }, phaseLabel(s.phase))),
+          h('td', {}, `${s.submitted}/${s.total_students}`),
+          h('td', {}, s.avg_pct == null ? '—' : `${s.avg_pct}%`),
+          h('td', {}, s.max_pct == null ? '—' : `${s.max_pct}%`),
+          h('td', {}, s.min_pct == null ? '—' : `${s.min_pct}%`),
+          h('td', {}, s.submitted ? `${s.pass_count}/${s.submitted}` : '—'),
+          h('td', {}, h('button', { class: 'secondary btn-sm', onclick: () => {
+            selectedSessionId = s.id;
+            document.querySelector('.tabs button[data-tab="grading"]').click();
+          } }, 'បើក')),
+        ]))),
+      ]),
+    ]));
+  }
+};
+
 let gradingRefreshTimer = null;
 
 async function renderAnalysis(session) {
@@ -995,7 +1033,7 @@ async function renderAnalysis(session) {
       })),
     ]));
   };
-  return h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+  return h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [
     h('h2', {}, 'ការវិភាគសំណួរ (សំណួរណាសិស្សខុសច្រើន)'),
     h('table', {}, [
       h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចំនួនសិស្សជ្រើសរើសតាមជម្រើស', '% ត្រឹមត្រូវ'].map((t) => h('th', {}, t)))),
@@ -1026,7 +1064,7 @@ async function renderGradingSession(container) {
   const inProgress = session.roster.filter((s) => s.started_at != null && s.submitted_at == null).length;
   const publishedCount = session.roster.filter((s) => s.published_at != null).length;
 
-  const headerCard = h('div', { class: 'card' }, [
+  const headerCard = h('div', { class: 'card print-keep' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start;' }, [
       h('div', {}, [
         h('h2', { style: 'margin-bottom:4px;' }, `${session.test_title} — ${session.class_name}`),
@@ -1038,11 +1076,11 @@ async function renderGradingSession(container) {
           publishedCount > 0 ? h('span', { class: 'badge' }, `បានប្រកាសលទ្ធផល៖ ${publishedCount} នាក់`) : null,
         ].filter(Boolean)),
       ]),
-      h('button', { class: 'secondary', style: 'font-weight:600;padding:6px 12px;', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់ទៅជ្រើសរើសសម័យប្រឡង'),
+      h('button', { class: 'secondary no-print', style: 'font-weight:600;padding:6px 12px;', onclick: () => { selectedSessionId = null; render.grading(); } }, '← ត្រឡប់ទៅជ្រើសរើសសម័យប្រឡង'),
     ]),
   ]);
 
-  const toolsCard = h('div', { class: 'card' }, [
+  const toolsCard = h('div', { class: 'card no-print' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;' }, [
       h('div', { class: 'row', style: 'align-items:center;gap:8px;' }, [
         h('label', { style: 'margin:0;font-weight:600;' }, 'ពិន្ទុសរសេរអតិបរមា (Max Writing Points):'),
@@ -1055,7 +1093,10 @@ async function renderGradingSession(container) {
           Exam.notify(`បានអនុវត្តពិន្ទុអតិបរមា ${val} ដល់សិស្សទាំងអស់។`);
         } }, 'អនុវត្តទាំងអស់'),
       ]),
-      h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
+      h('div', { class: 'row', style: 'gap:8px;' }, [
+        h('button', { class: 'secondary btn-sm', onclick: () => window.print() }, '🖨 បោះពុម្ពតារាងពិន្ទុ'),
+        h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
+      ]),
     ]),
   ]);
 
@@ -1112,6 +1153,7 @@ async function renderGradingSession(container) {
       h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.started_at ? fmtTimeOnly(s.started_at) : h('span', { class: 'muted' }, '—')),
       h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.submitted_at ? fmtTimeOnly(s.submitted_at) : (s.started_at ? h('span', { style: 'color:var(--brand);' }, 'កំពុងធ្វើ...') : h('span', { class: 'muted' }, '—'))),
       h('td', {}, statusBadge),
+      h('td', { class: 'no-print', style: (s.tab_switches || 0) >= 3 ? 'color:#dc2626;font-weight:700;' : '' }, s.tab_switches ? `${s.tab_switches} ដង` : '—'),
       h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, '—')),
       h('td', {}, h('input', {
         type: 'number',
@@ -1144,6 +1186,7 @@ async function renderGradingSession(container) {
         h('th', {}, 'ពេលចូល'),
         h('th', {}, 'ពេលប្រគល់'),
         h('th', {}, 'របៀបប្រគល់'),
+        h('th', { class: 'no-print' }, 'ចាកចេញទំព័រ'),
         h('th', {}, 'MCQ'),
         h('th', {}, 'សរសេរដៃ'),
         h('th', {}, 'សរសេរ (Max)'),
@@ -1153,7 +1196,7 @@ async function renderGradingSession(container) {
       ])),
       h('tbody', {}, rows),
     ]),
-    h('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end;gap:10px;' }, [
+    h('div', { class: 'row no-print', style: 'margin-top:16px;justify-content:flex-end;gap:10px;' }, [
       h('button', { onclick: async () => {
         const inputs = tableCard.querySelectorAll('.writing-input');
         const scores = [];

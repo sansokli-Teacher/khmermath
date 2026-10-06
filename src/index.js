@@ -66,6 +66,8 @@ const ROUTES = [
   ['GET', '/api/student/test', student.getTest],
   ['POST', '/api/student/answer', student.answer],
   ['POST', '/api/student/submit', student.submit],
+  ['POST', '/api/student/left-page', student.leftPage],
+  ['GET', '/api/overview', sessions.overview],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {

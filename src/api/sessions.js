@@ -3,11 +3,12 @@ import { requireTeacher } from '../lib/session.js';
 import { sessionWindow } from '../lib/time.js';
 
 let columnsChecked = false;
-async function ensureColumns(env) {
+export async function ensureColumns(env) {
   if (columnsChecked) return;
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN started_at TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN submit_type TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN scheduled_end TEXT").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE results ADD COLUMN tab_switches INTEGER NOT NULL DEFAULT 0").run(); } catch {}
   columnsChecked = true;
 }
 
@@ -31,7 +32,7 @@ async function finalizeSession(env, sessionId, endIso) {
        submit_type = 'auto'
      WHERE session_id = ?1 AND submitted_at IS NULL
        AND (started_at IS NOT NULL OR EXISTS (SELECT 1 FROM responses r WHERE r.session_id = results.session_id AND r.student_id = results.student_id))`,
-  ).bind(sessionId, endIso).run();
+  ).bind(sessionId, new Date(Math.min(Date.parse(endIso), Date.now())).toISOString()).run();
 }
 
 export async function listSessions(req, env) {
@@ -107,7 +108,7 @@ export async function getSession(req, env, params) {
   const { results: roster } = await env.DB.prepare(
     `SELECT s.id, s.surname, s.first_name, s.gender,
             r.mcq_score, r.mcq_max, r.writing_score, r.writing_max,
-            r.started_at, r.submitted_at, r.submit_type, r.published_at,
+            r.started_at, r.submitted_at, r.submit_type, r.published_at, r.tab_switches,
             (SELECT COUNT(*) FROM responses res WHERE res.session_id = ?1 AND res.student_id = s.id) AS answered_count
      FROM students s
      LEFT JOIN results r ON r.student_id = s.id AND r.session_id = ?1
@@ -225,4 +226,40 @@ export async function sessionAnalysis(req, env, params) {
     return { id: q.id, order_no: q.order_no, stem_text: q.stem_text, options, correct_index: q.correct_index, points: q.points, counts, answered };
   });
   return json({ questions, answers, student_count: Object.keys(answers).length });
+}
+
+// One row per session with class-level statistics, for the "all classes" page.
+export async function overview(req, env) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await ensureColumns(env);
+  const { results } = await env.DB.prepare(
+    `SELECT ts.id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
+            c.name AS class_name, t.id AS test_id, t.title AS test_title,
+            (SELECT COALESCE(SUM(points), 0) FROM test_questions q WHERE q.test_id = t.id) AS mcq_max,
+            (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
+     FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
+     ORDER BY ts.scheduled_start DESC`,
+  ).all();
+  const { results: rs } = await env.DB.prepare(
+    `SELECT session_id, mcq_score, writing_score, writing_max FROM results WHERE submitted_at IS NOT NULL`,
+  ).all();
+  const bySession = {};
+  for (const r of rs) (bySession[r.session_id] ||= []).push(r);
+  const sessions = results.map((s) => {
+    const endIso = s.scheduled_end || new Date(Date.parse(s.scheduled_start) + s.duration_minutes * 60000).toISOString();
+    const phase = sessionWindow({ ...s, scheduled_end: endIso }).phase;
+    const pcts = (bySession[s.id] || []).map((r) => {
+      const max = s.mcq_max + (r.writing_max ?? 0);
+      return max > 0 ? ((r.mcq_score + (r.writing_score ?? 0)) / max) * 100 : 0;
+    });
+    const n = pcts.length;
+    return {
+      ...s, scheduled_end: endIso, phase, submitted: n,
+      avg_pct: n ? Math.round(pcts.reduce((a, b) => a + b, 0) / n) : null,
+      max_pct: n ? Math.round(Math.max(...pcts)) : null,
+      min_pct: n ? Math.round(Math.min(...pcts)) : null,
+      pass_count: pcts.filter((p) => p >= 50).length,
+    };
+  });
+  return json({ sessions });
 }

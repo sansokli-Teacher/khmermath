@@ -2,6 +2,7 @@ import { json, err } from '../lib/http.js';
 import { verifySecretValue } from '../lib/crypto.js';
 import { createSessionCookie, clearSessionCookie, requireStudent } from '../lib/session.js';
 import { sessionWindow } from '../lib/time.js';
+import { ensureColumns } from './sessions.js';
 
 const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight when the clock hit zero
 
@@ -111,9 +112,12 @@ export async function getTest(req, env) {
     }
   } catch {}
 
-  const { results: questions } = await env.DB.prepare(
+  const { results: orderedQuestions } = await env.DB.prepare(
     'SELECT id, stem_text, image_key, options_json FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
   ).bind(relevant.test_id).all();
+  // Each student sees the questions in their own fixed order (same every time
+  // they reload), so neighbours cannot copy by question number.
+  const questions = seededShuffle(orderedQuestions, `${relevant.id}:${studentSession.id}`);
 
   const { results: saved } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(relevant.id, studentSession.id).all();
@@ -128,6 +132,30 @@ export async function getTest(req, env) {
       options: JSON.parse(q.options_json), selected_index: savedByQuestion[q.id] ?? null,
     })),
   });
+}
+
+function seededShuffle(items, seedText) {
+  let h = 2166136261;
+  for (const ch of seedText) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const rand = () => { h = (Math.imul(h ^ (h >>> 15), 2246822507) + 0x6D2B79F5) >>> 0; return h / 4294967296; };
+  const a = items.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// The student's page reports each time it was left (tab switch, app switch).
+export async function leftPage(req, env) {
+  const studentSession = await requireStudent(req, env);
+  if (!studentSession) return err('Not logged in.', 401);
+  const relevant = await loadOpenSessionForStudent(env, studentSession);
+  if (!relevant) return json({ ok: true });
+  await ensureColumns(env);
+  await env.DB.prepare('UPDATE results SET tab_switches = tab_switches + 1 WHERE session_id = ?1 AND student_id = ?2')
+    .bind(relevant.id, studentSession.id).run();
+  return json({ ok: true });
 }
 
 export async function answer(req, env) {

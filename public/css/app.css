@@ -140,7 +140,13 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 
 .pin-sheet { font-family: 'Kantumruy Pro', system-ui; }
 .pin-sheet table { font-size: 15px; }
-@media print { .no-print { display: none !important; } }
+@media print {
+  .no-print, .tabs, #change-pwd-btn, #logout-btn { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: none; }
+  table { font-size: 12px; }
+  input { border: none !important; width: auto !important; padding: 0 !important; }
+}
 
 
 /* Excel & Roster Management */

@@ -141,6 +141,18 @@ async function loadTest() {
   startTimer();
 }
 
+// Warn and log when the student leaves the test page (other tab or app).
+let leftCount = 0;
+document.addEventListener('visibilitychange', () => {
+  if (!testState || document.getElementById('view-test').hidden) return;
+  if (document.hidden) {
+    leftCount++;
+    api('/api/student/left-page', { method: 'POST' }).catch(() => {});
+  } else {
+    Exam.notify(`⚠️ ប្អូនបានចាកចេញពីទំព័រប្រឡង (${leftCount} ដង)។ លោកគ្រូនឹងឃើញការកត់ត្រានេះ។ សូមកុំបើកកម្មវិធីផ្សេងពេលកំពុងប្រឡង។`);
+  }
+});
+
 function startTimer() {
   clearInterval(timerInterval);
   const bar = document.getElementById('timer-bar');
