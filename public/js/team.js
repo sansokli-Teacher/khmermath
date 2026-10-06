@@ -260,6 +260,26 @@ async function settingsCard() {
   const contact = h('input', { type: 'text', value: st.contact_text, placeholder: 'ឧ. Telegram @yourname · 012 345 678', style: 'flex:1;min-width:220px;' });
   const tgToken = h('input', { type: 'password', placeholder: st.telegram_set ? '•••••• (បានកំណត់ — វាយថ្មីដើម្បីប្តូរ)' : 'Bot token ពី @BotFather', style: 'flex:1;min-width:200px;', autocomplete: 'off' });
   const tgChat = h('input', { type: 'text', value: st.telegram_chat_id, placeholder: 'Chat ID របស់អ្នក', style: 'width:170px;' });
+  const { backups } = await api('/api/admin/backups');
+  const backupBox = h('div', {});
+  const drawBackups = (list) => {
+    backupBox.innerHTML = '';
+    backupBox.append(list.length
+      ? h('div', {}, list.map((b) => h('div', { class: 'list-item' }, [h('span', {}, `${fmtDateTime(b.at)} · ${b.reason === 'weekly' ? 'ស្វ័យប្រវត្តិ' : 'ដោយដៃ'} · ${Math.round(b.size_bytes / 1024)} KB`), h('a', { class: 'btn secondary btn-sm', href: `/api/admin/backups/${b.id}/download` }, '⬇ ទាញយក')])))
+      : h('p', { class: 'muted' }, 'មិនទាន់មានការបម្រុងទុកទេ — ចុច «បម្រុងទុកឥឡូវនេះ»។'));
+  };
+  drawBackups(backups);
+  const backupCard = [
+    h('h3', { style: 'margin-top:18px;' }, '💾 ការបម្រុងទុកទាំងប្រព័ន្ធ'),
+    h('p', { class: 'muted' }, 'ប្រព័ន្ធបម្រុងទុកដោយស្វ័យប្រវត្តិរៀងរាល់ថ្ងៃចន្ទ ម៉ោង ៣ ព្រឹក (រក្សាទុក ៤ ច្បាប់ចុងក្រោយ)។ បើបានកំណត់ Telegram ឯកសារពេញលេញ (រួមទាំងរូបភាព) នឹងផ្ញើមកអ្នកផង។ ឯកសារ .json.gz ជាច្បាប់ចម្លងទិន្នន័យទាំងអស់ លើកលែងពាក្យសម្ងាត់។'),
+    h('button', { onclick: async (e) => {
+      e.target.disabled = true; e.target.textContent = '⏳ កំពុងបម្រុងទុក…';
+      try { const r = await api('/api/admin/backup-now', { method: 'POST' }); const d = await api('/api/admin/backups'); drawBackups(d.backups); Exam.notify(`✅ បានបម្រុងទុក (${r.size_kb} KB)${r.telegram ? ' និងផ្ញើទៅ Telegram' : ''}${r.stored ? '' : ' — ធំពេកសម្រាប់ទុកក្នុងប្រព័ន្ធ សូមប្រើ Telegram'}។`); }
+      catch (er) { Exam.notify(er.message); }
+      e.target.disabled = false; e.target.textContent = '💾 បម្រុងទុកឥឡូវនេះ';
+    } }, '💾 បម្រុងទុកឥឡូវនេះ'),
+    backupBox,
+  ];
   return h('div', { class: 'card' }, [
     h('h2', {}, '⚙ ការកំណត់'),
     h('label', { class: 'setup-check', style: 'margin:0 0 12px;' }, [open, ' អនុញ្ញាតឱ្យគ្រូចុះឈ្មោះដោយខ្លួនឯង (បង្កើតគណនីសាកល្បង)']),

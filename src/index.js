@@ -9,6 +9,7 @@ import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
 import * as admin from './api/admin.js';
+import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 
 function compile(pattern) {
@@ -37,6 +38,9 @@ const ROUTES = [
   ['POST', '/api/admin/settings', admin.setAdminSettings],
   ['GET', '/api/admin/audit', admin.listAudit],
   ['POST', '/api/admin/telegram-test', admin.telegramTest],
+  ['POST', '/api/admin/backup-now', admin.backupNow],
+  ['GET', '/api/admin/backups', admin.backupList],
+  ['GET', '/api/admin/backups/:id/download', admin.backupDownload],
   ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
   ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
   ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],
@@ -122,6 +126,11 @@ const ROUTES = [
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {
+  // Weekly backup (cron in wrangler.toml): Sunday 20:00 UTC = Monday 03:00 in Cambodia.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBackup(env, { reason: 'weekly' }));
+  },
+
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
 

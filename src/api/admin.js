@@ -7,6 +7,7 @@ import { authTeacher, needAdmin, needClass, needTest, needLicense, isAdmin, acce
 import { allow } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
 import { notifyOwner } from '../lib/notify.js';
+import { runBackup, listBackups, getBackupFile } from '../lib/backup.js';
 
 const INVITE_DAYS = 7;
 
@@ -329,4 +330,21 @@ export async function telegramTest(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const ok = await notifyOwner(env, '✅ ការជូនដំណឹង Telegram ដំណើរការ — ប្រព័ន្ធប្រឡងគណិតវិទ្យា');
   return ok ? json({ ok: true }) : err('ផ្ញើមិនបានទេ។ សូមពិនិត្យ Bot token និង Chat ID (ហើយបាន /start ជាមួយ Bot ជាមុន)។', 400);
+}
+
+// ---------- whole-system backup (owner) ----------
+export async function backupNow(req, env) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const r = await runBackup(env, { reason: 'manual' });
+  return json({ ok: true, ...r });
+}
+export async function backupList(req, env) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  return json({ backups: await listBackups(env) });
+}
+export async function backupDownload(req, env, params) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const f = await getBackupFile(env, Number(params.id));
+  if (!f) return err('Backup not found.', 404);
+  return new Response(f.bytes, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="exam-backup-${f.at.slice(0, 10)}.json.gz"` } });
 }

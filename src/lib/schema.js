@@ -54,6 +54,14 @@ export async function ensureColumns(env) {
       expires_at TEXT NOT NULL,
       used_at TEXT
     )`),
+    // Weekly / on-demand system snapshots (newest 4 kept).
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS backups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL DEFAULT (datetime('now')),
+      reason TEXT,
+      size_bytes INTEGER,
+      data_b64 TEXT NOT NULL
+    )`),
     // Per-question writing marks.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS writing_marks (
       session_id INTEGER NOT NULL,
