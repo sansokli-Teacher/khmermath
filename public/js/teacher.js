@@ -639,6 +639,7 @@ render.tests = async function () {
       if (open) return;
       const item = (label, fn, cls = '') => h('button', { class: `menu-item ${cls}`, onclick: (ev) => { ev.stopPropagation(); closeMenus(); fn(); } }, label);
       const pop = h('div', { class: 'menu-pop' }, [
+        item('📝 ទាញយកជា Word (.docx)', () => window.open(`paper.html?test=${t.id}&docx=1`, '_blank')),
         licensed || ME.role === 'owner' ? item('📋 ចម្លងតេស្តនេះ', async () => {
           try { const copy = await api(`/api/tests/${t.id}/duplicate`, { method: 'POST' }); await Exam.notify(`បានចម្លងជា «${copy.title}»`); render.tests(); }
           catch (er) { Exam.notify(er.message); }
@@ -744,6 +745,7 @@ async function renderTestBuilder(container) {
     h('div', { class: 'row' }, [
       h('button', { class: 'secondary', onclick: () => window.open(`student.html?preview=${test.id}`, '_blank') }, '👁 មើលជាសិស្ស'),
       h('button', { class: 'secondary', onclick: () => window.open(`paper.html?test=${test.id}`, '_blank') }, '📄 វិញ្ញាសា PDF'),
+      h('button', { class: 'secondary', onclick: () => window.open(`paper.html?test=${test.id}&docx=1`, '_blank') }, '📝 Word'),
       h('span', { class: `badge ${test.status}` }, test.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'),
       test.status !== 'ready'
         ? h('button', { onclick: async () => { await api(`/api/tests/${test.id}`, { method: 'PUT', body: { status: 'ready' } }); renderTestBuilder(container); } }, 'សម្គាល់ថារួចរាល់')

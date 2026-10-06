@@ -116,7 +116,20 @@ async function init() {
   if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
   for (const id of ['opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
   document.getElementById('print-btn').onclick = () => window.print();
+  const toWord = async (btn) => {
+    const label = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ កំពុងបង្កើត Word…'; }
+    try {
+      await window.ExamDocx.download(test, {
+        minutes: Number(document.getElementById('opt-min').value) || 70, date: document.getElementById('opt-date').value.trim(),
+        showKey: document.getElementById('opt-key').checked, space: document.getElementById('opt-space').checked,
+      });
+    } catch (e) { Exam.notify(`មិនអាចបង្កើតឯកសារ Word បានទេ៖ ${e.message}`); }
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  };
+  document.getElementById('docx-btn').onclick = (e) => toWord(e.currentTarget);
   if (!test.questions.every((q) => q.kind === 'writing' || q.correct_index != null)) document.getElementById('opt-key').closest('label').hidden = true;
   render();
+  if (params.get('docx') === '1') toWord(document.getElementById('docx-btn'));   // opened from the ⋯ menu
 }
 init();
