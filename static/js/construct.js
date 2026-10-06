@@ -1615,8 +1615,9 @@
       if (it[0] === 'seg') segLine(g, it[1], it[2], it[3] || 'cx-line');
       else if (it[0] === 'arc') arcDraw(g, it[1]);
       else if (it[0] === 'perp') segLine(g, it[1], footOn(it[1], it[2], it[3]), it[4] || 'cx-perp');
+      else if (it[0] === 'circ') el('circle', { cx: it[1][0], cy: it[1][1], r: len(sub(it[2], it[1])), class: 'cx-circle' }, g);
     };
-    var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp'; };
+    var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp' || it[0] === 'circ'; };
     return {
       steps: spec.steps, start: spec.start, limit: spec.limit, place: spec.place, presets: spec.presets,
       figure: function (s) { var f = spec.figure(s); f.meet = true; f.script = spec.script(f); return f; },
@@ -1646,6 +1647,9 @@
             el('path', { d: arcPath(q.c, q.r, q.t1, th), class: 'cx-arc' }, drawn);
             drawCompass(tools, q.c, onCircle(q.c, q.r, th));
           } });
+          else if (it[0] === 'circ') circlePhases(it[1], it[2], 'cx-circle').forEach(function (ph) {
+            phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
+          });
           else perpPhases(it[1], it[2], it[3], it[4] || 'cx-perp').forEach(function (ph) {
             phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
           });
@@ -1702,6 +1706,67 @@
       ];
     },
   });
+
+  // Grade 8, lesson 17 §4.2: the excircles of a triangle. The external bisectors at B and C meet at J,
+  // which is also on the internal bisector of A; the perpendiculars from J to the three side lines
+  // are equal, so the circle of centre J touches them (the excircle opposite A). The external bisector
+  // at A meets those at K and L, the centres of the other two excircles.
+  CX['g8-l17-excircle'] = scripted({
+    steps: 16,
+    start: { A: [297, 127], B: [250, 211], C: [369, 211] },
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      var ex = excentres(t), ok = Math.min.apply(null, t.angles) >= 0.6 && t.least >= 80;
+      ex.forEach(function (e) { if (e.c[0] - e.r < 8 || e.c[0] + e.r > W - 8 || e.c[1] - e.r < 8 || e.c[1] + e.r > H - 8) ok = false; });
+      return ok;
+    },
+    figure: function (s) {
+      var f = triangleOf(s), ex = excentres(f), far = function (V, X) { return add(X, mul(unit(sub(X, V)), 42)); };
+      f.J = ex[0].c; f.K = ex[1].c; f.L = ex[2].c;
+      f.Bx = add(f.B, mul(unit(sub(f.B, f.A)), 95)); f.Cx = add(f.C, mul(unit(sub(f.C, f.A)), 95)); f.Ax = add(f.A, mul(unit(sub(f.A, f.B)), 95));
+      f.bB = bisectorOf(f.B, f.C, f.Bx, f.J); f.bC = bisectorOf(f.C, f.B, f.Cx, f.J); f.bA = bisectorOf(f.A, f.C, f.Ax, f.K);
+      f.D = footOn(f.J, f.A, f.B); f.E = footOn(f.J, f.A, f.C); f.F = footOn(f.J, f.B, f.C);
+      f.Kf = footOn(f.K, f.A, f.C); f.Lf = footOn(f.L, f.A, f.B);
+      f.far = far;
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var arcs = function (b) { return b.arcs.map(function (a) { return ['arc', a]; }); }, aux = 'cx-line cx-line-2';
+      var outward = function (X) { return sub(X, f.G); };
+      return [
+        [],
+        [['seg', f.B, f.Bx, 'cx-line'], ['seg', f.C, f.Cx, 'cx-line']],
+        arcs(f.bB),
+        [['seg', f.B, f.far(f.B, f.J), aux], ['mark', function (g) { halfAngles(g, f.B, f.C, f.Bx, f.J, 'a'); }]],
+        arcs(f.bC),
+        [['seg', f.C, f.far(f.C, f.J), aux], ['mark', function (g) { halfAngles(g, f.C, f.B, f.Cx, f.J, 'a'); }],
+          ['pt', f.J, 'J', DOWN, 'cx-pt-m', 24]],
+        [['perp', f.J, f.B, f.C], ['mark', function (g) { rightAt(g, f.F, f.J, f.B, f.C); }], ['pt', f.F, 'F', sub(f.F, f.J), null, 20]],
+        [['perp', f.J, f.A, f.B], ['mark', function (g) { rightAt(g, f.D, f.J, f.A, f.B); }], ['pt', f.D, 'D', sub(f.D, f.J), null, 20],
+          ['perp', f.J, f.A, f.C], ['mark', function (g) { rightAt(g, f.E, f.J, f.A, f.C); tick(g, f.J, f.D); tick(g, f.J, f.E); tick(g, f.J, f.F); }],
+          ['pt', f.E, 'E', sub(f.E, f.J), null, 20]],
+        [['circ', f.J, f.F]],
+        [['seg', f.A, f.J, aux], ['mark', function (g) { halfAngles(g, f.A, f.B, f.C, f.J, 'b'); }]],
+        [['seg', f.A, f.Ax, 'cx-line']].concat(arcs(f.bA)),
+        [['seg', f.A, f.far(f.A, f.K), aux], ['seg', f.A, f.far(f.A, f.L), aux], ['mark', function (g) { halfAngles(g, f.A, f.C, f.Ax, f.K, 'a'); }]],
+        [['seg', f.C, f.far(f.C, f.K), aux], ['seg', f.B, f.far(f.B, f.L), aux],
+          ['pt', f.K, 'K', outward(f.K), 'cx-pt-m', 24], ['pt', f.L, 'L', outward(f.L), 'cx-pt-m', 24]],
+        [['perp', f.K, f.A, f.C], ['mark', function (g) { rightAt(g, f.Kf, f.K, f.A, f.C); }], ['circ', f.K, f.Kf]],
+        [['perp', f.L, f.A, f.B], ['mark', function (g) { rightAt(g, f.Lf, f.L, f.A, f.B); }], ['circ', f.L, f.Lf]],
+        [],
+      ];
+    },
+  });
+  // the centres and radii of the three excircles (opposite A, B, C)
+  function excentres(t) {
+    var a = t.a, b = t.b, c = t.c, s = (a + b + c) / 2, area = t.r * s;
+    return [[-a, b, c, area / (s - a)], [a, -b, c, area / (s - b)], [a, b, -c, area / (s - c)]].map(function (w) {
+      var k = w[0] + w[1] + w[2];
+      return { c: mul(add(add(mul(t.A, w[0]), mul(t.B, w[1])), mul(t.C, w[2])), 1 / k), r: w[3] };
+    });
+  }
 
   // Grade 8, lesson 12, a worked example: M is a point of the bisector of the angle XOY; the
   // perpendiculars from M meet OX at A and OY at B. (Then MA = MB.) The handle on OY turns that
