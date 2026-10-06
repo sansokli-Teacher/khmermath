@@ -95,7 +95,7 @@ export async function updateQuestion(req, env, params) {
   const sets = []; const vals = [];
   const put = (col, v) => { sets.push(`${col} = ?${sets.length + 1}`); vals.push(v); };
   if (b.stem_text !== undefined) { if (!String(b.stem_text).trim()) return err('stem_text is required.', 400); put('stem_text', String(b.stem_text).trim()); }
-  if (b.points !== undefined) { const p = Number(b.points); if (!(p > 0 && p <= 100)) return err('points must be between 1 and 100.', 400); put('points', Math.round(p)); }
+  if (b.points !== undefined) { const p = Number(b.points); if (!(p > 0 && p <= 100)) return err('points must be above 0 and at most 100.', 400); put('points', Math.round(p * 100) / 100); }
   if (b.solution_text !== undefined) put('solution_text', b.solution_text ? String(b.solution_text) : null);
   if (b.image_key !== undefined) put('image_key', b.image_key || null);        // null/'' removes the picture
   if (b.topic !== undefined) put('topic', b.topic ? String(b.topic).trim().slice(0, 60) : null);
@@ -317,7 +317,7 @@ export async function bulkAdd(req, env, params) {
     stmts.push(env.DB.prepare(
       `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`,
-    ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(1, Math.round(Number(q.points) || (writing ? 5 : 1))),
+    ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(0.25, Math.round((Number(q.points) || (writing ? 5 : 1)) * 100) / 100),
       writing ? 'writing' : 'mcq', q.solution_text ? String(q.solution_text) : null, q.topic ? String(q.topic).slice(0, 60) : null,
       ['easy', 'medium', 'hard'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0)));
   });
