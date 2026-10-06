@@ -5,7 +5,7 @@
     ['easy', 'កម្រិត ១៖ ចំណេះដឹងមូលដ្ឋាន'],
     ['medium', 'កម្រិត ២៖ ការគណនា និងអនុវត្ត'],
     ['hard', 'កម្រិត ៣៖ ការវិភាគ និងដោះស្រាយបញ្ហា'],
-    ['pisa', 'កម្រិត ៤៖ សំណួរបែប PISA'],
+    ['pisa', 'កម្រិត ៤៖ បែប PISA'],
   ];
   const visLen = (t) => String(t).replace(/\\[A-Za-z]+/g, 'x').replace(/[\\{}()$^_]/g, '').length;
   const cssStr = (s) => `"${String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`;
@@ -195,7 +195,7 @@
         return [p1.length ? `ផ្នែកទី ១ សំណួរទី ${p1.map(kh).join(', ')}` : '', p2.length ? `ផ្នែកទី ២ សំណួរទី ${p2.map(kh).join(', ')}` : ''].filter(Boolean).join(' · ');
       };
       kids.push(h('div', { class: 'ptk-banner' }, 'ផែនទីកម្រិតលំបាកសម្រាប់គ្រូបង្រៀន'));
-      kids.push(h('ul', {}, [['easy', 'កម្រិតងាយស្រួល (Easy)'], ['medium', 'កម្រិតមធ្យម (Medium)'], ['hard', 'កម្រិតលំបាក (Hard)'], ['pisa', 'សំណួរបែប PISA']].map(([lv, label]) => {
+      kids.push(h('ul', {}, [['easy', 'កម្រិតងាយស្រួល (Easy)'], ['medium', 'កម្រិតមធ្យម (Medium)'], ['hard', 'កម្រិតលំបាក (Hard)'], ['pisa', 'បែប PISA']].map(([lv, label]) => {
         const list = test.questions.filter((q) => q.level === lv);
         return list.length ? h('li', {}, [h('b', {}, `${label}៖ `), `${kh(list.length)} សំណួរ — ${num(list)}`]) : null;
       })));
