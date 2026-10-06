@@ -13,21 +13,26 @@
   var STEP = reduce ? 60 : 340;
 
   var mode = 'ai', sound = true, holes, score, turn, busy, over, token = 0, skips = 0, handMode = true, release = null, handN = 0, grabbed = null;
-  var cells = [], arrs = [], ac = null, handEl = null;
+  var match = false, dead = [], reserve = [0, 0], round = 1, totals = null, matchOver = false;
+  var NODEAD = [];
+  var cells = [], arrs = [], ac = null, handEl = null, roundEl = document.getElementById('bk-round'), nextBtn = document.getElementById('bk-nextround'), endBtn = document.getElementById('bk-endmatch');
 
   function owner(i) { return i < 5 ? 0 : 1; }
   function nameOf(p) { return p === 0 ? 'អ្នកលេងទី ១' : (mode === 'ai' ? 'កុំព្យូទ័រ' : 'អ្នកលេងទី ២'); }
 
   /* ---- rules: one whole turn, as a list of events ---- */
-  function sim(h0, start, dir) {
+  function sim(h0, start, dir, dd) {
+    dd = dd || NODEAD;
     var h = h0.slice(), ev = [], gain = 0, n = h[start], pos = start, guard = 0;
+    /* the next hole that is alive: a dead hole is skipped, as if it were not on the board */
+    function nl(q) { var g = 0; do { q = (q + dir + 10) % 10; } while (dd[q] && ++g < 10); return q; }
     h[start] = 0; ev.push({ t: 'take', i: start });
     for (;;) {
-      while (n > 0) { pos = (pos + dir + 10) % 10; h[pos]++; n--; ev.push({ t: 'drop', i: pos }); }
+      while (n > 0) { pos = nl(pos); h[pos]++; n--; ev.push({ t: 'drop', i: pos }); }
       if (++guard > 200) break;
-      var nx = (pos + dir + 10) % 10;
+      var nx = nl(pos);
       if (h[nx] > 0) { n = h[nx]; h[nx] = 0; pos = nx; ev.push({ t: 'take', i: nx }); continue; }
-      var nn = (nx + dir + 10) % 10;
+      var nn = nl(nx);
       if (h[nn] > 0) { gain = h[nn]; h[nn] = 0; ev.push({ t: 'cap', i: nn, n: gain }); }
       break;
     }
@@ -39,8 +44,8 @@
     var best = -1e9, pick = null;
     legal(h, 1).forEach(function (m) {
       [1, -1].forEach(function (d) {
-        var r = sim(h, m, d), opp = 0;
-        legal(r.holes, 0).forEach(function (m2) { [1, -1].forEach(function (d2) { opp = Math.max(opp, sim(r.holes, m2, d2).gain); }); });
+        var r = sim(h, m, d, dead), opp = 0;
+        legal(r.holes, 0).forEach(function (m2) { [1, -1].forEach(function (d2) { opp = Math.max(opp, sim(r.holes, m2, d2, dead).gain); }); });
         var v = r.gain - opp + Math.random() * 0.5;
         if (v > best) { best = v; pick = [m, d]; }
       });
@@ -102,10 +107,11 @@
       var mine = !busy && !over && owner(i) === turn && (mode === 'two' || turn === 0);
       var can = mine && n > 0 && !grabbed;
       var held = mine && grabbed && grabbed.i === i;
+      c.classList.toggle('dead', !!dead[i]);
       c.classList.toggle('can', can);
       c.disabled = !(c.classList.contains('next') || can || held);
       arrs[i][0].hidden = arrs[i][1].hidden = !held;
-      c.setAttribute('aria-label', 'រន្ធ ' + km((i % 5) + 1) + (i === 4 || i === 9 ? ' (ក្បាលឈីមឿង)' : '') + ' មានគ្រាប់ ' + km(n));
+      c.setAttribute('aria-label', 'រន្ធ ' + km((i % 5) + 1) + (i === 4 || i === 9 ? ' (ក្បាលឈីមឿង)' : '') + (dead[i] ? ' រន្ធងាប់' : ' មានគ្រាប់ ' + km(n)));
     }
     root.querySelector('[data-score="0"]').textContent = km(score[0]);
     root.querySelector('[data-score="1"]').textContent = km(score[1]);
@@ -113,7 +119,10 @@
       var p = +e.dataset.pl;
       e.classList.toggle('on', !over && p === turn);
       e.querySelector('.bk-name').textContent = nameOf(p);
+      var d = 0; for (var q = p * 5; q < p * 5 + 5; q++) if (dead[q]) d++;
+      e.querySelector('[data-extra]').textContent = match ? ((d ? 'រន្ធងាប់ ' + km(d) : '') + (d && reserve[p] ? ' · ' : '') + (reserve[p] ? 'ទុក ' + km(reserve[p]) + ' គ្រាប់' : '')) : '';
     });
+    roundEl.hidden = !match; roundEl.textContent = 'ជុំទី ' + km(round);
   }
   function say(t) { msgEl.textContent = t; }
 
@@ -131,7 +140,7 @@
 
   /* ---- a turn ---- */
   async function run(i, dir, g) {
-    var my = token, r = sim(g ? g.base : holes, i, dir), who = turn;
+    var my = token, r = sim(g ? g.base : holes, i, dir, dead), who = turn;
     var manual = handMode && (mode === 'two' || who === 0);
     busy = true; handN = g ? g.n : 0; draw();
     say(nameOf(who) + ' កំពុងចាក់គ្រាប់…');
@@ -187,9 +196,38 @@
     for (var i = 0; i < 10; i++) { score[owner(i)] += holes[i]; holes[i] = 0; }
     draw();
     var a = score[0], b = score[1];
-    say('ល្បែងចប់។ ' + nameOf(0) + ' ' + km(a) + ' គ្រាប់ · ' + nameOf(1) + ' ' + km(b) + ' គ្រាប់។ ' +
-        (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
+    var res = nameOf(0) + ' ' + km(a) + ' គ្រាប់ · ' + nameOf(1) + ' ' + km(b) + ' គ្រាប់។ ';
     tone(660, .5);
+    if (!match) return say('ល្បែងចប់។ ' + res + (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
+    totals = [score[0] + reserve[0], score[1] + reserve[1]];
+    var lost = totals[0] < 5 ? 0 : totals[1] < 5 ? 1 : -1;   /* fewer seeds than the Kbal Chi Mueng needs */
+    if (lost >= 0) {
+      matchOver = true;
+      return say('ជុំទី ' + km(round) + ' ចប់។ ' + res + nameOf(lost) + ' មានគ្រាប់តិចជាង ៥ មិនអាចបំពេញក្បាលឈីមឿងបាន ដូច្នេះ' + nameOf(1 - lost) + ' ឈ្នះទាំងស្រុង!');
+    }
+    say('ជុំទី ' + km(round) + ' ចប់។ ' + res + (a === b ? 'ស្មើគ្នា។ ' : nameOf(a > b ? 0 : 1) + ' ឈ្នះជុំនេះ។ ') + 'ចុច «ជុំបន្ទាប់» ដើម្បីបំពេញរន្ធឡើងវិញពីគ្រាប់ដែលមាន។');
+    nextBtn.hidden = false; endBtn.hidden = false;
+  }
+  /* a round starts from what each player holds: the Kbal Chi Mueng first (5), then the holes next to it (4 each);
+     a hole that cannot be filled is dead, and what is left over (under 4) is kept for a later round */
+  function fill(avail) {
+    holes = []; dead = [];
+    for (var i = 0; i < 10; i++) { holes[i] = 0; dead[i] = false; }
+    [0, 1].forEach(function (p) {
+      var order = p === 0 ? [4, 3, 2, 1, 0] : [9, 8, 7, 6, 5], t = avail[p];
+      order.forEach(function (idx, k) {
+        var need = k === 0 ? 5 : 4;
+        if (t >= need) { holes[idx] = need; t -= need; } else dead[idx] = true;
+      });
+      reserve[p] = t;
+    });
+  }
+  function nextRound() {
+    if (!over || matchOver || !totals) return;
+    token++; round++; nextBtn.hidden = true; endBtn.hidden = true;
+    var first = score[0] === score[1] ? (Math.random() < 0.5 ? 0 : 1) : (score[0] > score[1] ? 0 : 1);   /* the winner of the last round */
+    fill(totals); score = [0, 0]; over = false; busy = false; skips = 0; grabbed = null; turn = first;
+    next('ជុំទី ' + km(round) + ' ចាប់ផ្ដើម។ ' + nameOf(turn) + ' លេងមុន។ ');
   }
   async function holeTap(i) {
     if (busy || over || owner(i) !== turn || (mode === 'ai' && turn === 1)) return;
@@ -215,7 +253,8 @@
   }
   function start() {
     token++;
-    holes = [4, 4, 4, 4, 5, 4, 4, 4, 4, 5]; score = [0, 0]; busy = false; over = false; skips = 0; pendingI = -1; grabbed = null;
+    round = 1; matchOver = false; totals = null; reserve = [0, 0]; nextBtn.hidden = true; endBtn.hidden = true;
+    fill([21, 21]); score = [0, 0]; busy = false; over = false; skips = 0; pendingI = -1; grabbed = null;
     if (release) { var r = release; release = null; r(); }
     if (handEl) handEl.hidden = true;
     cells.forEach(function (c) { c.classList.remove('next', 'hit', 'cap'); });
@@ -233,6 +272,17 @@
   var hb = root.querySelector('[data-act="hand"]');
   hb.addEventListener('click', function () {
     handMode = !handMode; hb.setAttribute('aria-pressed', handMode); hb.textContent = 'ដាក់គ្រាប់៖ ' + (handMode ? 'ដោយដៃខ្លួនឯង' : 'ស្វ័យប្រវត្តិ');
+  });
+  nextBtn.addEventListener('click', nextRound);
+  endBtn.addEventListener('click', function () {
+    if (!over || matchOver || !totals) return;
+    matchOver = true; nextBtn.hidden = true; endBtn.hidden = true;
+    var a = totals[0], b = totals[1];
+    say('ចប់ល្បែងនៅជុំទី ' + km(round) + '។ គ្រាប់សរុប៖ ' + nameOf(0) + ' ' + km(a) + ' · ' + nameOf(1) + ' ' + km(b) + '។ ' + (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
+  });
+  var mb = root.querySelector('[data-act="match"]');
+  mb.addEventListener('click', function () {
+    match = !match; mb.setAttribute('aria-pressed', match); mb.textContent = 'ច្រើនជុំ៖ ' + (match ? 'បើក' : 'បិទ'); start();
   });
   root.querySelector('[data-act="new"]').addEventListener('click', start);
   var sb = root.querySelector('[data-act="sound"]');

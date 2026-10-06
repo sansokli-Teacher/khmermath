@@ -65,3 +65,13 @@
 .bk-hand-n:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .bk-hand { transition: none; } }
 @media (max-width: 560px) { .bk-arr { font-size: 16px; min-height: 36px; } .bk-hand-ic { font-size: 36px; } }
+/* several rounds */
+.bk-round { margin: 0; font-weight: 700; color: var(--teal-strong); }
+.bk-round[hidden], .bk-nr[hidden] { display: none; }
+.bk-rules h3 { margin: 22px 0 6px; }
+.bk-extra { flex-basis: 100%; color: var(--ink-3); font-size: 14px; }
+.bk-extra:empty { display: none; }
+.bk-nr { min-height: 44px; align-self: flex-start; }
+.bk-hole.dead { opacity: .45; background: #1a0f06; border-style: dashed; border-color: #4a2d12; box-shadow: none; }
+.bk-hole.dead::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #6b4520; }
+.bk-hole.dead .bk-n { display: none; }
