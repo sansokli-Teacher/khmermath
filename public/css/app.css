@@ -387,3 +387,13 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .lock-card { background: #fff; border: 1.5px dashed #c8d4e3; border-radius: 18px; padding: 36px 20px; text-align: center; max-width: 560px; margin: 24px auto; }
 .lock-card .code-row { justify-content: center; margin-top: 8px; }
 .lock-icon { font-size: 46px; }
+
+/* ---------- Student: save status + flags ---------- */
+.save-status { font-size: 12px; font-weight: 600; padding: 1px 9px; border-radius: 99px; background: var(--good-soft); color: var(--good); white-space: nowrap; }
+.save-status.busy { background: var(--warn-soft); color: var(--warn); }
+.save-status.bad { background: var(--bad-soft); color: var(--bad); animation: pulse 1.2s infinite; }
+.question-nav button.flagged::after { content: '🚩'; font-size: 9px; position: absolute; margin: -22px 0 0 20px; }
+.flag-btn { background: transparent; color: var(--muted); border: 1.5px solid var(--line); padding: 4px 12px; font-size: 13px; }
+.flag-btn.on { background: #fff4dc; color: #8a5a0d; border-color: #e9c46a; }
+.question-nav button { position: relative; }
+.dob-toggle { display: flex; gap: 8px; align-items: center; margin: 6px 0 12px; padding: 8px 12px; background: var(--brand-soft); border-radius: 10px; color: var(--ink); font-size: 14px; }

@@ -26,6 +26,18 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN created_at TEXT',
     'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE invites ADD COLUMN months INTEGER',
+    // scoring rules + question metadata
+    'ALTER TABLE test_questions ADD COLUMN alt_correct_index INTEGER',
+    'ALTER TABLE test_questions ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE test_questions ADD COLUMN shuffle INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE test_questions ADD COLUMN topic TEXT',
+    'ALTER TABLE test_questions ADD COLUMN level TEXT',
+    // exam-day controls
+    'ALTER TABLE results ADD COLUMN extra_minutes INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE results ADD COLUMN device_id TEXT',
+    'ALTER TABLE results ADD COLUMN last_seen TEXT',
+    // optional date-of-birth check at student login
+    'ALTER TABLE classes ADD COLUMN require_dob INTEGER NOT NULL DEFAULT 0',
   ];
   for (const sql of alters) { try { await env.DB.prepare(sql).run(); } catch {} }
 
@@ -41,6 +53,14 @@ export async function ensureColumns(env) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       expires_at TEXT NOT NULL,
       used_at TEXT
+    )`),
+    // Per-question writing marks.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS writing_marks (
+      session_id INTEGER NOT NULL,
+      student_id TEXT NOT NULL,
+      question_id INTEGER NOT NULL,
+      score REAL NOT NULL,
+      PRIMARY KEY (session_id, student_id, question_id)
     )`),
     // Unlock codes the owner generates and hands out.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS license_codes (

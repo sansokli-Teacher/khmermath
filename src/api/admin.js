@@ -3,7 +3,7 @@ import { json, err } from '../lib/http.js';
 import { hashSecretValue } from '../lib/crypto.js';
 import { createSessionCookie } from '../lib/session.js';
 import { ensureColumns } from '../lib/schema.js';
-import { authTeacher, needAdmin, needClass, needTest, needLicense, isAdmin } from '../lib/access.js';
+import { authTeacher, needAdmin, needClass, needTest, needLicense, isAdmin, accessibleClasses, accessibleTests } from '../lib/access.js';
 import { allow } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
 
@@ -290,4 +290,33 @@ export async function listAudit(req, env) {
      FROM audit_log a LEFT JOIN teachers t ON t.id = a.teacher_id ORDER BY a.id DESC LIMIT 200`,
   ).all();
   return json({ log: results });
+}
+
+// ---------- backup / export of everything this teacher can see ----------
+export async function exportData(req, env) {
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
+  const myClasses = await accessibleClasses(env, t);
+  const myTests = await accessibleTests(env, t);
+  const classIds = [...myClasses.keys()];
+  const testIds = [...myTests.entries()].filter(([, r]) => r === 'owner' || r === 'editor').map(([id]) => id);
+  const ph = (arr) => (arr.length ? arr.map(() => '?').join(',') : 'NULL');
+  const q = async (sql, ...binds) => (await env.DB.prepare(sql).bind(...binds).all()).results;
+
+  const classes = await q(`SELECT id, name, grade FROM classes WHERE id IN (${ph(classIds)})`, ...classIds);
+  const students = await q(`SELECT id, class_id, surname, first_name, gender, dob FROM students WHERE class_id IN (${ph(classIds)}) ORDER BY class_id, surname`, ...classIds);
+  const sessions = await q(
+    `SELECT s.id, s.class_id, c.name AS class_name, x.title AS test_title, s.scheduled_start, s.scheduled_end, s.duration_minutes, s.status
+     FROM test_sessions s JOIN classes c ON c.id = s.class_id JOIN tests x ON x.id = s.test_id WHERE s.class_id IN (${ph(classIds)}) ORDER BY s.scheduled_start`, ...classIds);
+  const sessionIds = sessions.map((x) => x.id);
+  const results = await q(
+    `SELECT session_id, student_id, mcq_score, mcq_max, writing_score, writing_max, started_at, submitted_at, submit_type, published_at, tab_switches
+     FROM results WHERE session_id IN (${ph(sessionIds)})`, ...sessionIds);
+  const assessments = await q(`SELECT id, class_id, key, title, month_label, kind, session_id, max_score FROM assessments WHERE class_id IN (${ph(classIds)})`, ...classIds).catch(() => []);
+  const aIds = assessments.map((a) => a.id);
+  const manual = await q(`SELECT assessment_id, student_id, score FROM manual_scores WHERE assessment_id IN (${ph(aIds)})`, ...aIds).catch(() => []);
+  const tests = await q(`SELECT id, title, status FROM tests WHERE id IN (${ph(testIds)})`, ...testIds);
+  const questions = await q(
+    `SELECT test_id, order_no, kind, stem_text, options_json, correct_index, points, topic, level, solution_text FROM test_questions WHERE test_id IN (${ph(testIds)}) ORDER BY test_id, order_no`, ...testIds);
+  return json({ exported_at: new Date().toISOString(), teacher: t.display_name, classes, students, sessions, results, assessments, manual_scores: manual, tests, questions });
 }

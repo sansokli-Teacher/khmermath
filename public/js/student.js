@@ -64,14 +64,19 @@ async function doLogin() {
   const card = views.login.querySelector('.auth-card');
   if (!id) return showError(card, 'សូមបញ្ចូលអត្តលេខរបស់អ្នក។');
   try {
-    await api('/api/student/login', { method: 'POST', body: { id } });
+    await api('/api/student/login', { method: 'POST', body: { id, dob: document.getElementById('login-dob').value.trim() } });
     boot();
   } catch (e) {
+    if (e.data && e.data.need_dob) {
+      document.getElementById('dob-wrap').hidden = false;
+      document.getElementById('login-dob').focus();
+    }
     showError(card, e.message);
   }
 }
 document.getElementById('login-submit').addEventListener('click', doLogin);
 document.getElementById('login-id').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-dob').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 
 async function logoutStudent() {
   try { await api('/api/student/logout', { method: 'POST' }); } catch {}
@@ -81,6 +86,8 @@ async function logoutStudent() {
   clearInterval(waitInterval);
   clearInterval(homeRefresh);
   document.getElementById('login-id').value = '';
+  document.getElementById('login-dob').value = '';
+  document.getElementById('dob-wrap').hidden = true;
   showView('login');
 }
 document.getElementById('home-logout').onclick = logoutStudent;
@@ -284,9 +291,84 @@ async function loadTest(sessionId) {
   showView('test');
   document.getElementById('timer-title').textContent = testState.test_title;
   document.getElementById('student-badge').textContent = `${currentStudent.name} (${currentStudent.id})`;
+  // Answers kept on this phone but never confirmed by the server (e.g. connection dropped): re-send them.
+  const saved = readLocal();
+  pending.clear();
+  for (const q of testState.questions) {
+    if (q.kind === 'writing') continue;
+    if (q.selected_index == null && saved[q.id] != null) { q.selected_index = saved[q.id]; pending.add(q.id); }
+  }
+  flags = new Set(readLocal('flags'));
+  setSave(pending.size ? 'busy' : 'ok');
   renderNav();
   renderQuestion();
   startTimer();
+  startHeartbeat();
+  if (pending.size) flush();
+}
+
+// ---------- reliable answer saving ----------
+const pending = new Set();
+let flushing = false;
+let retryTimer = null;
+let flags = new Set();
+const localKey = (what = 'ans') => `exam_${what}_${testState ? testState.session_id : 'x'}_${currentStudent ? currentStudent.id : 'x'}`;
+function readLocal(what = 'ans') { try { return JSON.parse(localStorage.getItem(localKey(what)) || (what === 'flags' ? '[]' : '{}')); } catch { return what === 'flags' ? [] : {}; } }
+function writeLocal() {
+  try {
+    const map = {};
+    for (const q of testState.questions) if (q.kind !== 'writing' && q.selected_index != null) map[q.id] = q.selected_index;
+    localStorage.setItem(localKey('ans'), JSON.stringify(map));
+    localStorage.setItem(localKey('flags'), JSON.stringify([...flags]));
+  } catch {}
+}
+function setSave(state) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  el.className = `save-status${state === 'ok' ? '' : state === 'busy' ? ' busy' : ' bad'}`;
+  el.textContent = state === 'ok' ? '✓ រក្សាទុកហើយ' : state === 'busy' ? '⏳ កំពុងរក្សាទុក…' : `⚠ មិនទាន់រក្សាទុក (${pending.size}) — កំពុងព្យាយាម`;
+}
+async function flush() {
+  if (PREVIEW || flushing || !testState) return;
+  flushing = true;
+  clearTimeout(retryTimer);
+  let failed = false;
+  for (const qid of [...pending]) {
+    const q = testState.questions.find((x) => x.id === qid);
+    if (!q || q.selected_index == null) { pending.delete(qid); continue; }
+    try {
+      const r = await api('/api/student/answer', { method: 'POST', body: { session_id: testState.session_id, question_id: qid, selected_index: q.selected_index } });
+      if (r.end_at) testState.end_at = r.end_at;
+      // only forget it if the student did not change their mind meanwhile
+      if (testState.questions.find((x) => x.id === qid).selected_index === q.selected_index) pending.delete(qid);
+    } catch (e) {
+      if (e.status === 403 || e.status === 409) { pending.clear(); setSave('ok'); flushing = false; return; }   // exam over / other device
+      failed = true; break;
+    }
+  }
+  flushing = false;
+  if (failed || pending.size) { setSave('bad'); retryTimer = setTimeout(flush, 4000); } else setSave('ok');
+}
+window.addEventListener('online', () => { if (pending.size) flush(); });
+
+// Poll lightly: picks up extra time from the teacher, and tells the teacher we are online.
+let heartbeatTimer = null;
+function startHeartbeat() {
+  clearInterval(heartbeatTimer);
+  if (PREVIEW) return;
+  heartbeatTimer = setInterval(async () => {
+    if (!testState) return clearInterval(heartbeatTimer);
+    try {
+      const r = await api(`/api/student/heartbeat?session_id=${testState.session_id}`);
+      syncClock(r.server_now);
+      if (!r.open) {
+        clearInterval(heartbeatTimer); clearInterval(timerInterval);
+        await Exam.notify('ការប្រឡងត្រូវបានបញ្ចប់។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុក។');
+        testState = null; return boot();
+      }
+      if (r.end_at && r.end_at !== testState.end_at) testState.end_at = r.end_at;
+    } catch {}
+  }, 45000);
 }
 
 // Warn and log when the student leaves the test page (other tab or app).
@@ -329,7 +411,7 @@ function renderNav() {
     const writing = q.kind === 'writing';
     if (!writing && q.selected_index != null) answered++;
     nav.append(h('button', {
-      class: `${q.selected_index != null ? 'answered ' : ''}${writing ? 'writing ' : ''}${i === testState.current ? 'current' : ''}`,
+      class: `${q.selected_index != null ? 'answered ' : ''}${writing ? 'writing ' : ''}${flags.has(q.id) ? 'flagged ' : ''}${i === testState.current ? 'current' : ''}`,
       title: writing ? 'សំណួរសរសេរ' : '',
       onclick: () => { testState.current = i; renderQuestion(); renderNav(); },
     }, writing ? `✎${i + 1 - mcqTotal}` : String(i + 1)));
@@ -367,9 +449,12 @@ function renderQuestion() {
   const card = h('div', { class: 'question-card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:8px;' }, [
       h('span', { class: 'q-count' }, `ផ្នែក ក · សំណួរទី ${currQ} / ${mcqTotal}`),
-      q.selected_index != null
-        ? h('span', { class: 'chip chip-open' }, '✓ បានឆ្លើយ')
-        : h('span', { class: 'chip chip-closed' }, 'មិនទាន់ឆ្លើយ'),
+      h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: `flag-btn${flags.has(q.id) ? ' on' : ''}`, title: 'ចំណាំសំណួរនេះដើម្បីត្រឡប់មកមើលវិញ', onclick: () => toggleFlag(q) }, flags.has(q.id) ? '🚩 បានចំណាំ' : '🏳 ចំណាំ'),
+        q.selected_index != null
+          ? h('span', { class: 'chip chip-open' }, '✓ បានឆ្លើយ')
+          : h('span', { class: 'chip chip-closed' }, 'មិនទាន់ឆ្លើយ'),
+      ]),
     ]),
     mathEl('div', { class: 'q-stem' }, q.stem_text),
     q.image_key ? h('div', { style: 'text-align:center;margin:10px 0;' }, [h('img', { src: `/api/images/${q.image_key}`, style: 'max-height:300px;border-radius:8px;' })]) : null,
@@ -399,9 +484,16 @@ async function selectAnswer(q, idx) {
   renderQuestion();
   renderNav();
   if (PREVIEW) return;
-  try {
-    await api('/api/student/answer', { method: 'POST', body: { session_id: testState.session_id, question_id: q.id, selected_index: idx } });
-  } catch {}
+  writeLocal();
+  pending.add(q.id);
+  setSave('busy');
+  flush();
+}
+
+function toggleFlag(q) {
+  if (flags.has(q.id)) flags.delete(q.id); else flags.add(q.id);
+  if (!PREVIEW) writeLocal();
+  renderQuestion(); renderNav();
 }
 
 function submitPrompt() {
@@ -426,6 +518,7 @@ function submitPrompt() {
     unanswered > 0
       ? h('div', { class: 'callout bad' }, `ប្អូនឆ្លើយបាន ${answered}/${total} — នៅសល់ ${unanswered} សំណួរមិនទាន់ឆ្លើយ!`)
       : h('div', { class: 'callout good' }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
+    flags.size ? h('div', { class: 'callout warn' }, `🚩 ប្អូនមាន ${flags.size} សំណួរដែលបានចំណាំទុក — ត្រឡប់មកមើលវិញមុនប្រគល់?`) : null,
     hasWriting ? h('div', { class: 'callout warn' }, '✎ កុំភ្លេចប្រគល់ក្រដាសឆ្លើយផ្នែកសរសេរ ជូនលោកគ្រូ/អ្នកគ្រូ។') : null,
     h('p', { class: 'muted', style: 'margin:12px 0 18px;' }, 'នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែចម្លើយបានទៀតទេ។'),
     h('div', { style: 'display:flex;flex-direction:column;gap:10px;' }, [
@@ -442,12 +535,25 @@ document.getElementById('submit-btn').addEventListener('click', submitPrompt);
 async function doSubmit(auto) {
   if (PREVIEW) { await Exam.notify('នេះគ្រាន់តែជាការមើលសាកល្បង — គ្មានអ្វីត្រូវបានបញ្ជូនទេ។'); return; }
   clearInterval(timerInterval);
+  clearInterval(heartbeatTimer);
   const sessionId = testState && testState.session_id;
-  try {
-    await api('/api/student/submit', { method: 'POST', body: { session_id: sessionId, submit_type: auto ? 'auto' : 'manual' } });
-  } catch (e) {
-    if (!auto) await Exam.notify(e.message);
+  // give pending saves a few seconds, then send everything we know in the submit itself
+  if (pending.size) await Promise.race([flush(), new Promise((r) => setTimeout(r, 6000))]);
+  const answers = {};
+  for (const q of testState.questions) if (q.kind !== 'writing' && q.selected_index != null) answers[q.id] = q.selected_index;
+  let done = false;
+  for (let attempt = 0; attempt < 4 && !done; attempt++) {
+    try {
+      await api('/api/student/submit', { method: 'POST', body: { session_id: sessionId, submit_type: auto ? 'auto' : 'manual', answers } });
+      done = true;
+    } catch (e) {
+      if (e.status && e.status < 500 && e.status !== 429) { if (!auto) await Exam.notify(e.message); break; }   // refused (e.g. already submitted)
+      await new Promise((r) => setTimeout(r, 1500));                                                             // network trouble: try again
+    }
   }
+  if (!done && !auto) await Exam.notify('មិនអាចបញ្ជូនបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយចុចបញ្ជូនម្តងទៀត។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុកលើទូរស័ព្ទ។');
+  if (!done && !auto) { startTimer(); startHeartbeat(); return; }
+  try { localStorage.removeItem(localKey('ans')); localStorage.removeItem(localKey('flags')); } catch {}
   testState = null;
   boot();
 }

@@ -107,7 +107,27 @@ function showLocked(tab) {
   ]));
 }
 
+async function downloadBackup() {
+  if (typeof XLSX === 'undefined') return Exam.notify('មិនទាន់ដំណើរការបណ្ណាល័យ Excel នៅឡើយទេ។');
+  const d = await api('/api/export');
+  const wb = XLSX.utils.book_new();
+  const sheet = (name, rows) => XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ '': '' }]), name);
+  const cname = Object.fromEntries(d.classes.map((c) => [c.id, c.name]));
+  sheet('Classes', d.classes);
+  sheet('Students', d.students.map((s) => ({ class: cname[s.class_id], ...s })));
+  sheet('Sessions', d.sessions);
+  const sname = Object.fromEntries(d.students.map((s) => [s.id, `${s.surname} ${s.first_name}`]));
+  const sess = Object.fromEntries(d.sessions.map((s) => [s.id, `${s.test_title} — ${s.class_name}`]));
+  sheet('Results', d.results.map((r) => ({ exam: sess[r.session_id], student: sname[r.student_id], ...r })));
+  sheet('Year scores (typed)', d.manual_scores.map((m) => ({ assessment: (d.assessments.find((a) => a.id === m.assessment_id) || {}).title, student: sname[m.student_id], ...m })));
+  sheet('Tests', d.tests);
+  sheet('Questions', d.questions);
+  XLSX.writeFile(wb, `បម្រុងទុក_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
 function initDashboard() {
+  const bk = document.getElementById('backup-btn');
+  if (bk) bk.onclick = () => downloadBackup().catch((e) => Exam.notify(e.message));
   if (ME.status === 'trial') for (const k of Object.keys(LOCK_INFO)) render[k] = () => showLocked(k);
   if (ME.status === 'trial' || ME.status === 'expired') {
     const dash = document.getElementById('view-dashboard');
@@ -369,11 +389,18 @@ async function renderRoster(container) {
   const cls = classes.find((c) => c.id === selectedClassId);
   const { students } = await api(`/api/classes/${selectedClassId}/students`);
 
+  const dobBox = cls && cls.my_role !== 'reviewer' && cls.my_role !== 'sample' ? h('label', { class: 'dob-toggle', title: 'សិស្សត្រូវវាយថ្ងៃកំណើតបន្ថែមលើអត្តលេខ ដើម្បីចូលមើលលទ្ធផល' }, [
+    h('input', { type: 'checkbox', checked: cls.require_dob ? 'checked' : null, style: 'width:18px;height:18px;', onchange: async (e) => {
+      try { await api(`/api/classes/${cls.id}/settings`, { method: 'POST', body: { require_dob: e.target.checked } }); } catch (er) { e.target.checked = !e.target.checked; Exam.notify(er.message); }
+    } }),
+    ' 🔐 សិស្សត្រូវវាយថ្ងៃកំណើតពេលចូល',
+  ]) : null;
   const card = h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between' }, [
       h('h2', {}, `បញ្ជីសិស្ស — ${cls ? cls.name : ''} (សរុប ${students.length} នាក់)`),
       h('button', { class: 'secondary', onclick: () => { selectedClassId = null; render.classes(); } }, '← ត្រឡប់'),
     ]),
+    dobBox,
     h('table', {}, [
       h('thead', {}, h('tr', {}, [
         h('th', {}, 'លេខសម្គាល់'),
@@ -730,8 +757,11 @@ async function renderTestBuilder(container) {
     h('h3', {}, `សំណួរ (${test.questions.length}) — ពហុជ្រើសរើស ${mcqQs.length} សំណួរ ${sum(mcqQs)} ពិន្ទុ · សរសេរ ${wQs.length} សំណួរ ${sum(wQs)} ពិន្ទុ · សរុប ${sum(test.questions)} ពិន្ទុ`),
     ...test.questions.map((q, i) => h('div', { class: 'question-card' }, [
       h('div', { class: 'row', style: 'justify-content:space-between' }, [
-        h('div', {}, [h('strong', {}, `${i + 1}.`), q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null]),
-        h('button', { class: 'danger', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
+        h('div', {}, [h('strong', {}, `${i + 1}.`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
+        h('div', { class: 'row', style: 'gap:6px;' }, [
+          h('button', { class: 'secondary btn-sm', onclick: () => openQuestionEditor(q, test, container) }, '✏️ កែ'),
+          h('button', { class: 'danger btn-sm', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
+        ]),
       ]),
       mathEl('div', {}, q.stem_text),
       q.image_key ? h('img', { src: `/api/images/${q.image_key}` }) : null,
@@ -753,7 +783,10 @@ async function renderTestBuilder(container) {
     header.querySelectorAll('button').forEach((b) => { if (/សម្រាង|រួចរាល់/.test(b.textContent)) b.remove(); });
     return;
   }
-  container.append(header, list, buildQuestionForm(test, container));
+  const topics = [...new Set(test.questions.map((q) => q.topic).filter(Boolean))];
+  const dl = h('datalist', { id: 'topic-list' }, topics.map((t) => h('option', { value: t })));
+  const warn = test.submissions ? h('div', { class: 'callout warn', style: 'margin-bottom:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ — ការកែសំណួរ ឬចម្លើយអាចប៉ះពាល់ពិន្ទុ។`) : null;
+  container.append(warn, dl, header, list, buildQuestionForm(test, container));
 }
 
 function buildQuestionForm(test, container) {
@@ -771,6 +804,9 @@ function buildQuestionForm(test, container) {
   optionInputs.forEach(trackFocus);
   const mathBar = Exam.mathBar(() => mathTarget);
 
+  const topicInput = h('input', { type: 'text', list: 'topic-list', placeholder: 'ឧ. ប្រភាគ' });
+  const levelInput = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក']].map(([v, l]) => h('option', { value: v }, l)));
+  const shuffleInput = h('input', { type: 'checkbox', style: 'width:18px;height:18px;' });
   const kindSelect = h('select', { id: 'q-kind' }, [
     h('option', { value: 'mcq' }, 'ពហុជ្រើសរើស (ផ្នែក ក — ប្រព័ន្ធដាក់ពិន្ទុដោយស្វ័យប្រវត្តិ)'),
     h('option', { value: 'writing' }, 'សរសេរ (ផ្នែក ខ — សិស្សសរសេរលើក្រដាស លោកគ្រូដាក់ពិន្ទុ)'),
@@ -799,6 +835,11 @@ function buildQuestionForm(test, container) {
     writingBlock,
     h('label', {}, 'ពិន្ទុ'),
     pointsInput,
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [
+      h('div', { style: 'flex:1;min-width:150px;' }, [h('label', {}, 'មុខវិជ្ជា / ប្រធានបទ'), topicInput]),
+      h('div', {}, [h('label', {}, 'កម្រិត'), levelInput]),
+      h('label', { style: 'display:flex;gap:8px;align-items:center;color:var(--ink);' }, [shuffleInput, 'លាយជម្រើសចម្លើយ']),
+    ]),
     h('div', { class: 'row', style: 'margin-top:12px' }, [
       h('button', { onclick: async () => {
         const isWriting = kindSelect.value === 'writing';
@@ -815,6 +856,7 @@ function buildQuestionForm(test, container) {
           stem_text: stemInput.value.trim(), options, correct_index: Number(correctSelect.value),
           points: Number(pointsInput.value) || 1, image_key,
           kind: isWriting ? 'writing' : 'mcq', solution_text: isWriting ? solutionInput.value.trim() : null,
+          topic: topicInput.value.trim(), level: levelInput.value, shuffle: shuffleInput.checked && !isWriting,
         } });
         renderTestBuilder(container);
       } }, 'បញ្ចូលសំណួរ'),
@@ -1286,11 +1328,33 @@ async function renderGradingSession(container) {
         } }, 'អនុវត្តទាំងអស់'),
       ]),
       h('div', { class: 'row', style: 'gap:8px;' }, [
+        session.phase !== 'closed' ? h('button', { class: 'secondary btn-sm', title: 'បន្ថែមពេលឱ្យថ្នាក់ទាំងមូល', onclick: async () => {
+          const m = Number(prompt('បន្ថែមពេលប៉ុន្មាននាទីឱ្យថ្នាក់ទាំងមូល?', '5'));
+          if (!m) return;
+          try { await api(`/api/sessions/${selectedSessionId}/extend`, { method: 'POST', body: { minutes: m } }); await Exam.notify(`បានបន្ថែម ${m} នាទី។`); refresh(); } catch (e) { Exam.notify(e.message); }
+        } }, '⏱ បន្ថែមពេលថ្នាក់') : null,
+        h('button', { class: 'secondary btn-sm', title: 'គណនាពិន្ទុឡើងវិញតាមចម្លើយត្រឹមត្រូវបច្ចុប្បន្ន', onclick: async () => {
+          try { const r = await api(`/api/sessions/${selectedSessionId}/rescore`, { method: 'POST' }); await Exam.notify(`បានគណនាឡើងវិញ៖ ផ្លាស់ប្តូរ ${r.changed} នាក់ ក្នុងចំណោម ${r.total}។`); refresh(); } catch (e) { Exam.notify(e.message); }
+        } }, '🔄 រាប់ពិន្ទុឡើងវិញ'),
         h('button', { class: 'secondary btn-sm', onclick: () => window.print() }, '🖨 បោះពុម្ពតារាងពិន្ទុ'),
         h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
       ]),
     ]),
   ]);
+
+  const refresh = () => renderGradingSession(container);
+  const liveButtons = (s) => {
+    if (s.submitted_at || !(s.started_at || s.extra_minutes)) return [];
+    const mini = 'padding:4px 8px;font-size:12px;';
+    return [
+      h('button', { class: 'secondary btn-sm', style: mini, title: 'បន្ថែមពេល ៥ នាទីឱ្យសិស្សនេះ', onclick: async () => { await api(`/api/sessions/${selectedSessionId}/extend`, { method: 'POST', body: { student_id: s.id, minutes: 5 } }); refresh(); } }, "+5'"),
+      s.started_at ? h('button', { class: 'secondary btn-sm', style: mini, title: 'បញ្ជូនចម្លើយជំនួសសិស្ស', onclick: async () => {
+        if (!(await Exam.confirm(`បញ្ជូនចម្លើយដែលបានរក្សាទុករបស់ ${s.surname} ${s.first_name} ជំនួសគាត់ឥឡូវនេះ?`))) return;
+        try { await api(`/api/sessions/${selectedSessionId}/force-submit`, { method: 'POST', body: { student_id: s.id } }); refresh(); } catch (e) { Exam.notify(e.message); }
+      } }, '⏹') : null,
+      s.has_device ? h('button', { class: 'secondary btn-sm', style: mini, title: 'អនុញ្ញាតឱ្យសិស្សបន្តលើទូរស័ព្ទផ្សេង', onclick: async () => { await api(`/api/sessions/${selectedSessionId}/reset-device`, { method: 'POST', body: { student_id: s.id } }); Exam.notify('សិស្សអាចបន្តលើឧបករណ៍ផ្សេងបានហើយ។'); } }, '📱') : null,
+    ].filter(Boolean);
+  };
 
   const rows = session.roster.map((s, idx) => {
     const total = (s.mcq_score ?? 0) + (s.writing_score ?? 0);
@@ -1312,7 +1376,9 @@ async function renderGradingSession(container) {
         statusBadge = h('span', { class: 'badge ready', title: 'សិស្សបានចុចប្រគល់ដោយខ្លួនឯង' }, '✓ ដាក់ផ្ទាល់ (Manual)');
       }
     } else if (s.started_at) {
-      statusBadge = h('span', { class: 'badge open', title: 'សិស្សកំពុងស្ថិតក្នុងការប្រឡង' }, `⏳ កំពុងប្រឡង (${s.answered_count || 0})`);
+      const seen = s.last_seen ? Date.parse(s.last_seen.replace(' ', 'T') + 'Z') : 0;
+      const online = Date.now() - seen < 150000;
+      statusBadge = h('span', { class: `badge ${online ? 'open' : 'warn'}`, title: online ? 'កំពុងតភ្ជាប់' : 'ហាក់បីដូចជាបាត់ការតភ្ជាប់' }, `${online ? '🟢' : '🟠'} កំពុងប្រឡង (${s.answered_count || 0})${s.extra_minutes ? ` · +${s.extra_minutes}'` : ''}`);
     } else {
       statusBadge = h('span', { class: 'badge draft' }, '⚪ មិនទាន់ចូល');
     }
@@ -1367,7 +1433,11 @@ async function renderGradingSession(container) {
       })),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('strong', {}, String(total)) : '—'),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('span', { class: `badge ${grade === 'F' ? 'closed' : 'ready'}` }, `${grade} (${pct}%)`) : '—'),
-      h('td', { class: 'no-print' }, h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap;' }, [reportBtn, resetBtn || (s.published_at ? h('span', { class: 'badge ready' }, 'ផ្សាយហើយ') : h('span', { class: 'muted' }, 'សម្រាង'))])),
+      h('td', { class: 'no-print' }, h('div', { class: 'row', style: 'gap:4px;flex-wrap:wrap;min-width:130px;' }, [
+        ...liveButtons(s), reportBtn,
+        session.writing_max_default && s.submitted_at ? h('button', { class: 'secondary btn-sm', style: 'padding:4px 8px;font-size:12px;', title: 'ដាក់ពិន្ទុសរសេរតាមសំណួរនីមួយៗ', onclick: () => openWritingMarks(session, s, () => renderGradingSession(container)) }, '✎') : null,
+        resetBtn || (s.published_at ? h('span', { class: 'badge ready' }, 'ផ្សាយហើយ') : null),
+      ])),
     ]);
   });
 
@@ -1474,4 +1544,104 @@ function notesBlock(q, test, container) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
   wrap.append(h('div', { class: 'row', style: 'margin-top:6px;' }, [input, h('button', { class: 'secondary btn-sm', onclick: add }, 'ផ្ញើចំណាំ')]));
   return h('div', {}, [open ? h('div', { class: 'badge warn', style: 'margin-top:6px;' }, `💬 ${open} ចំណាំមិនទាន់ដោះស្រាយ`) : null, wrap]);
+}
+
+
+// ---- per-question writing marks
+async function openWritingMarks(session, student, done) {
+  const { questions, marks } = await api(`/api/sessions/${selectedSessionId}/writing-marks`);
+  const mine = Object.fromEntries(marks.filter((m) => m.student_id === student.id).map((m) => [m.question_id, m.score]));
+  const inputs = questions.map((q) => h('input', { type: 'number', min: '0', max: String(q.points), step: 'any', value: mine[q.id] ?? '', style: 'width:90px;', 'data-q': q.id }));
+  const total = h('strong', {}, '');
+  const recount = () => { total.textContent = String(inputs.reduce((t, i) => t + (Number(i.value) || 0), 0)); };
+  inputs.forEach((i) => i.addEventListener('input', recount));
+  recount();
+  const back = h('div', { class: 'modal-back', onclick: (e) => { if (e.target === back) back.remove(); } });
+  back.append(h('div', { class: 'modal-box', style: 'text-align:left;max-width:460px;' }, [
+    h('h2', {}, `✎ ពិន្ទុសរសេរ — ${student.surname} ${student.first_name}`),
+    ...questions.map((q, i) => h('div', { class: 'list-item' }, [h('span', {}, `សំណួរ ខ${i + 1}  (ពេញ ${q.points})`), inputs[i]])),
+    h('div', { class: 'list-item' }, [h('span', {}, 'សរុប'), h('span', {}, [total, ` / ${questions.reduce((t, q) => t + q.points, 0)}`])]),
+    h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px;' }, [
+      h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'),
+      h('button', { onclick: async () => {
+        const body = { student_id: student.id, marks: Object.fromEntries(inputs.map((i) => [i.dataset.q, i.value])) };
+        try { await api(`/api/sessions/${selectedSessionId}/writing-marks`, { method: 'POST', body }); back.remove(); done(); } catch (e) { Exam.notify(e.message); }
+      } }, 'រក្សាទុក'),
+    ]),
+  ]));
+  document.body.append(back);
+}
+
+// ---- edit an existing question (stem, options, answer key, tags, picture)
+function openQuestionEditor(q, test, container) {
+  const isWriting = q.kind === 'writing';
+  const stem = h('textarea', { style: 'min-height:90px;' }); stem.value = q.stem_text;
+  const optInputs = (q.options || []).map((o) => { const i = h('input', { type: 'text' }); i.value = o; return i; });
+  while (!isWriting && optInputs.length < 4) optInputs.push(h('input', { type: 'text', placeholder: 'ជម្រើសបន្ថែម' }));
+  const letters = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
+  const correct = h('select', {}, optInputs.map((_, i) => h('option', { value: i, selected: i === q.correct_index ? 'selected' : null }, `ជម្រើស ${letters[i] || i + 1}`)));
+  const alt = h('select', {}, [h('option', { value: '' }, '— គ្មាន —'), ...optInputs.map((_, i) => h('option', { value: i, selected: q.alt_correct_index === i ? 'selected' : null }, `ជម្រើស ${letters[i] || i + 1}`))]);
+  const points = h('input', { type: 'number', value: q.points, style: 'width:90px;' });
+  const topic = h('input', { type: 'text', list: 'topic-list', placeholder: 'ឧ. ប្រភាគ', value: q.topic || '' });
+  const level = h('select', {}, [['', '— មិនកំណត់ —'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក']].map(([v, l]) => h('option', { value: v, selected: (q.level || '') === v ? 'selected' : null }, l)));
+  const shuffle = h('input', { type: 'checkbox', checked: q.shuffle ? 'checked' : null, style: 'width:18px;height:18px;' });
+  const cancelled = h('input', { type: 'checkbox', checked: q.cancelled ? 'checked' : null, style: 'width:18px;height:18px;' });
+  const solution = h('textarea', { style: 'min-height:70px;' }); solution.value = q.solution_text || '';
+  const removeImg = h('input', { type: 'checkbox', style: 'width:18px;height:18px;' });
+  const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/svg+xml' });
+
+  let target = stem; const track = (f) => f.addEventListener('focus', () => { target = f; });
+  track(stem); optInputs.forEach(track);
+  const back = h('div', { class: 'modal-back', style: 'align-items:flex-start;overflow:auto;', onclick: (e) => { if (e.target === back) back.remove(); } });
+  const box = h('div', { class: 'modal-box', style: 'text-align:left;max-width:640px;margin:20px auto;' }, [
+    h('h2', {}, '✏️ កែសំណួរ'),
+    h('label', {}, 'អត្ថបទសំណួរ'), Exam.mathBar(() => target), stem, Exam.mathPreview(stem),
+    q.image_key ? h('div', {}, [h('img', { src: `/api/images/${q.image_key}`, style: 'max-height:120px;display:block;margin:8px 0;' }), h('label', { style: 'display:flex;gap:8px;align-items:center;' }, [removeImg, 'ដករូបភាពនេះចេញ'])]) : null,
+    h('label', {}, q.image_key ? 'ប្តូររូបភាពថ្មី (មិនចាំបាច់)' : 'រូបភាព (មិនចាំបាច់)'), file,
+    !isWriting ? h('div', {}, [
+      h('label', {}, 'ជម្រើសចម្លើយ (ទុកទទេដើម្បីមិនប្រើ)'), ...optInputs.flatMap((i) => [i, Exam.mathPreview(i)]),
+      h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [
+        h('div', { style: 'flex:1;min-width:160px;' }, [h('label', {}, 'ចម្លើយត្រឹមត្រូវ'), correct]),
+        h('div', { style: 'flex:1;min-width:160px;' }, [h('label', {}, 'ចម្លើយទី២ ដែលទទួលយក (មិនចាំបាច់)'), alt]),
+      ]),
+      h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--ink);' }, [shuffle, 'លាយលំដាប់ជម្រើសចម្លើយសម្រាប់សិស្សម្នាក់ៗ']),
+    ]) : h('div', {}, [h('label', {}, 'ចម្លើយគំរូ / របៀបដាក់ពិន្ទុ'), solution]),
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;margin-top:6px;' }, [
+      h('div', {}, [h('label', {}, 'ពិន្ទុ'), points]),
+      h('div', { style: 'flex:1;min-width:140px;' }, [h('label', {}, 'មុខវិជ្ជា / ប្រធានបទ'), topic]),
+      h('div', {}, [h('label', {}, 'កម្រិត'), level]),
+    ]),
+    !isWriting ? h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:12px;color:#a52a2a;' }, [cancelled, 'បោះបង់សំណួរនេះ — ឱ្យពិន្ទុដល់សិស្សទាំងអស់']) : null,
+    test.submissions ? h('div', { class: 'callout warn', style: 'margin-top:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ។ បើប្តូរចម្លើយត្រឹមត្រូវ ប្រព័ន្ធនឹងសួរឱ្យរាប់ពិន្ទុឡើងវិញ។`) : null,
+    h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:16px;' }, [
+      h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'),
+      h('button', { onclick: async () => {
+        try {
+          const body = { stem_text: stem.value, points: Number(points.value), topic: topic.value, level: level.value };
+          if (isWriting) body.solution_text = solution.value;
+          else {
+            const options = optInputs.map((i) => i.value.trim());
+            const used = options.map((o, i) => [o, i]).filter(([o]) => o);
+            // keep indexes stable: drop only trailing empty options
+            let last = options.length; while (last > 0 && !options[last - 1]) last--;
+            const opts = options.slice(0, last);
+            if (opts.some((o) => !o)) return Exam.notify('សូមកុំទុកជម្រើសទទេនៅចន្លោះ។ ជម្រើសទទេអាចនៅខាងចុងបានតែប៉ុណ្ណោះ។');
+            body.options = opts; body.correct_index = Number(correct.value); body.alt_correct_index = alt.value === '' ? null : Number(alt.value);
+            body.shuffle = shuffle.checked; body.cancelled = cancelled.checked;
+          }
+          if (removeImg.checked) body.image_key = null;
+          if (file.files[0]) { const f = file.files[0]; body.image_key = (await api('/api/images', { method: 'POST', body: await f.arrayBuffer(), contentType: f.type })).key; }
+          const r = await api(`/api/questions/${q.id}`, { method: 'PUT', body });
+          back.remove();
+          if (r.key_changed && r.submissions > 0 && await Exam.confirm(`ចម្លើយត្រឹមត្រូវត្រូវបានផ្លាស់ប្តូរ។ រាប់ពិន្ទុឡើងវិញសម្រាប់សិស្ស ${r.submissions} នាក់ដែលបានប្រគល់រួចហើយឬ?`)) {
+            const rs = await api(`/api/tests/${test.id}/rescore`, { method: 'POST' });
+            await Exam.notify(`បានគណនាឡើងវិញ៖ ពិន្ទុរបស់សិស្ស ${rs.changed} នាក់ត្រូវបានកែ។`);
+          }
+          renderTestBuilder(container);
+        } catch (e) { Exam.notify(e.message); }
+      } }, 'រក្សាទុក'),
+    ]),
+  ]);
+  back.append(box);
+  document.body.append(back);
 }

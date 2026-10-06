@@ -18,6 +18,10 @@
     <p class="muted">សូមបញ្ចូលអត្តលេខរបស់អ្នក ដើម្បីមើលលទ្ធផល និងការប្រឡងខាងមុខ។</p>
     <label for="login-id">អត្តលេខសិស្ស</label>
     <input type="text" id="login-id" class="big-input" autocomplete="off" inputmode="numeric" placeholder="ឧ. 0109293">
+    <div id="dob-wrap" hidden>
+      <label for="login-dob">ថ្ងៃខែឆ្នាំកំណើត (ឧ. 15/03/2012)</label>
+      <input type="text" id="login-dob" class="big-input" autocomplete="off" inputmode="numeric" placeholder="ថ្ងៃ/ខែ/ឆ្នាំ">
+    </div>
     <button id="login-submit" class="btn-block">ចូល</button>
     <a href="index.html" class="back-link">← ទំព័រដើម</a>
   </div>
@@ -55,7 +59,7 @@
   <div class="timer" id="timer-bar">
     <div style="min-width:0;">
       <div id="timer-title" class="timer-title"></div>
-      <div id="student-badge" class="muted" style="font-size:12px;"></div>
+      <div style="display:flex;gap:10px;align-items:center;"><span id="student-badge" class="muted" style="font-size:12px;"></span><span id="save-status" class="save-status">✓ រក្សាទុកហើយ</span></div>
     </div>
     <div id="timer-clock" class="timer-clock"></div>
   </div>

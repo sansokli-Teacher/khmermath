@@ -1,19 +1,31 @@
 // Small shared helpers — no framework, plain globals (matches the rest of the khmermath.org tooling).
 const Exam = {};
 
+// One id per browser, so an exam started on one phone cannot be silently continued on another.
+Exam.deviceId = function () {
+  try {
+    let d = localStorage.getItem('exam_device');
+    if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()); localStorage.setItem('exam_device', d); }
+    return d;
+  } catch { return 'nostorage'; }
+};
+
 Exam.api = async function (path, options = {}) {
   const res = await fetch(path, {
     method: options.method || 'GET',
     credentials: 'include',
-    headers: options.body instanceof ArrayBuffer || options.body instanceof Blob
-      ? { 'Content-Type': options.contentType || 'application/octet-stream' }
-      : options.body ? { 'Content-Type': 'application/json' } : {},
+    headers: {
+      'X-Device': Exam.deviceId(),
+      ...(options.body instanceof ArrayBuffer || options.body instanceof Blob
+        ? { 'Content-Type': options.contentType || 'application/octet-stream' }
+        : options.body ? { 'Content-Type': 'application/json' } : {}),
+    },
     body: options.body
       ? (options.body instanceof ArrayBuffer || options.body instanceof Blob ? options.body : JSON.stringify(options.body))
       : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (!res.ok) { const e = new Error(data.error || `Request failed (${res.status})`); e.data = data; e.status = res.status; throw e; }
   return data;
 };
 

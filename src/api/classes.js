@@ -6,7 +6,7 @@ export async function listClasses(req, env) {
   if (!t) return err('Not logged in.', 401);
   const mine = await accessibleClasses(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT c.id, c.name, c.grade, c.owner_id, COUNT(s.id) AS student_count,
+    `SELECT c.id, c.name, c.grade, c.owner_id, c.require_dob, COUNT(s.id) AS student_count,
             COALESCE(o.display_name, o.username) AS owner_name
      FROM classes c LEFT JOIN students s ON s.class_id = c.id LEFT JOIN teachers o ON o.id = c.owner_id
      GROUP BY c.id ORDER BY c.grade, c.name`,
@@ -111,5 +111,12 @@ export async function deleteClass(req, env, params) {
   await env.DB.prepare("DELETE FROM shares WHERE resource_type = 'class' AND resource_id = ?1").bind(classId).run();
   const result = await env.DB.prepare('DELETE FROM classes WHERE id = ?1').bind(classId).run();
   if (!result.meta.rows_written) return err('Class not found.', 404);
+  return json({ ok: true });
+}
+
+export async function classSettings(req, env, params) {
+  const g = await needClass(req, env, params.classId, 'edit'); if (g.resp) return g.resp;
+  const { require_dob } = await req.json();
+  await env.DB.prepare('UPDATE classes SET require_dob = ?1 WHERE id = ?2').bind(require_dob ? 1 : 0, params.classId).run();
   return json({ ok: true });
 }
