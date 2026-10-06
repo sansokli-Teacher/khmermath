@@ -148,10 +148,20 @@ export async function deleteQuestion(req, env, params) {
 
 export async function deleteTest(req, env, params) {
   const g = await needTest(req, env, params.testId, 'own'); if (g.resp) return g.resp;
-  await env.DB.prepare('DELETE FROM question_notes WHERE question_id IN (SELECT id FROM test_questions WHERE test_id = ?1)').bind(params.testId).run();
-  await env.DB.prepare("DELETE FROM shares WHERE resource_type = 'test' AND resource_id = ?1").bind(params.testId).run();
-  await env.DB.prepare('DELETE FROM test_questions WHERE test_id = ?1').bind(params.testId).run();
-  await env.DB.prepare('DELETE FROM test_sessions WHERE test_id = ?1').bind(params.testId).run();
+  await ensureColumns(env);
+  const id = params.testId;
+  const sess = '(SELECT id FROM test_sessions WHERE test_id = ?1)';
+  const qs = '(SELECT id FROM test_questions WHERE test_id = ?1)';
+  // children first (responses/results point at sessions, students and questions)
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM responses WHERE session_id IN ${sess} OR question_id IN ${qs}`).bind(id),
+    env.DB.prepare(`DELETE FROM results WHERE session_id IN ${sess}`).bind(id),
+    env.DB.prepare(`DELETE FROM writing_marks WHERE session_id IN ${sess} OR question_id IN ${qs}`).bind(id),
+    env.DB.prepare(`DELETE FROM question_notes WHERE question_id IN ${qs}`).bind(id),
+    env.DB.prepare("DELETE FROM shares WHERE resource_type = 'test' AND resource_id = ?1").bind(id),
+    env.DB.prepare('DELETE FROM test_questions WHERE test_id = ?1').bind(id),
+    env.DB.prepare('DELETE FROM test_sessions WHERE test_id = ?1').bind(id),
+  ]);
   const result = await env.DB.prepare('DELETE FROM tests WHERE id = ?1').bind(params.testId).run();
   if (!result.meta.rows_written) return err('Test not found.', 404);
   return json({ ok: true });
