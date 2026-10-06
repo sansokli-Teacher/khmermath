@@ -1759,6 +1759,95 @@
       ];
     },
   });
+  // Grade 8, lesson 17 §1, the practice problem: the lines d (through A) and d' (through B) carry the
+  // medians from A and B. G = d ∩ d'; the midpoint M of AB (mediator); the median from C runs along MG
+  // and GC = 2·GM, found with the compass; then C is joined to A and B. G is dragged.
+  var MEDC = { A: [190, 392], B: [450, 392] };
+  CX['g8-l17-medians-construct'] = scripted({
+    steps: 9,
+    start: { G: [296, 272] },
+    place: function (s, key, p) { return [Math.max(140, Math.min(500, p[0])), Math.max(120, Math.min(330, p[1]))]; },
+    limit: function (s, key, p) {
+      var M = mul(add(MEDC.A, MEDC.B), 0.5), C = sub(mul(p, 3), mul(M, 2));
+      return C[0] > 40 && C[0] < W - 40 && C[1] > 30 && Math.abs(p[0] - M[0]) >= 12 && len(sub(p, M)) >= 90;
+    },
+    figure: function (s) {
+      var A = MEDC.A, B = MEDC.B, G = s.G, M = mul(add(A, B), 0.5), u = unit(sub(G, M)), r = len(sub(G, M));
+      var N = add(G, mul(u, r)), C = add(G, mul(u, 2 * r)), spot = function (c, X) { var t = aimAt(c, X); return { c: c, r: r, t1: t - 0.24, t2: t + 0.24 }; };
+      return { A: A, B: B, G: G, M: M, N: N, C: C, u: u, r: r, md: mediatorOf(A, B, G), a1: spot(G, N), a2: spot(N, C),
+        dEnd: add(A, mul(unit(sub(G, A)), len(sub(G, A)) + 70)), eEnd: add(B, mul(unit(sub(G, B)), len(sub(G, B)) + 70)) };
+    },
+    base: function (f, ink) {
+      segLine(ink, f.A, f.dEnd, 'cx-line'); segLine(ink, f.B, f.eEnd, 'cx-line');
+      label(ink, add(f.dEnd, [14, -6]), 'd', 'cx-label'); label(ink, add(f.eEnd, [-14, -6]), "d′", 'cx-label');
+    },
+    top: function (f, ink, i) {
+      point(ink, f.A, 'A', [-0.7, 0.8], null, null, 22); point(ink, f.B, 'B', [0.7, 0.8], null, null, 22);
+      if (i >= 1) el('circle', { cx: f.G[0], cy: f.G[1], r: 24, class: 'cx-grab', 'data-drag': 'G' }, ink);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [],
+        [['pt', f.G, 'G', [0.8, -0.7], 'cx-pt-m', 22]],
+        f.md.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.md.e1, f.md.e2, aux], ['pt', f.M, 'M', DOWN, null, 22], ['mark', function (g) { tick(g, f.A, f.M); tick(g, f.M, f.B); }]],
+        [['seg', f.M, add(f.G, mul(f.u, 2.7 * f.r)), 'cx-line']],
+        [['arc', f.a1], ['mark', function (g) { tick(g, f.M, f.G); }]],
+        [['arc', f.a2], ['mark', function (g) { tick(g, f.G, f.N); tick(g, f.N, f.C); }], ['pt', f.C, 'C', f.u, 'cx-pt-m', 22]],
+        [['seg', f.C, f.A, 'cx-seg'], ['seg', f.C, f.B, 'cx-seg']],
+        [],
+      ];
+    },
+  });
+
+  // Grade 8, lesson 17 §2/§3/exercise 13: the lines through A, B, C parallel to the opposite sides form
+  // a triangle A′B′C′ in which A, B, C are the midpoints; each is found with the compass as the fourth
+  // corner of a parallelogram. Then the altitudes of ABC (the mediators of A′B′C′) meet at H.
+  CX['g8-l17-big-triangle'] = scripted({
+    steps: 11,
+    start: { A: [330, 118], B: [240, 262], C: [420, 270] },
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      var q = [add(t.B, sub(t.C, t.A)), add(t.A, sub(t.C, t.B)), add(t.A, sub(t.B, t.C))], ok = true;
+      q.forEach(function (X) { if (X[0] < 26 || X[0] > W - 26 || X[1] < 26 || X[1] > H - 26) ok = false; });
+      return ok && t.least >= 90 && Math.min.apply(null, t.angles) >= 0.55 && Math.max.apply(null, t.angles) <= 1.42;
+    },
+    figure: function (s) {
+      var f = triangleOf(s), A = f.A, B = f.B, C = f.C;
+      var line = function (p1, p2, p3, p4) {
+        var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]), a = p1[0] * p2[1] - p1[1] * p2[0], b = p3[0] * p4[1] - p3[1] * p4[0];
+        return [(a * (p3[0] - p4[0]) - (p1[0] - p2[0]) * b) / d, (a * (p3[1] - p4[1]) - (p1[1] - p2[1]) * b) / d];
+      }, spot = function (c, r, X) { var t = aimAt(c, X); return { c: c, r: r, t1: t - 0.2, t2: t + 0.2 }; };
+      f.Ap = add(B, sub(C, A)); f.Bp = add(A, sub(C, B)); f.Cp = add(A, sub(B, C));
+      f.Ha = footOn(A, B, C); f.Hb = footOn(B, A, C); f.Hc = footOn(C, A, B); f.H = line(A, f.Ha, B, f.Hb);
+      f.arcsA = [spot(B, f.b, f.Ap), spot(C, f.c, f.Ap)]; f.arcsB = [spot(A, f.a, f.Bp), spot(C, f.c, f.Bp)]; f.arcsC = [spot(A, f.a, f.Cp), spot(B, f.b, f.Cp)];
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var out = function (X) { return sub(X, f.G); };
+      var pr = function (P, Q) { return ['seg', P, Q, 'cx-line']; };
+      return [
+        [],
+        f.arcsA.map(function (a) { return ['arc', a]; }),
+        [pr(f.B, f.Ap), pr(f.C, f.Ap), ['pt', f.Ap, 'A′', out(f.Ap), null, 22]],
+        f.arcsB.map(function (a) { return ['arc', a]; }),
+        [pr(f.A, f.Bp), pr(f.C, f.Bp), ['pt', f.Bp, 'B′', out(f.Bp), null, 22]],
+        f.arcsC.map(function (a) { return ['arc', a]; }),
+        [pr(f.A, f.Cp), pr(f.B, f.Cp), ['pt', f.Cp, 'C′', out(f.Cp), null, 22],
+          ['mark', function (g) { tick(g, f.Bp, f.A); tick(g, f.A, f.Cp); }]],
+        [['perp', f.A, f.B, f.C], ['mark', function (g) {
+          rightAt(g, f.Ha, f.A, f.B, f.C); rightMark(g, f.A, unit(sub(f.Ha, f.A)), unit(sub(f.Cp, f.A)));
+        }]],
+        [['perp', f.B, f.A, f.C], ['mark', function (g) { rightAt(g, f.Hb, f.B, f.A, f.C); tick(g, f.Ap, f.C); tick(g, f.C, f.Bp); }]],
+        [['perp', f.C, f.A, f.B], ['mark', function (g) { rightAt(g, f.Hc, f.C, f.A, f.B); tick(g, f.Ap, f.B); tick(g, f.B, f.Cp); }],
+          ['pt', f.H, 'H', [0.9, 0.5], 'cx-pt-m', 22]],
+        [],
+      ];
+    },
+  });
   // the centres and radii of the three excircles (opposite A, B, C)
   function excentres(t) {
     var a = t.a, b = t.b, c = t.c, s = (a + b + c) / 2, area = t.r * s;
