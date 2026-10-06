@@ -70,6 +70,8 @@ const ROUTES = [
   ['POST', '/api/student/login', student.login],
   ['POST', '/api/student/logout', student.logout],
   ['GET', '/api/student/status', student.status],
+  ['GET', '/api/student/review', student.review],
+  ['GET', '/api/sessions/:sessionId/review/:studentId', student.teacherReview],
   ['POST', '/api/student/start', student.start],
   ['GET', '/api/student/test', student.getTest],
   ['POST', '/api/student/answer', student.answer],

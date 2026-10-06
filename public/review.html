@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>របាយការណ៍លទ្ធផល</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/review.css">
+<script src="katex/katex.min.js"></script>
+</head>
+<body class="review-body">
+
+<div class="review-toolbar no-print">
+  <div class="review-toolbar-in">
+    <a href="student.html" id="back-link" class="btn secondary">← ត្រឡប់</a>
+    <div class="row">
+      <button id="filter-all" class="secondary btn-sm is-on">ទាំងអស់</button>
+      <button id="filter-wrong" class="secondary btn-sm">❌ ខុស</button>
+      <button id="filter-right" class="secondary btn-sm">✅ ត្រូវ</button>
+      <button id="print-btn">📄 ទាញយក PDF</button>
+    </div>
+  </div>
+  <div class="review-hint">ពេលចុច «ទាញយក PDF» សូមជ្រើស «Save as PDF / រក្សាទុកជា PDF» ជាគោលដៅ ហើយបិទ «Headers and footers»។</div>
+</div>
+
+<main class="report" id="report"></main>
+
+<script src="js/common.js"></script>
+<script src="js/mathtype.js"></script>
+<script src="js/review.js"></script>
+</body>
+</html>

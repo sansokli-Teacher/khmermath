@@ -1,5 +1,5 @@
 import { json, err } from '../lib/http.js';
-import { createSessionCookie, clearSessionCookie, requireStudent } from '../lib/session.js';
+import { createSessionCookie, clearSessionCookie, requireStudent, requireTeacher } from '../lib/session.js';
 import { sessionWindow } from '../lib/time.js';
 import { ensureColumns } from './sessions.js';
 import { studentYear } from './year.js';
@@ -240,4 +240,63 @@ export async function submit(req, env) {
   ).bind(active.id, studentSession.id, mcqScore, mcqMax, submitType).run();
 
   return json({ ok: true, submit_type: submitType });
+}
+
+// Per-question review of one student's attempt: what they chose, what was right.
+async function buildReview(env, sessionId, studentId, { onlyIfPublished }) {
+  await ensureColumns(env);
+  const ses = await env.DB.prepare(
+    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, t.title AS test_title, c.name AS class_name
+     FROM test_sessions ts JOIN tests t ON t.id = ts.test_id JOIN classes c ON c.id = ts.class_id WHERE ts.id = ?1`,
+  ).bind(sessionId).first();
+  if (!ses) return { error: err('រកមិនឃើញការប្រឡងនេះទេ។', 404) };
+  const stu = await env.DB.prepare('SELECT id, surname, first_name, gender, class_id FROM students WHERE id = ?1').bind(studentId).first();
+  if (!stu || stu.class_id !== ses.class_id) return { error: err('រកមិនឃើញសិស្សក្នុងថ្នាក់នេះទេ។', 404) };
+  const result = await env.DB.prepare(
+    'SELECT mcq_score, mcq_max, writing_score, writing_max, submitted_at, published_at FROM results WHERE session_id = ?1 AND student_id = ?2',
+  ).bind(sessionId, studentId).first();
+  if (!result || !result.submitted_at) return { error: err('សិស្សនេះមិនបានប្រគល់ការប្រឡងនេះទេ។', 404) };
+  if (onlyIfPublished && !result.published_at) return { error: err('លទ្ធផលមិនទាន់ត្រូវបានប្រកាសនៅឡើយទេ។', 403) };
+
+  const { results: qs } = await env.DB.prepare(
+    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, points, kind, solution_text FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+  ).bind(ses.test_id).all();
+  const { results: rs } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
+    .bind(sessionId, studentId).all();
+  const chosen = Object.fromEntries(rs.map((r) => [r.question_id, r.selected_index]));
+
+  const questions = qs.map((q) => {
+    if (q.kind === 'writing') {
+      return { id: q.id, order_no: q.order_no, kind: 'writing', stem_text: q.stem_text, image_key: q.image_key, points: q.points, solution_text: q.solution_text };
+    }
+    const sel = chosen[q.id] ?? null;
+    return {
+      id: q.id, order_no: q.order_no, kind: 'mcq', stem_text: q.stem_text, image_key: q.image_key,
+      options: JSON.parse(q.options_json), selected_index: sel, correct_index: q.correct_index,
+      points: q.points, correct: sel === q.correct_index,
+    };
+  });
+  return {
+    review: {
+      test_title: ses.test_title, class_name: ses.class_name, date: ses.scheduled_start,
+      student: { id: stu.id, name: `${stu.surname} ${stu.first_name}` },
+      mcq_score: result.mcq_score, mcq_max: result.mcq_max,
+      writing_score: result.writing_score, writing_max: result.writing_max,
+      questions,
+    },
+  };
+}
+
+export async function review(req, env) {
+  const studentSession = await requireStudent(req, env);
+  if (!studentSession) return err('Not logged in.', 401);
+  const sessionId = Number(new URL(req.url).searchParams.get('session_id'));
+  const { error, review: r } = await buildReview(env, sessionId, studentSession.id, { onlyIfPublished: true });
+  return error || json(r);
+}
+
+export async function teacherReview(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const { error, review: r } = await buildReview(env, Number(params.sessionId), params.studentId, { onlyIfPublished: false });
+  return error || json(r);
 }

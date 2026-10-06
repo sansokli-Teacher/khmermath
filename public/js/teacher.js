@@ -1185,6 +1185,8 @@ async function renderGradingSession(container) {
       }
     }, '🔄 Reset') : null;
 
+    const reportBtn = s.submitted_at ? h('a', { class: 'btn secondary btn-sm', style: 'padding:4px 8px;font-size:12px;', target: '_blank', href: `review.html?session=${selectedSessionId}&student=${encodeURIComponent(s.id)}`, title: 'របាយការណ៍ត្រូវ/ខុស របស់សិស្សនេះ' }, '📄') : null;
+
     return h('tr', {}, [
       h('td', { class: 'muted' }, idx + 1),
       h('td', {}, h('strong', {}, s.id)),
@@ -1212,7 +1214,7 @@ async function renderGradingSession(container) {
       })),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('strong', {}, String(total)) : '—'),
       h('td', {}, (s.submitted_at || s.writing_score != null) ? h('span', { class: `badge ${grade === 'F' ? 'closed' : 'ready'}` }, `${grade} (${pct}%)`) : '—'),
-      h('td', {}, resetBtn || (s.published_at ? h('span', { class: 'badge ready' }, 'ផ្សាយហើយ') : h('span', { class: 'muted' }, 'សម្រាង'))),
+      h('td', { class: 'no-print' }, h('div', { class: 'row', style: 'gap:4px;flex-wrap:nowrap;' }, [reportBtn, resetBtn || (s.published_at ? h('span', { class: 'badge ready' }, 'ផ្សាយហើយ') : h('span', { class: 'muted' }, 'សម្រាង'))])),
     ]);
   });
 

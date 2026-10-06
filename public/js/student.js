@@ -230,6 +230,10 @@ function historyCard(s) {
         h('span', {}, `ពហុជ្រើសរើស ${s.mcq_score}/${s.mcq_max}`),
         s.writing_score != null ? h('span', {}, `សរសេរ ${s.writing_score}/${s.writing_max}`) : null,
       ]),
+      h('div', { class: 'row', style: 'margin-top:12px;' }, [
+        h('a', { class: 'btn secondary btn-sm', href: `review.html?session=${s.session_id}` }, '🔍 មើលចម្លើយត្រូវ/ខុស'),
+        h('a', { class: 'btn btn-sm', href: `review.html?session=${s.session_id}&print=1`, title: 'រក្សាទុកជា PDF' }, '📄 ទាញយករបាយការណ៍ PDF'),
+      ]),
     ]);
   }
   const text = s.state === 'pending' ? ['⏳ បានប្រគល់ — រង់ចាំលោកគ្រូប្រកាសលទ្ធផល', 'chip-soon'] : ['អវត្តមាន — មិនបានចូលប្រឡង', 'chip-closed'];
