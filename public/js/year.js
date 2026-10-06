@@ -178,6 +178,31 @@ function scoreTable(data) {
     pctCell(s.scores.pre?.pct), pctCell(s.scores.m1?.pct), pctCell(s.scores.m2?.pct), pctCell(s.monthly_avg, true),
     manualCell(s, 'sem1'), pctCell(s.semester1, true), manualCell(s, 'final'), pctCell(s.year_avg, true),
   ]));
+  // Fill the typed-score boxes from an Excel/CSV sheet (ID + score columns); nothing is saved until 💾.
+  const importKey = h('select', { style: 'width:auto;' }, [h('option', { value: 'sem1' }, `${A.sem1.title} (${A.sem1.month_label})`), h('option', { value: 'final' }, `${A.final.title} (${A.final.month_label})`)]);
+  const importFile = h('input', { type: 'file', accept: '.xlsx,.xls,.csv', style: 'max-width:240px;' });
+  importFile.addEventListener('change', async () => {
+    if (!importFile.files[0]) return;
+    try {
+      const wb = XLSX.read(await importFile.files[0].arrayBuffer(), { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }).filter((r) => r.some((c) => c !== ''));
+      const head = rows[0].map((c) => String(c).trim().toLowerCase());
+      let idCol = head.findIndex((c) => /^(id|អត្តលេខ|លេខសម្គាល់|student id)/.test(c));
+      let scoreCol = head.findIndex((c) => /^(score|ពិន្ទុ|mark|total|សរុប)/.test(c));
+      let body = rows.slice(1);
+      if (idCol < 0 || scoreCol < 0) { idCol = 0; scoreCol = 1; body = /^\d/.test(String(rows[0][0])) ? rows : rows.slice(1); }
+      let ok = 0; const missing = [];
+      for (const r of body) {
+        const id = String(r[idCol]).trim(); const v = String(r[scoreCol]).trim();
+        if (!id || v === '') continue;
+        const inp = manualInputs.find((i) => i.dataset.student === id && i.dataset.key === importKey.value);
+        if (inp) { inp.value = Number(v); inp.style.background = '#e3f6ec'; ok++; } else missing.push(id);
+      }
+      await Exam.notify(`បានបំពេញពិន្ទុ ${ok} នាក់${missing.length ? `\nរកមិនឃើញអត្តលេខ ${missing.length}៖ ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? '…' : ''}` : ''}\n\nសូមពិនិត្យ រួចចុច «💾 រក្សាទុកពិន្ទុ»។`);
+    } catch (e) { Exam.notify(`មិនអាចអានឯកសារបានទេ៖ ${e.message}`); }
+    importFile.value = '';
+  });
+
   const save = h('button', { onclick: async () => {
     try {
       for (const key of ['sem1', 'final']) {
@@ -193,9 +218,13 @@ function scoreTable(data) {
     data.students.length === 0 ? h('p', { class: 'muted' }, 'ថ្នាក់នេះមិនទាន់មានសិស្សទេ។') : h('table', {}, [
       h('thead', {}, h('tr', {}, head.map((t) => h('th', {}, t)))), h('tbody', {}, rows),
     ]),
-    h('div', { class: 'row no-print', style: 'margin-top:14px;justify-content:flex-end;' }, [
-      h('button', { class: 'secondary', onclick: () => window.print() }, '🖨 បោះពុម្ព'),
-      save,
+    h('div', { class: 'row no-print', style: 'margin-top:14px;justify-content:space-between;' }, [
+      h('div', { class: 'row', style: 'gap:6px;' }, [h('span', { class: 'muted' }, '📥 នាំចូលពីសៀវភៅ Excel៖'), importKey, importFile]),
+      h('div', { class: 'row' }, [
+        h('button', { class: 'secondary', onclick: () => window.open(`reportcard.html?class=${data.class.id}`, '_blank') }, '📄 សៀវភៅរបាយការណ៍ (ទាំងថ្នាក់)'),
+        h('button', { class: 'secondary', onclick: () => window.print() }, '🖨 បោះពុម្ព'),
+        save,
+      ]),
     ]),
   ]);
 }

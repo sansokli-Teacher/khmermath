@@ -92,6 +92,7 @@ const LOCK_INFO = {
   grading: ['ដាក់ពិន្ទុ & លទ្ធផល', 'មើលលទ្ធផលផ្ទាល់ ដាក់ពិន្ទុសរសេរ ផ្សព្វផ្សាយ និងវិភាគសំណួរ។'],
   year: ['ពិន្ទុប្រចាំឆ្នាំ', 'ពិន្ទុបុរេតេស្ត ប្រចាំខែ ឆមាស និងស្ថិតិ A-F តាមភេទ។'],
   overview: ['សង្ខេបគ្រប់ថ្នាក់', 'ប្រៀបធៀបលទ្ធផលថ្នាក់ផ្សេងៗ។'],
+  bank: ['ធនាគារសំណួរ', 'ប្រើសំណួរឡើងវិញ និងបង្កើតតេស្តដោយចៃដន្យតាមកម្រិត និងប្រធានបទ។'],
 };
 function showLocked(tab) {
   const [title, desc] = LOCK_INFO[tab] || ['', ''];
@@ -786,7 +787,7 @@ async function renderTestBuilder(container) {
   const topics = [...new Set(test.questions.map((q) => q.topic).filter(Boolean))];
   const dl = h('datalist', { id: 'topic-list' }, topics.map((t) => h('option', { value: t })));
   const warn = test.submissions ? h('div', { class: 'callout warn', style: 'margin-bottom:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ — ការកែសំណួរ ឬចម្លើយអាចប៉ះពាល់ពិន្ទុ។`) : null;
-  container.append(warn, dl, header, list, buildQuestionForm(test, container));
+  container.append(warn, dl, header, list, buildQuestionForm(test, container), importQuestionsCard(test, container));
 }
 
 function buildQuestionForm(test, container) {

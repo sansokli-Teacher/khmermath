@@ -224,3 +224,104 @@ export async function setSample(req, env, params) {
   await env.DB.prepare('UPDATE tests SET is_sample = ?1 WHERE id = ?2').bind(is_sample ? 1 : 0, params.testId).run();
   return json({ ok: true });
 }
+
+// ---------- question bank: every question from tests this teacher owns or can edit ----------
+async function bankRows(env, t, { dedupe = true } = {}) {
+  const mine = await accessibleTests(env, t);
+  const ids = [...mine.entries()].filter(([, r]) => r === 'owner' || r === 'editor').map(([id]) => id);
+  if (!ids.length) return [];
+  const ph = ids.map(() => '?').join(',');
+  const { results } = await env.DB.prepare(
+    `SELECT q.id, q.test_id, x.title AS test_title, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind,
+            q.topic, q.level, q.shuffle, q.solution_text, q.cancelled
+     FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ph}) ORDER BY q.test_id DESC, q.order_no`,
+  ).bind(...ids).all();
+  if (!dedupe) return results.filter((q) => !q.cancelled);
+  // the same question often lives in several tests (copies) — show it once, preferring the tagged copy
+  const byKey = new Map();
+  for (const q of results) {
+    if (q.cancelled) continue;
+    const k = `${q.kind}|${q.stem_text}|${q.options_json}`;
+    const cur = byKey.get(k);
+    if (!cur || ((!cur.topic || !cur.level) && (q.topic || q.level) && (q.topic ? 1 : 0) + (q.level ? 1 : 0) > (cur.topic ? 1 : 0) + (cur.level ? 1 : 0))) byKey.set(k, q);
+  }
+  return [...byKey.values()];
+}
+
+export async function listBank(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  await ensureColumns(env);
+  const rows = await bankRows(env, g0.t);
+  return json({ questions: rows.map((q) => ({ ...q, options: JSON.parse(q.options_json), options_json: undefined })) });
+}
+
+async function copyInto(env, testId, q) {
+  const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(testId).all();
+  await env.DB.prepare(
+    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
+  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle).run();
+}
+
+// copy chosen questions into a test
+export async function copyQuestions(req, env, params) {
+  const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
+  const { question_ids } = await req.json();
+  if (!Array.isArray(question_ids) || !question_ids.length) return err('question_ids is required.', 400);
+  const bank = await bankRows(env, g.t, { dedupe: false });
+  const byId = new Map(bank.map((q) => [q.id, q]));
+  let n = 0;
+  for (const id of question_ids.slice(0, 200)) { const q = byId.get(Number(id)); if (q) { await copyInto(env, Number(params.testId), q); n++; } }
+  return json({ ok: true, copied: n });
+}
+
+// build a new draft test by picking random questions per difficulty
+export async function generateTest(req, env) {
+  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  await ensureColumns(env);
+  const { title, counts, topics, kind } = await req.json();
+  if (!title || !String(title).trim()) return err('title is required.', 400);
+  const bank = (await bankRows(env, g0.t)).filter((q) => (kind === 'writing' ? q.kind === 'writing' : kind === 'all' ? true : q.kind !== 'writing'))
+    .filter((q) => !topics || !topics.length || topics.includes(q.topic));
+  const shuffle = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+  const picked = []; const shortage = {};
+  for (const lvl of ['easy', 'medium', 'hard']) {
+    const want = Math.min(Math.max(Number(counts && counts[lvl]) || 0, 0), 100);
+    const pool = shuffle(bank.filter((q) => q.level === lvl));
+    picked.push(...pool.slice(0, want));
+    if (pool.length < want) shortage[lvl] = want - pool.length;
+  }
+  if (!picked.length) return err('មិនមានសំណួរគ្រប់គ្រាន់ក្នុងធនាគារតាមលក្ខខណ្ឌនេះទេ។', 400);
+  const { meta } = await env.DB.prepare('INSERT INTO tests (title, owner_id) VALUES (?1, ?2)').bind(String(title).trim(), g0.t.id).run();
+  for (const q of picked) await copyInto(env, meta.last_row_id, q);
+  await audit(env, g0.t, 'bank.generate', `test ${meta.last_row_id}: ${picked.length} questions`);
+  return json({ ok: true, id: meta.last_row_id, picked: picked.length, shortage });
+}
+
+// import many questions at once (from the Excel template)
+export async function bulkAdd(req, env, params) {
+  const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const { questions } = await req.json();
+  if (!Array.isArray(questions) || !questions.length) return err('questions[] is required.', 400);
+  if (questions.length > 200) return err('នាំចូលបានអតិបរមា ២០០ សំណួរម្តង។', 400);
+  const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(params.testId).all();
+  let order = results[0].m;
+  const stmts = []; const bad = [];
+  questions.forEach((q, i) => {
+    const writing = q.kind === 'writing';
+    const stem = String(q.stem_text || '').trim();
+    const opts = Array.isArray(q.options) ? q.options.map((o) => String(o).trim()).filter(Boolean) : [];
+    if (!stem || (!writing && (opts.length < 2 || !Number.isInteger(q.correct_index) || q.correct_index < 0 || q.correct_index >= opts.length))) { bad.push(i + 1); return; }
+    order += 1;
+    stmts.push(env.DB.prepare(
+      `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`,
+    ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(1, Math.round(Number(q.points) || (writing ? 5 : 1))),
+      writing ? 'writing' : 'mcq', q.solution_text ? String(q.solution_text) : null, q.topic ? String(q.topic).slice(0, 60) : null,
+      ['easy', 'medium', 'hard'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0)));
+  });
+  if (stmts.length) await env.DB.batch(stmts);
+  await audit(env, g.t, 'questions.import', `test ${params.testId}: ${stmts.length} added, ${bad.length} skipped`);
+  return json({ ok: true, added: stmts.length, skipped: bad });
+}

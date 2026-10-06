@@ -165,6 +165,7 @@ function yearCard(y) {
       tile('ពិន្ទុឆមាសទី១', y.semester1),
       tile('មធ្យមភាគប្រចាំឆ្នាំ', y.year_avg, true),
     ]),
+    h('div', { class: 'row', style: 'margin-top:12px;' }, [h('a', { class: 'btn secondary btn-sm', href: 'reportcard.html', target: '_blank' }, '📄 ទាញយកសៀវភៅរបាយការណ៍ (PDF)')]),
   ]);
 }
 
