@@ -955,9 +955,71 @@ render.grading = async function () {
   container.append(card);
 };
 
+let gradingRefreshTimer = null;
+
+async function renderAnalysis(session) {
+  const data = await api(`/api/sessions/${session.id}/analysis`);
+  const letters = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
+  const qRows = data.questions.map((q) => {
+    const pct = q.answered ? Math.round((q.counts[q.correct_index] / q.answered) * 100) : null;
+    const color = pct == null ? 'var(--muted,#888)' : pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+    return h('tr', {}, [
+      h('td', {}, q.order_no),
+      mathEl('td', { style: 'max-width:340px;' }, q.stem_text),
+      h('td', { style: 'white-space:nowrap;' }, q.options.map((_, i) =>
+        h('span', { style: `margin-right:8px;${i === q.correct_index ? 'font-weight:700;color:#16a34a;' : ''}` }, `${letters[i] || i + 1}:${q.counts[i]}`))),
+      h('td', { style: `font-weight:700;color:${color};white-space:nowrap;` }, pct == null ? '—' : `${pct}% (${q.counts[q.correct_index]}/${q.answered})`),
+    ]);
+  });
+  const select = h('select', {}, [
+    h('option', { value: '' }, '— ជ្រើសរើសសិស្ស —'),
+    ...session.roster.filter((s) => data.answers[s.id]).map((s) => h('option', { value: s.id }, `${s.surname} ${s.first_name} (${s.id})`)),
+  ]);
+  const detail = h('div', { style: 'margin-top:10px;overflow-x:auto;' });
+  select.onchange = () => {
+    detail.innerHTML = '';
+    const a = data.answers[select.value];
+    if (!a) return;
+    detail.append(h('table', {}, [
+      h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចម្លើយសិស្ស', 'ចម្លើយត្រឹមត្រូវ', ''].map((t) => h('th', {}, t)))),
+      h('tbody', {}, data.questions.map((q) => {
+        const v = a[q.id];
+        const ok = v === q.correct_index;
+        return h('tr', {}, [
+          h('td', {}, q.order_no),
+          mathEl('td', { style: 'max-width:300px;' }, q.stem_text),
+          h('td', {}, v == null ? h('span', { class: 'muted' }, 'មិនបានឆ្លើយ') : letters[v] || String(v + 1)),
+          h('td', {}, letters[q.correct_index] || String(q.correct_index + 1)),
+          h('td', { style: `font-weight:700;color:${ok ? '#16a34a' : '#dc2626'};` }, ok ? '✓' : '✗'),
+        ]);
+      })),
+    ]));
+  };
+  return h('div', { class: 'card', style: 'overflow-x:auto;' }, [
+    h('h2', {}, 'ការវិភាគសំណួរ (សំណួរណាសិស្សខុសច្រើន)'),
+    h('table', {}, [
+      h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចំនួនសិស្សជ្រើសរើសតាមជម្រើស', '% ត្រឹមត្រូវ'].map((t) => h('th', {}, t)))),
+      h('tbody', {}, qRows),
+    ]),
+    h('h3', { style: 'margin-top:16px;' }, 'ចម្លើយរបស់សិស្សម្នាក់ៗ'),
+    select,
+    detail,
+  ]);
+}
+
 async function renderGradingSession(container) {
   const session = await api(`/api/sessions/${selectedSessionId}`);
   container.innerHTML = '';
+  clearInterval(gradingRefreshTimer);
+  if (session.phase === 'open') {
+    // Watch the class live while the test is running.
+    gradingRefreshTimer = setInterval(() => {
+      if (!document.body.contains(container) || !selectedSessionId || !document.getElementById('bulk-writing-max')) {
+        return clearInterval(gradingRefreshTimer);
+      }
+      renderGradingSession(container);
+    }, 15000);
+  }
 
   const totalStudents = session.roster.length;
   const participated = session.roster.filter((s) => s.submitted_at != null).length;
@@ -1135,6 +1197,7 @@ async function renderGradingSession(container) {
   ]);
 
   container.append(headerCard, toolsCard, tableCard);
+  try { container.append(await renderAnalysis(session)); } catch (e) { /* analysis is optional */ }
 }
 
 boot();

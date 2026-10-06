@@ -52,6 +52,7 @@ const ROUTES = [
   ['GET', '/api/sessions', sessions.listSessions],
   ['POST', '/api/sessions', sessions.createSession],
   ['GET', '/api/sessions/:sessionId', sessions.getSession],
+  ['GET', '/api/sessions/:sessionId/analysis', sessions.sessionAnalysis],
   ['POST', '/api/sessions/:sessionId/close', sessions.closeSession],
   ['POST', '/api/sessions/:sessionId/writing', sessions.setWritingScore],
   ['POST', '/api/sessions/:sessionId/writing-bulk', sessions.setWritingScoresBulk],

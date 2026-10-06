@@ -11,6 +11,29 @@ async function ensureColumns(env) {
   columnsChecked = true;
 }
 
+// A student who never pressed Submit (closed the browser, phone died, time ran
+// out while offline) has saved answers but no score. Once the session is over,
+// score those answers on the server so the teacher always sees a result.
+async function finalizeSession(env, sessionId, endIso) {
+  await env.DB.prepare(
+    `INSERT INTO results (session_id, student_id, mcq_score, mcq_max)
+     SELECT DISTINCT session_id, student_id, 0, 0 FROM responses WHERE session_id = ?1
+     ON CONFLICT(session_id, student_id) DO NOTHING`,
+  ).bind(sessionId).run();
+  await env.DB.prepare(
+    `UPDATE results SET
+       mcq_score = COALESCE((SELECT SUM(q.points) FROM responses r
+                             JOIN test_questions q ON q.id = r.question_id AND q.correct_index = r.selected_index
+                             WHERE r.session_id = results.session_id AND r.student_id = results.student_id), 0),
+       mcq_max = (SELECT COALESCE(SUM(q.points), 0) FROM test_questions q
+                  JOIN test_sessions ts ON ts.test_id = q.test_id WHERE ts.id = results.session_id),
+       submitted_at = datetime(?2),
+       submit_type = 'auto'
+     WHERE session_id = ?1 AND submitted_at IS NULL
+       AND (started_at IS NOT NULL OR EXISTS (SELECT 1 FROM responses r WHERE r.session_id = results.session_id AND r.student_id = results.student_id))`,
+  ).bind(sessionId, endIso).run();
+}
+
 export async function listSessions(req, env) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
   await ensureColumns(env);
@@ -18,12 +41,21 @@ export async function listSessions(req, env) {
     `SELECT ts.id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status,
             c.name AS class_name, t.title AS test_title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
-            (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
+            (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students,
+            (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NULL
+               AND (r.started_at IS NOT NULL OR EXISTS (SELECT 1 FROM responses x WHERE x.session_id = r.session_id AND x.student_id = r.student_id))) AS pending_count
      FROM test_sessions ts
      JOIN classes c ON c.id = ts.class_id
      JOIN tests t ON t.id = ts.test_id
      ORDER BY ts.scheduled_start DESC`,
   ).all();
+  for (const s of results) {
+    const endIso = s.scheduled_end || new Date(Date.parse(s.scheduled_start) + s.duration_minutes * 60000).toISOString();
+    if (sessionWindow({ ...s, scheduled_end: endIso }).phase === 'closed' && s.pending_count > 0) {
+      await finalizeSession(env, s.id, endIso);
+      s.submitted_count += s.pending_count;
+    }
+  }
   const withPhase = results.map((s) => {
     const startMs = Date.parse(s.scheduled_start);
     const endMs = s.scheduled_end ? Date.parse(s.scheduled_end) : (startMs + s.duration_minutes * 60000);
@@ -66,6 +98,8 @@ export async function getSession(req, env, params) {
   const startMs = Date.parse(session.scheduled_start);
   const endMs = startMs + session.duration_minutes * 60000;
   session.scheduled_end = session.scheduled_end || new Date(endMs).toISOString();
+
+  if (session.phase === 'closed') await finalizeSession(env, session.id, session.scheduled_end);
 
   const maxPointsRow = await env.DB.prepare('SELECT COALESCE(SUM(points), 0) AS m FROM test_questions WHERE test_id = ?1')
     .bind(session.test_id).first();
@@ -111,6 +145,11 @@ export async function setWritingScore(req, env, params) {
 
 export async function publishSession(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await ensureColumns(env);
+  const ses = await env.DB.prepare('SELECT * FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
+  if (!ses) return err('Session not found.', 404);
+  const endIso = ses.scheduled_end || new Date(Date.parse(ses.scheduled_start) + ses.duration_minutes * 60000).toISOString();
+  await finalizeSession(env, ses.id, endIso);
   await env.DB.prepare("UPDATE results SET published_at = datetime('now') WHERE session_id = ?1").bind(params.sessionId).run();
   return json({ ok: true });
 }
@@ -160,4 +199,30 @@ export async function resetStudentSession(req, env, params) {
   ).bind(params.sessionId, student_id).run();
 
   return json({ ok: true });
+}
+
+// Per-question statistics and every student's answers, for the teacher's review.
+export async function sessionAnalysis(req, env, params) {
+  if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  const ses = await env.DB.prepare('SELECT id, test_id FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
+  if (!ses) return err('Session not found.', 404);
+  const { results: qs } = await env.DB.prepare(
+    'SELECT id, order_no, stem_text, options_json, correct_index, points FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+  ).bind(ses.test_id).all();
+  const { results: rs } = await env.DB.prepare(
+    'SELECT student_id, question_id, selected_index FROM responses WHERE session_id = ?1',
+  ).bind(ses.id).all();
+  const answers = {};
+  for (const r of rs) (answers[r.student_id] ||= {})[r.question_id] = r.selected_index;
+  const questions = qs.map((q) => {
+    const options = JSON.parse(q.options_json);
+    const counts = options.map(() => 0);
+    let answered = 0;
+    for (const a of Object.values(answers)) {
+      const v = a[q.id];
+      if (v != null && counts[v] != null) { counts[v]++; answered++; }
+    }
+    return { id: q.id, order_no: q.order_no, stem_text: q.stem_text, options, correct_index: q.correct_index, points: q.points, counts, answered };
+  });
+  return json({ questions, answers, student_count: Object.keys(answers).length });
 }
