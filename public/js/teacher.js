@@ -1232,17 +1232,102 @@ let gradingRefreshTimer = null;
 async function renderAnalysis(session) {
   const data = await api(`/api/sessions/${session.id}/analysis`);
   const letters = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
-  const qRows = data.questions.map((q) => {
-    const pct = q.answered ? Math.round((q.counts[q.correct_index] / q.answered) * 100) : null;
-    const color = pct == null ? 'var(--muted,#888)' : pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
-    return h('tr', {}, [
-      h('td', {}, q.order_no),
-      mathEl('td', { style: 'max-width:340px;' }, q.stem_text),
-      h('td', { style: 'white-space:nowrap;' }, q.options.map((_, i) =>
-        h('span', { style: `margin-right:8px;${i === q.correct_index ? 'font-weight:700;color:#16a34a;' : ''}` }, `${letters[i] || i + 1}:${q.counts[i]}`))),
-      h('td', { style: `font-weight:700;color:${color};white-space:nowrap;` }, pct == null ? '—' : `${pct}% (${q.counts[q.correct_index]}/${q.answered})`),
-    ]);
+  const isRight = (q, v) => (q.cancelled ? true : v != null && (v === q.correct_index || (q.alt_correct_index != null && v === q.alt_correct_index)));
+  const students = session.roster.filter((s) => s.submitted_at && data.answers[s.id]);
+  const n = students.length;
+
+  // ----- per-question statistics: % right, discrimination (top vs bottom 27%), warnings
+  const ranked = [...students].sort((x, y) => (y.mcq_score || 0) - (x.mcq_score || 0));
+  const k = Math.max(1, Math.round(ranked.length * 0.27));
+  const upper = ranked.slice(0, k), lower = ranked.slice(-k);
+  const stats = data.questions.map((q) => {
+    const rightN = students.filter((s) => isRight(q, data.answers[s.id][q.id])).length;
+    const pct = n ? Math.round((rightN / n) * 100) : null;
+    const rate = (grp) => (grp.length ? grp.filter((s) => isRight(q, data.answers[s.id][q.id])).length / grp.length : 0);
+    const disc = n >= 12 ? rate(upper) - rate(lower) : null;
+    const flags = [];
+    if (q.cancelled) flags.push(['បានបោះបង់', 'chip-closed']);
+    else if (pct != null && n >= 8) {
+      if (pct < 25) flags.push(['⚠ ពិបាកពេក', 'chip-soon']);
+      if (pct > 95) flags.push(['ងាយពេក', 'chip-plain']);
+      if (disc != null && disc < 0.1 && pct >= 25 && pct <= 95) flags.push(['⚠ ពុំញែកសិស្សពូកែ/ខ្សោយ', 'chip-soon']);
+      const wrongTop = q.counts.map((c, i) => [c, i]).filter(([, i]) => i !== q.correct_index && i !== q.alt_correct_index).sort((a, b) => b[0] - a[0])[0];
+      if (wrongTop && wrongTop[0] > (q.counts[q.correct_index] || 0)) flags.push([`🔍 ពិនិត្យចម្លើយ — ជម្រើស ${letters[wrongTop[1]]} ត្រូវបានជ្រើសច្រើនជាង`, 'chip-soon']);
+    }
+    return { q, pct, disc, flags, rightN };
   });
+
+  let sortMode = 'order';
+  const qBody = h('tbody', {});
+  function drawQuestions() {
+    const rows = [...stats];
+    if (sortMode === 'hard') rows.sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+    qBody.innerHTML = '';
+    rows.forEach(({ q, pct, disc, flags }) => {
+      const color = pct == null ? 'var(--muted)' : pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+      qBody.append(h('tr', {}, [
+        h('td', {}, q.order_no),
+        mathEl('td', { style: 'max-width:300px;' }, q.stem_text),
+        h('td', { style: 'white-space:nowrap;' }, q.options.map((_, i) =>
+          h('span', { style: `margin-right:8px;${i === q.correct_index || i === q.alt_correct_index ? 'font-weight:700;color:#16a34a;' : ''}` }, `${letters[i] || i + 1}:${q.counts[i]}`))),
+        h('td', { style: `font-weight:700;color:${color};white-space:nowrap;` }, pct == null ? '—' : `${pct}%`),
+        h('td', { class: 'muted' }, disc == null ? '—' : disc.toFixed(2)),
+        h('td', {}, h('div', { class: 'test-chips' }, flags.map(([t, c]) => h('span', { class: `chip ${c}` }, t)))),
+      ]));
+    });
+  }
+  const questionsCard = h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;' }, [
+      h('h2', { style: 'margin:0;' }, '📊 ការវិភាគសំណួរ'),
+      h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'order'; drawQuestions(); } }, 'តាមលំដាប់'),
+        h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'hard'; drawQuestions(); } }, 'ពិបាកបំផុតមុន'),
+      ]),
+    ]),
+    h('p', { class: 'muted' }, `% = សិស្សឆ្លើយត្រូវ (${n} នាក់ដែលបានប្រគល់)។ D = ភាពខុសគ្នារវាងសិស្សពូកែ ២៧% និងខ្សោយ ២៧% — ប្រសិនបើ D ទាបជិត ០ ឬអវិជ្ជមាន សំណួរនេះអាចមានបញ្ហា។`),
+    h('table', {}, [
+      h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចំនួនជ្រើសតាមជម្រើស', '% ត្រូវ', 'D', 'ចំណាំ'].map((t) => h('th', {}, t)))),
+      qBody,
+    ]),
+  ]);
+  drawQuestions();
+
+  // ----- topic report: where is the class weak?
+  const topics = {};
+  for (const q of data.questions) {
+    if (!q.topic || q.cancelled) continue;
+    const t = (topics[q.topic] ||= { possible: 0, earned: 0, per: {} });
+    for (const s of students) {
+      const p = (t.per[s.id] ||= { possible: 0, earned: 0 });
+      p.possible += q.points;
+      if (isRight(q, data.answers[s.id][q.id])) { p.earned += q.points; t.earned += q.points; }
+      t.possible += q.points;
+    }
+  }
+  const topicRows = Object.entries(topics).map(([name, t]) => {
+    const pct = t.possible ? Math.round((t.earned / t.possible) * 100) : 0;
+    const weak = students.filter((s) => { const p = t.per[s.id]; return p && p.possible && p.earned / p.possible < 0.5; });
+    return { name, pct, weak };
+  }).sort((a, b) => a.pct - b.pct);
+  const topicCard = topicRows.length ? h('div', { class: 'card no-print' }, [
+    h('h2', {}, '📚 ចំណុចខ្សោយតាមប្រធានបទ'),
+    h('p', { class: 'muted' }, 'រៀបតាមប្រធានបទដែលថ្នាក់ធ្វើបានតិចជាងគេមុន។ ចុចលើឈ្មោះដើម្បីឃើញសិស្សដែលទទួលបានក្រោម ៥០% ក្នុងប្រធានបទនោះ។'),
+    ...topicRows.map((t) => {
+      const col = t.pct >= 70 ? '#16a34a' : t.pct >= 50 ? '#d97706' : '#dc2626';
+      const detail = h('div', { class: 'muted', hidden: 'hidden', style: 'margin:4px 0 10px;' }, t.weak.length ? `សិស្សដែលត្រូវការជំនួយ (${t.weak.length}): ${t.weak.map((s) => `${s.surname} ${s.first_name}`).join(' · ')}` : 'គ្មានសិស្សណាក្រោម ៥០% ទេ 🎉');
+      return h('div', {}, [
+        h('div', { class: 'topic-row', onclick: () => { detail.hidden = !detail.hidden; } }, [
+          h('div', { style: 'flex:1;min-width:0;font-weight:600;' }, t.name),
+          h('div', { class: 'bar', style: 'width:38%;' }, h('div', { class: 'bar-fill', style: `width:${t.pct}%;background:${col};` })),
+          h('div', { style: `width:48px;text-align:right;font-weight:700;color:${col};` }, `${t.pct}%`),
+          h('span', { class: `chip ${t.weak.length ? 'chip-soon' : 'chip-open'}`, style: 'margin-left:8px;' }, `${t.weak.length} នាក់`),
+        ]),
+        detail,
+      ]);
+    }),
+  ]) : null;
+
+  // ----- one student's answers
   const select = h('select', {}, [
     h('option', { value: '' }, '— ជ្រើសរើសសិស្ស —'),
     ...session.roster.filter((s) => data.answers[s.id]).map((s) => h('option', { value: s.id }, `${s.surname} ${s.first_name} (${s.id})`)),
@@ -1256,27 +1341,20 @@ async function renderAnalysis(session) {
       h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចម្លើយសិស្ស', 'ចម្លើយត្រឹមត្រូវ', ''].map((t) => h('th', {}, t)))),
       h('tbody', {}, data.questions.map((q) => {
         const v = a[q.id];
-        const ok = v === q.correct_index;
+        const ok = isRight(q, v);
         return h('tr', {}, [
           h('td', {}, q.order_no),
           mathEl('td', { style: 'max-width:300px;' }, q.stem_text),
           h('td', {}, v == null ? h('span', { class: 'muted' }, 'មិនបានឆ្លើយ') : letters[v] || String(v + 1)),
-          h('td', {}, letters[q.correct_index] || String(q.correct_index + 1)),
+          h('td', {}, `${letters[q.correct_index] || String(q.correct_index + 1)}${q.alt_correct_index != null ? ` / ${letters[q.alt_correct_index]}` : ''}`),
           h('td', { style: `font-weight:700;color:${ok ? '#16a34a' : '#dc2626'};` }, ok ? '✓' : '✗'),
         ]);
       })),
     ]));
   };
-  return h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [
-    h('h2', {}, 'ការវិភាគសំណួរ (សំណួរណាសិស្សខុសច្រើន)'),
-    h('table', {}, [
-      h('thead', {}, h('tr', {}, ['ល.រ', 'សំណួរ', 'ចំនួនសិស្សជ្រើសរើសតាមជម្រើស', '% ត្រឹមត្រូវ'].map((t) => h('th', {}, t)))),
-      h('tbody', {}, qRows),
-    ]),
-    h('h3', { style: 'margin-top:16px;' }, 'ចម្លើយរបស់សិស្សម្នាក់ៗ'),
-    select,
-    detail,
-  ]);
+  const studentCard = h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [h('h3', {}, 'ចម្លើយរបស់សិស្សម្នាក់ៗ'), select, detail]);
+
+  return h('div', {}, [topicCard, questionsCard, studentCard]);
 }
 
 async function renderGradingSession(container) {

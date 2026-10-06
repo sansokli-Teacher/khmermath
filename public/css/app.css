@@ -403,3 +403,5 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .bank-item { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
 .bank-item:hover { border-color: #bcd0f3; background: #fafcff; }
 .bank-stem { font-size: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.topic-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.topic-row:hover { background: #f7faff; }

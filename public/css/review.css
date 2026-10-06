@@ -59,3 +59,5 @@
   .rp-opt.is-wrong { background: #fdeaea !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rp-grade, .rp-tile, .rp-badge, .rp-sol { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.rp-topics { margin-top: 6px; }
+.rp-topic { display: flex; align-items: center; gap: 12px; padding: 6px 2px; border-bottom: 1px solid var(--line); font-size: 14.5px; }
