@@ -148,16 +148,22 @@ function seededShuffle(items, seedText) {
 export async function getTest(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
+  await ensureColumns(env);
   const sessionId = Number(new URL(req.url).searchParams.get('session_id'));
   const active = await loadActiveSession(env, studentSession, sessionId);
   if (!active) return err('No test is open for you right now.', 403);
 
   const { results: orderedQuestions } = await env.DB.prepare(
-    'SELECT id, stem_text, image_key, options_json FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+    "SELECT id, stem_text, image_key, options_json, kind, points FROM test_questions WHERE test_id = ?1 ORDER BY CASE WHEN kind = 'writing' THEN 1 ELSE 0 END, order_no",
   ).bind(active.test_id).all();
   // Each student sees the questions in their own fixed order (same every time
   // they reload), so neighbours cannot copy by question number.
-  const questions = seededShuffle(orderedQuestions, `${active.id}:${studentSession.id}`);
+  // Multiple-choice questions are shuffled per student; the writing section keeps
+  // its printed order after them.
+  const questions = [
+    ...seededShuffle(orderedQuestions.filter((q) => q.kind !== 'writing'), `${active.id}:${studentSession.id}`),
+    ...orderedQuestions.filter((q) => q.kind === 'writing'),
+  ];
 
   const { results: saved } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(active.id, studentSession.id).all();
@@ -169,7 +175,7 @@ export async function getTest(req, env) {
     end_at: active.window.end,
     server_now: Date.now(),
     questions: questions.map((q) => ({
-      id: q.id, stem_text: q.stem_text, image_key: q.image_key,
+      id: q.id, stem_text: q.stem_text, image_key: q.image_key, kind: q.kind, points: q.points,
       options: JSON.parse(q.options_json), selected_index: savedByQuestion[q.id] ?? null,
     })),
   });
@@ -191,10 +197,11 @@ export async function leftPage(req, env) {
 export async function answer(req, env) {
   const studentSession = await requireStudent(req, env);
   if (!studentSession) return err('Not logged in.', 401);
+  await ensureColumns(env);
   const { session_id, question_id, selected_index } = await req.json();
   const active = await loadActiveSession(env, studentSession, Number(session_id));
   if (!active) return err('This test is not open anymore.', 403);
-  const question = await env.DB.prepare('SELECT id FROM test_questions WHERE id = ?1 AND test_id = ?2').bind(question_id, active.test_id).first();
+  const question = await env.DB.prepare("SELECT id FROM test_questions WHERE id = ?1 AND test_id = ?2 AND kind <> 'writing'").bind(question_id, active.test_id).first();
   if (!question) return err('That question is not part of this test.', 400);
   await env.DB.prepare(
     `INSERT INTO responses (session_id, student_id, question_id, selected_index) VALUES (?1, ?2, ?3, ?4)
@@ -213,7 +220,7 @@ export async function submit(req, env) {
   if (!active) return err('This test is not open anymore.', 403);
   const submitType = body.submit_type === 'auto' ? 'auto' : 'manual';
 
-  const { results: questions } = await env.DB.prepare('SELECT id, correct_index, points FROM test_questions WHERE test_id = ?1')
+  const { results: questions } = await env.DB.prepare("SELECT id, correct_index, points FROM test_questions WHERE test_id = ?1 AND kind <> 'writing'")
     .bind(active.test_id).all();
   const { results: responses } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(active.id, studentSession.id).all();

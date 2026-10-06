@@ -316,3 +316,11 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .setup-kind { align-self: center; }
 .setup-check { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; color: var(--ink); font-size: 14px; white-space: nowrap; }
 .setup-check input { width: 18px; height: 18px; accent-color: var(--brand); }
+
+/* Writing (part B) questions + teacher preview banner */
+.q-stem { white-space: pre-line; }
+.question-nav button.writing { width: 46px; background: #fff8e6; border-color: #e9c46a; color: #8a5a0d; }
+.question-nav button.writing.current { outline-color: rgba(183, 121, 31, .55); }
+.writing-card { border-left: 5px solid #e9c46a; }
+.preview-banner { background: #17212e; color: #fff; text-align: center; padding: 8px 14px; font-size: 14px; font-weight: 600; }
+.preview-banner a { color: #9fc4ff; margin-left: 8px; }

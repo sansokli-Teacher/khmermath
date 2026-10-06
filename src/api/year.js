@@ -3,10 +3,11 @@
 // sessions they are linked to; the semester exam and final are typed in by hand.
 import { json, err } from '../lib/http.js';
 import { requireTeacher } from '../lib/session.js';
-import { finalizeIfClosed } from './sessions.js';
+import { finalizeIfClosed, ensureColumns } from './sessions.js';
 
 let ready = false;
 async function ensureYear(env) {
+  await ensureColumns(env);
   if (ready) return;
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS assessments (
@@ -121,7 +122,7 @@ async function loadData(env, assessments, studentIds) {
     for (const r of results) data.results[`${r.session_id}:${r.student_id}`] = r;
     const { results: maxes } = await env.DB.prepare(
       `SELECT ts.id AS session_id, COALESCE(SUM(q.points), 0) AS m FROM test_sessions ts
-       LEFT JOIN test_questions q ON q.test_id = ts.test_id WHERE ts.id IN (${ph}) GROUP BY ts.id`,
+       LEFT JOIN test_questions q ON q.test_id = ts.test_id AND q.kind <> 'writing' WHERE ts.id IN (${ph}) GROUP BY ts.id`,
     ).bind(...sessionIds).all();
     for (const m of maxes) data.testMax[m.session_id] = m.m;
   }

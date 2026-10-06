@@ -9,6 +9,8 @@ export async function ensureColumns(env) {
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN submit_type TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN scheduled_end TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE test_sessions ADD COLUMN pin TEXT").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE test_questions ADD COLUMN kind TEXT NOT NULL DEFAULT 'mcq'").run(); } catch {}
+  try { await env.DB.prepare("ALTER TABLE test_questions ADD COLUMN solution_text TEXT").run(); } catch {}
   try { await env.DB.prepare("ALTER TABLE results ADD COLUMN tab_switches INTEGER NOT NULL DEFAULT 0").run(); } catch {}
   columnsChecked = true;
 }
@@ -25,10 +27,10 @@ export async function finalizeSession(env, sessionId, endIso) {
   await env.DB.prepare(
     `UPDATE results SET
        mcq_score = COALESCE((SELECT SUM(q.points) FROM responses r
-                             JOIN test_questions q ON q.id = r.question_id AND q.correct_index = r.selected_index
+                             JOIN test_questions q ON q.id = r.question_id AND q.correct_index = r.selected_index AND q.kind <> 'writing'
                              WHERE r.session_id = results.session_id AND r.student_id = results.student_id), 0),
        mcq_max = (SELECT COALESCE(SUM(q.points), 0) FROM test_questions q
-                  JOIN test_sessions ts ON ts.test_id = q.test_id WHERE ts.id = results.session_id),
+                  JOIN test_sessions ts ON ts.test_id = q.test_id WHERE ts.id = results.session_id AND q.kind <> 'writing'),
        submitted_at = datetime(?2),
        submit_type = 'auto'
      WHERE session_id = ?1 AND submitted_at IS NULL
@@ -106,7 +108,7 @@ export async function getSession(req, env, params) {
 
   if (session.phase === 'closed') await finalizeSession(env, session.id, session.scheduled_end);
 
-  const maxPointsRow = await env.DB.prepare('SELECT COALESCE(SUM(points), 0) AS m FROM test_questions WHERE test_id = ?1')
+  const maxPointsRow = await env.DB.prepare('SELECT COALESCE(SUM(CASE WHEN kind = \'writing\' THEN 0 ELSE points END), 0) AS m, COALESCE(SUM(CASE WHEN kind = \'writing\' THEN points ELSE 0 END), 0) AS w FROM test_questions WHERE test_id = ?1')
     .bind(session.test_id).first();
 
   const { results: roster } = await env.DB.prepare(
@@ -120,6 +122,7 @@ export async function getSession(req, env, params) {
   ).bind(params.sessionId, session.class_id).all();
 
   session.mcq_max = maxPointsRow.m;
+  session.writing_max_default = maxPointsRow.w;
   session.roster = roster;
   return json(session);
 }
@@ -209,10 +212,11 @@ export async function resetStudentSession(req, env, params) {
 // Per-question statistics and every student's answers, for the teacher's review.
 export async function sessionAnalysis(req, env, params) {
   if (!(await requireTeacher(req, env))) return err('Not logged in.', 401);
+  await ensureColumns(env);
   const ses = await env.DB.prepare('SELECT id, test_id FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
   if (!ses) return err('Session not found.', 404);
   const { results: qs } = await env.DB.prepare(
-    'SELECT id, order_no, stem_text, options_json, correct_index, points FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+    "SELECT id, order_no, stem_text, options_json, correct_index, points FROM test_questions WHERE test_id = ?1 AND kind <> 'writing' ORDER BY order_no",
   ).bind(ses.test_id).all();
   const { results: rs } = await env.DB.prepare(
     'SELECT student_id, question_id, selected_index FROM responses WHERE session_id = ?1',
@@ -239,7 +243,7 @@ export async function overview(req, env) {
   const { results } = await env.DB.prepare(
     `SELECT ts.id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
             c.name AS class_name, t.id AS test_id, t.title AS test_title,
-            (SELECT COALESCE(SUM(points), 0) FROM test_questions q WHERE q.test_id = t.id) AS mcq_max,
+            (SELECT COALESCE(SUM(points), 0) FROM test_questions q WHERE q.test_id = t.id AND q.kind <> 'writing') AS mcq_max,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
      FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
      ORDER BY ts.scheduled_start DESC`,

@@ -25,8 +25,28 @@ let homeRefresh = null;
 
 const computeGrade = (pct) => Exam.gradeOf(pct);
 
+// ---------- Teacher preview (student.html?preview=TESTID&min=70) ----------
+const PREVIEW = new URLSearchParams(location.search).get('preview');
+
+async function bootPreview() {
+  let test;
+  try { test = await api(`/api/tests/${PREVIEW}`); } catch { return Exam.notify('សូមចូលជាគ្រូសិន ទើបអាចមើលតេស្តនេះបាន។').then(() => { location.href = 'teacher.html'; }); }
+  const minutes = Number(new URLSearchParams(location.search).get('min')) || 70;
+  currentStudent = { id: 'PREVIEW', name: 'សិស្សសាកល្បង' };
+  testState = {
+    session_id: null, test_title: test.title, end_at: Date.now() + minutes * 60000, current: 0,
+    questions: test.questions.map((q) => ({ id: q.id, stem_text: q.stem_text, image_key: q.image_key, kind: q.kind, points: q.points, options: q.options, selected_index: null })),
+  };
+  showView('test');
+  document.getElementById('preview-banner').hidden = false;
+  document.getElementById('timer-title').textContent = test.title;
+  document.getElementById('student-badge').textContent = 'របៀបមើលជាសិស្ស';
+  renderNav(); renderQuestion(); startTimer();
+}
+
 // ---------- Sign in ----------
 async function boot() {
+  if (PREVIEW) return bootPreview();
   clearInterval(homeRefresh);
   try {
     const data = await api('/api/student/status');
@@ -268,7 +288,7 @@ async function loadTest(sessionId) {
 // Warn and log when the student leaves the test page (other tab or app).
 let leftCount = 0;
 document.addEventListener('visibilitychange', () => {
-  if (!testState || views.test.hidden) return;
+  if (!testState || views.test.hidden || PREVIEW) return;
   if (document.hidden) {
     leftCount++;
     api('/api/student/left-page', { method: 'POST', body: { session_id: testState.session_id } }).catch(() => {});
@@ -287,6 +307,7 @@ function startTimer() {
     bar.classList.toggle('low', remaining < 5 * 60 * 1000);
     if (remaining <= 0) {
       clearInterval(timerInterval);
+      if (PREVIEW) { clockEl.textContent = '00:00:00'; return; }
       Exam.notify('ពេលវេលាប្រឡងបានបញ្ចប់! ប្រព័ន្ធនឹងបញ្ជូនចម្លើយរបស់អ្នកដោយស្វ័យប្រវត្តិ។');
       doSubmit(true);
     }
@@ -299,14 +320,17 @@ function renderNav() {
   const nav = document.getElementById('question-nav');
   nav.innerHTML = '';
   let answered = 0;
+  const mcqTotal = testState.questions.filter((q) => q.kind !== 'writing').length;
   testState.questions.forEach((q, i) => {
-    if (q.selected_index != null) answered++;
+    const writing = q.kind === 'writing';
+    if (!writing && q.selected_index != null) answered++;
     nav.append(h('button', {
-      class: `${q.selected_index != null ? 'answered ' : ''}${i === testState.current ? 'current' : ''}`,
+      class: `${q.selected_index != null ? 'answered ' : ''}${writing ? 'writing ' : ''}${i === testState.current ? 'current' : ''}`,
+      title: writing ? 'សំណួរសរសេរ' : '',
       onclick: () => { testState.current = i; renderQuestion(); renderNav(); },
-    }, String(i + 1)));
+    }, writing ? `✎${i + 1 - mcqTotal}` : String(i + 1)));
   });
-  document.getElementById('progress-fill').style.width = `${(answered / testState.questions.length) * 100}%`;
+  document.getElementById('progress-fill').style.width = `${mcqTotal ? (answered / mcqTotal) * 100 : 0}%`;
 }
 
 const LETTERS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
@@ -318,10 +342,27 @@ function renderQuestion() {
 
   const totalQ = testState.questions.length;
   const currQ = testState.current + 1;
+  const mcqTotal = testState.questions.filter((x) => x.kind !== 'writing').length;
+
+  if (q.kind === 'writing') {
+    const no = currQ - mcqTotal;
+    const wTotal = totalQ - mcqTotal;
+    area.append(h('div', { class: 'question-card writing-card' }, [
+      h('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:8px;' }, [
+        h('span', { class: 'q-count' }, `ផ្នែក ខ · សំណួរសរសេរទី ${no} / ${wTotal}`),
+        h('span', { class: 'chip chip-soon' }, `${q.points} ពិន្ទុ`),
+      ]),
+      mathEl('div', { class: 'q-stem' }, q.stem_text),
+      q.image_key ? h('div', { style: 'text-align:center;margin:10px 0;' }, [h('img', { src: `/api/images/${q.image_key}`, style: 'max-height:300px;border-radius:8px;' })]) : null,
+      h('div', { class: 'callout warn', style: 'margin-top:12px;' }, '✎ សរសេរចម្លើយលើក្រដាសឆ្លើយរបស់ប្អូន ដោយបង្ហាញវិធីដោះស្រាយឱ្យបានច្បាស់លាស់។ មិនត្រូវវាយចម្លើយក្នុងកម្មវិធីនេះទេ។'),
+    ]));
+    area.append(questionNavRow(totalQ));
+    return;
+  }
 
   const card = h('div', { class: 'question-card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:8px;' }, [
-      h('span', { class: 'q-count' }, `សំណួរទី ${currQ} / ${totalQ}`),
+      h('span', { class: 'q-count' }, `ផ្នែក ក · សំណួរទី ${currQ} / ${mcqTotal}`),
       q.selected_index != null
         ? h('span', { class: 'chip chip-open' }, '✓ បានឆ្លើយ')
         : h('span', { class: 'chip chip-closed' }, 'មិនទាន់ឆ្លើយ'),
@@ -335,7 +376,11 @@ function renderQuestion() {
     ]))),
   ]);
 
-  const navRow = h('div', { class: 'row', style: 'justify-content:space-between;margin-top:12px;' }, [
+  area.append(card, questionNavRow(totalQ));
+}
+
+function questionNavRow(totalQ) {
+  return h('div', { class: 'row', style: 'justify-content:space-between;margin-top:12px;' }, [
     testState.current > 0
       ? h('button', { class: 'secondary', onclick: () => { testState.current--; renderQuestion(); renderNav(); } }, '← សំណួរមុន')
       : h('span', {}),
@@ -343,14 +388,13 @@ function renderQuestion() {
       ? h('button', { onclick: () => { testState.current++; renderQuestion(); renderNav(); } }, 'សំណួរបន្ទាប់ →')
       : h('button', { class: 'good', onclick: submitPrompt }, 'បញ្ជូនចម្លើយ ✓'),
   ]);
-
-  area.append(card, navRow);
 }
 
 async function selectAnswer(q, idx) {
   q.selected_index = idx;
   renderQuestion();
   renderNav();
+  if (PREVIEW) return;
   try {
     await api('/api/student/answer', { method: 'POST', body: { session_id: testState.session_id, question_id: q.id, selected_index: idx } });
   } catch {}
@@ -358,8 +402,10 @@ async function selectAnswer(q, idx) {
 
 function submitPrompt() {
   const remaining = testState ? testState.end_at - now() : 0;
-  const unanswered = testState ? testState.questions.filter((q) => q.selected_index == null).length : 0;
-  const total = testState ? testState.questions.length : 0;
+  const mcqs = testState ? testState.questions.filter((q) => q.kind !== 'writing') : [];
+  const hasWriting = testState ? testState.questions.some((q) => q.kind === 'writing') : false;
+  const unanswered = mcqs.filter((q) => q.selected_index == null).length;
+  const total = mcqs.length;
   const answered = total - unanswered;
 
   const oldModal = document.getElementById('submit-modal');
@@ -376,6 +422,7 @@ function submitPrompt() {
     unanswered > 0
       ? h('div', { class: 'callout bad' }, `ប្អូនឆ្លើយបាន ${answered}/${total} — នៅសល់ ${unanswered} សំណួរមិនទាន់ឆ្លើយ!`)
       : h('div', { class: 'callout good' }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
+    hasWriting ? h('div', { class: 'callout warn' }, '✎ កុំភ្លេចប្រគល់ក្រដាសឆ្លើយផ្នែកសរសេរ ជូនលោកគ្រូ/អ្នកគ្រូ។') : null,
     h('p', { class: 'muted', style: 'margin:12px 0 18px;' }, 'នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែចម្លើយបានទៀតទេ។'),
     h('div', { style: 'display:flex;flex-direction:column;gap:10px;' }, [
       h('button', { class: 'btn-block', onclick: () => modal.remove() }, '← បន្តធ្វើតេស្តទៀត'),
@@ -389,6 +436,7 @@ function submitPrompt() {
 document.getElementById('submit-btn').addEventListener('click', submitPrompt);
 
 async function doSubmit(auto) {
+  if (PREVIEW) { await Exam.notify('នេះគ្រាន់តែជាការមើលសាកល្បង — គ្មានអ្វីត្រូវបានបញ្ជូនទេ។'); return; }
   clearInterval(timerInterval);
   const sessionId = testState && testState.session_id;
   try {
