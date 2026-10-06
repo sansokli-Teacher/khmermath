@@ -19,19 +19,20 @@
     <div class="row">
       <button id="print-btn">🖨 បោះពុម្ព / រក្សាទុកជា PDF</button>
       <button id="docx-btn" class="secondary">📝 ទាញយក Word (.docx)</button>
-      <label class="tb-check"><input type="checkbox" id="opt-key"> បង្ហាញចម្លើយ (សម្រាប់គ្រូ)</label>
+      <label class="tb-check"><input type="checkbox" id="opt-key"> បង្ហាញជាសន្លឹកចម្លើយ (អត្រាកំណែ — សម្រាប់គ្រូ)</label>
       <label class="tb-check"><input type="checkbox" id="opt-space" checked> ទុកចន្លោះសរសេរចម្លើយ</label>
     </div>
     <div class="row">
       <span class="muted">រយៈពេល</span><input type="number" id="opt-min" value="70" style="width:80px;">
       <span class="muted">នាទី · កាលបរិច្ឆេទ</span><input type="text" id="opt-date" placeholder="ថ្ងៃទី ... ខែ ... ឆ្នាំ ..." style="width:200px;">
+      <button id="profile-btn" class="secondary btn-sm">⚙ ក្បាល/ជើងទំព័រ</button>
       <a href="teacher.html" class="btn secondary">← ត្រឡប់</a>
     </div>
     <div class="muted" style="font-size:13px;">ពេលចុចបោះពុម្ព សូមជ្រើស «Save as PDF / រក្សាទុកជា PDF» ជាគោលដៅ។ បើកជម្រើស «Background graphics» ហើយបិទ «Headers and footers» ដើម្បីឱ្យវិញ្ញាសាស្អាត។</div>
   </div>
 </div>
 
-<main class="sheet" id="sheet"></main>
+<main id="sheet"></main>
 
 <script src="js/common.js"></script>
 <script src="js/mathtype.js"></script>

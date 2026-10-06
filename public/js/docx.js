@@ -51,8 +51,9 @@
   const table = (rows, o = {}) => `<w:tbl><w:tblPr><w:tblW w:w="${o.width || 9638}" w:type="dxa"/>${o.border ? '<w:tblBorders><w:top w:val="single" w:sz="4"/><w:left w:val="single" w:sz="4"/><w:bottom w:val="single" w:sz="4"/><w:right w:val="single" w:sz="4"/><w:insideH w:val="single" w:sz="4"/><w:insideV w:val="single" w:sz="4"/></w:tblBorders>' : ''}</w:tblPr><w:tblGrid>${(o.grid || []).map((g) => `<w:gridCol w:w="${g}"/>`).join('')}</w:tblGrid>${rows.map((r) => `<w:tr>${r}</w:tr>`).join('')}</w:tbl>`;
 
   // ---------- picture -> PNG (browser only) ----------
-  async function rasterize(key) {
-    const res = await fetch(`/api/images/${key}`); const blob = await res.blob();
+  // `ref` is either an uploaded-image key or a site path such as /ngs.png
+  async function rasterize(ref) {
+    const res = await fetch(String(ref).startsWith('/') ? ref : `/api/images/${ref}`); const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     try {
       const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
@@ -64,93 +65,134 @@
     } finally { URL.revokeObjectURL(url); }
   }
 
-  // ---------- the paper ----------
+  // template fonts (installed on the teacher's computer; Word substitutes if missing)
+  const FT = { title: 'Khmer M1', head: 'Khmer OS Bokor' };
+  const rprF = (cs, o = {}) => rpr(o).replace(`w:cs="${FONT_KH}"`, `w:cs="${cs}"`);
+  const runF = (cs, text, o = {}) => run(text, o).replace(new RegExp(`w:cs="${FONT_KH}"`, 'g'), `w:cs="${cs}"`);
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
+  const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+  // "ក) …" lines become indented sub-questions, like the NGS template
+  function splitWriting(stem) {
+    const intro = []; const subs = [];
+    for (const line of String(stem).split('\n')) {
+      const m = line.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+      if (m) subs.push({ l: m[1], t: m[2] }); else if (subs.length) subs[subs.length - 1].t += `\n${line}`; else intro.push(line);
+    }
+    return { intro: intro.join('\n').trim(), subs };
+  }
+
   async function build(test, opts = {}) {
     const minutes = opts.minutes || 70;
+    const prof = opts.profile || {};
     const mcq = test.questions.filter((q) => q.kind !== 'writing');
     const writing = test.questions.filter((q) => q.kind === 'writing');
     const mcqPts = mcq.reduce((a, q) => a + q.points, 0), wPts = writing.reduce((a, q) => a + q.points, 0);
     const hasKey = mcq.every((q) => q.correct_index != null);
-    const showKey = !!opts.showKey && hasKey;
+    const answers = !!(opts.answers || opts.showKey) && hasKey;
+    const rast = opts.rasterize || rasterize;
 
-    // pictures
-    const images = {}; let imgNo = 0; const media = [];
-    const keys = [...new Set(test.questions.map((q) => q.image_key).filter(Boolean))];
-    for (const k of keys) {
-      try { const r = opts.rasterize ? await opts.rasterize(k) : await rasterize(k); imgNo += 1; images[k] = { rid: `rIdImg${imgNo}`, n: imgNo, ...r }; media.push({ name: `word/media/image${imgNo}.png`, data: r.data }); } catch { /* skip a picture that cannot be read */ }
-    }
+    // pictures used in the body, plus the logo for the exam header
+    const media = []; const images = {}; let imgNo = 0;
+    const load = async (ref) => {
+      if (images[ref]) return images[ref];
+      try { const r = await rast(ref); imgNo += 1; images[ref] = { rid: `rIdImg${imgNo}`, n: imgNo, ...r }; media.push({ name: `word/media/image${imgNo}.png`, data: r.data }); return images[ref]; } catch { return null; }
+    };
+    if (!answers) for (const k of new Set(test.questions.map((q) => q.image_key).filter(Boolean))) await load(k);
+    const logo = !answers && prof.logo ? await load(prof.logo) : null;
     const pic = (key) => {
       const im = images[key]; if (!im) return '';
-      const maxW = 9.5 * 360000, maxH = 7 * 360000; let wE = im.w * 9525, hE = im.h * 9525;      // 96 dpi -> EMU
+      const maxW = 9.5 * 360000, maxH = 7 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
       const f = Math.min(1, maxW / wE, maxH / hE); wE = Math.round(wE * f); hE = Math.round(hE * f);
-      return para(image(im.rid, wE, hE, im.n), { left: 567, after: 80 });
+      return para(image(im.rid, wE, hE, im.n), { left: 1871, after: 80 });
     };
 
-    const body = [];
-    // header: two columns, no borders
-    const head = (lines, align) => lines.map((l) => P(l, { sz: 24 }, { align, after: 0 })).join('');
-    body.push(table([
-      cell(head(['ក្រសួងអប់រំ យុវជន និងកីឡា', 'វិទ្យាល័យព្រះស៊ីសុវត្ថិ', 'សាលារៀនជំនាន់ថ្មី (NGS)'], 'center'), 4800) + cell(head(['ព្រះរាជាណាចក្រកម្ពុជា', 'ជាតិ សាសនា ព្រះមហាក្សត្រ'], 'center'), 4838),
-    ], { grid: [4800, 4838] }));
-    body.push(P(test.title, { b: 1, sz: 34 }, { align: 'center', before: 160, after: 60 }));
-    body.push(P(`មុខវិជ្ជា៖ គណិតវិទ្យា        រយៈពេល៖ ${kh(minutes)} នាទី        ពិន្ទុសរុប៖ ${kh(mcqPts + wPts)} ពិន្ទុ${opts.date ? `        ${opts.date}` : ''}`, { sz: 25 }, { align: 'center', after: 120, underline: true }));
-    body.push(P('ឈ្មោះ៖ ..............................................      ថ្នាក់៖ ................      លេខ៖ ................', { sz: 25 }, { before: 80, after: 120 }));
-    body.push(P(`សូមអានសំណួរឱ្យបានល្អិតល្អន់។ ផ្នែក ក ជ្រើសរើសចម្លើយត្រឹមត្រូវ (${kh(mcqPts)} ពិន្ទុ)។ ផ្នែក ខ សរសេរចម្លើយលើក្រដាសឆ្លើយ ដោយបង្ហាញវិធីដោះស្រាយ (${kh(wPts)} ពិន្ទុ)។ មិនអនុញ្ញាតឱ្យប្រើទូរស័ព្ទ ឬម៉ាស៊ីនគណនាទេ។`, { sz: 24 }, { box: 1, after: 160 }));
+    const body = []; const extra = []; let sect;
+    const PAGE = '<w:pgSz w:w="11906" w:h="16838"/>';
+    const year = kh(new Date().getFullYear());
 
-    if (mcq.length) {
-      body.push(para(run('ផ្នែក ក · ពហុជ្រើសរើស ', { b: 1, sz: 30 }) + run(`(${kh(mcq.length)} សំណួរ × ${kh(mcq[0].points)} ពិន្ទុ)`, { sz: 24 }), { underline: true, before: 120, after: 100, keep: 1 }));
-      mcq.forEach((q, i) => {
-        body.push(para(run(`${kh(i + 1)}.\t`, { b: 1 }) + run(q.stem_text), { left: 567, hanging: 567, tabs: [567], before: 60, after: 40, keep: 1 }));
-        if (q.image_key) body.push(pic(q.image_key));
-        const short = q.options.every((o) => o.length <= 14);
-        if (short) {
-          body.push(para(q.options.map((o, j) => (j ? tab() : '') + run(`${LET[j]}. `, { b: 1 }) + run(o)).join(''), { left: 567, tabs: [2400, 4200, 6000, 7800], after: 100 }));
-        } else {
-          q.options.forEach((o, j) => body.push(para(run(`${LET[j]}. `, { b: 1 }) + run(o), { left: 1134, hanging: 567, after: 20 })));
-          body.push(P('', {}, { after: 60 }));
-        }
-      });
-    }
-    if (writing.length) {
-      body.push(para(run('ផ្នែក ខ · សរសេរ ', { b: 1, sz: 30 }) + run(`(${kh(writing.length)} សំណួរ · ${kh(wPts)} ពិន្ទុ)`, { sz: 24 }), { underline: true, before: 240, after: 100, keep: 1 }));
-      writing.forEach((q, i) => {
-        body.push(para(run(`${kh(i + 1)}.\t`, { b: 1 }) + run(q.stem_text) + run(`   (${kh(q.points)} ពិន្ទុ)`, { b: 1, sz: 24 }), { left: 567, hanging: 567, tabs: [567], before: 80, after: 60, keep: 1 }));
-        if (q.image_key) body.push(pic(q.image_key));
-        if (opts.space !== false) for (let n = 0; n < Math.min(12, Math.max(3, Math.round(q.points / 1.5))); n++) body.push(P('', {}, { after: 160 }));
-      });
-    }
-    if (showKey) {
-      body.push(P(`ចម្លើយ — ${test.title}`, { b: 1, sz: 32 }, { align: 'center', pageBreak: 1, after: 160 }));
+    if (!answers) {
+      // ----- exam paper -----
+      body.push(P(test.title, { b: 1, sz: 34 }, { align: 'center', before: 80, after: 20 }).replace(`w:cs="${FONT_KH}"`, `w:cs="${FT.title}"`));
+      if (opts.date) body.push(para(runF(FT.title, `សម័យប្រឡង ${opts.date}`, { b: 1, sz: 30 }), { align: 'center', after: 20 }));
+      body.push(para(runF(FT.title, `វិញ្ញាសា ${prof.subject || 'គណិតវិទ្យា'}`, { b: 1, sz: 30 }), { align: 'center', after: 60 }));
+      body.push(P(`រយៈពេល៖ ${kh(minutes)} នាទី        ពិន្ទុសរុប៖ ${kh(mcqPts + wPts)} ពិន្ទុ`, { sz: 24 }, { align: 'center', after: 100 }));
+      body.push(P('ឈ្មោះ៖ ..............................................      ថ្នាក់៖ ................      លេខ៖ ................', { sz: 24 }, { before: 40, after: 100 }));
+      body.push(P(`សូមអានសំណួរឱ្យបានល្អិតល្អន់។ ${mcq.length ? `ផ្នែក ក ជ្រើសរើសចម្លើយត្រឹមត្រូវ (${kh(mcqPts)} ពិន្ទុ)។ ` : ''}${writing.length ? `ផ្នែក ខ សរសេរចម្លើយលើក្រដាសឆ្លើយ ដោយបង្ហាញវិធីដោះស្រាយ (${kh(wPts)} ពិន្ទុ)។ ` : ''}មិនអនុញ្ញាតឱ្យប្រើទូរស័ព្ទ ឬម៉ាស៊ីនគណនាទេ។`, { sz: 23 }, { box: 1, after: 140 }));
+
       if (mcq.length) {
-        body.push(P('ផ្នែក ក · ចម្លើយពហុជ្រើសរើស', { b: 1, sz: 28 }, { underline: 1, after: 100 }));
-        const rows = []; const per = 10;
-        for (let i = 0; i < mcq.length; i += per) {
-          const slice = mcq.slice(i, i + per);
-          rows.push(slice.map((_, k) => cell(P(kh(i + k + 1), { b: 1, sz: 24 }, { align: 'center', after: 0 }), 960, { border: 1 })).join(''));
-          rows.push(slice.map((q) => cell(P(LET[q.correct_index], { sz: 26 }, { align: 'center', after: 0 }), 960, { border: 1 })).join(''));
-        }
-        body.push(table(rows, { border: 1, width: 9600, grid: Array(10).fill(960) }));
-      }
-      if (writing.length) {
-        body.push(P('ផ្នែក ខ · ចម្លើយ និងការដាក់ពិន្ទុ', { b: 1, sz: 28 }, { underline: 1, before: 240, after: 100 }));
-        writing.forEach((q, i) => {
-          body.push(para(run(`${kh(i + 1)}. `, { b: 1 }) + run(`(${kh(q.points)} ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 80, after: 20, keep: 1 }));
-          body.push(P(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)', { sz: 24 }, { left: 567, after: 80 }));
+        body.push(para(run('ផ្នែក ក · ពហុជ្រើសរើស ', { b: 1, sz: 28 }) + run(`(${kh(mcq.length)} សំណួរ × ${kh(mcq[0].points)} ពិន្ទុ)`, { sz: 23 }), { underline: true, before: 100, after: 100, keep: 1 }));
+        mcq.forEach((q, i) => {
+          body.push(para(run(`${kh(i + 1)}.\t`, { b: 1 }) + run(q.stem_text), { left: 567, hanging: 567, tabs: [567], before: 60, after: 40, keep: 1 }));
+          if (q.image_key) body.push(pic(q.image_key).replace('w:left="1871"', 'w:left="567"'));
+          const short = q.options.every((o) => o.length <= 14);
+          if (short) body.push(para(q.options.map((o, j) => (j ? tab() : '') + run(`${LET[j]}. `, { b: 1 }) + run(o)).join(''), { left: 567, tabs: [2400, 4200, 6000, 7800], after: 100 }));
+          else { q.options.forEach((o, j) => body.push(para(run(`${LET[j]}. `, { b: 1 }) + run(o), { left: 1134, hanging: 567, after: 20 }))); body.push(P('', {}, { after: 60 })); }
         });
       }
+      if (writing.length) {
+        body.push(para(run('ផ្នែក ខ · សរសេរ ', { b: 1, sz: 28 }) + run(`(${kh(writing.length)} សំណួរ · ${kh(wPts)} ពិន្ទុ)`, { sz: 23 }), { underline: true, before: 200, after: 100, keep: 1 }));
+        writing.forEach((q, i) => {
+          const { intro, subs } = splitWriting(q.stem_text);
+          // I.  (១០ពិន្ទុ)  question — Roman numeral, bold score, hanging text (NGS template)
+          body.push(para(run(`${ROMAN[i] || i + 1}.`, { b: 1 }) + tab() + run(`(${kh(q.points)}ពិន្ទុ)`, { b: 1 }) + tab() + run(intro || (subs.length ? '' : q.stem_text)), { left: 1871, hanging: 1871, tabs: [680, 1871], before: 100, after: 30, keep: 1 }));
+          subs.forEach((sq) => body.push(para(run(`${sq.l}.`) + tab() + run(sq.t), { left: 2381, hanging: 510, tabs: [2381], after: 20 })));
+          if (q.image_key) body.push(pic(q.image_key));
+          if (opts.space !== false) for (let n = 0; n < Math.min(12, Math.max(3, Math.round(q.points / 1.5))); n++) body.push(P('', {}, { after: 160 }));
+        });
+      }
+      // header (logo + school | website, facebook) and footer (teacher | email | telegram | tel), as in the template
+      const hRight = [prof.website && `Website: ${prof.website}`, prof.facebook && `Facebook: ${prof.facebook}`].filter(Boolean);
+      const leftCell = (logo ? para(image(logo.rid, 468000, 468000, 900) + runF(FT.head, `  ${prof.school || ''}`, { sz: 25 }), { after: 0 }) : para(runF(FT.head, prof.school || '', { sz: 25 }), { after: 0 }));
+      const rightCell = hRight.length ? hRight.map((l) => P(l, { sz: 20, i: 1 }, { align: 'right', after: 0 })).join('') : P('', {}, { after: 0 });
+      const hdr = `${XML}<w:hdr ${NS}>${table([cell(leftCell, 5800) + cell(rightCell, 4518)], { width: 10318, grid: [5800, 4518] })}${para('', { underline: true, after: 60 })}</w:hdr>`;
+      const fparts = [prof.teacher, prof.email && `Email: ${prof.email}`, prof.telegram && `Telegram: ${prof.telegram}`, prof.tel && `Tel: ${prof.tel}`].filter(Boolean);
+      const ftr = `${XML}<w:ftr ${NS}><w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="10" w:space="4" w:color="000000"/></w:pBdr><w:tabs><w:tab w:val="left" w:pos="2700"/><w:tab w:val="center" w:pos="6700"/><w:tab w:val="right" w:pos="10318"/></w:tabs><w:spacing w:before="0" w:after="0"/></w:pPr>${fparts.map((t, i) => (i ? tab() : '') + (i === 0 && prof.teacher ? runF(FT.head, t, { sz: 17 }) : run(t, { sz: 17, i: 1 }))).join('')}</w:p></w:ftr>`;
+      extra.push({ name: 'word/header1.xml', data: hdr }, { name: 'word/footer1.xml', data: ftr });
+      sect = `<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:footerReference w:type="default" r:id="rIdFtr"/>${PAGE}<w:pgMar w:top="1700" w:right="794" w:bottom="1134" w:left="794" w:header="454" w:footer="340" w:gutter="0"/></w:sectPr>`;
+    } else {
+      // ----- answer sheet (អត្រាកំណែ): school block, centred title, two columns, boxed conclusions -----
+      const head = (l, r) => `<w:tr>${cell(P(l, { b: 1, sz: 24 }, { after: 0 }), 5200)}${cell(P(r, { b: 1, sz: 24 }, { align: 'right', after: 0 }), 4800)}</w:tr>`;
+      body.push(`<w:tbl><w:tblPr><w:tblW w:w="10000" w:type="dxa"/></w:tblPr><w:tblGrid><w:gridCol w:w="5200"/><w:gridCol w:w="4800"/></w:tblGrid>${head(prof.school || '', `${prof.group || 'ក្រុមគ្រូគណិតវិទ្យា'} ឆ្នាំ ${year}`)}${head(`មុខវិជ្ជា៖ ${prof.subject || 'គណិតវិទ្យា'}`, `រយៈពេល៖ ${kh(minutes)} នាទី (ពិន្ទុ៖ ${kh(mcqPts + wPts)})`)}</w:tbl>`);
+      body.push(para(runF(FT.title, 'អត្រាកំណែ', { b: 1, sz: 34 }), { align: 'center', before: 120, after: 0 }));
+      body.push(para(runF(FT.title, `វិញ្ញាសា៖ ${prof.subject || 'គណិតវិទ្យា'}`, { b: 1, sz: 30 }), { align: 'center', after: 0 }));
+      // the last paragraph of the one-column part carries the section break (the rest of the sheet is two columns)
+      body.push(P(test.title, { sz: 22 }, { align: 'center', after: 120 }).replace('</w:pPr>', `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/>${PAGE}<w:pgMar w:top="1020" w:right="794" w:bottom="1000" w:left="794" w:header="454" w:footer="400" w:gutter="0"/></w:sectPr></w:pPr>`));
+      if (mcq.length) {
+        body.push(para(run(`ផ្នែក ក · ពហុជ្រើសរើស (${kh(mcqPts)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 60, after: 40, keep: 1 }));
+        const rows = []; const per = 5;
+        for (let i = 0; i < mcq.length; i += per) rows.push(mcq.slice(i, i + per).map((q, k) => cell(P(`${kh(i + k + 1)}. ${LET[q.correct_index]}${q.alt_correct_index != null ? `/${LET[q.alt_correct_index]}` : ''}`, { b: 1, sz: 22 }, { align: 'center', after: 0 }), 950, { border: 1 })).join(''));
+        body.push(table(rows, { border: 1, width: 4750, grid: Array(per).fill(950) }));
+        body.push(P('', {}, { after: 80 }));
+      }
+      writing.forEach((q, i) => {
+        body.push(para(run(`លំហាត់ទី${kh(i + 1)} (${kh(q.points)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 100, after: 30, keep: 1 }));
+        String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').forEach((ln) => {
+          if (/^\s*ដូចនេះ/.test(ln)) { body.push(para(run(ln.trim(), { sz: 22 }), { box: 1, align: 'center', before: 40, after: 80 })); return; }
+          const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+          body.push(para((m ? run(`${m[1]}. `, { b: 1, sz: 22 }) : '') + run(m ? m[2] : ln, { sz: 22 }), { after: 40 }));
+        });
+      });
+      const ftr = `${XML}<w:ftr ${NS}><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rpr({ sz: 22 })}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rpr({ sz: 22 })}<w:t>1</w:t></w:r><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`;
+      extra.push({ name: 'word/footer1.xml', data: ftr });
+      sect = `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/><w:type w:val="continuous"/>${PAGE}<w:pgMar w:top="1020" w:right="794" w:bottom="1000" w:left="794" w:header="454" w:footer="400" w:gutter="0"/><w:cols w:num="2" w:space="510"/></w:sectPr>`;
     }
-    const sect = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>';
-    const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body.join('')}${sect}</w:body></w:document>`;
-    const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="${FONT_KH}"/><w:sz w:val="26"/><w:szCs w:val="26"/><w:lang w:val="en-US" w:bidi="km-KH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
-    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${Object.values(images).map((im) => `<Relationship Id="${im.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${im.n}.png"/>`).join('')}</Relationships>`;
+
+    const documentXml = `${XML}<w:document ${NS}><w:body>${body.join('')}${sect}</w:body></w:document>`;
+    const stylesXml = `${XML}<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="${FONT_KH}"/><w:sz w:val="26"/><w:szCs w:val="26"/><w:lang w:val="en-US" w:bidi="km-KH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+    const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const imgRel = (im) => `<Relationship Id="${im.rid}" Type="${REL}/image" Target="media/image${im.n}.png"/>`;
+    const docRels = `${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="${REL}/styles" Target="styles.xml"/>${answers ? '' : `<Relationship Id="rIdHdr" Type="${REL}/header" Target="header1.xml"/>`}<Relationship Id="rIdFtr" Type="${REL}/footer" Target="footer1.xml"/>${Object.entries(images).filter(([k]) => !logo || k !== prof.logo).map(([, im]) => imgRel(im)).join('')}</Relationships>`;
     const enc = new TextEncoder();
     const files = [
-      { name: '[Content_Types].xml', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>') },
-      { name: '_rels/.rels', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>') },
+      { name: '[Content_Types].xml', data: enc.encode(`${XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>${answers ? '' : '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>'}<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`) },
+      { name: '_rels/.rels', data: enc.encode(`${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/officeDocument" Target="word/document.xml"/></Relationships>`) },
       { name: 'word/document.xml', data: enc.encode(documentXml) },
       { name: 'word/styles.xml', data: enc.encode(stylesXml) },
-      { name: 'word/_rels/document.xml.rels', data: enc.encode(rels) },
+      { name: 'word/_rels/document.xml.rels', data: enc.encode(docRels) },
+      ...extra.map((e) => ({ name: e.name, data: enc.encode(e.data) })),
+      ...(logo ? [{ name: 'word/_rels/header1.xml.rels', data: enc.encode(`${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imgRel(logo)}</Relationships>`) }] : []),
       ...media,
     ];
     return zip(files);
@@ -163,7 +205,7 @@
       const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${String(test.title).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)}.docx`;
+      a.download = `${String(test.title).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)}${opts.answers ? ' (អត្រាកំណែ)' : ''}.docx`;
       document.body.append(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     },

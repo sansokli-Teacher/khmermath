@@ -9,6 +9,7 @@ import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
 import * as admin from './api/admin.js';
+import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 
@@ -48,6 +49,8 @@ const ROUTES = [
   ['POST', '/api/invite/:token/accept', admin.acceptInvite],
   ['GET', '/api/teachers/search', admin.searchTeachers],
   ['GET', '/api/export', admin.exportData],
+  ['GET', '/api/profile/paper', profile.getPaperProfile],
+  ['POST', '/api/profile/paper', profile.setPaperProfile],
   ['GET', '/api/shares', admin.listShares],
   ['POST', '/api/shares', admin.setShare],
   ['POST', '/api/shares/remove', admin.removeShare],
