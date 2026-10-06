@@ -34,7 +34,7 @@ render.bank = async function () {
   const selected = new Set();
   const S = bankState;
   const topics = [...new Set(questions.map((q) => q.topic).filter(Boolean))].sort();
-  const reload = () => render.bank();
+  const reload = async () => { const y = window.scrollY; await render.bank(); window.scrollTo(0, y); };   // stay where the teacher was
 
   // lessons per grade: the curriculum list first, then any other lesson names found on questions
   const lessonsOf = (g) => {

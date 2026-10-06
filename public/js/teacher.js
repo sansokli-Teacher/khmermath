@@ -733,7 +733,16 @@ render.tests = async function () {
   draw();
 };
 
+// re-draws the test editor but keeps the teacher where they were (after save / delete / note)
 async function renderTestBuilder(container) {
+  const same = container.dataset.tb === String(selectedTestId);
+  const y = window.scrollY;
+  await drawTestBuilder(container);
+  container.dataset.tb = String(selectedTestId);
+  if (same) window.scrollTo(0, y);
+}
+
+async function drawTestBuilder(container) {
   const test = await api(`/api/tests/${selectedTestId}`);
   container.innerHTML = '';
 
@@ -753,7 +762,7 @@ async function renderTestBuilder(container) {
   const header = h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between' }, [
       h('h2', {}, [test.title, mayRename ? h('button', { class: 'secondary btn-sm', style: 'margin-left:10px;vertical-align:middle;', title: 'ប្តូរឈ្មោះតេស្ត', onclick: rename }, '✏️ ប្តូរឈ្មោះ') : null]),
-      h('button', { class: 'secondary', onclick: () => { selectedTestId = null; render.tests(); } }, '← ត្រឡប់'),
+      h('button', { class: 'secondary', onclick: () => { selectedTestId = null; container.dataset.tb = ''; render.tests(); } }, '← ត្រឡប់'),
     ]),
     h('div', { class: 'row' }, [
       h('button', { class: 'secondary', onclick: () => window.open(`student.html?preview=${test.id}`, '_blank') }, '👁 មើលជាសិស្ស'),
