@@ -86,3 +86,97 @@
   @page answers { size: A4; margin: 17mm 14mm 16mm; @bottom-center { content: counter(page, khmer); font-family: 'PaperBody', serif; font-size: 11pt; } }
 }
 @media (max-width: 800px) { .sheet { width: auto; margin: 0; padding: 12px 12px 30mm; font-size: 12pt; } .p-opts { grid-template-columns: repeat(2, auto); } .ans-cols { column-count: 1; } }
+
+/* =====================================================================================
+   Template 2 — "Pre-test" (NGS summer-course style): header with logo, red page-number
+   footer, A/B/C/D options in columns, OMR answer sheet, ruled written-answer pages
+   ===================================================================================== */
+.pt-doc { font-size: 12.5pt; line-height: 1.55; }
+.pt-ph { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: .8pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm; min-height: 13mm; }
+.pt-ph-left { display: flex; align-items: center; gap: 2.5mm; font-family: 'PaperHead', 'PaperBody', serif; font-size: 10pt; }
+.pt-ph-left img { height: 10mm; width: 10mm; object-fit: contain; }
+.pt-ph-right { text-align: right; font-family: 'Times New Roman', serif; font-size: 10pt; line-height: 1.25; }
+.pt-pf-screen { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-top: .8pt solid #000; padding-top: 1.5mm; margin-top: 10mm; font-size: 9.5pt; font-family: 'Times New Roman', serif; }
+.pt-pf-screen .t { font-family: 'PaperHead', 'PaperBody', serif; }
+.pt-pf-screen .pg { background: #e00; color: #fff; font-weight: 700; padding: 0 2.5mm; margin-left: 4mm; }
+
+.pt-title { text-align: center; font-family: 'PaperTitle', 'PaperBody', serif; margin: 3mm 0 4mm; line-height: 1.5; }
+.pt-title .a { font-size: 16pt; font-weight: 700; }
+.pt-title .b { font-size: 13pt; font-weight: 700; }
+.pt-info { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; margin-bottom: 4mm; font-size: 12pt; }
+.pt-info .f { display: flex; align-items: flex-end; gap: 2mm; }
+.pt-info .f i { flex: 1; border-bottom: .8pt solid #000; min-height: 5mm; }
+.pt-box { border: .8pt solid #000; padding: 2mm 4mm; margin: 0 auto 4mm; width: 92%; font-size: 11.5pt; }
+.pt-box ul { margin: 1mm 0 0; padding-left: 5mm; }
+.pt-sec { font-family: 'PaperTitle', 'PaperBody', serif; font-size: 14pt; font-weight: 700; margin: 5mm 0 1.5mm; break-after: avoid; }
+.pt-lvl { font-weight: 700; margin: 3mm 0 2mm; break-after: avoid; }
+.pt-note { margin-bottom: 2mm; }
+.pt-q { break-inside: avoid; page-break-inside: avoid; margin: 0 0 5mm; }
+.pt-q .stem { display: flex; gap: 2.5mm; white-space: pre-line; }
+.pt-q .no { font-family: 'Times New Roman', serif; font-size: 11pt; min-width: 6mm; }
+.pt-q img { display: block; max-width: 100mm; max-height: 60mm; margin: 1.5mm 0 1.5mm 8.5mm; }
+.pt-opts { display: grid; margin: 1mm 0 0 8.5mm; gap: 0.5mm 4mm; font-size: 12pt; }
+.pt-opts.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pt-opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pt-opts .o { display: flex; gap: 2mm; }
+.pt-opts .o b { font-family: 'Times New Roman', serif; font-weight: 400; }
+.pt-wq { break-inside: avoid; page-break-inside: avoid; margin: 0 0 5mm; }
+.pt-wq .stem { display: flex; gap: 2.5mm; white-space: pre-line; }
+.pt-wq .sub { margin-left: 14mm; display: flex; gap: 2mm; white-space: pre-line; }
+.pt-wq .pts { font-weight: 700; white-space: nowrap; }
+.pt-wq img { display: block; max-width: 100mm; max-height: 60mm; margin: 1.5mm 0 1.5mm 8.5mm; }
+.pt-end { text-align: center; font-family: 'PaperTitle', 'PaperBody', serif; margin: 8mm 0 4mm; }
+.pt-total { margin-left: auto; width: 62mm; border-collapse: collapse; font-size: 11.5pt; }
+.pt-total td { border: .8pt solid #000; padding: 1.5mm 3mm; background: none; }
+.pt-total td:last-child { width: 22mm; }
+
+/* OMR sheet */
+.pt-break { break-before: page; page-break-before: always; }
+.pt-omr-frame { position: relative; border: 1.2pt solid #000; padding: 6mm 7mm; margin: 3mm 0 5mm; display: flex; gap: 8mm; justify-content: center; }
+.pt-omr-frame::before, .pt-omr-frame::after { content: ''; position: absolute; width: 5mm; height: 5mm; background: #000; left: -1px; }
+.pt-omr-frame::before { top: -1px; } .pt-omr-frame::after { bottom: -1px; }
+.pt-omr-frame .c2 { position: absolute; right: -1px; width: 5mm; height: 5mm; background: #000; }
+.pt-omr { border-collapse: collapse; font-size: 10.5pt; flex: 1; }
+.pt-omr th, .pt-omr td { border: .6pt solid #000; text-align: center; padding: 0.6mm 0; background: none; color: #000; position: static; font-family: 'Times New Roman', serif; font-weight: 400; }
+.pt-omr th { font-weight: 700; padding: 1.4mm 0; }
+.pt-omr td.no { width: 11mm; }
+.pt-bub { display: inline-block; width: 3.6mm; height: 3.6mm; border: .7pt solid #000; border-radius: 50%; vertical-align: middle; }
+.pt-score-line { text-align: right; font-family: 'PaperTitle', 'PaperBody', serif; margin: 3mm 0; }
+.pt-ans-q { break-inside: avoid; margin-bottom: 4mm; }
+.pt-lines { margin: 2mm 0 0 8mm; }
+.pt-lines i { display: block; border-bottom: .7pt solid #000; height: 9mm; }
+.pt-lines-score { text-align: right; margin-top: 1.5mm; }
+
+/* teacher key (template 2) */
+.ptk-title { text-align: center; font-family: 'PaperTitle', 'PaperBody', serif; margin: 6mm 0 3mm; line-height: 1.5; }
+.ptk-title .a { font-size: 17pt; color: #b00; font-weight: 700; }
+.ptk-title .b { font-size: 13pt; font-weight: 700; }
+.ptk-note { text-align: center; background: #fde4e4; padding: 2mm 4mm; margin: 0 auto 6mm; width: 82%; font-family: 'PaperHead', 'PaperBody', serif; }
+.ptk-h { font-size: 15pt; margin: 6mm 0 2mm; }
+.ptk-table { width: 100%; border-collapse: collapse; }
+.ptk-table th, .ptk-table td { border: .7pt solid #000; text-align: center; padding: 2.2mm 1mm; background: none; color: #000; position: static; }
+.ptk-table th { font-weight: 400; }
+.ptk-table td.k { color: #b00; font-weight: 700; font-size: 13pt; }
+.ptk-table td.n { font-weight: 700; font-family: 'Times New Roman', serif; }
+.ptk-cols { column-count: 2; column-gap: 10mm; column-rule: .4pt solid #000; font-size: 11.5pt; line-height: 1.5; }
+.ptk-item { break-inside: avoid; margin-bottom: 7mm; }
+.ptk-item .tt { font-weight: 700; }
+.ptk-item .ans { color: #1a4fb4; font-size: 13pt; font-weight: 700; margin: 2mm 0; }
+.ptk-item .sc { color: #b00; font-weight: 700; margin-top: 2mm; }
+.ptk-item ul { margin: 1mm 0 0; padding-left: 6mm; }
+.ptk-banner { border: .8pt solid #000; background: #eee; text-align: center; padding: 2mm; margin: 8mm 0 3mm; font-family: 'PaperTitle', 'PaperBody', serif; font-size: 14pt; }
+
+@media print {
+  .pt-doc { page: pretest; }
+  .pt-doc > .pt-ph { position: fixed; top: 8mm; left: 0; right: 0; background: #fff; margin: 0; }
+  .pt-doc > .pt-pf-screen { display: none; }
+  .pt-doc .flow > thead > tr > td { height: 27mm; }
+  .pt-doc .flow > tfoot > tr > td { height: 0; }
+  .pt-doc .flow > tbody > tr > td { padding: 0; }
+  .ptkey-doc { page: ptkey; padding: 0; }
+  @page ptkey { size: A4; margin: 17mm 14mm 16mm; @bottom-center { content: counter(page); font-family: 'PaperBody', serif; font-size: 11pt; } }
+  .pt-omr th, .pt-omr td, .ptk-note, .pt-pf-screen .pg, .ptk-banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+.pt-doc .katex, .ptkey-doc .katex { font-size: 1.02em; }
+.ptk-item .tt .katex { font-weight: 400; }

@@ -134,15 +134,34 @@ function answerDoc(o) {
   return h('div', { class: 'sheet answers-doc' }, kids);
 }
 
+const tplValue = () => document.getElementById('opt-tpl').value;
+const pageOptions = () => ({
+  minutes: Number(document.getElementById('opt-min').value) || 70,
+  date: document.getElementById('opt-date').value.trim(),
+  space: document.getElementById('opt-space').checked,
+  subtitle: document.getElementById('opt-sub').value.trim(),
+  omr: document.getElementById('opt-omr').checked,
+  group: document.getElementById('opt-group').checked,
+});
+
 function render() {
-  const o = {
-    minutes: Number(document.getElementById('opt-min').value) || 70,
-    date: document.getElementById('opt-date').value.trim(),
-    space: document.getElementById('opt-space').checked,
-  };
+  const o = pageOptions();
+  const tpl = tplValue();
+  for (const id of ['opt-sub', 'lbl-omr', 'lbl-group']) document.getElementById(id).hidden = tpl !== 'pretest';
   const answers = document.getElementById('opt-key').checked;
   const sheet = document.getElementById('sheet');
   sheet.innerHTML = '';
+  // template 2 puts its footer into @page margin boxes, built from this teacher's details
+  let st = document.getElementById('pt-page-style');
+  if (!st) { st = document.createElement('style'); st.id = 'pt-page-style'; document.head.append(st); }
+  st.textContent = tpl === 'pretest' ? window.PaperPT.pageStyle(profile) : '';
+  if (tpl === 'pretest') {
+    const mcq = test.questions.filter((q) => q.kind !== 'writing'), writing = test.questions.filter((q) => q.kind === 'writing');
+    const ctx = { h, mathEl, kh, test, profile, mcq, writing, splitWriting, logoSrc,
+      mcqPts: mcq.reduce((a, q) => a + q.points, 0), wPts: writing.reduce((a, q) => a + q.points, 0) };
+    sheet.append(answers ? window.PaperPT.keyDoc(ctx, o) : window.PaperPT.examDoc(ctx, o));
+    return;
+  }
   sheet.append(answers ? answerDoc(o) : examDoc(o));
 }
 
@@ -197,7 +216,9 @@ async function init() {
   document.title = test.title;
   if (params.get('min')) document.getElementById('opt-min').value = params.get('min');
   if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
-  for (const id of ['opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
+  try { const t = params.get('tpl') || localStorage.getItem('paper_tpl'); if (t === 'pretest' || t === 'exam') document.getElementById('opt-tpl').value = t; } catch {}
+  document.getElementById('opt-tpl').addEventListener('change', () => { try { localStorage.setItem('paper_tpl', tplValue()); } catch {} });
+  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
   document.getElementById('print-btn').onclick = () => window.print();
   document.getElementById('profile-btn').onclick = openProfile;
   const toWord = async (btn) => {
@@ -205,8 +226,7 @@ async function init() {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ កំពុងបង្កើត Word…'; }
     try {
       await window.ExamDocx.download(test, {
-        minutes: Number(document.getElementById('opt-min').value) || 70, date: document.getElementById('opt-date').value.trim(),
-        answers: document.getElementById('opt-key').checked, space: document.getElementById('opt-space').checked, profile,
+        ...pageOptions(), tpl: tplValue(), answers: document.getElementById('opt-key').checked, profile,
       });
     } catch (e) { Exam.notify(`មិនអាចបង្កើតឯកសារ Word បានទេ៖ ${e.message}`); }
     if (btn) { btn.disabled = false; btn.textContent = label; }

@@ -23,6 +23,16 @@
       <label class="tb-check"><input type="checkbox" id="opt-space" checked> ទុកចន្លោះសរសេរចម្លើយ</label>
     </div>
     <div class="row">
+      <span class="muted">ទម្រង់៖</span>
+      <select id="opt-tpl" style="width:auto;max-width:300px;">
+        <option value="exam">ទម្រង់ ១ — ប្រឡងសញ្ញាបត្រ (NGS)</option>
+        <option value="pretest">ទម្រង់ ២ — បុរេតេស្ត (Pre-test)</option>
+      </select>
+      <input type="text" id="opt-sub" placeholder="ចំណងជើងរង (ទម្រង់ ២)" style="width:210px;">
+      <label class="tb-check" id="lbl-omr"><input type="checkbox" id="opt-omr" checked> សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</label>
+      <label class="tb-check" id="lbl-group"><input type="checkbox" id="opt-group"> ដាក់ជាក្រុមតាមកម្រិត</label>
+    </div>
+    <div class="row">
       <span class="muted">រយៈពេល</span><input type="number" id="opt-min" value="70" style="width:80px;">
       <span class="muted">នាទី · កាលបរិច្ឆេទ</span><input type="text" id="opt-date" placeholder="ថ្ងៃទី ... ខែ ... ឆ្នាំ ..." style="width:200px;">
       <button id="profile-btn" class="secondary btn-sm">⚙ ក្បាល/ជើងទំព័រ</button>
@@ -37,6 +47,7 @@
 <script src="js/common.js"></script>
 <script src="js/mathtype.js"></script>
 <script src="js/docx.js"></script>
+<script src="js/paper_pretest.js"></script>
 <script src="js/paper.js"></script>
 </body>
 </html>
