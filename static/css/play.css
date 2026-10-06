@@ -1,0 +1,51 @@
+/* khmermath.org — «ល្បែងបាយខុំ» (play/baykhom.html, static/js/baykhom.js).
+   Holes are real buttons, at least 64 px, so a finger or a mouse can hit them. */
+.bk { display: flex; flex-direction: column; gap: 14px; max-width: 900px; margin: 0 auto; }
+.bk-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; }
+.bk-seg, .bk-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.bk-seg button {
+  min-height: 44px; padding: 6px 18px; border-radius: 999px; border: 1.5px solid var(--line-2);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+.bk-seg button[aria-pressed="true"] { background: var(--teal-soft); border-color: var(--teal); color: var(--teal-strong); box-shadow: inset 0 0 0 1px var(--teal); }
+.bk .btn { min-height: 44px; }
+.bk-score { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bk-pl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px 16px; border-radius: var(--radius); background: var(--surface-2); border: 2px solid var(--line); }
+.bk-pl.on { border-color: var(--amber); background: var(--amber-soft); }
+.bk-pl .bk-name { font-weight: 700; }
+.bk-pl b { font-size: 28px; line-height: 1.2; color: var(--teal-strong); }
+.bk-pl small { color: var(--ink-3); font-size: 14px; }
+.bk-msg { min-height: 3.4em; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); line-height: 1.7; }
+.bk-board {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px;
+  border-radius: 28px; background: #b07a3f; border: 3px solid #7a4f22; box-shadow: var(--shadow);
+}
+.bk-hole {
+  position: relative; aspect-ratio: 1; min-height: 64px; padding: 0; border-radius: 50%; cursor: default;
+  background: radial-gradient(circle at 50% 40%, #4a2d12, #2a1808); border: 3px solid #6b4520;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,.6); font: inherit; color: #fff;
+}
+.bk-hole.chi { border-color: #e0b24a; box-shadow: inset 0 4px 10px rgba(0,0,0,.6), 0 0 0 3px rgba(224,178,74,.35); }
+.bk-hole.can { cursor: pointer; animation: bk-pulse 1.4s ease-in-out infinite; border-color: #f0c866; }
+.bk-hole.can:hover, .bk-hole.can:focus-visible { transform: scale(1.04); outline: 3px solid var(--amber); outline-offset: 2px; }
+.bk-hole.hit { box-shadow: inset 0 4px 10px rgba(0,0,0,.6), 0 0 0 5px #fff; }
+.bk-hole.cap { box-shadow: inset 0 4px 10px rgba(0,0,0,.6), 0 0 0 6px #e0524d; }
+.bk-hole:disabled { color: #fff; opacity: 1; }
+.bk-seeds { position: absolute; inset: 14%; }
+.bk-seed { position: absolute; width: 17%; height: 17%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1c9, #e0a93f 70%); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.bk-n {
+  position: absolute; right: 2px; bottom: 2px; min-width: 28px; padding: 0 6px; border-radius: 999px;
+  background: rgba(0,0,0,.72); font-size: 15px; font-weight: 700; line-height: 26px; text-align: center;
+}
+.bk-note { margin: 0; color: var(--ink-3); font-size: 15px; }
+.bk-rules { max-width: 900px; margin: 28px auto 0; }
+.bk-rules ol { padding-left: 1.4em; line-height: 1.9; }
+.bk-credit { color: var(--ink-3); font-size: 14.5px; }
+@keyframes bk-pulse { 50% { box-shadow: inset 0 4px 10px rgba(0,0,0,.6), 0 0 0 5px rgba(240,200,102,.55); } }
+@media (prefers-reduced-motion: reduce) { .bk-hole.can { animation: none; } }
+@media (max-width: 560px) {
+  .bk-board { gap: 6px; padding: 10px; border-radius: 20px; }
+  .bk-score { gap: 8px; }
+  .bk-pl { padding: 8px 10px; }
+  .bk-n { font-size: 13px; min-width: 24px; line-height: 22px; }
+}
