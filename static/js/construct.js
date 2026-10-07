@@ -1592,6 +1592,7 @@
   //                                     (it runs on ext past the line AB when ext is given)
   //   ['pt', P, name, dir, cls, dist]   a point and its name, once the step is drawn
   //   ['mark', function (g) { ... }]    marks (ticks, right angles, equal angles), behind the ink
+  //   ['phases', [{ dur, draw(t, drawn, tools) }], inkFn]   a movement of its own; inkFn(g) is what stays when it is done
   // The picture of step i is everything up to i; on arriving at a step its lines and arcs are drawn
   // one after another, each with its tool. A new figure is a figure() and this list, nothing more.
   // The perpendicular from P to AB as Grade 7 lesson 14 §5.1 draws it: one side of the right angle of
@@ -1621,8 +1622,9 @@
         segLine(g, it[1], add(foot, mul(unit(sub(foot, it[1])), it[5] || 0)), it[4] || 'cx-perp');
       }
       else if (it[0] === 'circ') el('circle', { cx: it[1][0], cy: it[1][1], r: len(sub(it[2], it[1])), class: 'cx-circle' }, g);
+      else if (it[0] === 'phases' && it[2]) it[2](g);
     };
-    var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp' || it[0] === 'circ'; };
+    var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp' || it[0] === 'circ' || it[0] === 'phases'; };
     return {
       steps: spec.steps, start: spec.start, limit: spec.limit, place: spec.place, presets: spec.presets,
       figure: function (s) { var f = spec.figure(s); f.meet = true; f.script = spec.script(f); return f; },
@@ -1652,6 +1654,9 @@
             el('path', { d: arcPath(q.c, q.r, q.t1, th), class: 'cx-arc' }, drawn);
             drawCompass(tools, q.c, onCircle(q.c, q.r, th));
           } });
+          else if (it[0] === 'phases') it[1].forEach(function (ph) {
+            phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
+          });
           else if (it[0] === 'circ') circlePhases(it[1], it[2], 'cx-circle').forEach(function (ph) {
             phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
           });
@@ -3240,6 +3245,267 @@
       return null;
     },
   };
+
+  // ===== Grade 7, lesson 19: reflection about a point and about a line ======================================
+  var ptSym = function (P, O) { return sub(mul(O, 2), P); };
+  var inSheet = function (P, m) { return P[0] >= m && P[0] <= W - m && P[1] >= m && P[1] <= H - m; };
+  var mirrorIn = function (P, A, B) { return sub(mul(footOn(P, A, B), 2), P); };
+  var tagged = function (it) { it.img = true; return it; };         // belongs to the mirror image: hidden while it is folded
+  var foldNext = false;                                           // set when a fold is about to run: the step before it is drawn without the image
+  var withoutImage = function (f, run) {
+    var saved = f.script;
+    f.script = saved.map(function (st) { return st.filter(function (it) { return !it.img; }); });
+    run(); f.script = saved;
+  };
+
+  // §1.2: the point M′ symmetric to M about O (O is the middle of MM′): with the ruler marked in centimetres,
+  // and with the compass and a ruler. M and O are dragged.
+  var rpStart = { M: [160, 150], O: [320, 235] };
+  var rpLimit = function (s, key, p) {
+    var M = key === 'M' ? p : s.M, O = key === 'O' ? p : s.O, d = len(sub(M, O));
+    return d >= 80 && d <= 200 && inSheet(M, 30) && inSheet(O, 30) && inSheet(ptSym(M, O), 30);
+  };
+  var rpFigure = function (s) {
+    var f = { M: s.M, O: s.O, Mp: ptSym(s.M, s.O) };
+    f.u = unit(sub(s.O, s.M)); f.len = len(sub(s.M, s.O)); f.far = add(f.Mp, mul(f.u, 36));
+    return f;
+  };
+  var rpTop = function (f, ink) {
+    point(ink, f.M, 'M', mul(f.u, -1), null, 'M', 22);
+    point(ink, f.O, 'O', [f.u[1], -f.u[0]], 'cx-pt-m', 'O', 22);
+  };
+  var rpEnd = function (g, f) {
+    tick(g, f.M, f.O); tick(g, f.O, f.Mp);
+    says(g, 0, 'OM′ = OM'); says(g, 1, 'O ជាចំណុចកណ្ដាលនៃអង្កត់ MM′');
+  };
+  CX['reflect-ruler'] = scripted({
+    steps: 4, start: rpStart, limit: rpLimit, figure: rpFigure, top: rpTop,
+    script: function (f) {
+      var cm = Math.ceil(f.len / CM) + 1, d1 = mul(f.u, -1), d2 = f.u, nn = [-f.u[1], f.u[0]];
+      var measure = [
+        { dur: 900, draw: function (t, drawn, tools) { drawCmRuler(tools, f.O, d1, cm, nn, 0.25 + 0.75 * t); } },
+        { dur: 1000, draw: function (t, drawn, tools) { drawCmRuler(tools, f.O, d1, cm, nn, 1 - t); drawCmRuler(tools, f.O, d2, cm, nn, t); } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          drawCmRuler(tools, f.O, d2, cm, nn); dot(drawn, f.Mp, 1 + 3.4 * t); pencilAt(tools, f.Mp);
+        } },
+      ];
+      return [
+        [],
+        [['seg', f.M, f.far, 'cx-line']],
+        [['phases', measure], ['pt', f.Mp, 'M′', add(mul(f.u, 0.4), [-f.u[1], f.u[0]]), 'cx-pt-m', 24]],
+        [['mark', function (g) { rpEnd(g, f); }]],
+      ];
+    },
+  });
+  CX['reflect-compass'] = scripted({
+    steps: 4, start: rpStart, limit: rpLimit, figure: rpFigure, top: rpTop,
+    script: function (f) {
+      var t0 = aimAt(f.O, f.M);
+      return [
+        [],
+        [['seg', f.M, f.far, 'cx-line']],
+        [['arc', { c: f.O, r: f.len, t1: t0, t2: t0 + Math.PI }], ['pt', f.Mp, 'M′', add(mul(f.u, 0.4), [-f.u[1], f.u[0]]), 'cx-pt-m', 24]],
+        [['mark', function (g) { rpEnd(g, f); }]],
+      ];
+    },
+  });
+
+  // §3.2: the point A′ symmetric to A about the line d: the perpendicular from A to d (set square) meets d at O,
+  // the compass (centre O, radius OA) cuts it again at A′; d is the mediator of AA′. Last, the paper is folded
+  // along d and A′ lands on A. d turns with its handle, A is dragged.
+  CX['reflect-line'] = (function () {
+    var def = scripted({
+      steps: 5,
+      start: { A: [270, 165], D: [590, 285] },
+      place: parPlace,
+      limit: function (s, key, p) {
+        var f = parFrame(key === 'D' ? { A: s.A, D: p } : { A: p, D: s.D });
+        return f.u[0] > 0 && Math.abs(Math.atan2(f.u[1], f.u[0])) <= 0.2 && f.along >= -140 && f.along <= 30 && f.dist >= 60 && f.dist <= 125;
+      },
+      figure: function (s) {
+        var f = parFrame(s);
+        f.p1 = add(PAR.C, mul(f.u, -330)); f.p2 = add(PAR.C, mul(f.u, 330));
+        f.O = footOn(f.A, f.p1, f.p2); f.Ap = sub(mul(f.O, 2), f.A);
+        return f;
+      },
+      base: function (f, ink) { parGiven(f, ink); },
+      top: function (f, ink) { parHandles(f, ink); },
+      script: function (f) {
+        var t = aimAt(f.O, f.Ap);
+        return [
+          [],
+          [['perp', f.A, f.p1, f.p2, 'cx-line', f.dist + 28], ['mark', function (g) { rightMark(g, f.O, f.n, f.u); }],
+            ['pt', f.O, 'O', add(f.u, mul(f.n, -0.9)), null, 20]],
+          [['arc', { c: f.O, r: f.dist, t1: t - 0.55, t2: t + 0.55 }], tagged(['pt', f.Ap, 'A′', mul(f.n, -1), 'cx-pt-m', 22])],
+          [tagged(['mark', function (g) {
+            tick(g, f.A, f.O); tick(g, f.O, f.Ap);
+            says(g, 0, 'd ⟂ AA′  ,  OA = OA′'); says(g, 1, 'd ជាមេដ្យាទ័រនៃអង្កត់ AA′');
+          }])],
+          [],
+        ];
+      },
+    });
+    var baseAnim = def.anim, baseDraw = def.draw;
+    var foldPoint = function (f, P, k) {
+      var v = sub(P, PAR.C);
+      return add(add(PAR.C, mul(f.u, dotp(v, f.u))), mul(f.n, dotp(v, f.n) * Math.cos(Math.PI * k)));
+    };
+    var halfSheet = function (f, k) {
+      var c1 = add(PAR.C, mul(f.u, -330)), c2 = add(PAR.C, mul(f.u, 330));
+      return [c1, c2, add(c2, mul(f.n, -200)), add(c1, mul(f.n, -200))].map(function (P) {
+        return foldPoint(f, P, k).map(function (x) { return x.toFixed(1); }).join(',');
+      }).join(' ');
+    };
+    def.anim = function (f, i) {
+      if (i !== 4) return baseAnim(f, i);
+      foldNext = true;
+      return { phases: [{ dur: 2600, draw: function (k, drawn, tools) {
+        var P = foldPoint(f, f.Ap, k);
+        el('polygon', { points: halfSheet(f, k), class: 'cx-sector cx-sector-c' }, tools);
+        el('circle', { cx: P[0], cy: P[1], r: 5, class: 'cx-pt cx-pt-m' }, tools);
+        label(tools, add(P, mul(f.n, k < 0.5 ? -22 : 22)), 'A′', 'cx-label');
+      } }] };
+    };
+    def.draw = function (f, i, g, layer) {
+      if (i === 3 && foldNext) { foldNext = false; withoutImage(f, function () { baseDraw(f, i, g, layer); }); return; }
+      if (i < 4) return baseDraw(f, i, g, layer);
+      withoutImage(f, function () { baseDraw(f, i, g, layer); });
+      el('circle', { cx: f.A[0], cy: f.A[1], r: 12, class: 'cx-ghost' }, layer.ink);
+      label(layer.ink, add(f.A, [-34, 6]), 'A′', 'cx-label');
+      says(layer.marks, 0, 'ពត់ក្រដាសតាម d៖ A′ ត្រួតលើ A');
+    };
+    return def;
+  })();
+
+  // §2: the figure symmetric to the triangle ABC about the point O: each vertex is carried through O (OA′ = OA ...),
+  // so A′B′C′ is the same triangle, turned half a turn, with A′B′ ∥ AB. The corners and O are dragged; O on C is the
+  // book's worked example (the triangle EFC symmetric to ABC about C).
+  function rfpOk(s, key, p) {
+    var P = { A: s.A, B: s.B, C: s.C, O: s.O }; P[key] = p;
+    var tr = triangleOf(P);
+    if (!(tr.least >= 70 && Math.min.apply(null, tr.angles) >= 0.45 && inSheet(P.O, 26))) return false;
+    return ['A', 'B', 'C'].every(function (k) { return inSheet(P[k], 26) && inSheet(ptSym(P[k], P.O), 26) && !(P[k][0] < 330 && P[k][1] < 112); });
+  }
+  CX['reflect-fig-point'] = scripted({
+    steps: 6,
+    start: { A: [170, 132], B: [95, 225], C: [235, 225], O: [320, 245] },
+    limit: rfpOk,
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.O = s.O; f.Ap = ptSym(f.A, f.O); f.Bp = ptSym(f.B, f.O); f.Cp = ptSym(f.C, f.O);
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) {
+      triCorners(f, ink);
+      point(ink, f.O, 'O', [0.2, 1], 'cx-pt-m', 'O', 24);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2', img = 'cx-line';
+      var carry = function (P, Pp, name) {
+        return [['seg', P, Pp, aux], ['mark', function (g) { tick(g, P, f.O); tick(g, f.O, Pp); }],
+          ['pt', Pp, name, sub(Pp, f.O), null, 22]];
+      };
+      return [
+        [],
+        carry(f.A, f.Ap, 'A′'), carry(f.B, f.Bp, 'B′'), carry(f.C, f.Cp, 'C′'),
+        [['seg', f.Ap, f.Bp, img], ['seg', f.Bp, f.Cp, img], ['seg', f.Cp, f.Ap, img]],
+        [['mark', function (g) {
+          tick(g, f.A, f.B); tick(g, f.Ap, f.Bp);
+          arrowHead(g, mul(add(f.A, f.B), 0.5), unit(sub(f.B, f.A))); arrowHead(g, mul(add(f.Ap, f.Bp), 0.5), unit(sub(f.B, f.A)));
+          wedgeBetween(g, f.A, f.B, f.C, 34, 'a'); wedgeBetween(g, f.Ap, f.Bp, f.Cp, 34, 'a');
+          says(g, 0, 'A′B′ ∥ AB  ,  A′B′ = AB'); says(g, 1, '∠A′ = ∠A'); says(g, 2, 'ត្រីកោណ A′B′C′ ប៉ុនត្រីកោណ ABC');
+        }]],
+      ];
+    },
+  });
+
+  // §4: the figure symmetric to the triangle ABC about the line d: from each vertex the perpendicular to d (set
+  // square) and the same distance on the other side (compass). A′B′C′ is the same triangle, flipped over. Last,
+  // the paper is folded along d and A′B′C′ lands on ABC. d turns with its handle, the corners are dragged.
+  function rflParts(s, key, p) {
+    var P = { A: s.A, B: s.B, C: s.C, D: s.D }; P[key] = p;
+    var u = unit(sub(P.D, PAR.C)), n = [u[1], -u[0]];
+    return { P: P, u: u, n: n, dist: function (X) { return dotp(sub(X, PAR.C), n); } };
+  }
+  function rflLimit(s, key, p) {
+    var q = rflParts(s, key, p), P = q.P, tr = triangleOf(P);
+    if (!(q.u[0] > 0 && Math.abs(Math.atan2(q.u[1], q.u[0])) <= 0.2)) return false;
+    if (!(tr.least >= 70 && Math.min.apply(null, tr.angles) >= 0.45)) return false;
+    var p1 = add(PAR.C, mul(q.u, -330)), p2 = add(PAR.C, mul(q.u, 330));
+    return ['A', 'B', 'C'].every(function (k) {
+      var d = q.dist(P[k]);
+      return d >= 45 && d <= 125 && inSheet(P[k], 26) && inSheet(mirrorIn(P[k], p1, p2), 26);
+    });
+  }
+  CX['reflect-fig-line'] = (function () {
+    var def = scripted({
+      steps: 7,
+      start: { A: [180, 135], B: [270, 195], C: [380, 155], D: [590, 285] },
+      place: parPlace, limit: rflLimit,
+      figure: function (s) {
+        var f = triangleOf(s), u = unit(sub(s.D, PAR.C));
+        f.u = u; f.n = [u[1], -u[0]]; f.D = s.D;
+        f.p1 = add(PAR.C, mul(u, -330)); f.p2 = add(PAR.C, mul(u, 330));
+        ['A', 'B', 'C'].forEach(function (k) {
+          f[k + 'f'] = footOn(f[k], f.p1, f.p2); f[k + 'p'] = sub(mul(f[k + 'f'], 2), f[k]); f[k + 'd'] = len(sub(f[k], f[k + 'f']));
+        });
+        return f;
+      },
+      base: function (f, ink) { parGiven(f, ink); triDrawn(f, ink); },
+      top: function (f, ink) {
+        triCorners(f, ink);
+        el('circle', { cx: f.D[0], cy: f.D[1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f.D[0], cy: f.D[1], r: 24, class: 'cx-grab', 'data-drag': 'D' }, ink);
+      },
+      script: function (f) {
+        var aux = 'cx-line cx-line-2', img = 'cx-line';
+        var vertex = function (k) {
+          var F = f[k + 'f'], Pp = f[k + 'p'], a = aimAt(F, Pp);
+          return [['perp', f[k], f.p1, f.p2, aux, f[k + 'd'] + 20], ['mark', function (g) { rightMark(g, F, f.n, f.u); }],
+            ['arc', { c: F, r: f[k + 'd'], t1: a - 0.5, t2: a + 0.5 }], tagged(['pt', Pp, k + '′', mul(f.n, -1), 'cx-pt-m', 22])];
+        };
+        return [
+          [],
+          vertex('A'), vertex('B'), vertex('C'),
+          [tagged(['seg', f.Ap, f.Bp, img]), tagged(['seg', f.Bp, f.Cp, img]), tagged(['seg', f.Cp, f.Ap, img])],
+          [tagged(['mark', function (g) {
+            tick(g, f.A, f.B); tick(g, f.Ap, f.Bp);
+            wedgeBetween(g, f.A, f.B, f.C, 34, 'a'); wedgeBetween(g, f.Ap, f.Bp, f.Cp, 34, 'a');
+            says(g, 0, 'A′B′ = AB  ,  ∠A′ = ∠A'); says(g, 1, 'ត្រីកោណ A′B′C′ ប៉ុនត្រីកោណ ABC');
+          }])],
+          [],
+        ];
+      },
+    });
+    var baseAnim = def.anim, baseDraw = def.draw;
+    var foldPoint = function (f, P, k) {
+      var v = sub(P, PAR.C);
+      return add(add(PAR.C, mul(f.u, dotp(v, f.u))), mul(f.n, dotp(v, f.n) * Math.cos(Math.PI * k)));
+    };
+    var pts = function (list) { return list.map(function (x) { return x.map(function (v) { return v.toFixed(1); }).join(','); }).join(' '); };
+    def.anim = function (f, i) {
+      if (i !== 6) return baseAnim(f, i);
+      foldNext = true;
+      return { phases: [{ dur: 2800, draw: function (k, drawn, tools) {
+        var c1 = add(PAR.C, mul(f.u, -330)), c2 = add(PAR.C, mul(f.u, 330));
+        el('polygon', { points: pts([c1, c2, add(c2, mul(f.n, -200)), add(c1, mul(f.n, -200))].map(function (P) { return foldPoint(f, P, k); })), class: 'cx-sector cx-sector-c' }, tools);
+        el('polygon', { points: pts([f.Ap, f.Bp, f.Cp].map(function (P) { return foldPoint(f, P, k); })), class: 'cx-sector cx-sector-b' }, tools);
+        [['A′', f.Ap], ['B′', f.Bp], ['C′', f.Cp]].forEach(function (q) {
+          var P = foldPoint(f, q[1], k);
+          el('circle', { cx: P[0], cy: P[1], r: 4.5, class: 'cx-pt cx-pt-m' }, tools);
+        });
+      } }] };
+    };
+    def.draw = function (f, i, g, layer) {
+      if (i === 5 && foldNext) { foldNext = false; withoutImage(f, function () { baseDraw(f, i, g, layer); }); return; }
+      if (i < 6) return baseDraw(f, i, g, layer);
+      withoutImage(f, function () { baseDraw(f, i, g, layer); });
+      el('polygon', { points: pts([f.A, f.B, f.C]), class: 'cx-ghost-fill' }, layer.marks);
+      says(layer.marks, 0, 'ពត់ក្រដាសតាម d៖ ត្រីកោណ A′B′C′ ត្រួតលើត្រីកោណ ABC');
+    };
+    return def;
+  })();
 
   // ===== The protractor (Grade 7, lesson 13 §2.1), one page with two tabs =============================
   // #measure: the protractor goes on the vertex O, is turned until Ox lies on its 0, and Oy cuts the scale

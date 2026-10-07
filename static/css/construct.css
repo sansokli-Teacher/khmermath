@@ -214,3 +214,5 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 
 /* the sector page: the rest of the circle, faint */
 .cx-circle-faint { stroke-width: 1.6; stroke-dasharray: 5 5; opacity: .55; }
+.cx-ghost { fill: none; stroke: #c9862b; stroke-width: 2.4; stroke-dasharray: 4 3; }
+.cx-ghost-fill { fill: rgba(201, 134, 43, .22); stroke: #c9862b; stroke-width: 2.4; stroke-dasharray: 6 4; }
