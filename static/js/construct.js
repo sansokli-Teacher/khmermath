@@ -1588,22 +1588,24 @@
   // script(f) gives, for each step, what that step adds:
   //   ['seg', P, Q, cls]                a line drawn along the ruler
   //   ['arc', {c, r, t1, t2}]           an arc drawn with the compass
-  //   ['perp', P, A, B, cls]            the perpendicular from P to the line AB, along a set square slid on AB
+  //   ['perp', P, A, B, cls, ext]       the perpendicular from P to the line AB, along a set square slid on AB
+  //                                     (it runs on ext past the line AB when ext is given)
   //   ['pt', P, name, dir, cls, dist]   a point and its name, once the step is drawn
   //   ['mark', function (g) { ... }]    marks (ticks, right angles, equal angles), behind the ink
   // The picture of step i is everything up to i; on arriving at a step its lines and arcs are drawn
   // one after another, each with its tool. A new figure is a figure() and this list, nothing more.
   // The perpendicular from P to AB as Grade 7 lesson 14 §5.1 draws it: one side of the right angle of
   // the set square on AB, the set square slid along AB until its other side passes through P.
-  function perpPhases(P, A, B, cls) {
+  function perpPhases(P, A, B, cls, ext) {
     var D = footOn(P, A, B), w = unit(sub(P, D)), far = len(sub(B, D)) > len(sub(A, D)) ? B : A, p = unit(sub(far, D));
-    var lw = len(sub(P, D)) + 34, lp = Math.max(70, Math.min(0.62 * lw, len(sub(far, D)) + 30)), from = add(D, mul(p, 58));
+    var end = add(D, mul(w, -(ext || 0)));                  // the line may run on past the foot, as the book draws it
+    var lw = len(sub(P, D)) + 34 + (ext || 0), lp = Math.max(70, Math.min(0.62 * lw, len(sub(far, D)) + 30)), from = add(D, mul(p, 58));
     var sq = function (g, c, alpha) { drawSetSquare(g, c, w, p, lw, lp, alpha); };
     return [
       { dur: 700, draw: function (t, drawn, tools) { sq(tools, from, 0.2 + 0.8 * t); } },
       { dur: 900, draw: function (t, drawn, tools) { sq(tools, add(from, mul(sub(D, from), t))); } },
       { dur: 800, draw: function (t, drawn, tools) {
-        var e = add(P, mul(sub(D, P), t));
+        var e = add(P, mul(sub(end, P), t));
         segLine(drawn, P, e, cls);
         sq(tools, D);
         el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
@@ -1614,7 +1616,10 @@
     var inkOf = function (g, it) {
       if (it[0] === 'seg') segLine(g, it[1], it[2], it[3] || 'cx-line');
       else if (it[0] === 'arc') arcDraw(g, it[1]);
-      else if (it[0] === 'perp') segLine(g, it[1], footOn(it[1], it[2], it[3]), it[4] || 'cx-perp');
+      else if (it[0] === 'perp') {
+        var foot = footOn(it[1], it[2], it[3]);
+        segLine(g, it[1], add(foot, mul(unit(sub(foot, it[1])), it[5] || 0)), it[4] || 'cx-perp');
+      }
       else if (it[0] === 'circ') el('circle', { cx: it[1][0], cy: it[1][1], r: len(sub(it[2], it[1])), class: 'cx-circle' }, g);
     };
     var drawnWithTool = function (it) { return it[0] === 'seg' || it[0] === 'arc' || it[0] === 'perp' || it[0] === 'circ'; };
@@ -1650,7 +1655,7 @@
           else if (it[0] === 'circ') circlePhases(it[1], it[2], 'cx-circle').forEach(function (ph) {
             phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
           });
-          else perpPhases(it[1], it[2], it[3], it[4] || 'cx-perp').forEach(function (ph) {
+          else perpPhases(it[1], it[2], it[3], it[4] || 'cx-perp', it[5]).forEach(function (ph) {
             phases.push({ dur: ph.dur, draw: function (t, drawn, tools) { before(drawn); ph.draw(t, drawn, tools); } });
           });
         });
@@ -2949,6 +2954,196 @@
         }]],
         [['mark', function (g) {
           says(g, 2, '∠BAz = ∠B + ∠C :  ' + deg(180 - f.deg[0]) + ' = ' + deg(f.deg[1]) + ' + ' + deg(f.deg[2]));
+        }]],
+      ];
+    },
+  });
+
+  // ===== Grade 7, lesson 14 §4-5: the set square, perpendiculars, parallels and altitudes ===============
+  var lineMeet = function (p1, p2, p3, p4) {                // where the line p1p2 meets the line p3p4
+    var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
+    var a = p1[0] * p2[1] - p1[1] * p2[0], b = p3[0] * p4[1] - p3[1] * p4[0];
+    return [(a * (p3[0] - p4[0]) - (p1[0] - p2[0]) * b) / d, (a * (p3[1] - p4[1]) - (p1[1] - p2[1]) * b) / d];
+  };
+  var pencilAt = function (tools, e) { el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools); };
+
+  // §4 ក: through A, which is not on d, there is exactly one line perpendicular to d. The set square has one
+  // side of its right angle on d and slides along d until its other side passes through A; a tilted line
+  // through A (dashed) shows that no other line does. d turns with its handle, A is dragged.
+  CX['g7-l14-perpendicular'] = scripted({
+    steps: 4,
+    start: { A: [270, 135], D: [590, 285] },
+    limit: parLimit, place: parPlace,
+    figure: function (s) {
+      var f = parFrame(s);
+      f.p1 = add(PAR.C, mul(f.u, -330)); f.p2 = add(PAR.C, mul(f.u, 330));
+      f.H = footOn(f.A, f.p1, f.p2);
+      var tilt = turn(unit(sub(f.H, f.A)), 0.5);
+      f.X = lineMeet(f.A, add(f.A, tilt), f.p1, f.p2);
+      f.Xend = add(f.X, mul(unit(sub(f.X, f.A)), 34));
+      f.hEnd = add(f.H, mul(f.n, -36));
+      return f;
+    },
+    base: function (f, ink) { parGiven(f, ink); },
+    top: function (f, ink) { parHandles(f, ink); },
+    script: function (f) {
+      return [
+        [],
+        [['perp', f.A, f.p1, f.p2, 'cx-line', 36], ['mark', function (g) { label(g, add(f.hEnd, add(mul(f.u, 16), mul(f.n, -8))), 'h', 'cx-label'); }]],
+        [['mark', function (g) { rightMark(g, f.H, f.n, f.u); }], ['pt', f.H, 'H', add(f.u, mul(f.n, -0.9)), null, 20]],
+        [['seg', f.A, f.Xend, 'cx-line cx-line-2'], ['mark', function (g) {
+          label(g, add(add(f.X, mul(f.n, 24)), mul(unit(sub(f.X, f.H)), 40)), '≠ 90°', 'cx-note');
+        }]],
+      ];
+    },
+  });
+
+  // §5.2 1: two lines perpendicular to xy are parallel. The set square sits with one side on xy, the pencil runs
+  // along its other side (d); the set square slides along xy and the pencil runs along that side again (d′).
+  // Run on along the hypotenuse the same way gives L and L′, also parallel. The small circle on xy is how far it slides.
+  var TP = { y: 340, x1: 150, lw: 190, lp: 150, from: 40, to: 600, xmin: 220, xmax: 450 };
+  CX['g7-l14-two-perpendiculars'] = {
+    steps: 8,
+    start: { E: [340, 340] },
+    place: function (s, key, p) { return [Math.max(TP.xmin, Math.min(TP.xmax, p[0])), TP.y]; },
+    limit: function () { return true; },
+    figure: function (s) {
+      var f = { E: s.E, c1: [TP.x1, TP.y], c2: [s.E[0], TP.y], meet: true };
+      var hv = unit([TP.lp, TP.lw]), hyp = function (c) { return [toEdge([c[0], c[1] - TP.lw], mul(hv, -1), 0), toEdge([c[0] + TP.lp, c[1]], hv, 0)]; };
+      f.hv = hv; f.n = [hv[1], -hv[0]]; f.L1 = hyp(f.c1); f.L2 = hyp(f.c2);
+      f.at = function (k) { return [f.c1[0] + (f.c2[0] - f.c1[0]) * k, TP.y]; };
+      return f;
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var side = function (c) { return [[c[0], c[1]], [c[0], c[1] - TP.lw]]; };
+      var sq = function (c) { drawSetSquare(tools, c, UP, RIGHT, TP.lw, TP.lp); };
+      segLine(ink, [TP.from, TP.y], [TP.to, TP.y], 'cx-seg');
+      label(ink, [TP.from + 6, TP.y + 24], 'x', 'cx-label'); label(ink, [TP.to - 6, TP.y + 24], 'y', 'cx-label');
+      if (i >= 2) { segLine(ink, side(f.c1)[0], side(f.c1)[1], 'cx-line'); label(ink, [f.c1[0] - 16, TP.y - 70], 'd', 'cx-label'); rightMark(marks, f.c1, UP, RIGHT); }
+      if (i >= 4) { segLine(ink, side(f.c2)[0], side(f.c2)[1], 'cx-line'); label(ink, [f.c2[0] - 16, TP.y - 70], 'd′', 'cx-label'); rightMark(marks, f.c2, UP, RIGHT); }
+      if (i >= 5) [f.c1, f.c2].forEach(function (c) { arrowHead(marks, [c[0], TP.y - 110], UP); });
+      if (i >= 6) {
+        [[f.L1, 'L'], [f.L2, 'L′']].forEach(function (q) {
+          segLine(ink, q[0][0], q[0][1], 'cx-line cx-line-2');
+          label(ink, add(add(q[0][0], mul(f.hv, 24)), mul(f.n, 16)), q[1], 'cx-label');
+        });
+      }
+      if (i >= 7) [f.L1, f.L2].forEach(function (q) { arrowHead(marks, mul(add(q[0], q[1]), 0.5), mul(f.hv, -1)); });
+      if (i >= 3) {
+        el('circle', { cx: f.c2[0], cy: TP.y, r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f.c2[0], cy: TP.y, r: 24, class: 'cx-grab', 'data-drag': 'E' }, ink);
+      }
+      if (i === 1 || i === 2) sq(f.c1);
+      if (i === 3 || i === 4) sq(f.c2);
+      if (i === 6) sq(f.c1);
+    },
+    anim: function (f, i) {
+      var sq = function (tools, c, alpha) { drawSetSquare(tools, c, UP, RIGHT, TP.lw, TP.lp, alpha); };
+      var upright = function (c, dur) {
+        return { dur: dur, draw: function (t, drawn, tools) {
+          var e = [c[0], c[1] - TP.lw * t];
+          segLine(drawn, c, e, 'cx-line'); sq(tools, c); pencilAt(tools, e);
+        } };
+      };
+      if (i === 1) return { phases: [{ dur: 1000, draw: function (t, drawn, tools) { sq(tools, add(f.c1, [0, -46 * (1 - t)]), 0.25 + 0.75 * t); } }] };
+      if (i === 2) return { phases: [upright(f.c1, 1200)] };
+      if (i === 3) return { phases: [{ dur: 1700, draw: function (t, drawn, tools) { sq(tools, f.at(ease(t))); } }] };
+      if (i === 4) return { phases: [upright(f.c2, 1200)] };
+      if (i === 6) {
+        var along = function (q, c) {
+          return { dur: 1500, draw: function (t, drawn, tools) {
+            var e = add(q[0], mul(sub(q[1], q[0]), t));
+            segLine(drawn, q[0], e, 'cx-line cx-line-2'); sq(tools, c); pencilAt(tools, e);
+          } };
+        };
+        return { phases: [
+          along(f.L2, f.c2),
+          { dur: 1400, draw: function (t, drawn, tools) { segLine(drawn, f.L2[0], f.L2[1], 'cx-line cx-line-2'); sq(tools, f.at(1 - ease(t))); } },
+          { dur: 1500, draw: function (t, drawn, tools) {
+            segLine(drawn, f.L2[0], f.L2[1], 'cx-line cx-line-2');
+            var e = add(f.L1[0], mul(sub(f.L1[1], f.L1[0]), t));
+            segLine(drawn, f.L1[0], e, 'cx-line cx-line-2'); sq(tools, f.c1); pencilAt(tools, e);
+          } },
+        ] };
+      }
+      return null;
+    },
+  };
+
+  // §5.2 worked example: h through A perpendicular to d, B a point outside d and h, k through B perpendicular to h.
+  // h ⟂ d and h ⟂ k, so d ∥ k. A and B are dragged (B stays to the right of h).
+  var PD = { y: 340, from: 40, to: 600 };
+  CX['g7-l14-perpendicular-parallel'] = scripted({
+    steps: 5,
+    start: { A: [190, 120], B: [440, 190] },
+    limit: function (s, key, p) {
+      var A = key === 'A' ? p : s.A, B = key === 'B' ? p : s.B;
+      return A[0] >= 90 && A[0] <= 300 && A[1] >= 70 && A[1] <= 230 && B[0] >= A[0] + 110 && B[0] <= 570 && B[1] >= 70 && B[1] <= 250 && Math.abs(B[1] - A[1]) >= 45;
+    },
+    figure: function (s) {
+      var f = { A: s.A, B: s.B, p1: [PD.from, PD.y], p2: [PD.to, PD.y] };
+      f.D = [s.A[0], PD.y]; f.K = [s.A[0], s.B[1]];
+      return f;
+    },
+    base: function (f, ink) {
+      segLine(ink, f.p1, f.p2, 'cx-seg');
+      label(ink, [PD.to - 14, PD.y + 22], 'd', 'cx-label');
+    },
+    top: function (f, ink, i) {
+      point(ink, f.A, 'A', [-1, -0.5], null, 'A', 22);
+      if (i >= 2) point(ink, f.B, 'B', [1, -0.7], null, 'B', 22);
+    },
+    script: function (f) {
+      return [
+        [],
+        [['perp', f.A, f.p1, f.p2, 'cx-line', 36], ['mark', function (g) {
+          rightMark(g, f.D, UP, RIGHT); label(g, [f.D[0] + 16, f.D[1] + 52], 'h', 'cx-label');
+        }]],
+        [],
+        [['perp', f.B, f.A, f.D, 'cx-line cx-line-2', 40], ['mark', function (g) {
+          rightMark(g, f.K, RIGHT, unit(sub(f.A, f.K))); label(g, [f.K[0] - 56, f.K[1] - 14], 'k', 'cx-label');
+        }]],
+        [['mark', function (g) {
+          arrowHead(g, [520, PD.y], RIGHT); arrowHead(g, mul(add(f.K, f.B), 0.5), RIGHT);
+          says(g, 0, 'h ⟂ d  និង  h ⟂ k'); says(g, 1, 'ដូច្នេះ  d ∥ k');
+        }]],
+      ];
+    },
+  });
+
+  // §6 worked example: the altitudes from B and C of the acute triangle ABC meet at H, and the altitude from A
+  // goes through H too (H is the orthocentre). AB ⟂ CH and AC ⟂ BH, so the angles BAC and BHC have their sides
+  // perpendicular in pairs: one is acute, one obtuse, and they add up to 180°.
+  CX['g7-l14-orthocentre'] = scripted({
+    steps: 5,
+    start: { A: [330, 96], B: [130, 380], C: [540, 380] },
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      var q = key === 'A' ? p : s.A;                       // A stays clear of the working written at the top left
+      return (q[1] >= 100 || q[0] >= 340) && t.least >= 170 && Math.min.apply(null, t.angles) >= 0.62 && Math.max.apply(null, t.angles) <= 1.38;
+    },
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.D = footOn(f.A, f.B, f.C); f.E = footOn(f.B, f.A, f.C); f.F = footOn(f.C, f.A, f.B);
+      f.H = lineMeet(f.B, f.E, f.C, f.F);
+      f.deg = Math.round(f.angles[0] * 180 / Math.PI);
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var out = function (X) { return sub(X, f.H); };
+      return [
+        [],
+        [['perp', f.B, f.A, f.C], ['mark', function (g) { rightAt(g, f.E, f.B, f.A, f.C); }], ['pt', f.E, 'E', out(f.E), null, 22]],
+        [['perp', f.C, f.A, f.B], ['mark', function (g) { rightAt(g, f.F, f.C, f.A, f.B); }], ['pt', f.F, 'F', out(f.F), null, 22],
+          ['pt', f.H, 'H', [0.9, 0.5], 'cx-pt-m', 24]],
+        [['perp', f.A, f.B, f.C, 'cx-line cx-line-2'], ['mark', function (g) { rightAt(g, f.D, f.A, f.B, f.C); }], ['pt', f.D, 'D', out(f.D), null, 22]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.A, f.B, f.C, 40, 'a'); wedgeBetween(g, f.H, f.B, f.C, 34, 'b');
+          says(g, 0, '∠BAC = ' + deg(f.deg) + '  ,  ∠BHC = ' + deg(180 - f.deg));
+          says(g, 1, '∠BAC + ∠BHC = ' + deg(f.deg) + ' + ' + deg(180 - f.deg) + ' = 180°');
         }]],
       ];
     },
