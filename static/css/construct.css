@@ -211,3 +211,6 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-pr-t1 { stroke-width: .6; opacity: .75; }
 .cx-pr-num2 { font-size: 9px; fill: #6a7a8e; }
 @media (max-width: 640px) { .cx-pr-num2 { font-size: 13px; } }
+
+/* the sector page: the rest of the circle, faint */
+.cx-circle-faint { stroke-width: 1.6; stroke-dasharray: 5 5; opacity: .55; }

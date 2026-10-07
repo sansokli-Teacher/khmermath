@@ -3149,6 +3149,98 @@
     },
   });
 
+  // ===== Grade 7, lesson 17 §4: the sector of a disc ====================================================
+  // The slider is the central angle α (5° to 360°); the handle on A sets the radius R (3 to 12.5 cm, by halves).
+  // 360° goes with the whole circle (2πR, πR²) and α with the share α/360 of it: arc AB = 2πR × α/360,
+  // area S = πR² × α/360, perimeter p = AB + R + R. π = 3.14 as in the book's worked examples.
+  var SEC = { O: [300, 205], cm: 12.5, rmin: 3, rmax: 12.5 };
+  var round2 = function (x) { return Math.round(x * 100) / 100; };
+  function sectorOf(s) {
+    var O = SEC.O, R = (s.P[0] - O[0]) / SEC.cm, a = s.k, rad = a * Math.PI / 180, px = R * SEC.cm, share = a / 360;
+    var f = { O: O, R: R, px: px, a: a, rad: rad, share: share, meet: true };
+    f.A = [O[0] + px, O[1]];
+    f.B = a >= 360 ? f.A : [O[0] + px * Math.cos(rad), O[1] - px * Math.sin(rad)];
+    f.arc = round2(2 * 3.14 * R * share); f.area = round2(3.14 * R * R * share); f.per = round2(f.arc + 2 * R);
+    return f;
+  }
+  // the sector up to the share t of its angle (with its two radii when closed, else only the arc)
+  function sectorPath(f, t, closed) {
+    var rad = f.rad * t, O = f.O, px = f.px, pt = function (th) { return (O[0] + px * Math.cos(th)).toFixed(1) + ' ' + (O[1] - px * Math.sin(th)).toFixed(1); };
+    var start = (closed ? 'M' + O.join(' ') + 'L' : 'M') + f.A.join(' ');
+    if (rad < 1e-4) return '';
+    if (rad >= 2 * Math.PI - 1e-3) return start + 'A' + px + ' ' + px + ' 0 1 0 ' + pt(Math.PI) + 'A' + px + ' ' + px + ' 0 1 0 ' + f.A.join(' ') + (closed ? 'Z' : '');
+    return start + 'A' + px + ' ' + px + ' 0 ' + (rad > Math.PI ? 1 : 0) + ' 0 ' + pt(rad) + (closed ? 'Z' : '');
+  }
+  var secCase = function (R, a) { return function (s) { s.P = [SEC.O[0] + R * SEC.cm, SEC.O[1]]; s.k = a; }; };
+  CX['sector'] = {
+    steps: 5,
+    start: { P: [SEC.O[0] + 12 * SEC.cm, SEC.O[1]], k: 144 },
+    kScale: 1,
+    kOk: function () { return true; },
+    kText: function (s) {
+      var f = sectorOf(s), share = Math.round(f.share * 1000) / 10;
+      var words = s.k === 90 ? '  (មួយភាគបួននៃថាស)' : s.k === 180 ? '  (កន្លះថាស)' : s.k === 360 ? '  (ថាសទាំងមូល)' : '';
+      return 'α = ' + s.k + '°  →  α/360 = ' + s.k + '/360 = ' + share + '% នៃថាស' + words;
+    },
+    place: function (s, key, p) {
+      var R = Math.max(SEC.rmin, Math.min(SEC.rmax, Math.round((p[0] - SEC.O[0]) / SEC.cm * 2) / 2));
+      return [SEC.O[0] + R * SEC.cm, SEC.O[1]];
+    },
+    limit: function () { return true; },
+    presets: { a30: secCase(5, 30), a45: secCase(12, 45), a144: secCase(12, 144), a60: secCase(6, 60) },
+    figure: sectorOf,
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, O = f.O, R = String(round2(f.R)), a = String(f.a);
+      var text = function (x, y, s, cls) { el('text', { x: x, y: y, class: cls || 'cx-given', 'dominant-baseline': 'central' }, marks).textContent = s; };
+      el('circle', { cx: O[0], cy: O[1], r: f.px, class: 'cx-circle cx-circle-faint' }, marks);
+      el('path', { d: sectorPath(f, 1, true), class: i === 2 ? 'cx-sector cx-sector-b' : 'cx-sector cx-sector-a' }, marks);
+      if (i === 1 || i === 3) el('path', { d: sectorPath(f, 1, false), class: 'cx-trace' }, marks);
+      segLine(ink, O, f.A, i === 3 ? 'cx-trace' : 'cx-seg'); segLine(ink, O, f.B, i === 3 ? 'cx-trace' : 'cx-seg');
+      if (f.a < 360) el('path', { d: arcPath(O, 24, 0, -f.rad), class: 'cx-arc' }, ink);
+      point(ink, O, 'O', [-0.9, 0.9], null, null, 20);
+      if (f.a < 360) point(ink, f.B, 'B', [Math.cos(f.rad) + 0.2, -Math.sin(f.rad) - 0.2], null, null, 22);
+      label(ink, add(f.A, [24, 16]), 'A', 'cx-label');
+      el('circle', { cx: f.A[0], cy: f.A[1], r: 7, class: 'cx-handle' }, ink);
+      el('circle', { cx: f.A[0], cy: f.A[1], r: 24, class: 'cx-grab', 'data-drag': 'P' }, ink);
+      label(marks, [(O[0] + f.A[0]) / 2, O[1] + 20], 'R = ' + R + ' cm', 'cx-note');
+      text(22, 30, 'មុំផ្ចិត α = ' + a + '°');
+      if (i >= 1) text(22, 392, 'AB = 2πR × α/360 = 2 × 3.14 × ' + R + ' × ' + a + '/360 = ' + f.arc + ' cm');
+      if (i >= 2) text(22, 416, 'S = πR² × α/360 = 3.14 × ' + R + '² × ' + a + '/360 = ' + f.area + ' cm²');
+      if (i >= 3) text(22, 440, 'p = AB + R + R = ' + f.arc + ' + ' + R + ' + ' + R + ' = ' + f.per + ' cm');
+      if (i >= 4) {
+        el('rect', { x: 440, y: 46, width: 180, height: 18, rx: 3, class: 'cx-sector-edge cx-sector-edge-a' }, marks);
+        el('rect', { x: 440, y: 46, width: 180 * f.share, height: 18, rx: 3, class: 'cx-sector cx-sector-a' }, marks);
+        label(marks, [530, 30], 'α/360 = ' + a + '/360 = ' + Math.round(f.share * 1000) / 10 + '%', 'cx-note');
+      }
+    },
+    anim: function (f, i) {
+      var pen = function (tools, t) {
+        var th = f.rad * t;
+        el('circle', { cx: f.O[0] + f.px * Math.cos(th), cy: f.O[1] - f.px * Math.sin(th), r: 4.2, class: 'cx-c-pencil' }, tools);
+      };
+      if (i === 1) return { phases: [{ dur: 1700, draw: function (t, drawn, tools) {
+        var k = ease(t); el('path', { d: sectorPath(f, k, false), class: 'cx-trace' }, drawn); pen(tools, k);
+      } }] };
+      if (i === 2) return { phases: [{ dur: 1700, draw: function (t, drawn, tools) {
+        el('path', { d: sectorPath(f, ease(t), true), class: 'cx-sector cx-sector-b' }, drawn);
+      } }] };
+      if (i === 3) return { phases: [
+        { dur: 800, draw: function (t, drawn, tools) {
+          var e = add(f.O, mul(sub(f.A, f.O), t)); segLine(drawn, f.O, e, 'cx-trace'); el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+        } },
+        { dur: 1500, draw: function (t, drawn, tools) {
+          var k = ease(t); segLine(drawn, f.O, f.A, 'cx-trace'); el('path', { d: sectorPath(f, k, false), class: 'cx-trace' }, drawn); pen(tools, k);
+        } },
+        { dur: 800, draw: function (t, drawn, tools) {
+          var e = add(f.B, mul(sub(f.O, f.B), t));
+          segLine(drawn, f.O, f.A, 'cx-trace'); el('path', { d: sectorPath(f, 1, false), class: 'cx-trace' }, drawn);
+          segLine(drawn, f.B, e, 'cx-trace'); el('circle', { cx: e[0], cy: e[1], r: 4.2, class: 'cx-c-pencil' }, tools);
+        } },
+      ] };
+      return null;
+    },
+  };
+
   // ===== The protractor (Grade 7, lesson 13 §2.1), one page with two tabs =============================
   // #measure: the protractor goes on the vertex O, is turned until Ox lies on its 0, and Oy cuts the scale
   // where the measure is. #a150: the ray yx, the protractor with its 0 on yx, a pencil mark at the number,
@@ -3435,6 +3527,7 @@
         if (!set) return;
         stopPlay(); stopAnim();
         set(state);
+        if (slider) { slider.value = Math.round(state.k * kScale); showK(); }
         render(step);
       });
     });
