@@ -47,7 +47,7 @@ export async function listSessions(req, env) {
   await ensureColumns(env);
   const mine = await accessibleClasses(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
+    `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin, ts.integrity_mode, ts.max_violations,
             c.name AS class_name, t.title AS test_title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students,
@@ -86,6 +86,8 @@ export async function createSession(req, env) {
   const g2 = await needTest(req, env, body.test_id, 'view'); if (g2.resp) return g2.resp;
   await ensureColumns(env);
   const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin } = body;
+  const mode = ['log', 'warn', 'lock'].includes(body.integrity_mode) ? body.integrity_mode : 'warn';
+  const maxV = Math.max(1, Math.min(20, Number(body.max_violations) || 3));
   if (!test_id || !class_id || !scheduled_start || !duration_minutes) {
     return err('test_id, class_id, scheduled_start, and duration_minutes are required.', 400);
   }
@@ -94,8 +96,8 @@ export async function createSession(req, env) {
   if (cleanPin && !/^[0-9A-Za-z]{3,12}$/.test(cleanPin)) return err('PIN must be 3–12 letters or digits.', 400);
   const finalPin = cleanPin || String(Math.floor(1000 + Math.random() * 9000));
   const { meta } = await env.DB.prepare(
-    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin) VALUES (?1, ?2, ?3, ?4, ?5, ?6)',
-  ).bind(test_id, class_id, scheduled_start, duration_minutes, endIso, finalPin).run();
+    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin, integrity_mode, max_violations) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)',
+  ).bind(test_id, class_id, scheduled_start, duration_minutes, endIso, finalPin, mode, maxV).run();
   return json({ id: meta.last_row_id, pin: finalPin });
 }
 
@@ -103,7 +105,7 @@ export async function getSession(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   await ensureColumns(env);
   const session = await env.DB.prepare(
-    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin,
+    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin, ts.integrity_mode, ts.max_violations,
             c.name AS class_name, t.title AS test_title
      FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
      WHERE ts.id = ?1`,
@@ -128,7 +130,7 @@ export async function getSession(req, env, params) {
   const { results: roster } = await env.DB.prepare(
     `SELECT s.id, s.surname, s.first_name, s.gender,
             r.mcq_score, r.mcq_max, r.writing_score, r.writing_max,
-            r.started_at, r.submitted_at, r.submit_type, r.published_at, r.tab_switches, r.extra_minutes, r.last_seen, (r.device_id IS NOT NULL) AS has_device,
+            r.started_at, r.submitted_at, r.submit_type, r.published_at, r.tab_switches, r.violations, r.locked, r.lock_reason, (SELECT COALESCE(SUM(e.dur_ms), 0) FROM exam_events e WHERE e.session_id = ?1 AND e.student_id = s.id AND e.kind IN ('tab_hidden', 'window_blur')) AS away_ms, (SELECT COUNT(*) FROM session_notes n WHERE n.session_id = ?1 AND n.student_id = s.id) AS note_count, r.extra_minutes, r.last_seen, (r.device_id IS NOT NULL) AS has_device,
             (SELECT COUNT(*) FROM responses res WHERE res.session_id = ?1 AND res.student_id = s.id) AS answered_count
      FROM students s
      LEFT JOIN results r ON r.student_id = s.id AND r.session_id = ?1
@@ -182,6 +184,8 @@ export async function deleteSession(req, env, params) {
   await env.DB.prepare('DELETE FROM responses WHERE session_id = ?1').bind(params.sessionId).run();
   await env.DB.prepare('DELETE FROM results WHERE session_id = ?1').bind(params.sessionId).run();
   await env.DB.prepare('DELETE FROM session_questions WHERE session_id = ?1').bind(params.sessionId).run();
+  await env.DB.prepare('DELETE FROM exam_events WHERE session_id = ?1').bind(params.sessionId).run();
+  await env.DB.prepare('DELETE FROM session_notes WHERE session_id = ?1').bind(params.sessionId).run();
   const result = await env.DB.prepare('DELETE FROM test_sessions WHERE id = ?1').bind(params.sessionId).run();
   if (!result.meta.rows_written) return err('Session not found.', 404);
   return json({ ok: true });

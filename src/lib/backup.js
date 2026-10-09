@@ -8,7 +8,7 @@ const TABLES = [
   ['teachers', 'id, username, role, display_name, active, plan, license_until, contact, last_login'],   // never password hashes
   ['classes', '*'], ['students', '*'], ['tests', '*'], ['test_questions', '*'], ['test_sessions', '*'],
   ['results', '*'], ['responses', '*'], ['writing_marks', '*'], ['assessments', '*'], ['manual_scores', '*'],
-  ['session_questions', '*'], ['shares', '*'], ['question_notes', '*'], ['license_codes', '*'],
+  ['session_questions', '*'], ['exam_events', '*'], ['session_notes', '*'], ['shares', '*'], ['question_notes', '*'], ['license_codes', '*'],
 ];
 const SECRET_SETTINGS = ['telegram_token', 'student_pin_hash'];
 

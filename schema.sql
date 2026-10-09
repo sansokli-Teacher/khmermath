@@ -115,3 +115,25 @@ CREATE TABLE IF NOT EXISTS session_questions (
   frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (session_id, question_id)
 );
+
+CREATE TABLE IF NOT EXISTS exam_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  student_id TEXT NOT NULL,
+  at TEXT NOT NULL DEFAULT (datetime('now')),
+  kind TEXT NOT NULL,
+  detail TEXT,
+  dur_ms INTEGER,
+  counted INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_events_session ON exam_events(session_id, student_id, id);
+CREATE TABLE IF NOT EXISTS session_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  student_id TEXT NOT NULL,
+  teacher_id INTEGER,
+  author TEXT,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- (policy columns on test_sessions / results are added by ensureColumns in src/lib/schema.js)

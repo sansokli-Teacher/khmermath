@@ -137,14 +137,14 @@ async function loadActiveSession(env, studentSession, sessionId, graceMs = 0, de
   ).bind(sessionId, studentSession.classId).first();
   if (!ses) return null;
   const result = await env.DB.prepare(
-    'SELECT started_at, submitted_at, extra_minutes, device_id FROM results WHERE session_id = ?1 AND student_id = ?2',
+    'SELECT started_at, submitted_at, extra_minutes, device_id, locked FROM results WHERE session_id = ?1 AND student_id = ?2',
   ).bind(ses.id, studentSession.id).first();
   if (!result || !result.started_at || result.submitted_at) return null;
   if (result.device_id && deviceId && result.device_id !== deviceId) return null;
   const window = windowFor(ses, result.extra_minutes);
   const inGrace = graceMs > 0 && ses.status !== 'closed' && Date.now() < window.end + graceMs;
   if (window.phase !== 'open' && !inGrace) return null;
-  return { ...ses, window };
+  return { ...ses, window, locked: !!result.locked };
 }
 
 const deviceOf = (req) => req.headers.get('X-Device') || null;
@@ -236,6 +236,8 @@ export async function getTest(req, env) {
   const sessionId = Number(new URL(req.url).searchParams.get('session_id'));
   const active = await loadActiveSession(env, studentSession, sessionId, 0, deviceOf(req));
   if (!active) return err('No test is open for you right now.', 403);
+  const integrity = { mode: active.integrity_mode || 'warn', max: active.max_violations || 3 };
+  if (active.locked) return json({ session_id: active.id, test_title: active.test_title, end_at: active.window.end, server_now: Date.now(), locked: true, integrity, questions: [] });
 
   const orderedQuestions = (await sessionQuestions(env, active.id, active.test_id))
     .sort((a, b) => (a.kind === 'writing') - (b.kind === 'writing') || a.order_no - b.order_no);
@@ -255,6 +257,7 @@ export async function getTest(req, env) {
     test_title: active.test_title,
     end_at: active.window.end,
     server_now: Date.now(),
+    integrity,
     questions: questions.map((q) => {
       let options = JSON.parse(q.options_json);
       let sel = savedByQuestion[q.id] ?? null;
@@ -279,7 +282,7 @@ export async function heartbeat(req, env) {
   await env.DB.prepare(
     "UPDATE results SET last_seen = datetime('now') WHERE session_id = ?1 AND student_id = ?2 AND (last_seen IS NULL OR last_seen < datetime('now', '-40 seconds'))",
   ).bind(active.id, studentSession.id).run();
-  return json({ open: true, end_at: active.window.end, server_now: Date.now() });
+  return json({ open: true, locked: active.locked, end_at: active.window.end, server_now: Date.now() });
 }
 
 // The student's page reports each time it was left (tab switch, app switch).
@@ -311,6 +314,7 @@ export async function answer(req, env) {
   const { session_id, question_id, selected_index } = await req.json();
   const active = await loadActiveSession(env, studentSession, Number(session_id), SUBMIT_GRACE_MS, deviceOf(req));
   if (!active) return err('This test is not open anymore.', 403);
+  if (active.locked) return json({ error: 'locked', locked: true }, 423);
   const qm = await questionMap(env, active.id, active.test_id);
   const q = qm[question_id];
   if (!q) return err('That question is not part of this test.', 400);

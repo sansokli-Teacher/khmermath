@@ -43,6 +43,13 @@ export async function ensureColumns(env) {
     'ALTER TABLE results ADD COLUMN last_seen TEXT',
     // optional date-of-birth check at student login
     'ALTER TABLE classes ADD COLUMN require_dob INTEGER NOT NULL DEFAULT 0',
+    // exam integrity: per-session policy and per-student state
+    "ALTER TABLE test_sessions ADD COLUMN integrity_mode TEXT NOT NULL DEFAULT 'warn'",
+    'ALTER TABLE test_sessions ADD COLUMN max_violations INTEGER NOT NULL DEFAULT 3',
+    'ALTER TABLE results ADD COLUMN violations INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE results ADD COLUMN lock_base INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE results ADD COLUMN locked INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE results ADD COLUMN lock_reason TEXT',
   ];
   for (const sql of alters) { try { await env.DB.prepare(sql).run(); } catch {} }
 
@@ -119,6 +126,28 @@ export async function ensureColumns(env) {
       shuffle INTEGER NOT NULL DEFAULT 0,
       frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (session_id, question_id)
+    )`),
+    // What a student's browser reported during an exam (tab switches, shortcuts, ...).
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS exam_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      student_id TEXT NOT NULL,
+      at TEXT NOT NULL DEFAULT (datetime('now')),
+      kind TEXT NOT NULL,
+      detail TEXT,
+      dur_ms INTEGER,
+      counted INTEGER NOT NULL DEFAULT 0
+    )`),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_events_session ON exam_events(session_id, student_id, id)'),
+    // Supervisor observations about a student during/after an exam.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS session_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      student_id TEXT NOT NULL,
+      teacher_id INTEGER,
+      author TEXT,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`),
     // A class or test shared with another teacher.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS shares (

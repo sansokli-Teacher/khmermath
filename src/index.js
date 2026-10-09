@@ -10,6 +10,7 @@ import * as student from './api/student.js';
 import * as year from './api/year.js';
 import * as admin from './api/admin.js';
 import * as ops from './api/ops.js';
+import * as integrity from './api/integrity.js';
 import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
@@ -136,6 +137,12 @@ const ROUTES = [
   ['POST', '/api/student/answer', student.answer],
   ['POST', '/api/student/submit', student.submit],
   ['POST', '/api/student/left-page', student.leftPage],
+  ['POST', '/api/student/events', integrity.postEvents],
+  ['POST', '/api/sessions/:sessionId/integrity', integrity.setIntegrity],
+  ['POST', '/api/sessions/:sessionId/lock', integrity.lockStudent],
+  ['GET', '/api/sessions/:sessionId/activity', integrity.studentActivity],
+  ['POST', '/api/sessions/:sessionId/notes', integrity.addSessionNote],
+  ['DELETE', '/api/sessions/:sessionId/notes/:noteId', integrity.deleteSessionNote],
   ['GET', '/api/overview', sessions.overview],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 

@@ -47,6 +47,7 @@ async function bootPreview() {
 // ---------- Sign in ----------
 async function boot() {
   if (PREVIEW) return bootPreview();
+  stopIntegrity();
   clearInterval(homeRefresh);
   try {
     const data = await api('/api/student/status');
@@ -292,7 +293,7 @@ async function readyCheck(s) {
         ]),
       ]),
       h('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:14px;' }, [
-        h('button', { class: 'btn-block', disabled: net ? null : 'disabled', onclick: () => finish(true) }, 'នេះជាខ្ញុំ — ចាប់ផ្តើមប្រឡង'),
+        h('button', { class: 'btn-block', disabled: net ? null : 'disabled', onclick: () => { Integrity.goFullscreen(); finish(true); } }, 'នេះជាខ្ញុំ — ចាប់ផ្តើមប្រឡង'),
         h('button', { class: 'secondary btn-block', onclick: () => finish(false) }, '← ត្រឡប់ក្រោយ'),
       ]),
     ]));
@@ -363,6 +364,10 @@ async function loadTest(sessionId) {
   showView('test');
   document.getElementById('timer-title').textContent = testState.test_title;
   document.getElementById('student-badge').textContent = `${currentStudent.name} (${currentStudent.id})`;
+  if (testState.locked) {                      // locked by the teacher: show no questions until unlocked
+    lockedNow = true; applyReader(); renderShield(); startTimer(); startHeartbeat(); return;
+  }
+  lockedNow = false;
   // Answers kept on this phone but never confirmed by the server (e.g. connection dropped): re-send them.
   const saved = readLocal();
   const unsent = new Set(readLocal('pend'));
@@ -381,6 +386,7 @@ async function loadTest(sessionId) {
   renderQuestion();
   startTimer();
   startHeartbeat();
+  startIntegrity();
   if (pending.size) flush();
   if (recovered) { const n = recovered; recovered = 0; Exam.notify(`↺ បានស្ដារចម្លើយ ${n} ដែលមិនទាន់រក្សាទុកទៅម៉ាស៊ីនមេពីទូរស័ព្ទរបស់ប្អូន — កំពុងបញ្ជូនឥឡូវនេះ។`); }
 }
@@ -432,6 +438,7 @@ async function flush() {
       // only forget it if the student did not change their mind meanwhile
       if (testState.questions.find((x) => x.id === qid).selected_index === q.selected_index) { pending.delete(qid); writeLocal(); }
     } catch (e) {
+      if (e.status === 423) { flushing = false; lockedNow = true; renderShield(); return; }   // locked: keep the unsent answers for after unlock
       if (e.status === 403 || e.status === 409) { pending.clear(); setSave('ok'); flushing = false; return; }   // exam over / other device
       failed = true; break;
     }
@@ -454,6 +461,8 @@ function startHeartbeat() {
     try {
       const r = await api(`/api/student/heartbeat?session_id=${testState.session_id}`);
       syncClock(r.server_now);
+      if (r.open && r.locked && !lockedNow) { lockedNow = true; renderShield(); }
+      if (r.open && !r.locked && lockedNow) { lockedNow = false; return loadTest(testState.session_id); }   // the teacher unlocked: reload the questions
       if (!r.open) {
         clearInterval(heartbeatTimer); clearInterval(timerInterval);
         await Exam.notify('ការប្រឡងត្រូវបានបញ្ចប់។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុក។');
@@ -461,20 +470,78 @@ function startHeartbeat() {
       }
       if (r.end_at && r.end_at !== testState.end_at) testState.end_at = r.end_at;
     } catch {}
-  }, 45000);
+  }, 12000);
 }
 
-// Warn and log when the student leaves the test page (other tab or app).
-let leftCount = 0;
-document.addEventListener('visibilitychange', () => {
-  if (!testState || views.test.hidden || PREVIEW) return;
-  if (document.hidden) {
-    leftCount++;
-    api('/api/student/left-page', { method: 'POST', body: { session_id: testState.session_id } }).catch(() => {});
-  } else {
-    Exam.notify(`⚠️ ប្អូនបានចាកចេញពីទំព័រប្រឡង (${leftCount} ដង)។ លោកគ្រូនឹងឃើញការកត់ត្រានេះ។ សូមកុំបើកកម្មវិធីផ្សេងពេលកំពុងប្រឡង។`);
+// ---------- Exam integrity: shield, warnings, lock ----------
+let awayNow = false, needFs = false, lockedNow = false, fsBroken = false, shieldOn = false;
+const integrityOn = () => !PREVIEW && testState && ((testState.integrity && testState.integrity.mode) || 'warn') !== 'log';
+
+function renderShield() {
+  const el = document.getElementById('shield');
+  const on = !!testState && !views.test.hidden && (lockedNow || (integrityOn() && (awayNow || needFs)));
+  if (on) {
+    const icon = document.getElementById('shield-icon'), title = document.getElementById('shield-title'), text = document.getElementById('shield-text'), btn = document.getElementById('shield-btn');
+    btn.hidden = true;
+    if (lockedNow) {
+      icon.textContent = '🔒'; title.textContent = 'ការប្រឡងត្រូវបានជាប់សោ';
+      text.textContent = 'ប្រព័ន្ធបានកត់ត្រាសកម្មភាពមិនប្រក្រតី។ សូមលើកដៃហៅលោកគ្រូអ្នកគ្រូ — ចម្លើយដែលបានរក្សាទុកមិនបាត់ទេ។ ការប្រឡងនឹងបន្តដោយស្វ័យប្រវត្តិពេលលោកគ្រូដោះសោ។';
+    } else if (awayNow) {
+      icon.textContent = '⏸'; title.textContent = 'សូមត្រឡប់មកទំព័រប្រឡង';
+      text.textContent = 'សំណួរត្រូវបានលាក់ពេលប្អូនចាកចេញពីទំព័រ។ ការចាកចេញត្រូវបានកត់ត្រាជូនលោកគ្រូអ្នកគ្រូ។';
+    } else {
+      icon.textContent = '⛶'; title.textContent = 'សូមបើកពេញអេក្រង់ដើម្បីបន្ត';
+      text.textContent = 'ការប្រឡងនេះតម្រូវឱ្យប្រើពេញអេក្រង់។ ការចេញពីពេញអេក្រង់ត្រូវបានកត់ត្រា។';
+      btn.hidden = false; btn.textContent = 'បើកពេញអេក្រង់';
+      btn.onclick = async () => { if (!(await Integrity.goFullscreen())) fsBroken = true; needFs = false; renderShield(); };
+    }
+    document.getElementById('question-area').innerHTML = '';     // nothing for a page-reading tool to see
   }
-});
+  el.hidden = !on;
+  const was = shieldOn;
+  shieldOn = on;
+  if (was && !on && testState && testState.questions.length) { renderQuestion(); renderNav(); }
+}
+
+function integrityChip(d) {
+  const chip = document.getElementById('integrity-chip');
+  if (!d || !integrityOn() || !d.violations) { chip.hidden = true; return; }
+  chip.hidden = false;
+  chip.textContent = d.mode === 'lock' ? `🚨 ${d.since_unlock}/${d.max}` : `🚨 ${d.violations}`;
+  chip.title = 'សកម្មភាពមិនប្រក្រតីដែលបានកត់ត្រា';
+}
+
+const integrityHooks = {
+  onAway: async (away, dur) => {
+    awayNow = away && integrityOn();
+    if (away) { if (testState && !PREVIEW) api('/api/student/left-page', { method: 'POST', body: { session_id: testState.session_id } }).catch(() => {}); renderShield(); return; }
+    const d = await Integrity.flush();
+    renderShield();
+    if (integrityOn() && dur >= 2000 && !lockedNow) {
+      const lim = d && d.mode === 'lock' ? ` (${d.since_unlock}/${d.max}) — ដល់ ${d.max} ការប្រឡងនឹងជាប់សោ` : '';
+      Exam.notify(`⚠️ ប្អូនបានចាកចេញពីទំព័រប្រឡង ${Math.round(dur / 1000)} វិនាទី។ លោកគ្រូអ្នកគ្រូនឹងឃើញការកត់ត្រានេះ${lim}។ សូមកុំបើកកម្មវិធីផ្សេង កុំថតអេក្រង់ ឬប្រើ AI ពេលប្រឡង។`);
+    }
+  },
+  onFullscreen: (on) => { needFs = !on && Integrity.fullscreenSupported() && !fsBroken; renderShield(); },
+  onState: (d) => {
+    integrityChip(d);
+    if (d.locked && !lockedNow) { lockedNow = true; renderShield(); }
+  },
+};
+function startIntegrity() {
+  if (PREVIEW || !testState) return;
+  Integrity.watermark(`${currentStudent.name} · ${currentStudent.id}`);
+  Integrity.start(testState.session_id, testState.integrity, integrityHooks);
+  needFs = integrityOn() && Integrity.fullscreenSupported() && !Integrity.isFullscreen() && !fsBroken;
+  renderShield();
+}
+function stopIntegrity() {
+  Integrity.stop(); Integrity.unwatermark();
+  awayNow = needFs = lockedNow = false; shieldOn = false;
+  document.getElementById('shield').hidden = true;
+  document.getElementById('integrity-chip').hidden = true;
+  try { if (document.fullscreenElement) document.exitFullscreen(); else if (document.webkitFullscreenElement) document.webkitExitFullscreen(); } catch {}
+}
 
 function startTimer() {
   clearInterval(timerInterval);
@@ -517,6 +584,7 @@ const LETTERS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
 function renderQuestion() {
   const area = document.getElementById('question-area');
   const q = testState.questions[testState.current];
+  if (!q || lockedNow || shieldOn) return;
   area.innerHTML = '';
 
   const totalQ = testState.questions.length;

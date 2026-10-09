@@ -229,3 +229,17 @@ body.focus-mode .radio-opt { margin-block: 12px; }
 .stage-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #eef1ee; margin: 10px 0; }
 .stage-chip.on { background: var(--brand); color: #fff; }
 .stage-chip:disabled { opacity: .45; }
+
+/* ---- exam integrity: nothing selectable/printable, shield, watermark ---- */
+#view-test { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#view-test img { -webkit-user-drag: none; }
+.shield { position: fixed; inset: 0; z-index: 10001; background: #14231f; color: #fff; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+.shield[hidden] { display: none; }
+.shield-box { max-width: 460px; }
+.shield-icon { font-size: 56px; margin-bottom: 8px; }
+.shield-box h2 { margin: 0 0 10px; }
+.shield-box p { line-height: 1.8; opacity: .9; }
+.shield-box button { margin-top: 14px; min-height: 48px; padding-inline: 24px; }
+@media print { #view-test, #exam-watermark { display: none !important; } body::before { content: 'ហាមបោះពុម្ពវិញ្ញាសា'; font-size: 24px; } }
+.incident-btn.hot { background: #fde8e8; border-color: #d64545; color: #8f1d1d; }
+.incident-btn.locked { background: #8f1d1d; color: #fff; }

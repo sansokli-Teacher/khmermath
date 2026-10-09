@@ -21,6 +21,8 @@ const PLAN = [
   ['assessments', ['id'], []],
   ['manual_scores', ['assessment_id', 'student_id'], []],
   ['question_notes', ['id'], []],
+  ['exam_events', ['id'], []],
+  ['session_notes', ['id'], []],
   ['shares', ['id'], []],
 ];
 

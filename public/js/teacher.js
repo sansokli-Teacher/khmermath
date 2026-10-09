@@ -1067,6 +1067,12 @@ render.schedule = async function (preSelectedTestId = null) {
     h('button', { type: 'button', class: 'time-pill', onclick: () => setSchedulePreset(tomorrowYMD, '14:00', '16:00', 120) }, 'ថ្ងៃស្អែក 14:00 — 16:00'),
   ]);
 
+  const integritySelect = h('select', { id: 'sch-integrity', style: 'min-width:260px;' }, [
+    h('option', { value: 'lock', selected: 'selected' }, '🔒 តឹងរ៉ឹង — ជាប់សោ រហូតលោកគ្រូដោះសោ'),
+    h('option', { value: 'warn' }, '⚠ ព្រមាន — លាក់សំណួរ ព្រមាន និងកត់ត្រា'),
+    h('option', { value: 'log' }, '📝 កត់ត្រាតែប៉ុណ្ណោះ (មិនរំខានសិស្ស)'),
+  ]);
+  const maxViolInput = h('input', { type: 'number', id: 'sch-maxv', value: '3', min: '1', max: '20', style: 'width:70px;' });
   const randomPin = () => String(Math.floor(1000 + Math.random() * 9000));
   const pinInput = h('input', { type: 'text', id: 'sch-pin', value: randomPin(), maxlength: '12', style: 'font-weight:700;font-family:monospace;letter-spacing:3px;font-size:18px;' });
 
@@ -1103,6 +1109,11 @@ render.schedule = async function (preSelectedTestId = null) {
       ]),
     ]),
     shortcuts,
+    h('label', {}, 'ការការពារភាពស្មោះត្រង់ (ចាកចេញពីទំព័រ ថតអេក្រង់ ប្រើ AI…)'),
+    h('div', { class: 'row', style: 'gap:10px;align-items:center;flex-wrap:wrap;' }, [
+      integritySelect,
+      h('span', { class: 'muted' }, 'ជាប់សោបន្ទាប់ពី'), maxViolInput, h('span', { class: 'muted' }, 'លើកដែលមិនប្រក្រតី'),
+    ]),
     h('label', {}, 'PIN សម្រាប់ការប្រឡងនេះ (សិស្សវាយ PIN នេះដើម្បីចូលប្រឡង)'),
     h('div', { class: 'row', style: 'flex-wrap:nowrap;' }, [
       pinInput,
@@ -1152,6 +1163,7 @@ render.schedule = async function (preSelectedTestId = null) {
           scheduled_end: endDt.toISOString(),
           duration_minutes: dur,
           pin: pinInput.value.trim(),
+          integrity_mode: integritySelect.value, max_violations: Number(maxViolInput.value) || 3,
         } });
         await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ! សូមប្រាប់សិស្សពី PIN: ' + pinInput.value.trim());
         render.schedule();
@@ -1588,6 +1600,11 @@ async function renderGradingSession(container) {
       h('td', { style: 'font-size:13px;white-space:nowrap;' }, s.submitted_at ? fmtTimeOnly(s.submitted_at) : (s.started_at ? h('span', { style: 'color:var(--brand);' }, 'កំពុងធ្វើ...') : h('span', { class: 'muted' }, '—'))),
       h('td', {}, statusBadge),
       h('td', { class: 'no-print', style: (s.tab_switches || 0) >= 3 ? 'color:#dc2626;font-weight:700;' : '' }, s.tab_switches ? `${s.tab_switches} ដង` : '—'),
+      h('td', { class: 'no-print' }, (s.started_at || s.violations || s.note_count) ? h('button', {
+        class: `secondary btn-sm incident-btn${s.locked ? ' locked' : s.violations >= 3 ? ' hot' : ''}`,
+        title: 'មើលកំណត់ហេតុសកម្មភាព និងកំណត់ចំណាំ',
+        onclick: () => openActivity(session, s, () => renderGradingSession(container)),
+      }, `${s.locked ? '🔒 ' : s.violations ? '🚨 ' : '📋 '}${s.violations || 0}${s.away_ms ? ` · ${fmtAway(s.away_ms)}` : ''}${s.note_count ? ` · 📝${s.note_count}` : ''}`) : h('span', { class: 'muted' }, '—')),
       h('td', {}, s.submitted_at ? `${s.mcq_score} / ${session.mcq_max}` : h('span', { class: 'muted' }, '—')),
       h('td', {}, h('input', {
         type: 'number',
@@ -1625,6 +1642,7 @@ async function renderGradingSession(container) {
         h('th', {}, 'ពេលប្រគល់'),
         h('th', {}, 'របៀបប្រគល់'),
         h('th', { class: 'no-print' }, 'ចាកចេញទំព័រ'),
+        h('th', { class: 'no-print' }, 'សកម្មភាពគួរឱ្យសង្ស័យ'),
         h('th', {}, 'MCQ'),
         h('th', {}, 'សរសេរដៃ'),
         h('th', {}, 'សរសេរ (Max)'),
@@ -1685,8 +1703,67 @@ async function renderGradingSession(container) {
     toolsCard.querySelectorAll('input, button:not([onclick*="Excel"])').forEach((b) => { if (!/Excel|PDF|បោះពុម្ព/.test(b.textContent)) b.disabled = true; });
     container.append(h('div', { class: 'notice' }, '👁 អ្នកជាអ្នកពិនិត្យ — មើលបានតែមិនអាចដាក់ពិន្ទុ ឬផ្សព្វផ្សាយលទ្ធផលបានទេ។'));
   }
-  container.append(headerCard, stageCard, toolsCard, tableCard);
+  const polMode = h('select', {}, [['lock', '🔒 តឹងរ៉ឹង (ជាប់សោ)'], ['warn', '⚠ ព្រមាន'], ['log', '📝 កត់ត្រាតែប៉ុណ្ណោះ']].map(([v, l]) => h('option', { value: v, selected: session.integrity_mode === v ? 'selected' : null }, l)));
+  const polMax = h('input', { type: 'number', min: '1', max: '20', value: session.max_violations || 3, style: 'width:70px;' });
+  const lockedCount = session.roster.filter((x) => x.locked).length;
+  const integrityCard = h('div', { class: 'card no-print' }, [
+    h('div', { class: 'row', style: 'gap:10px;align-items:center;flex-wrap:wrap;' }, [
+      h('strong', {}, '🛡 ការការពារភាពស្មោះត្រង់'), polMode, h('span', { class: 'muted' }, 'ជាប់សោបន្ទាប់ពី'), polMax, h('span', { class: 'muted' }, 'លើក'),
+      h('button', { class: 'secondary btn-sm', onclick: async () => { try { await api(`/api/sessions/${selectedSessionId}/integrity`, { method: 'POST', body: { mode: polMode.value, max_violations: Number(polMax.value) } }); Exam.notify('បានរក្សាទុក — មានអនុភាពភ្លាមៗលើសិស្សដែលកំពុងប្រឡង។'); } catch (e) { Exam.notify(e.message); } } }, 'រក្សាទុក'),
+      lockedCount ? h('span', { class: 'badge warn' }, `🔒 កំពុងជាប់សោ ${lockedCount} នាក់ — ចុចលើជួររបស់គេដើម្បីដោះសោ`) : null,
+    ]),
+  ]);
+  container.append(headerCard, stageCard, integrityCard, toolsCard, tableCard);
   try { container.append(await renderAnalysis(session)); } catch (e) { /* analysis is optional */ }
+}
+
+// ---------- activity during the exam ----------
+const fmtAway = (ms) => (ms >= 60000 ? `${Math.floor(ms / 60000)}ន ${Math.round((ms % 60000) / 1000)}វ` : `${Math.round(ms / 1000)}វ`);
+const EVENT_LABEL = {
+  start: ['▶', 'ចាប់ផ្តើមប្រឡង'], tab_hidden: ['🔀', 'ប្តូរផ្ទាំង/កម្មវិធី'], window_blur: ['🪟', 'ចុចក្រៅទំព័រប្រឡង (អាចជា AI popup)'],
+  fullscreen_exit: ['⛶', 'ចេញពីពេញអេក្រង់'], fullscreen_enter: ['⛶', 'ចូលពេញអេក្រង់'], split_view: ['◧', 'បែងចែកអេក្រង់/បង្រួមផ្ទាំង'],
+  copy: ['📋', 'ព្យាយាមចម្លង'], cut: ['📋', 'ព្យាយាមកាត់'], contextmenu: ['🖱', 'ចុចស្តាំ/ចុចយូរ'], shortcut: ['⌨', 'ប៊ូតុងថតអេក្រង់/បោះពុម្ព/DevTools'],
+  print: ['🖨', 'ព្យាយាមបោះពុម្ព'], devtools: ['🛠', 'បើក Developer Tools'], second_tab: ['🗗', 'បើកការប្រឡងក្នុងផ្ទាំងទីពីរ'], drag: ['✋', 'អូសអត្ថបទ'],
+  online: ['🟢', 'មានអ៊ីនធឺណិតវិញ'], offline: ['🔴', 'ដាច់អ៊ីនធឺណិត'], focus_back: ['↩', 'ត្រឡប់មកវិញ'], locked: ['🔒', 'ជាប់សោ'], unlocked: ['🔓', 'ដោះសោ'],
+};
+async function openActivity(session, stu, onDone) {
+  let d;
+  try { d = await api(`/api/sessions/${session.id}/activity?student_id=${encodeURIComponent(stu.id)}`); } catch (e) { return Exam.notify(e.message); }
+  const canEdit = session.my_role !== 'reviewer';
+  const back = h('div', { class: 'modal-back', style: 'align-items:flex-start;overflow:auto;' });
+  const close = () => { back.remove(); onDone(); };
+  const reopen = () => { back.remove(); openActivity(session, stu, onDone); };
+  const counted = d.events.filter((e) => e.counted).length;
+  const away = d.events.filter((e) => e.kind === 'tab_hidden' || e.kind === 'window_blur').reduce((t, e) => t + (e.dur_ms || 0), 0);
+  const note = h('textarea', { placeholder: 'កំណត់ចំណាំរបស់អ្នកត្រួតពិនិត្យ ឧ. «ឃើញកំពុងមើលទូរស័ព្ទទីពីរ ម៉ោង 9:12»', style: 'min-height:60px;' });
+  back.append(h('div', { class: 'modal-box', style: 'margin:20px auto;max-width:640px;text-align:left;' }, [
+    h('h2', { style: 'margin:0 0 4px;' }, `📋 ${stu.surname} ${stu.first_name}`),
+    h('div', { class: 'muted', style: 'margin-bottom:10px;' }, `${session.test_title} · ${session.class_name}`),
+    h('div', { class: 'review-summary' }, [
+      h('div', { class: `review-stat ${counted ? 'bad' : 'good'}` }, [h('b', {}, String(counted)), 'ការរំលោភ']),
+      h('div', { class: 'review-stat' }, [h('b', {}, away ? fmtAway(away) : '0'), 'ពេលចាកចេញសរុប']),
+      h('div', { class: `review-stat ${d.result && d.result.locked ? 'warn' : ''}` }, [h('b', {}, d.result && d.result.locked ? '🔒' : '—'), d.result && d.result.locked ? 'កំពុងជាប់សោ' : 'មិនជាប់សោ']),
+    ]),
+    canEdit ? h('div', { class: 'row', style: 'gap:8px;margin-bottom:10px;' }, [
+      d.result && d.result.locked
+        ? h('button', { onclick: async () => { await api(`/api/sessions/${session.id}/lock`, { method: 'POST', body: { student_id: stu.id, locked: false } }); reopen(); } }, '🔓 ដោះសោឱ្យបន្តប្រឡង')
+        : (stu.started_at && !stu.submitted_at ? h('button', { class: 'danger', onclick: async () => { await api(`/api/sessions/${session.id}/lock`, { method: 'POST', body: { student_id: stu.id, locked: true } }); reopen(); } }, '🔒 ចាក់សោសិស្សនេះ') : null),
+    ]) : null,
+    h('h3', {}, 'កំណត់ហេតុសកម្មភាព'),
+    d.events.length ? h('div', { style: 'max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:6px;' }, h('table', {}, [
+      h('thead', {}, h('tr', {}, ['ម៉ោង', 'សកម្មភាព', 'រយៈពេល', ''].map((x) => h('th', {}, x)))),
+      h('tbody', {}, d.events.map((e) => { const [ic, lb] = EVENT_LABEL[e.kind] || ['•', e.kind]; return h('tr', { style: e.counted ? 'background:#fdecec;' : '' }, [
+        h('td', { style: 'white-space:nowrap;' }, fmtTimeOnly(e.at)), h('td', {}, [`${ic} ${lb}`, e.detail ? h('div', { class: 'muted', style: 'font-size:12px;' }, e.detail) : null]),
+        h('td', {}, e.dur_ms ? fmtAway(e.dur_ms) : ''), h('td', {}, e.counted ? h('span', { class: 'badge closed' }, 'រាប់') : ''),
+      ]); })),
+    ])) : h('p', { class: 'muted' }, 'មិនមានសកម្មភាពមិនប្រក្រតីត្រូវបានកត់ត្រាទេ។'),
+    h('h3', { style: 'margin-top:14px;' }, 'កំណត់ចំណាំ'),
+    ...d.notes.map((n) => h('div', { class: 'callout', style: 'display:flex;justify-content:space-between;gap:8px;' }, [h('div', {}, [h('div', {}, n.body), h('div', { class: 'muted', style: 'font-size:12px;font-weight:400;' }, `${n.author || ''} · ${fmtDateTime(n.created_at)}`)]),
+      canEdit ? h('button', { class: 'secondary btn-sm', onclick: async () => { await api(`/api/sessions/${session.id}/notes/${n.id}`, { method: 'DELETE' }); reopen(); } }, '✕') : null])),
+    canEdit ? h('div', {}, [note, h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:6px;' }, [h('button', { class: 'secondary btn-sm', onclick: async () => { if (!note.value.trim()) return; await api(`/api/sessions/${session.id}/notes`, { method: 'POST', body: { student_id: stu.id, body: note.value } }); reopen(); } }, '＋ បន្ថែមចំណាំ')])]) : null,
+    h('div', { class: 'row', style: 'justify-content:space-between;margin-top:14px;' }, [h('button', { class: 'secondary', onclick: () => window.print() }, '🖨 បោះពុម្ព'), h('button', { onclick: close }, 'បិទ')]),
+  ]));
+  document.body.append(back);
 }
 
 // ---------- publish preview ----------

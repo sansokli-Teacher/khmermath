@@ -173,6 +173,8 @@ export async function deleteTest(req, env, params) {
     env.DB.prepare(`DELETE FROM results WHERE session_id IN ${sess}`).bind(id),
     env.DB.prepare(`DELETE FROM writing_marks WHERE session_id IN ${sess} OR question_id IN ${qs}`).bind(id),
     env.DB.prepare(`DELETE FROM session_questions WHERE session_id IN ${sess}`).bind(id),
+    env.DB.prepare(`DELETE FROM exam_events WHERE session_id IN ${sess}`).bind(id),
+    env.DB.prepare(`DELETE FROM session_notes WHERE session_id IN ${sess}`).bind(id),
     env.DB.prepare(`DELETE FROM question_notes WHERE question_id IN ${qs}`).bind(id),
     env.DB.prepare("DELETE FROM shares WHERE resource_type = 'test' AND resource_id = ?1").bind(id),
     env.DB.prepare('DELETE FROM test_questions WHERE test_id = ?1').bind(id),
