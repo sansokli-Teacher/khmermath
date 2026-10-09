@@ -24,7 +24,8 @@ function windowFor(ses, extraMin = 0) {
   else phase = 'closed';
   return { start, end, now, phase };
 }
-const SUBMIT_GRACE_MS = 5000; // forgive a submit that was already in flight when the clock hit zero
+const SUBMIT_GRACE_MS = 5000; // forgive an answer that was already in flight when the clock hit zero
+const SUBMIT_LATE_MS = 60000; // a final submit may arrive up to a minute late (phone lost signal at the deadline)
 
 // ---------- login (ID only; optionally ID + date of birth, per class) ----------
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
@@ -171,6 +172,8 @@ export async function start(req, env) {
   // restarted) may resume without typing it again — on the same device.
   const alreadyUnlocked = result && result.started_at;
   if (alreadyUnlocked && result.device_id && device && result.device_id !== device) {
+    await env.DB.prepare("INSERT INTO exam_events (session_id, student_id, kind, detail) VALUES (?1, ?2, 'second_device', ?3)")
+      .bind(ses.id, studentSession.id, `ព្យាយាមចូលពីឧបករណ៍ផ្សេង (${String(device).slice(0, 8)})`).run().catch(() => {});
     return json({ error: 'ការប្រឡងនេះកំពុងបើកលើឧបករណ៍ផ្សេង។ សូមសុំលោកគ្រូអ្នកគ្រូអនុញ្ញាតឱ្យប្តូរឧបករណ៍។', device: true }, 409);
   }
   if (!alreadyUnlocked) {
@@ -271,6 +274,15 @@ export async function getTest(req, env) {
   });
 }
 
+// Why is this student's exam not open for them? (the page tells them the real reason)
+async function inactiveReason(env, studentSession, sessionId, deviceId) {
+  const r = await env.DB.prepare('SELECT device_id, submitted_at FROM results WHERE session_id = ?1 AND student_id = ?2').bind(sessionId, studentSession.id).first();
+  if (!r) return 'none';
+  if (r.submitted_at) return 'submitted';
+  if (r.device_id && deviceId && r.device_id !== deviceId) return 'device';
+  return 'closed';
+}
+
 // Light poll while taking the test: has the teacher extended the time, submitted for
 // the student, or closed the exam? Also tells the teacher the student is online.
 export async function heartbeat(req, env) {
@@ -278,11 +290,13 @@ export async function heartbeat(req, env) {
   if (!studentSession) return err('Not logged in.', 401);
   const sessionId = Number(new URL(req.url).searchParams.get('session_id'));
   const active = await loadActiveSession(env, studentSession, sessionId, SUBMIT_GRACE_MS, deviceOf(req));
-  if (!active) return json({ open: false, server_now: Date.now() });
+  // every heartbeat renews the login, so a long exam can never log the student out
+  const renew = { 'Set-Cookie': await createSessionCookie({ role: 'student', id: studentSession.id, name: studentSession.name, classId: studentSession.classId }, env.SESSION_SECRET) };
+  if (!active) return json({ open: false, reason: await inactiveReason(env, studentSession, sessionId, deviceOf(req)), server_now: Date.now() }, 200, renew);
   await env.DB.prepare(
     "UPDATE results SET last_seen = datetime('now') WHERE session_id = ?1 AND student_id = ?2 AND (last_seen IS NULL OR last_seen < datetime('now', '-40 seconds'))",
   ).bind(active.id, studentSession.id).run();
-  return json({ open: true, locked: active.locked, end_at: active.window.end, server_now: Date.now() });
+  return json({ open: true, locked: active.locked, end_at: active.window.end, server_now: Date.now() }, 200, renew);
 }
 
 // The student's page reports each time it was left (tab switch, app switch).
@@ -335,7 +349,7 @@ export async function submit(req, env) {
   await ensureColumns(env);
   let body = {};
   try { body = await req.json(); } catch {}
-  const active = await loadActiveSession(env, studentSession, Number(body.session_id), SUBMIT_GRACE_MS, deviceOf(req));
+  const active = await loadActiveSession(env, studentSession, Number(body.session_id), SUBMIT_LATE_MS, deviceOf(req));
   if (!active) return err('This test is not open anymore.', 403);
   const submitType = body.submit_type === 'auto' ? 'auto' : 'manual';
 

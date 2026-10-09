@@ -59,6 +59,16 @@
   </div>
 </div>
 
+<!-- no connection while signed in: keep trying, never fall back to the login page -->
+<div id="view-offline" class="auth-screen" hidden>
+  <div class="auth-card">
+    <div class="wait-icon">📴</div>
+    <h1>គ្មានអ៊ីនធឺណិត</h1>
+    <p class="muted">ប្រព័ន្ធកំពុងព្យាយាមភ្ជាប់ឡើងវិញដោយស្វ័យប្រវត្តិ។ ចម្លើយរបស់ប្អូនដែលបានរក្សាទុកលើទូរស័ព្ទមិនបាត់ទេ — សូមកុំបិទទំព័រនេះ។</p>
+    <button class="btn-block" id="offline-retry">ព្យាយាមឥឡូវនេះ</button>
+  </div>
+</div>
+
 <!-- 4. Taking the test -->
 <div id="view-test" hidden>
   <div id="preview-banner" class="preview-banner" hidden>👁 របៀបមើលជាសិស្ស — ចម្លើយមិនត្រូវបានរក្សាទុក ឬបញ្ជូនទេ · <a href="teacher.html">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a></div>

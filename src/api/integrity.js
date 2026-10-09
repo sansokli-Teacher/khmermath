@@ -15,7 +15,7 @@ import { audit } from '../lib/audit.js';
 // kind -> does this one count as an incident? (true | min duration in ms | false = log only)
 const COUNTS = {
   tab_hidden: 2000, window_blur: 4000, fullscreen_exit: true, split_view: true, copy: true, cut: true,
-  contextmenu: true, shortcut: true, print: true, devtools: true, second_tab: true, drag: true, selection: false,
+  contextmenu: true, shortcut: true, print: true, devtools: true, second_tab: true, drag: true, selection: false, second_device: false,
   online: false, offline: false, fullscreen_enter: false, focus_back: false, start: false, resume: false,
 };
 export const KINDS = Object.keys(COUNTS);

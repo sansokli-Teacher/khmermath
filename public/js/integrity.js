@@ -23,6 +23,7 @@ const Integrity = (() => {
         headers: { 'Content-Type': 'application/json', 'X-Device': Exam.deviceId() },
         body: JSON.stringify({ session_id: sid, events }),
       });
+      if (res.status === 401) { queue.unshift(...events); flushTimer = setTimeout(flush, 8000); return null; }   // logged out: keep them until the student signs in again
       const d = await res.json().catch(() => null);
       if (d && d.violations != null && hooks.onState) hooks.onState(d);
       if (queue.length) flushTimer = setTimeout(flush, 500);
@@ -123,7 +124,7 @@ const Integrity = (() => {
   function watermark(text) {
     unwatermark();
     const safe = String(text).replace(/[<>&"']/g, '');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><text x="20" y="110" transform="rotate(-24 160 100)" font-family="sans-serif" font-size="15" font-weight="700" fill="rgba(20,40,35,0.085)">${safe}</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="340"><text x="30" y="190" transform="rotate(-22 260 170)" font-family="sans-serif" font-size="13" fill="rgba(20,40,35,0.035)">${safe}</text></svg>`;
     const el = document.createElement('div');
     el.id = 'exam-watermark';
     el.style.cssText = `position:fixed;inset:0;z-index:40;pointer-events:none;background-image:url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}");background-repeat:repeat;`;

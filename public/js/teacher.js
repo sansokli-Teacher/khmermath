@@ -1724,7 +1724,7 @@ const EVENT_LABEL = {
   fullscreen_exit: ['⛶', 'ចេញពីពេញអេក្រង់'], fullscreen_enter: ['⛶', 'ចូលពេញអេក្រង់'], split_view: ['◧', 'បែងចែកអេក្រង់/បង្រួមផ្ទាំង'],
   copy: ['📋', 'ព្យាយាមចម្លង'], cut: ['📋', 'ព្យាយាមកាត់'], contextmenu: ['🖱', 'ចុចស្តាំ/ចុចយូរ'], shortcut: ['⌨', 'ប៊ូតុងថតអេក្រង់/បោះពុម្ព/DevTools'],
   print: ['🖨', 'ព្យាយាមបោះពុម្ព'], devtools: ['🛠', 'បើក Developer Tools'], second_tab: ['🗗', 'បើកការប្រឡងក្នុងផ្ទាំងទីពីរ'], drag: ['✋', 'អូសអត្ថបទ'],
-  online: ['🟢', 'មានអ៊ីនធឺណិតវិញ'], offline: ['🔴', 'ដាច់អ៊ីនធឺណិត'], focus_back: ['↩', 'ត្រឡប់មកវិញ'], locked: ['🔒', 'ជាប់សោ'], unlocked: ['🔓', 'ដោះសោ'],
+  second_device: ['📱', 'មានឧបករណ៍ផ្សេងព្យាយាមចូលប្រឡងជំនួស (ត្រូវបានបដិសេធ)'], online: ['🟢', 'មានអ៊ីនធឺណិតវិញ'], offline: ['🔴', 'ដាច់អ៊ីនធឺណិត'], focus_back: ['↩', 'ត្រឡប់មកវិញ'], locked: ['🔒', 'ជាប់សោ'], unlocked: ['🔓', 'ដោះសោ'],
 };
 async function openActivity(session, stu, onDone) {
   let d;

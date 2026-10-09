@@ -1,4 +1,49 @@
-const { h, api, showError, fmtDateTime, fmtTimeOnly, fmtClock } = Exam;
+const { h, showError, fmtDateTime, fmtTimeOnly, fmtClock } = Exam;
+const rawApi = Exam.api;
+// While an exam is open, a login that expired (or a cookie the phone dropped) must never cost the
+// student their answers: sign in again on the spot, then repeat the request.
+const api = async (path, opts) => {
+  try { return await rawApi(path, opts); } catch (e) {
+    if (e.status === 401 && testState && !PREVIEW && !path.startsWith('/api/student/login')) { await reauth(); return rawApi(path, opts); }
+    throw e;
+  }
+};
+let reauthPromise = null;
+function reauth() {
+  if (reauthPromise) return reauthPromise;
+  reauthPromise = new Promise((resolve) => {
+    const err = h('div', { class: 'error', hidden: 'hidden' });
+    const dob = h('input', { type: 'text', class: 'big-input', placeholder: 'ថ្ងៃខែឆ្នាំកំណើត (ឧ. 15032012)', inputmode: 'numeric', maxlength: '10', hidden: 'hidden' });
+    dob.addEventListener('input', (e) => { e.target.value = formatDob(e.target.value); });
+    const attempt = async () => {
+      try {
+        await rawApi('/api/student/login', { method: 'POST', body: { id: currentStudent.id, dob: dob.value.trim() } });
+        back.remove(); reauthPromise = null; resolve();
+      } catch (e) {
+        if (e.data && e.data.need_dob) dob.hidden = false;
+        err.hidden = false; err.textContent = e.status ? e.message : 'គ្មានអ៊ីនធឺណិត — កំពុងព្យាយាមម្តងទៀត…';
+        if (!e.status) setTimeout(attempt, 4000);
+      }
+    };
+    const back = h('div', { class: 'modal-back', style: 'z-index:10002;' }, h('div', { class: 'modal-box' }, [
+      h('div', { style: 'font-size:42px;' }, '🔑'), h('h2', {}, 'សូមចូលម្តងទៀត'),
+      h('p', { class: 'muted' }, `ការចូលបានផុតកំណត់ ប៉ុន្តែចម្លើយរបស់ប្អូនមិនបាត់ទេ។ ប្រព័ន្ធកំពុងចូលជា ${currentStudent.name} ឡើងវិញ។`),
+      dob, err, h('button', { class: 'btn-block', onclick: attempt }, 'ចូលម្តងទៀត និងបន្តប្រឡង'),
+    ]));
+    document.body.append(back);
+    attempt();
+  });
+  return reauthPromise;
+}
+// Connection lost outside the exam page (reload, resume): wait and retry, do not show the login form.
+let offlineTimer = null;
+function showOffline(retry) {
+  clearInterval(offlineTimer);
+  showView('offline');
+  const go = async () => { try { await rawApi('/api/student/status'); clearInterval(offlineTimer); retry(); } catch (e) { if (e.status === 401) { clearInterval(offlineTimer); retry(); } } };
+  offlineTimer = setInterval(go, 5000);
+  document.getElementById('offline-retry').onclick = go;
+}
 
 function mathEl(tag, attrs, text) {
   const el = h(tag, attrs);
@@ -11,7 +56,7 @@ let clockSkew = 0;
 const now = () => Date.now() + clockSkew;
 const syncClock = (serverNow) => { if (serverNow) clockSkew = serverNow - Date.now(); };
 
-const views = ['login', 'home', 'wait', 'test'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
+const views = ['login', 'home', 'wait', 'offline', 'test'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
 function showView(name) {
   for (const [n, el] of Object.entries(views)) el.hidden = n !== name;
   window.scrollTo(0, 0);
@@ -48,13 +93,15 @@ async function bootPreview() {
 async function boot() {
   if (PREVIEW) return bootPreview();
   stopIntegrity();
+  clearInterval(offlineTimer);
   clearInterval(homeRefresh);
   try {
     const data = await api('/api/student/status');
     syncClock(data.server_now);
     currentStudent = { id: data.student_id, name: data.student_name };
     renderHome(data);
-  } catch {
+  } catch (e) {
+    if (e && !e.status) return showOffline(boot);          // no network: not the same as being logged out
     showView('login');
     document.getElementById('login-id').focus();
   }
@@ -358,6 +405,7 @@ async function loadTest(sessionId) {
     syncClock(data.server_now);
     testState = { ...data, current: 0 };
   } catch (e) {
+    if (!e.status) return showOffline(() => loadTest(sessionId));
     await Exam.notify(e.message);
     return boot();
   }
@@ -465,7 +513,7 @@ function startHeartbeat() {
       if (r.open && !r.locked && lockedNow) { lockedNow = false; return loadTest(testState.session_id); }   // the teacher unlocked: reload the questions
       if (!r.open) {
         clearInterval(heartbeatTimer); clearInterval(timerInterval);
-        await Exam.notify('ការប្រឡងត្រូវបានបញ្ចប់។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុក។');
+        await Exam.notify(r.reason === 'device' ? 'ការប្រឡងនេះត្រូវបានបើកលើឧបករណ៍ផ្សេង (លោកគ្រូបានអនុញ្ញាតឱ្យប្តូរ)។ ឧបករណ៍នេះត្រូវបានបិទ។' : r.reason === 'submitted' ? 'ប្អូនបានប្រគល់ការប្រឡងនេះរួចហើយ។' : 'ការប្រឡងត្រូវបានបញ្ចប់។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុក។');
         testState = null; return boot();
       }
       if (r.end_at && r.end_at !== testState.end_at) testState.end_at = r.end_at;
@@ -713,18 +761,32 @@ async function doSubmit(auto) {
   if (pending.size) await Promise.race([flush(), new Promise((r) => setTimeout(r, 6000))]);
   const answers = {};
   for (const q of testState.questions) if (q.kind !== 'writing' && q.selected_index != null) answers[q.id] = q.selected_index;
+  const send = () => api('/api/student/submit', { method: 'POST', body: { session_id: sessionId, submit_type: auto ? 'auto' : 'manual', answers } });
+  const refused = (e) => e.status && e.status < 500 && e.status !== 429 && e.status !== 401;
   let done = false;
-  for (let attempt = 0; attempt < 4 && !done; attempt++) {
-    try {
-      await api('/api/student/submit', { method: 'POST', body: { session_id: sessionId, submit_type: auto ? 'auto' : 'manual', answers } });
-      done = true;
-    } catch (e) {
-      if (e.status && e.status < 500 && e.status !== 429) { if (!auto) await Exam.notify(e.message); break; }   // refused (e.g. already submitted)
-      await new Promise((r) => setTimeout(r, 1500));                                                             // network trouble: try again
+  const giveUpAt = Date.now() + (auto ? 45000 : 25000);
+  for (let attempt = 0; !done; attempt++) {
+    try { await send(); done = true; }
+    catch (e) {
+      if (refused(e)) { if (!auto) await Exam.notify(e.message); break; }               // refused (e.g. already submitted)
+      if (Date.now() > giveUpAt) break;
+      await new Promise((r) => setTimeout(r, Math.min(1500 * (attempt + 1), 5000)));    // network trouble: try again
     }
   }
-  if (!done && !auto) await Exam.notify('មិនអាចបញ្ជូនបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយចុចបញ្ជូនម្តងទៀត។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុកលើទូរស័ព្ទ។');
-  if (!done && !auto) { startTimer(); startHeartbeat(); return; }
+  if (!done) {
+    // Never throw the answers away: they stay on the phone, and the teacher can reopen the exam for this student.
+    await Exam.notify(auto
+      ? '⚠ ពេលវេលាអស់ ប៉ុន្តែបញ្ជូនចម្លើយមិនបានទេ (គ្មានអ៊ីនធឺណិត)។ ចម្លើយរបស់ប្អូននៅលើទូរស័ព្ទនៅឡើយ។ សូមប្រាប់លោកគ្រូអ្នកគ្រូភ្លាមៗ ហើយកុំបិទទំព័រ ឬលុបទិន្នន័យទូរស័ព្ទ។'
+      : 'មិនអាចបញ្ជូនបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយចុចបញ្ជូនម្តងទៀត។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុកលើទូរស័ព្ទ។');
+    if (!auto) { startTimer(); startHeartbeat(); return; }
+    const banner = document.getElementById('save-banner');
+    banner.hidden = false; banner.textContent = '⏳ កំពុងរង់ចាំអ៊ីនធឺណិតដើម្បីបញ្ជូនចម្លើយ — កុំបិទទំព័រ។ ប្រាប់លោកគ្រូអ្នកគ្រូ។';
+    const retry = setInterval(async () => {
+      try { await send(); clearInterval(retry); banner.hidden = true; try { for (const k of ['ans', 'flags', 'pend']) localStorage.removeItem(localKey(k)); } catch {} testState = null; boot(); }
+      catch (e) { if (refused(e)) { clearInterval(retry); banner.textContent = '⚠ ម៉ាស៊ីនមេមិនទទួលចម្លើយទៀតទេ — សូមប្រាប់លោកគ្រូអ្នកគ្រូឱ្យបន្ថែមពេលឱ្យប្អូន។ ចម្លើយនៅលើទូរស័ព្ទ។'; } }
+    }, 8000);
+    return;
+  }
   try { for (const k of ['ans', 'flags', 'pend']) localStorage.removeItem(localKey(k)); } catch {}
   testState = null;
   boot();
