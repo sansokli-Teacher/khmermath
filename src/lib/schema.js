@@ -1,6 +1,10 @@
 // Lazy schema upgrades. Every API module calls ensureColumns() before touching
 // columns/tables that were added after the first deploy; it is cheap after the
 // first call in an isolate and safe to run repeatedly.
+// Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
+// skips everything else; the (batched) migration runs once per version, not once per cold start.
+// (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
+const SCHEMA_VERSION = '2026-10-09-c';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
@@ -54,8 +58,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE results ADD COLUMN locked INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE results ADD COLUMN lock_reason TEXT',
   ];
-  for (const sql of alters) { try { await env.DB.prepare(sql).run(); } catch {} }
-
+  const cur = await env.DB.prepare("SELECT value FROM settings WHERE key = 'schema_version'").first().catch(() => null);
+  if (cur && cur.value === SCHEMA_VERSION) { done = true; return; }
   await env.DB.batch([
     // One-time invite / password-reset links. Only a hash of the token is stored.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS invites (
@@ -174,10 +178,19 @@ export async function ensureColumns(env) {
     )`),
   ]);
 
+  // Add whichever columns are missing — one call to look, one call to add (a failing ALTER would roll the batch back).
+  const want = alters.map((sql) => { const m = sql.match(/ALTER TABLE (\w+) ADD COLUMN (\w+)/); return m ? { sql, table: m[1], col: m[2] } : null; }).filter(Boolean);
+  const tables = [...new Set(want.map((w) => w.table))];
+  const info = await env.DB.batch(tables.map((t) => env.DB.prepare(`PRAGMA table_info(${t})`)));
+  const have = Object.fromEntries(tables.map((t, i) => [t, new Set(info[i].results.map((r) => r.name))]));
+  const missing = want.filter((w) => have[w.table].size && !have[w.table].has(w.col));
+  if (missing.length) await env.DB.batch(missing.map((w) => env.DB.prepare(w.sql)));
+
   // The existing account becomes the owner; everything created before teams
   // existed belongs to the owner.
   await env.DB.prepare("UPDATE teachers SET role = 'owner' WHERE id = (SELECT MIN(id) FROM teachers) AND NOT EXISTS (SELECT 1 FROM teachers WHERE role = 'owner')").run();
   await env.DB.prepare("UPDATE classes SET owner_id = (SELECT id FROM teachers WHERE role = 'owner' ORDER BY id LIMIT 1) WHERE owner_id IS NULL").run();
   await env.DB.prepare("UPDATE tests SET owner_id = (SELECT id FROM teachers WHERE role = 'owner' ORDER BY id LIMIT 1) WHERE owner_id IS NULL").run();
+  await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('schema_version', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1").bind(SCHEMA_VERSION).run();
   done = true;
 }

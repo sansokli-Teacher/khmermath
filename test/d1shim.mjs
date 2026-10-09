@@ -13,7 +13,10 @@ class Stmt {
   constructor(db, sql) { this.db = db; this.sql = sql; this.v = []; }
   _p() { const [sql, args] = toNamed(this.sql, this.v); return [this.db.prepare(sql), args]; }
   bind(...v) { this.v = v.map((x) => (x === undefined ? null : x)); return this; }
-  _run() { const [st, a] = this._p(); const r = st.run(...a); return { results: [], meta: { changes: Number(r.changes), rows_written: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } }; }
+  _run() {
+    const [st, a] = this._p();
+    if (/^\s*(SELECT|PRAGMA|WITH)/i.test(this.sql)) return { results: st.all(...a), meta: { changes: 0 } };   // D1's batch returns rows for reads
+    const r = st.run(...a); return { results: [], meta: { changes: Number(r.changes), rows_written: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } }; }
   async run() { return this._run(); }
   async first() { const [st, a] = this._p(); return st.get(...a) ?? null; }
   async all() { const [st, a] = this._p(); return { results: st.all(...a), meta: {} }; }

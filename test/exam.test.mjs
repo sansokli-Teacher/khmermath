@@ -149,3 +149,19 @@ test('backup self-check passes on a healthy backup and fails when there is none'
   assert.equal(c.ok, true);
   assert.equal(c.tables.students, 3);
 });
+
+test('schema upgrade is cheap: one call when current, a handful when migrating (50-subrequest limit)', async () => {
+  const env = makeEnv(new URL('../schema.sql', import.meta.url).pathname);
+  let calls = 0;
+  const prepare = env.DB.prepare, batch = env.DB.batch;
+  env.DB.prepare = (sql) => { calls++; return prepare(sql); };
+  env.DB.batch = (s) => { calls++; calls -= s.length; return batch(s); };   // a batch is one subrequest, however many statements it holds
+  _resetSchemaForTests();
+  await ensureColumns(env);
+  assert.ok(calls <= 10, `migration used ${calls} calls`);
+  assert.equal(env.raw.prepare("SELECT value FROM settings WHERE key='schema_version'").get().value.length > 3, true);
+  assert.ok(env.raw.prepare("SELECT 1 FROM pragma_table_info('results') WHERE name='violations'").get());
+  calls = 0; _resetSchemaForTests();                    // a cold Worker on an already-migrated database
+  await ensureColumns(env);
+  assert.equal(calls, 1);
+});
