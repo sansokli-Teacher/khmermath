@@ -3,6 +3,8 @@
 // first call in an isolate and safe to run repeatedly.
 let done = false;
 
+export function _resetSchemaForTests() { done = false; }
+
 export async function ensureColumns(env) {
   if (done) return;
   const alters = [
@@ -97,6 +99,26 @@ export async function ensureColumns(env) {
       teacher_id INTEGER,
       action TEXT NOT NULL,
       detail TEXT
+    )`),
+    // Questions as they were when an exam session started (see lib/frozen.js).
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS session_questions (
+      session_id INTEGER NOT NULL,
+      question_id INTEGER NOT NULL,
+      order_no INTEGER NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'mcq',
+      stem_text TEXT NOT NULL,
+      image_key TEXT,
+      options_json TEXT NOT NULL,
+      correct_index INTEGER NOT NULL,
+      alt_correct_index INTEGER,
+      cancelled INTEGER NOT NULL DEFAULT 0,
+      points REAL NOT NULL DEFAULT 1,
+      solution_text TEXT,
+      topic TEXT,
+      level TEXT,
+      shuffle INTEGER NOT NULL DEFAULT 0,
+      frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (session_id, question_id)
     )`),
     // A class or test shared with another teacher.
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS shares (

@@ -41,7 +41,7 @@ async function bootPreview() {
   document.getElementById('preview-banner').hidden = false;
   document.getElementById('timer-title').textContent = test.title;
   document.getElementById('student-badge').textContent = 'របៀបមើលជាសិស្ស';
-  renderNav(); renderQuestion(); startTimer();
+  applyReader(); renderNav(); renderQuestion(); startTimer();
 }
 
 // ---------- Sign in ----------
@@ -201,6 +201,7 @@ function examCard(s) {
 
   const go = async (withPin) => {
     showError(card, '');
+    if (!(s.started && isOpen) && !(await readyCheck(s))) return;
     try {
       const res = await api('/api/student/start', { method: 'POST', body: { session_id: s.session_id, pin: withPin } });
       syncClock(res.server_now);
@@ -258,6 +259,66 @@ function historyCard(s) {
   return h('div', { class: 'score-card' }, [head, h('div', { style: 'margin-top:8px;' }, h('span', { class: `chip ${text[1]}` }, text[0]))]);
 }
 
+// ---------- Before starting: identity, duration, instructions, connection ----------
+async function readyCheck(s) {
+  const status = (ok, text) => h('div', { class: `ready-row ${ok === true ? 'ok' : ok === false ? 'bad' : 'warn'}` }, [h('span', {}, ok === true ? '✓' : ok === false ? '✗' : '⚠'), h('span', {}, text)]);
+  const checks = h('div', { class: 'ready-checks' });
+  const t0 = performance.now();
+  let net = null, ms = 0;
+  try { const d = await api('/api/student/status'); syncClock(d.server_now); ms = Math.round(performance.now() - t0); net = true; } catch { net = false; }
+  checks.append(
+    status(net ? (ms < 1500 ? true : null) : false, net ? (ms < 1500 ? `ការតភ្ជាប់ល្អ (${ms} ms)` : `ការតភ្ជាប់យឺត (${ms} ms) — ចម្លើយអាចរក្សាទុកយឺត`) : 'មិនអាចតភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ — សូមពិនិត្យអ៊ីនធឺណិត'),
+  );
+  let store = true; try { localStorage.setItem('exam_probe', '1'); localStorage.removeItem('exam_probe'); } catch { store = false; }
+  checks.append(status(store, store ? 'ទូរស័ព្ទអាចរក្សាចម្លើយទុកបណ្ដោះអាសន្នបាន' : 'ទូរស័ព្ទមិនអាចរក្សាចម្លើយទុកបណ្ដោះអាសន្ន (កុំប្រើផ្ទាំង Private)'));
+  if (Math.abs(clockSkew) > 120000) checks.append(status(null, 'ម៉ោងលើទូរស័ព្ទមិនត្រឹមត្រូវ — ប្រព័ន្ធនឹងប្រើម៉ោងរបស់ម៉ាស៊ីនមេជំនួស'));
+  try {
+    if (navigator.getBattery) { const b = await navigator.getBattery(); if (!b.charging && b.level < 0.2) checks.append(status(null, `ថ្មសល់ ${Math.round(b.level * 100)}% — សូមសាកថ្មមុនប្រឡង`)); }
+  } catch {}
+  return new Promise((resolve) => {
+    const finish = (v) => { back.remove(); resolve(v); };
+    const back = h('div', { class: 'modal-back', style: 'align-items:flex-start;overflow:auto;' }, h('div', { class: 'modal-box', style: 'margin:auto;max-width:480px;text-align:left;' }, [
+      h('h2', { style: 'margin:0 0 4px;text-align:center;' }, 'ត្រៀមខ្លួនមុនប្រឡង'),
+      h('div', { class: 'ready-who' }, [h('div', { class: 'muted' }, 'ប្អូនកំពុងចូលប្រឡងក្នុងនាម'), h('div', { class: 'ready-name' }, currentStudent.name), h('div', { class: 'muted' }, `អត្តលេខ ${currentStudent.id}`)]),
+      h('div', { class: 'ready-exam' }, [h('b', {}, s.test_title), h('div', { class: 'muted' }, `⏱ ${s.duration_minutes} នាទី · 🏁 បញ្ចប់ ${fmtTimeOnly(s.scheduled_end)}`)]),
+      checks,
+      h('div', { class: 'ready-rules' }, [
+        h('b', {}, 'ណែនាំ'),
+        h('ul', {}, [
+          h('li', {}, 'ចម្លើយរក្សាទុកដោយស្វ័យប្រវត្តិ។ បើអ៊ីនធឺណិតដាច់ ចម្លើយនៅតែនៅលើទូរស័ព្ទ។'),
+          h('li', {}, 'កុំចាកចេញពីទំព័រប្រឡង — លោកគ្រូអ្នកគ្រូនឹងឃើញការកត់ត្រានេះ។'),
+          h('li', {}, 'ប្រើតែឧបករណ៍មួយប៉ុណ្ណោះក្នុងការប្រឡងនេះ។'),
+          h('li', {}, 'ចុច «បញ្ជូនចម្លើយ» ពេលចប់។ ផ្នែកសរសេរធ្វើលើក្រដាស។'),
+        ]),
+      ]),
+      h('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:14px;' }, [
+        h('button', { class: 'btn-block', disabled: net ? null : 'disabled', onclick: () => finish(true) }, 'នេះជាខ្ញុំ — ចាប់ផ្តើមប្រឡង'),
+        h('button', { class: 'secondary btn-block', onclick: () => finish(false) }, '← ត្រឡប់ក្រោយ'),
+      ]),
+    ]));
+    document.body.append(back);
+  });
+}
+
+// ---------- Reading comfort: text size and a distraction-free view ----------
+let reader = { size: 1, focus: false, nav: false };
+try { reader = { ...reader, ...JSON.parse(localStorage.getItem('exam_reader') || '{}') }; } catch {}
+function applyReader() {
+  const cls = document.body.classList;
+  for (let i = 0; i <= 3; i++) cls.toggle(`ts-${i}`, reader.size === i);
+  cls.toggle('focus-mode', !!reader.focus);
+  cls.toggle('focus-nav-open', !!reader.focus && !!reader.nav);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.classList.toggle('on', v); };
+  set('rd-focus', reader.focus); set('rd-nav', reader.nav);
+  const nav = document.getElementById('rd-nav'); if (nav) nav.hidden = !reader.focus;
+  try { localStorage.setItem('exam_reader', JSON.stringify(reader)); } catch {}
+}
+document.getElementById('rd-smaller').onclick = () => { reader.size = Math.max(0, reader.size - 1); applyReader(); };
+document.getElementById('rd-bigger').onclick = () => { reader.size = Math.min(3, reader.size + 1); applyReader(); };
+document.getElementById('rd-focus').onclick = () => { reader.focus = !reader.focus; reader.nav = false; applyReader(); };
+document.getElementById('rd-nav').onclick = () => { reader.nav = !reader.nav; applyReader(); };
+applyReader();
+
 // ---------- Waiting for the start time ----------
 function showWaiting(s, pin, startAt) {
   showView('wait');
@@ -304,40 +365,58 @@ async function loadTest(sessionId) {
   document.getElementById('student-badge').textContent = `${currentStudent.name} (${currentStudent.id})`;
   // Answers kept on this phone but never confirmed by the server (e.g. connection dropped): re-send them.
   const saved = readLocal();
+  const unsent = new Set(readLocal('pend'));
   pending.clear();
   for (const q of testState.questions) {
     if (q.kind === 'writing') continue;
-    if (q.selected_index == null && saved[q.id] != null) { q.selected_index = saved[q.id]; pending.add(q.id); }
+    const mine = saved[q.id];
+    // an answer that was never confirmed by the server wins over an older one the server still has
+    if (mine != null && (q.selected_index == null || (unsent.has(q.id) && mine !== q.selected_index))) { q.selected_index = mine; pending.add(q.id); }
   }
+  recovered = pending.size;
   flags = new Set(readLocal('flags'));
   setSave(pending.size ? 'busy' : 'ok');
+  applyReader();
   renderNav();
   renderQuestion();
   startTimer();
   startHeartbeat();
   if (pending.size) flush();
+  if (recovered) { const n = recovered; recovered = 0; Exam.notify(`↺ បានស្ដារចម្លើយ ${n} ដែលមិនទាន់រក្សាទុកទៅម៉ាស៊ីនមេពីទូរស័ព្ទរបស់ប្អូន — កំពុងបញ្ជូនឥឡូវនេះ។`); }
 }
 
 // ---------- reliable answer saving ----------
 const pending = new Set();
+let recovered = 0;
 let flushing = false;
 let retryTimer = null;
 let flags = new Set();
 const localKey = (what = 'ans') => `exam_${what}_${testState ? testState.session_id : 'x'}_${currentStudent ? currentStudent.id : 'x'}`;
-function readLocal(what = 'ans') { try { return JSON.parse(localStorage.getItem(localKey(what)) || (what === 'flags' ? '[]' : '{}')); } catch { return what === 'flags' ? [] : {}; } }
+const LISTS = ['flags', 'pend'];
+function readLocal(what = 'ans') { try { return JSON.parse(localStorage.getItem(localKey(what)) || (LISTS.includes(what) ? '[]' : '{}')); } catch { return LISTS.includes(what) ? [] : {}; } }
 function writeLocal() {
   try {
     const map = {};
     for (const q of testState.questions) if (q.kind !== 'writing' && q.selected_index != null) map[q.id] = q.selected_index;
     localStorage.setItem(localKey('ans'), JSON.stringify(map));
     localStorage.setItem(localKey('flags'), JSON.stringify([...flags]));
+    localStorage.setItem(localKey('pend'), JSON.stringify([...pending]));
   } catch {}
 }
 function setSave(state) {
   const el = document.getElementById('save-status');
   if (!el) return;
-  el.className = `save-status${state === 'ok' ? '' : state === 'busy' ? ' busy' : ' bad'}`;
-  el.textContent = state === 'ok' ? '✓ រក្សាទុកហើយ' : state === 'busy' ? '⏳ កំពុងរក្សាទុក…' : `⚠ មិនទាន់រក្សាទុក (${pending.size}) — កំពុងព្យាយាម`;
+  const offline = navigator.onLine === false;
+  el.className = `save-status${state === 'ok' ? '' : state === 'busy' && !offline ? ' busy' : ' bad'}`;
+  el.textContent = state === 'ok' ? '✓ រក្សាទុកហើយ' : state === 'busy' && !offline ? '⏳ កំពុងរក្សាទុក…' : `⚠ មិនទាន់រក្សាទុក (${pending.size})`;
+  el.title = pending.size ? 'ចុចដើម្បីព្យាយាមរក្សាទុកម្តងទៀត' : '';
+  const banner = document.getElementById('save-banner');
+  if (!banner) return;
+  const waiting = pending.size > 0 && (state === 'bad' || offline);
+  banner.hidden = !waiting;
+  if (waiting) banner.textContent = offline
+    ? `📴 គ្មានអ៊ីនធឺណិត — ចម្លើយ ${pending.size} មិនទាន់ទៅដល់ម៉ាស៊ីនមេ។ ចម្លើយរក្សាទុកលើទូរស័ព្ទហើយ សូមកុំបិទទំព័រ។ ចុចទីនេះដើម្បីព្យាយាមម្តងទៀត។`
+    : `⚠ ចម្លើយ ${pending.size} មិនទាន់រក្សាទុកទៅម៉ាស៊ីនមេ — កំពុងព្យាយាមម្តងទៀត។ ចុចទីនេះដើម្បីព្យាយាមឥឡូវនេះ។`;
 }
 async function flush() {
   if (PREVIEW || flushing || !testState) return;
@@ -351,16 +430,19 @@ async function flush() {
       const r = await api('/api/student/answer', { method: 'POST', body: { session_id: testState.session_id, question_id: qid, selected_index: q.selected_index } });
       if (r.end_at) testState.end_at = r.end_at;
       // only forget it if the student did not change their mind meanwhile
-      if (testState.questions.find((x) => x.id === qid).selected_index === q.selected_index) pending.delete(qid);
+      if (testState.questions.find((x) => x.id === qid).selected_index === q.selected_index) { pending.delete(qid); writeLocal(); }
     } catch (e) {
       if (e.status === 403 || e.status === 409) { pending.clear(); setSave('ok'); flushing = false; return; }   // exam over / other device
       failed = true; break;
     }
   }
   flushing = false;
-  if (failed || pending.size) { setSave('bad'); retryTimer = setTimeout(flush, 4000); } else setSave('ok');
+  if (failed || pending.size) { setSave('bad'); retryTimer = setTimeout(flush, 4000); } else { setSave('ok'); writeLocal(); }
 }
-window.addEventListener('online', () => { if (pending.size) flush(); });
+window.addEventListener('online', () => { if (pending.size) flush(); else if (testState) setSave('ok'); });
+window.addEventListener('offline', () => { if (testState && !PREVIEW) setSave(pending.size ? 'bad' : 'ok'); });
+window.addEventListener('beforeunload', (e) => { if (testState && !PREVIEW && pending.size) { e.preventDefault(); e.returnValue = ''; } });
+for (const id of ['save-status', 'save-banner']) document.getElementById(id).addEventListener('click', () => { if (pending.size) flush(); });
 
 // Poll lightly: picks up extra time from the teacher, and tells the teacher we are online.
 let heartbeatTimer = null;
@@ -509,9 +591,12 @@ function toggleFlag(q) {
 
 function submitPrompt() {
   const remaining = testState ? testState.end_at - now() : 0;
-  const mcqs = testState ? testState.questions.filter((q) => q.kind !== 'writing') : [];
-  const hasWriting = testState ? testState.questions.some((q) => q.kind === 'writing') : false;
-  const unanswered = mcqs.filter((q) => q.selected_index == null).length;
+  const all = testState ? testState.questions : [];
+  const mcqs = all.filter((q) => q.kind !== 'writing');
+  const hasWriting = all.some((q) => q.kind === 'writing');
+  const unansweredQs = mcqs.filter((q) => q.selected_index == null);
+  const flaggedQs = mcqs.filter((q) => flags.has(q.id));
+  const unanswered = unansweredQs.length;
   const total = mcqs.length;
   const answered = total - unanswered;
 
@@ -520,16 +605,24 @@ function submitPrompt() {
 
   const remainingMins = Math.max(0, Math.floor(remaining / 60000));
   const remainingSecs = Math.max(0, Math.floor((remaining % 60000) / 1000));
+  const modal = h('div', { id: 'submit-modal', class: 'modal-back', style: 'align-items:flex-start;overflow:auto;' });
+  // numbered buttons that jump back to the question
+  const jump = (q) => h('button', { class: 'review-chip', onclick: () => { modal.remove(); testState.current = all.indexOf(q); renderQuestion(); renderNav(); } }, String(all.indexOf(q) + 1));
+  const group = (title, cls, list) => list.length ? h('div', { class: `review-group ${cls}` }, [h('div', { class: 'review-title' }, `${title} (${list.length})`), h('div', { class: 'review-chips' }, list.map(jump))]) : null;
 
-  const modal = h('div', { id: 'submit-modal', class: 'modal-back' });
-  const box = h('div', { class: 'modal-box' }, [
+  const box = h('div', { class: 'modal-box', style: 'margin:auto;max-width:480px;' }, [
     h('div', { style: 'font-size:42px;margin-bottom:8px;' }, unanswered > 0 ? '⚠️' : '📝'),
-    h('h2', { style: 'margin:0 0 10px;' }, 'បញ្ជាក់ការប្រគល់វិញ្ញាសា'),
+    h('h2', { style: 'margin:0 0 10px;' }, 'ពិនិត្យមុនប្រគល់វិញ្ញាសា'),
     remaining > 60000 ? h('div', { class: 'callout warn' }, `⏱ ពេលវេលានៅសល់៖ ${remainingMins} នាទី ${remainingSecs} វិនាទី`) : null,
-    unanswered > 0
-      ? h('div', { class: 'callout bad' }, `ប្អូនឆ្លើយបាន ${answered}/${total} — នៅសល់ ${unanswered} សំណួរមិនទាន់ឆ្លើយ!`)
-      : h('div', { class: 'callout good' }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`),
-    flags.size ? h('div', { class: 'callout warn' }, `🚩 ប្អូនមាន ${flags.size} សំណួរដែលបានចំណាំទុក — ត្រឡប់មកមើលវិញមុនប្រគល់?`) : null,
+    h('div', { class: 'review-summary' }, [
+      h('div', { class: 'review-stat good' }, [h('b', {}, String(answered)), ' បានឆ្លើយ']),
+      h('div', { class: `review-stat ${unanswered ? 'bad' : ''}` }, [h('b', {}, String(unanswered)), ' មិនទាន់ឆ្លើយ']),
+      h('div', { class: `review-stat ${flaggedQs.length ? 'warn' : ''}` }, [h('b', {}, String(flaggedQs.length)), ' បានចំណាំ 🚩']),
+    ]),
+    group('សំណួរមិនទាន់ឆ្លើយ — ចុចលេខដើម្បីត្រឡប់ទៅឆ្លើយ', 'bad', unansweredQs),
+    group('សំណួរដែលបានចំណាំ', 'warn', flaggedQs),
+    pending.size ? h('div', { class: 'callout bad' }, `⚠ ចម្លើយ ${pending.size} មិនទាន់រក្សាទុកទៅម៉ាស៊ីនមេ — ប្រព័ន្ធនឹងបញ្ជូនជាមួយការប្រគល់។`) : null,
+    unanswered === 0 && !flaggedQs.length ? h('div', { class: 'callout good' }, `✓ ប្អូនបានឆ្លើយគ្រប់ទាំង ${total} សំណួរហើយ!`) : null,
     hasWriting ? h('div', { class: 'callout warn' }, '✎ កុំភ្លេចប្រគល់ក្រដាសឆ្លើយផ្នែកសរសេរ ជូនលោកគ្រូ/អ្នកគ្រូ។') : null,
     h('p', { class: 'muted', style: 'margin:12px 0 18px;' }, 'នៅពេលប្រគល់ហើយ ប្អូនមិនអាចត្រឡប់មកកែចម្លើយបានទៀតទេ។'),
     h('div', { style: 'display:flex;flex-direction:column;gap:10px;' }, [
@@ -564,7 +657,7 @@ async function doSubmit(auto) {
   }
   if (!done && !auto) await Exam.notify('មិនអាចបញ្ជូនបានទេ — សូមពិនិត្យអ៊ីនធឺណិត ហើយចុចបញ្ជូនម្តងទៀត។ ចម្លើយរបស់ប្អូនត្រូវបានរក្សាទុកលើទូរស័ព្ទ។');
   if (!done && !auto) { startTimer(); startHeartbeat(); return; }
-  try { localStorage.removeItem(localKey('ans')); localStorage.removeItem(localKey('flags')); } catch {}
+  try { for (const k of ['ans', 'flags', 'pend']) localStorage.removeItem(localKey(k)); } catch {}
   testState = null;
   boot();
 }

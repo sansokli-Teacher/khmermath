@@ -94,3 +94,24 @@ CREATE TABLE IF NOT EXISTS results (
   published_at TEXT,
   UNIQUE(session_id, student_id)
 );
+
+-- Questions as they were when an exam session started (see src/lib/frozen.js).
+CREATE TABLE IF NOT EXISTS session_questions (
+  session_id INTEGER NOT NULL,
+  question_id INTEGER NOT NULL,
+  order_no INTEGER NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'mcq',
+  stem_text TEXT NOT NULL,
+  image_key TEXT,
+  options_json TEXT NOT NULL,
+  correct_index INTEGER NOT NULL,
+  alt_correct_index INTEGER,
+  cancelled INTEGER NOT NULL DEFAULT 0,
+  points REAL NOT NULL DEFAULT 1,
+  solution_text TEXT,
+  topic TEXT,
+  level TEXT,
+  shuffle INTEGER NOT NULL DEFAULT 0,
+  frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (session_id, question_id)
+);

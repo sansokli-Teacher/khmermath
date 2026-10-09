@@ -5,6 +5,7 @@ import { ensureColumns } from '../lib/schema.js';
 import { allow } from '../lib/limits.js';
 import { isRight, submitStudent } from '../lib/scoring.js';
 import { studentYear } from './year.js';
+import { sessionQuestions, ensureFrozen } from '../lib/frozen.js';
 
 export { ensureColumns };
 
@@ -194,6 +195,7 @@ export async function start(req, env) {
     return json({ ok: true, waiting: true, start_at: window.start, server_now: Date.now() });
   }
 
+  await ensureFrozen(env, ses.id);   // from the first start on, everyone sees the same fixed questions
   if (!result) {
     await env.DB.prepare(
       "INSERT INTO results (session_id, student_id, mcq_score, mcq_max, started_at, device_id, last_seen) VALUES (?1, ?2, 0, 0, datetime('now'), ?3, datetime('now'))",
@@ -235,9 +237,8 @@ export async function getTest(req, env) {
   const active = await loadActiveSession(env, studentSession, sessionId, 0, deviceOf(req));
   if (!active) return err('No test is open for you right now.', 403);
 
-  const { results: orderedQuestions } = await env.DB.prepare(
-    "SELECT id, stem_text, image_key, options_json, kind, points, shuffle FROM test_questions WHERE test_id = ?1 ORDER BY CASE WHEN kind = 'writing' THEN 1 ELSE 0 END, order_no",
-  ).bind(active.test_id).all();
+  const orderedQuestions = (await sessionQuestions(env, active.id, active.test_id))
+    .sort((a, b) => (a.kind === 'writing') - (b.kind === 'writing') || a.order_no - b.order_no);
   // Each student sees the multiple-choice questions in their own fixed order (same
   // every reload); the writing section keeps its printed order after them.
   const questions = [
@@ -294,8 +295,8 @@ export async function leftPage(req, env) {
   return json({ ok: true });
 }
 
-async function questionMap(env, testId) {
-  const { results } = await env.DB.prepare("SELECT id, options_json, shuffle FROM test_questions WHERE test_id = ?1 AND kind <> 'writing'").bind(testId).all();
+async function questionMap(env, sessionId, testId) {
+  const results = (await sessionQuestions(env, sessionId, testId)).filter((q) => q.kind !== 'writing');
   return Object.fromEntries(results.map((q) => [q.id, { n: JSON.parse(q.options_json).length, shuffle: q.shuffle }]));
 }
 function realIndex(q, displayed, sessionId, studentId, questionId) {
@@ -310,7 +311,7 @@ export async function answer(req, env) {
   const { session_id, question_id, selected_index } = await req.json();
   const active = await loadActiveSession(env, studentSession, Number(session_id), SUBMIT_GRACE_MS, deviceOf(req));
   if (!active) return err('This test is not open anymore.', 403);
-  const qm = await questionMap(env, active.test_id);
+  const qm = await questionMap(env, active.id, active.test_id);
   const q = qm[question_id];
   if (!q) return err('That question is not part of this test.', 400);
   const real = realIndex(q, Number(selected_index), active.id, studentSession.id, Number(question_id));
@@ -335,7 +336,7 @@ export async function submit(req, env) {
   const submitType = body.submit_type === 'auto' ? 'auto' : 'manual';
 
   if (body.answers && typeof body.answers === 'object') {
-    const qm = await questionMap(env, active.test_id);
+    const qm = await questionMap(env, active.id, active.test_id);
     const stmts = [];
     for (const [qid, displayed] of Object.entries(body.answers)) {
       const q = qm[qid];
@@ -369,9 +370,7 @@ async function buildReview(env, sessionId, studentId, { onlyIfPublished }) {
   if (!result || !result.submitted_at) return { error: err('សិស្សនេះមិនបានប្រគល់ការប្រឡងនេះទេ។', 404) };
   if (onlyIfPublished && !result.published_at) return { error: err('លទ្ធផលមិនទាន់ត្រូវបានប្រកាសនៅឡើយទេ។', 403) };
 
-  const { results: qs } = await env.DB.prepare(
-    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, points, kind, solution_text, topic, level FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
-  ).bind(ses.test_id).all();
+  const qs = await sessionQuestions(env, sessionId, ses.test_id);
   const { results: rs } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(sessionId, studentId).all();
   const chosen = Object.fromEntries(rs.map((r) => [r.question_id, r.selected_index]));
@@ -386,7 +385,7 @@ async function buildReview(env, sessionId, studentId, { onlyIfPublished }) {
     return {
       id: q.id, order_no: q.order_no, kind: 'mcq', stem_text: q.stem_text, image_key: q.image_key,
       options: JSON.parse(q.options_json), selected_index: sel, correct_index: q.correct_index, alt_correct_index: q.alt_correct_index,
-      cancelled: q.cancelled, points: q.points, topic: q.topic, level: q.level, correct: isRight(q, sel),
+      cancelled: q.cancelled, points: q.points, topic: q.topic, level: q.level, solution_text: q.solution_text, correct: isRight(q, sel),
     };
   });
   return {

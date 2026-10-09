@@ -3,6 +3,7 @@ import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
 import { rescoreSession } from '../lib/scoring.js';
 import { audit } from '../lib/audit.js';
+import { syncKeyToFrozen, frozenCountForTest } from '../lib/frozen.js';
 import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessibleTests, lockedResponse } from '../lib/access.js';
 
 export async function listTests(req, env) {
@@ -55,6 +56,7 @@ export async function getTest(req, env, params) {
     'SELECT COUNT(*) AS n FROM results r JOIN test_sessions s ON s.id = r.session_id WHERE s.test_id = ?1 AND r.submitted_at IS NOT NULL',
   ).bind(params.testId).first();
   test.submissions = sub.n;
+  test.frozen_sessions = await frozenCountForTest(env, params.testId);
   test.my_role = g.acc;
   test.my_id = g.t.id;
   return json(test);
@@ -127,7 +129,18 @@ export async function updateQuestion(req, env, params) {
     `SELECT COUNT(*) AS n FROM results r JOIN test_sessions s ON s.id = r.session_id WHERE s.test_id = ?1 AND r.submitted_at IS NOT NULL`,
   ).bind(g.q.test_id).all();
   if (keyChanged) await audit(env, g.t, 'question.key_changed', `question ${g.q.id} (test ${g.q.test_id})`);
-  return json({ ok: true, key_changed: keyChanged, submissions: results[0].n });
+  // A key correction (not a rewording of the options) also reaches the frozen copies used by past sessions.
+  const keyFields = {};
+  const optionsSame = b.options === undefined || JSON.stringify(b.options.map((o) => String(o))) === cur.options_json;
+  if (optionsSame) {
+    for (const c of ['correct_index', 'alt_correct_index', 'cancelled', 'solution_text']) {
+      const i = sets.findIndex((x) => x.startsWith(c + ' ='));
+      if (i >= 0) keyFields[c] = vals[i];
+    }
+  }
+  const synced = await syncKeyToFrozen(env, g.q.id, keyFields);
+  const frozenSessions = await frozenCountForTest(env, g.q.test_id);
+  return json({ ok: true, key_changed: keyChanged, submissions: results[0].n, frozen_sessions: frozenSessions, synced_to_frozen: synced });
 }
 
 // Apply the current answer key to every session of this test.
@@ -142,6 +155,8 @@ export async function rescoreTest(req, env, params) {
 
 export async function deleteQuestion(req, env, params) {
   const g = await needQuestion(req, env, params.questionId, 'edit'); if (g.resp) return g.resp;
+  const used = await env.DB.prepare('SELECT 1 AS x FROM responses WHERE question_id = ?1 LIMIT 1').bind(params.questionId).first();
+  if (used) return err('សំណួរនេះមានសិស្សបានឆ្លើយរួចហើយ មិនអាចលុបបានទេ។ សូមប្រើ «បោះបង់សំណួរ» ជំនួស។', 409);
   await env.DB.prepare('DELETE FROM test_questions WHERE id = ?1').bind(params.questionId).run();
   return json({ ok: true });
 }
@@ -157,6 +172,7 @@ export async function deleteTest(req, env, params) {
     env.DB.prepare(`DELETE FROM responses WHERE session_id IN ${sess} OR question_id IN ${qs}`).bind(id),
     env.DB.prepare(`DELETE FROM results WHERE session_id IN ${sess}`).bind(id),
     env.DB.prepare(`DELETE FROM writing_marks WHERE session_id IN ${sess} OR question_id IN ${qs}`).bind(id),
+    env.DB.prepare(`DELETE FROM session_questions WHERE session_id IN ${sess}`).bind(id),
     env.DB.prepare(`DELETE FROM question_notes WHERE question_id IN ${qs}`).bind(id),
     env.DB.prepare("DELETE FROM shares WHERE resource_type = 'test' AND resource_id = ?1").bind(id),
     env.DB.prepare('DELETE FROM test_questions WHERE test_id = ?1').bind(id),

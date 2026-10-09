@@ -123,8 +123,10 @@ async function loadData(env, assessments, studentIds) {
     ).bind(...sessionIds).all();
     for (const r of results) data.results[`${r.session_id}:${r.student_id}`] = r;
     const { results: maxes } = await env.DB.prepare(
-      `SELECT ts.id AS session_id, COALESCE(SUM(q.points), 0) AS m FROM test_sessions ts
-       LEFT JOIN test_questions q ON q.test_id = ts.test_id AND q.kind <> 'writing' WHERE ts.id IN (${ph}) GROUP BY ts.id`,
+      `SELECT ts.id AS session_id,
+              COALESCE((SELECT SUM(sq.points) FROM session_questions sq WHERE sq.session_id = ts.id AND sq.kind <> 'writing'),
+                       (SELECT SUM(q.points) FROM test_questions q WHERE q.test_id = ts.test_id AND q.kind <> 'writing'), 0) AS m
+       FROM test_sessions ts WHERE ts.id IN (${ph})`,
     ).bind(...sessionIds).all();
     for (const m of maxes) data.testMax[m.session_id] = m.m;
   }

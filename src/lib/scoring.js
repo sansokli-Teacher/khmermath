@@ -1,3 +1,4 @@
+import { sessionQuestions, mcqOnly } from './frozen.js';
 // One place that decides what counts as correct, so submit, auto-finalize,
 // re-scoring, reviews and statistics can never disagree.
 //   q.cancelled          -> everybody gets the points (question withdrawn)
@@ -17,11 +18,8 @@ export function scoreMcq(questions, selectedByQuestion) {
   return { score, max };
 }
 
-export async function loadMcq(env, testId) {
-  const { results } = await env.DB.prepare(
-    "SELECT id, correct_index, alt_correct_index, cancelled, points FROM test_questions WHERE test_id = ?1 AND kind <> 'writing'",
-  ).bind(testId).all();
-  return results;
+export async function loadMcq(env, sessionId, testId) {
+  return mcqOnly(await sessionQuestions(env, sessionId, testId));
 }
 
 async function answersOf(env, sessionId) {
@@ -35,7 +33,7 @@ async function answersOf(env, sessionId) {
 export async function rescoreSession(env, sessionId) {
   const ses = await env.DB.prepare('SELECT test_id FROM test_sessions WHERE id = ?1').bind(sessionId).first();
   if (!ses) return { changed: 0, total: 0 };
-  const qs = await loadMcq(env, ses.test_id);
+  const qs = await loadMcq(env, sessionId, ses.test_id);
   const by = await answersOf(env, sessionId);
   const { results: rows } = await env.DB.prepare(
     'SELECT id, student_id, mcq_score, mcq_max FROM results WHERE session_id = ?1 AND submitted_at IS NOT NULL',
@@ -53,7 +51,7 @@ export async function rescoreSession(env, sessionId) {
 
 // Score and submit one student from the answers saved on the server.
 export async function submitStudent(env, session, studentId, submitType) {
-  const qs = await loadMcq(env, session.test_id);
+  const qs = await loadMcq(env, session.id, session.test_id);
   const { results: rs } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(session.id, studentId).all();
   const { score, max } = scoreMcq(qs, Object.fromEntries(rs.map((r) => [r.question_id, r.selected_index])));

@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>សិស្ស — ប្រព័ន្ធប្រឡង</title>
 <link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/interface.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2260d6">
+<meta name="theme-color" content="#285b55">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <script src="katex/katex.min.js"></script>
@@ -17,8 +18,9 @@
 <!-- 1. Sign in with the student ID only -->
 <div id="view-login" class="auth-screen" hidden>
   <div class="auth-card">
-    <div class="brand-mark">∑</div>
-    <h1>ប្រព័ន្ធប្រឡងគណិតវិទ្យា</h1>
+    <a class="site-brand" href="index.html"><span class="brand-symbol" aria-hidden="true">∑</span><span>KhmerMath<span class="brand-caption">ប្រព័ន្ធប្រឡងគណិតវិទ្យា</span></span></a>
+    <p class="eyebrow auth-eyebrow">សម្រាប់សិស្ស</p>
+    <h1>ចូលប្រឡង និងមើលលទ្ធផល</h1>
     <p class="muted">សូមបញ្ចូលអត្តលេខរបស់អ្នក ដើម្បីមើលលទ្ធផល និងការប្រឡងខាងមុខ។</p>
     <label for="login-id">អត្តលេខសិស្ស</label>
     <input type="text" id="login-id" class="big-input" autocomplete="off" inputmode="numeric" placeholder="ឧ. 0109293">
@@ -63,14 +65,21 @@
   <div class="timer" id="timer-bar">
     <div style="min-width:0;">
       <div id="timer-title" class="timer-title"></div>
-      <div style="display:flex;gap:10px;align-items:center;"><span id="student-badge" class="muted" style="font-size:12px;"></span><span id="save-status" class="save-status">✓ រក្សាទុកហើយ</span></div>
+      <div style="display:flex;gap:10px;align-items:center;"><span id="student-badge" class="muted" style="font-size:12px;"></span><span id="save-status" class="save-status" role="status" aria-live="polite">✓ រក្សាទុកហើយ</span></div>
     </div>
     <div id="timer-clock" class="timer-clock"></div>
   </div>
+  <div id="save-banner" class="save-banner" role="alert" hidden></div>
   <div class="wrap">
+    <div class="reader-tools" role="toolbar" aria-label="ការអានងាយស្រួល">
+      <button type="button" id="rd-smaller" class="secondary btn-sm" aria-label="បន្ថយទំហំអក្សរ">A−</button>
+      <button type="button" id="rd-bigger" class="secondary btn-sm" aria-label="បង្កើនទំហំអក្សរ">A+</button>
+      <button type="button" id="rd-focus" class="secondary btn-sm" aria-label="របៀបផ្ដោតអារម្មណ៍">◐ ផ្ដោតអារម្មណ៍</button>
+      <button type="button" id="rd-nav" class="secondary btn-sm" hidden aria-label="បង្ហាញបញ្ជីសំណួរ">☰ បញ្ជី</button>
+    </div>
     <div class="progress"><div class="progress-fill" id="progress-fill"></div></div>
-    <div class="question-nav" id="question-nav"></div>
-    <div id="question-area"></div>
+    <nav class="question-nav" id="question-nav" aria-label="បញ្ជីសំណួរ"></nav>
+    <main id="question-area"></main>
     <div class="row" style="justify-content:center;margin-top:10px;">
       <button id="submit-btn" class="good">បញ្ជូនចម្លើយ ✓</button>
     </div>

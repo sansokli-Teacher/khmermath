@@ -4,6 +4,7 @@ import { authTeacher, needClass, needSession, needTest, accessibleClasses } from
 import { sessionWindow } from '../lib/time.js';
 import { loadMcq, scoreMcq, rescoreSession, submitStudent } from '../lib/scoring.js';
 import { audit } from '../lib/audit.js';
+import { sessionQuestions, mcqOnly, isFrozen } from '../lib/frozen.js';
 
 export { ensureColumns };
 
@@ -28,7 +29,7 @@ export async function finalizeSession(env, sessionId, endIso) {
   const sessionEnd = Date.parse(endIso);
   const due = pending.filter((r) => ses.status === 'closed' || now >= sessionEnd + (r.extra_minutes || 0) * 60000);
   if (!due.length) return;
-  const qs = await loadMcq(env, ses.test_id);
+  const qs = await loadMcq(env, ses.id, ses.test_id);
   const { results: rs } = await env.DB.prepare('SELECT student_id, question_id, selected_index FROM responses WHERE session_id = ?1').bind(sessionId).all();
   const by = {};
   for (const r of rs) (by[r.student_id] ||= {})[r.question_id] = r.selected_index;
@@ -117,8 +118,12 @@ export async function getSession(req, env, params) {
 
   if (session.phase === 'closed') await finalizeSession(env, session.id, session.scheduled_end);
 
-  const maxPointsRow = await env.DB.prepare('SELECT COALESCE(SUM(CASE WHEN kind = \'writing\' THEN 0 ELSE points END), 0) AS m, COALESCE(SUM(CASE WHEN kind = \'writing\' THEN points ELSE 0 END), 0) AS w FROM test_questions WHERE test_id = ?1')
-    .bind(session.test_id).first();
+  const sqs = await sessionQuestions(env, session.id, session.test_id);
+  const maxPointsRow = {
+    m: mcqOnly(sqs).reduce((t, q) => t + q.points, 0),
+    w: sqs.filter((q) => q.kind === 'writing').reduce((t, q) => t + q.points, 0),
+  };
+  session.frozen = await isFrozen(env, session.id);
 
   const { results: roster } = await env.DB.prepare(
     `SELECT s.id, s.surname, s.first_name, s.gender,
@@ -176,6 +181,7 @@ export async function deleteSession(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await env.DB.prepare('DELETE FROM responses WHERE session_id = ?1').bind(params.sessionId).run();
   await env.DB.prepare('DELETE FROM results WHERE session_id = ?1').bind(params.sessionId).run();
+  await env.DB.prepare('DELETE FROM session_questions WHERE session_id = ?1').bind(params.sessionId).run();
   const result = await env.DB.prepare('DELETE FROM test_sessions WHERE id = ?1').bind(params.sessionId).run();
   if (!result.meta.rows_written) return err('Session not found.', 404);
   return json({ ok: true });
@@ -226,9 +232,7 @@ export async function sessionAnalysis(req, env, params) {
   await ensureColumns(env);
   const ses = await env.DB.prepare('SELECT id, test_id FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
   if (!ses) return err('Session not found.', 404);
-  const { results: qs } = await env.DB.prepare(
-    "SELECT id, order_no, stem_text, options_json, correct_index, alt_correct_index, cancelled, points, topic, level FROM test_questions WHERE test_id = ?1 AND kind <> 'writing' ORDER BY order_no",
-  ).bind(ses.test_id).all();
+  const qs = mcqOnly(await sessionQuestions(env, ses.id, ses.test_id));
   const { results: rs } = await env.DB.prepare(
     'SELECT student_id, question_id, selected_index FROM responses WHERE session_id = ?1',
   ).bind(ses.id).all();
@@ -256,7 +260,8 @@ export async function overview(req, env) {
   const { results } = await env.DB.prepare(
     `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
             c.name AS class_name, t.id AS test_id, t.title AS test_title,
-            (SELECT COALESCE(SUM(points), 0) FROM test_questions q WHERE q.test_id = t.id AND q.kind <> 'writing') AS mcq_max,
+            COALESCE((SELECT SUM(sq.points) FROM session_questions sq WHERE sq.session_id = ts.id AND sq.kind <> 'writing'),
+                     (SELECT SUM(points) FROM test_questions q WHERE q.test_id = t.id AND q.kind <> 'writing'), 0) AS mcq_max,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students
      FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests t ON t.id = ts.test_id
      ORDER BY ts.scheduled_start DESC`,
@@ -363,9 +368,7 @@ export async function rescoreOne(req, env, params) {
 export async function getWritingMarks(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   await ensureColumns(env);
-  const { results: qs } = await env.DB.prepare(
-    "SELECT id, order_no, stem_text, points FROM test_questions WHERE test_id = ?1 AND kind = 'writing' ORDER BY order_no",
-  ).bind(g.ses.test_id).all();
+  const qs = (await sessionQuestions(env, g.ses.id, g.ses.test_id)).filter((q) => q.kind === 'writing').map((q) => ({ id: q.id, order_no: q.order_no, stem_text: q.stem_text, points: q.points }));
   const { results: marks } = await env.DB.prepare('SELECT student_id, question_id, score FROM writing_marks WHERE session_id = ?1').bind(g.ses.id).all();
   return json({ questions: qs, marks });
 }
@@ -373,7 +376,7 @@ export async function getWritingMarks(req, env, params) {
 export async function setWritingMarks(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   const { student_id, marks } = await req.json();
-  const { results: qs } = await env.DB.prepare("SELECT id, points FROM test_questions WHERE test_id = ?1 AND kind = 'writing'").bind(g.ses.test_id).all();
+  const qs = (await sessionQuestions(env, g.ses.id, g.ses.test_id)).filter((q) => q.kind === 'writing');
   const byId = Object.fromEntries(qs.map((q) => [q.id, q]));
   const stmts = [];
   let total = 0;

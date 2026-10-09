@@ -102,6 +102,7 @@ function render(r) {
           isMine ? h('em', {}, isRight ? ' ← ចម្លើយរបស់ប្អូន ✓' : ' ← ចម្លើយរបស់ប្អូន ✗') : (isRight ? h('em', {}, ' ← ចម្លើយត្រឹមត្រូវ') : null),
         ]);
       })),
+      q.solution_text ? h('div', { class: 'rp-sol' }, [h('b', {}, '💡 ការពន្យល់៖'), mathEl('div', { class: 'rp-soltext', style: 'white-space:pre-line;' }, q.solution_text)]) : null,
     ]));
   });
   if (writing.length) {
@@ -177,17 +178,19 @@ function practice(questions) {
         [...opts.children].forEach((c, k) => { if (k === q.correct_index || k === q.alt_correct_index) c.classList.add('selected'); else if (k === j) c.style.cssText = 'border-color:var(--bad);background:var(--bad-soft);'; });
         fb.textContent = good ? '✓ ត្រឹមត្រូវ!' : `✗ មិនទាន់ត្រូវ — ចម្លើយត្រឹមត្រូវគឺ ${LETTERS[q.correct_index]}`;
         fb.style.color = good ? 'var(--good)' : 'var(--bad)';
+        if (q.solution_text) { sol.innerHTML = Exam.mathHtml('💡 ' + q.solution_text); sol.hidden = false; }
         next.hidden = false;
       } }, [h('span', { class: 'opt-letter' }, LETTERS[j]), mathEl('span', { class: 'opt-body' }, o)]);
       opts.append(el);
     });
     const fb = h('div', { style: 'font-weight:700;margin:8px 0;min-height:24px;' });
+    const sol = h('div', { class: 'rp-sol', style: 'white-space:pre-line;', hidden: 'hidden' });
     const next = h('button', { hidden: 'hidden', onclick: () => { i++; show(); } }, i + 1 < questions.length ? 'សំណួរបន្ទាប់ →' : 'មើលលទ្ធផល');
     box.append(...[
       h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('b', {}, `ហាត់ ${i + 1} / ${questions.length}`), h('button', { class: 'secondary btn-sm', onclick: () => back.remove() }, '✕')]),
       mathEl('div', { class: 'rp-stem', style: 'font-size:18px;margin:10px 0;' }, q.stem_text),
       q.image_key ? h('img', { src: `/api/images/${q.image_key}`, style: 'max-width:100%;max-height:220px;display:block;margin:6px 0;' }) : null,
-      opts, fb, next,
+      opts, fb, sol, next,
     ].filter(Boolean));
   }
   show();

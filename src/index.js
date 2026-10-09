@@ -9,6 +9,7 @@ import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
 import * as admin from './api/admin.js';
+import * as ops from './api/ops.js';
 import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
@@ -42,6 +43,12 @@ const ROUTES = [
   ['POST', '/api/admin/backup-now', admin.backupNow],
   ['GET', '/api/admin/backups', admin.backupList],
   ['GET', '/api/admin/backups/:id/download', admin.backupDownload],
+  ['POST', '/api/admin/restore/verify', ops.restoreVerify],
+  ['POST', '/api/admin/restore/apply', ops.restoreApply],
+  ['GET', '/api/readiness', ops.readiness],
+  ['GET', '/api/sessions/:sessionId/readiness', ops.sessionReadiness],
+  ['GET', '/api/sessions/:sessionId/publish-preview', ops.publishPreview],
+  ['POST', '/api/sessions/:sessionId/unpublish', ops.unpublishSession],
   ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
   ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
   ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],

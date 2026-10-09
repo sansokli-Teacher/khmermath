@@ -1,0 +1,6 @@
+{
+  "name": "exam-khmer",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/exam.test.mjs" }
+}

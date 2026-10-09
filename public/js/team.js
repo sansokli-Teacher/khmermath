@@ -254,6 +254,59 @@ function codesCard() {
   return card;
 }
 
+// Restore: always verify first (writes nothing), then put back only the rows that are missing.
+function restoreCard(backups) {
+  const pick = h('select', { style: 'min-width:220px;' }, [
+    ...backups.map((b) => h('option', { value: b.id }, `${fmtDateTime(b.at)} (ទុកក្នុងប្រព័ន្ធ)`)),
+    h('option', { value: 'file' }, 'ឯកសារ .json.gz ពីកុំព្យូទ័រ/Telegram…'),
+  ]);
+  const file = h('input', { type: 'file', accept: '.gz,.json.gz,application/gzip', hidden: 'hidden' });
+  const out = h('div', {});
+  pick.onchange = () => { file.hidden = pick.value !== 'file'; };
+  file.hidden = pick.value !== 'file';
+  let last = null;
+  const request = async (what) => {
+    const confirmQ = what === 'apply' ? 'confirm=RESTORE' : '';
+    if (pick.value === 'file') {
+      if (!file.files[0]) throw new Error('សូមជ្រើសរើសឯកសារបម្រុងទុកជាមុន។');
+      return api(`/api/admin/restore/${what}?${confirmQ}`, { method: 'POST', body: await file.files[0].arrayBuffer(), contentType: 'application/gzip' });
+    }
+    return api(`/api/admin/restore/${what}?backup_id=${pick.value}&${confirmQ}`, { method: 'POST' });
+  };
+  const KH = { classes: 'ថ្នាក់', students: 'សិស្ស', tests: 'តេស្ត', test_questions: 'សំណួរ', test_sessions: 'ការប្រឡង', session_questions: 'សំណួរដែលបានរក្សា', results: 'លទ្ធផល', responses: 'ចម្លើយ', writing_marks: 'ពិន្ទុសរសេរ', assessments: 'ការវាយតម្លៃឆ្នាំ', manual_scores: 'ពិន្ទុដោយដៃ', question_notes: 'កំណត់សម្គាល់', shares: 'ការចែករំលែក' };
+  const verify = h('button', { class: 'secondary', onclick: async (e) => {
+    e.target.disabled = true; out.innerHTML = '';
+    try {
+      last = await request('verify');
+      const rows = last.tables.filter((t) => t.in_backup || t.in_live);
+      out.append(
+        h('p', { class: 'muted' }, `ការបម្រុងទុកនេះបង្កើតនៅ ${fmtDateTime(last.exported_at)} — ការផ្ទៀងផ្ទាត់មិនបានកែអ្វីទេ។`),
+        h('table', {}, [h('thead', {}, h('tr', {}, ['តារាង', 'ក្នុងការបម្រុងទុក', 'ក្នុងប្រព័ន្ធឥឡូវ', 'បាត់ (អាចស្ដារ)', 'មិនអាចស្ដារ'].map((x) => h('th', {}, x)))),
+          h('tbody', {}, rows.map((t) => h('tr', {}, [h('td', {}, KH[t.table] || t.table), h('td', {}, t.in_backup), h('td', {}, t.in_live), h('td', { style: t.missing ? 'font-weight:700;color:#8a5a0d;' : '' }, t.missing), h('td', {}, t.orphans || '—')])))]),
+        last.total_missing
+          ? h('div', { style: 'margin-top:12px;' }, [h('div', { class: 'callout warn' }, `អាចស្ដារបាន ${last.total_missing} ជួរដែលបាត់។ ជួរដែលមានស្រាប់នឹងមិនត្រូវបានប៉ះពាល់ទេ — ប្រព័ន្ធនឹងបម្រុងទុកថ្មីមួយជាមុនសិន។`),
+              h('button', { class: 'danger', onclick: async (ev) => {
+                if (!(await Exam.confirm(`ស្ដារ ${last.total_missing} ជួរដែលបាត់ពីការបម្រុងទុកនេះ? សកម្មភាពនេះបន្ថែមតែទិន្នន័យដែលបាត់ ហើយមិនលុប ឬសរសេរជាន់អ្វីទេ។`))) return;
+                ev.target.disabled = true;
+                try {
+                  const r = await request('apply');
+                  await Exam.notify(`✅ បានស្ដារ ${r.total_inserted} ជួរ${r.images ? ` និងរូបភាព ${r.images}` : ''}។ (ប្រព័ន្ធបានបម្រុងទុកថ្មីមួយមុនស្ដារ)`);
+                  verify.click();
+                } catch (er) { ev.target.disabled = false; Exam.notify(er.message); }
+              } }, '♻ ស្ដារទិន្នន័យដែលបាត់')])
+          : h('div', { class: 'callout good' }, '✓ គ្មានអ្វីបាត់ទេ — ទិន្នន័យទាំងអស់នៅក្នុងការបម្រុងទុកមាននៅក្នុងប្រព័ន្ធរួចហើយ។'),
+      );
+    } catch (er) { out.append(h('div', { class: 'error' }, er.message)); }
+    e.target.disabled = false;
+  } }, '🔍 ផ្ទៀងផ្ទាត់ (មិនកែអ្វីទេ)');
+  return h('div', { style: 'margin-top:18px;' }, [
+    h('h3', {}, '♻ ស្ដារទិន្នន័យពីការបម្រុងទុក'),
+    h('p', { class: 'muted' }, 'ប្រើពេលលុបថ្នាក់ សិស្ស ឬលទ្ធផលដោយចៃដន្យ។ ជំហានទី១ «ផ្ទៀងផ្ទាត់» បង្ហាញអ្វីដែលបាត់ ដោយមិនកែអ្វីទាំងអស់។ ការស្ដារបន្ថែមតែជួរដែលបាត់ ហើយមិនសរសេរជាន់ការងារថ្មីៗទេ។ ដើម្បីត្រឡប់ទាំងមូលទៅម៉ោងមុន សូមមើលឯកសារ RESTORE.md។'),
+    h('div', { class: 'row' }, [pick, file, verify]),
+    out,
+  ]);
+}
+
 async function settingsCard() {
   const st = await api('/api/admin/settings');
   const open = h('input', { type: 'checkbox', checked: st.signup_open ? 'checked' : null, style: 'width:18px;height:18px;' });
@@ -279,6 +332,7 @@ async function settingsCard() {
       e.target.disabled = false; e.target.textContent = '💾 បម្រុងទុកឥឡូវនេះ';
     } }, '💾 បម្រុងទុកឥឡូវនេះ'),
     backupBox,
+    restoreCard(backups),
   ];
   return h('div', { class: 'card' }, [
     h('h2', {}, '⚙ ការកំណត់'),

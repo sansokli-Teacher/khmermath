@@ -5,28 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ប្រព័ន្ធប្រឡងគណិតវិទ្យា</title>
 <link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/interface.css">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2260d6">
+<meta name="theme-color" content="#285b55">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
-<body>
-<div class="landing">
-  <div class="brand-mark">∑</div>
-  <h1>ប្រព័ន្ធប្រឡងគណិតវិទ្យា</h1>
-  <p class="muted">ការប្រឡងប្រចាំខែ · សាលារៀនជំនាន់ថ្មី</p>
-  <div class="landing-cards">
-    <a class="landing-card" href="student.html">
-      <div class="landing-icon">🎓</div>
-      <strong>សិស្ស</strong>
-      <span>មើលលទ្ធផល និងចូលប្រឡង</span>
+<body class="portal-page">
+<a class="skip-link" href="#portal-main">រំលងទៅមាតិកា</a>
+<header class="portal-header"><a class="site-brand" href="index.html"><span class="brand-symbol" aria-hidden="true">∑</span><span>KhmerMath<span class="brand-caption">ប្រព័ន្ធប្រឡងគណិតវិទ្យា</span></span></a><span class="portal-edition">សាលារៀនជំនាន់ថ្មី</span></header>
+<main id="portal-main" class="portal-main" tabindex="-1">
+  <section class="portal-intro" aria-labelledby="portal-title">
+    <p class="eyebrow">KHMERMATH / EXAMS</p>
+    <h1 id="portal-title">ប្រព័ន្ធប្រឡង<br>គណិតវិទ្យា</h1>
+    <p class="portal-description">រៀបចំការប្រឡង ចូលធ្វើតេស្ត និងតាមដានលទ្ធផលសិក្សា។</p>
+    <div class="portal-note"><span class="note-rule" aria-hidden="true"></span>ការប្រឡងប្រចាំខែ · ពិន្ទុប្រចាំឆ្នាំ</div>
+  </section>
+  <section class="portal-entry" aria-labelledby="entry-title">
+    <h2 id="entry-title">ជ្រើសរើសចូលប្រើ</h2>
+    <a class="role-entry" href="student.html">
+      <span class="entry-number" aria-hidden="true">01</span>
+      <span class="entry-copy"><strong>សិស្ស</strong><span>ចូលប្រឡង និងមើលលទ្ធផលសិក្សា</span><small>ចូលដោយប្រើអត្តលេខសិស្ស</small></span>
+      <span class="entry-arrow" aria-hidden="true">↗</span>
     </a>
-    <a class="landing-card" href="teacher.html">
-      <div class="landing-icon">👩‍🏫</div>
-      <strong>គ្រូបង្រៀន</strong>
-      <span>បង្កើតតេស្ត និងដាក់ពិន្ទុ</span>
+    <a class="role-entry" href="teacher.html">
+      <span class="entry-number" aria-hidden="true">02</span>
+      <span class="entry-copy"><strong>គ្រូបង្រៀន</strong><span>រៀបចំតេស្ត គ្រប់គ្រងថ្នាក់ និងដាក់ពិន្ទុ</span><small>ចូលដោយប្រើគណនីគ្រូ</small></span>
+      <span class="entry-arrow" aria-hidden="true">↗</span>
     </a>
-  </div>
-</div>
+    <p class="entry-help">មិនទាន់មានគណនីគ្រូ? <a href="signup.html">បង្កើតគណនីសាកល្បង →</a></p>
+  </section>
+</main>
+<footer class="portal-footer"><span>KhmerMath</span><span>exam.khmermath.org</span></footer>
 </body>
 </html>
