@@ -243,3 +243,4 @@ body.focus-mode .radio-opt { margin-block: 12px; }
 @media print { #view-test, #exam-watermark { display: none !important; } body::before { content: 'ហាមបោះពុម្ពវិញ្ញាសា'; font-size: 24px; } }
 .incident-btn.hot { background: #fde8e8; border-color: #d64545; color: #8f1d1d; }
 .incident-btn.locked { background: #8f1d1d; color: #fff; }
+.card button.secondary.on { background: var(--brand); color: #fff; border-color: var(--brand); }

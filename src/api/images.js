@@ -34,7 +34,7 @@ export async function upload(req, env) {
   if (!ext) return err('Unsupported image type — use PNG, JPEG, WEBP, or SVG.', 400);
   const bytes = new Uint8Array(await req.arrayBuffer());
   const key = `${randomKey()}.${ext}`;
-  await env.DB.prepare('INSERT INTO images (key, content_type, data_base64) VALUES (?1, ?2, ?3)')
+  await env.DB.prepare('INSERT INTO images (key, content_type, data_base64, created_at) VALUES (?1, ?2, ?3, datetime(\'now\'))')
     .bind(key, contentType, bytesToBase64(bytes)).run();
   return json({ key });
 }

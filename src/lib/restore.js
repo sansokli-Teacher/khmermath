@@ -116,3 +116,20 @@ export async function applyRestore(env, backup, { backupFirst = true } = {}) {
     .bind(`from backup ${backup.exported_at}: ${out.map((t) => `${t.table}+${t.inserted}`).join(' ')} images+${images}`).run();
   return { tables: out, images, total_inserted: out.reduce((t, x) => t + x.inserted, 0) };
 }
+
+// Is the newest stored backup actually usable? Run weekly after the backup itself, and on demand.
+export async function selfCheck(env) {
+  await ensureColumns(env);
+  const row = await env.DB.prepare('SELECT id, at, data_b64 FROM backups ORDER BY id DESC LIMIT 1').first();
+  if (!row) return { ok: false, problem: 'no stored backup' };
+  try {
+    const bin = atob(row.data_b64); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const backup = validateBackup(await gunzipJson(bytes));
+    const plan = await planRestore(env, backup);
+    const inBackup = Object.fromEntries(plan.tables.map((t) => [t.table, t.in_backup]));
+    const live = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM students) AS s, (SELECT COUNT(*) FROM results) AS r').first();
+    if (live.s > 0 && !inBackup.students) return { ok: false, id: row.id, at: row.at, problem: 'backup has no students but the live system does' };
+    return { ok: true, id: row.id, at: row.at, tables: inBackup, missing_from_live: plan.total_missing };
+  } catch (e) { return { ok: false, id: row.id, at: row.at, problem: String(e.message || e) }; }
+}

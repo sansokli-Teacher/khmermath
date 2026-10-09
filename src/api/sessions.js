@@ -372,7 +372,7 @@ export async function rescoreOne(req, env, params) {
 export async function getWritingMarks(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;
   await ensureColumns(env);
-  const qs = (await sessionQuestions(env, g.ses.id, g.ses.test_id)).filter((q) => q.kind === 'writing').map((q) => ({ id: q.id, order_no: q.order_no, stem_text: q.stem_text, points: q.points }));
+  const qs = (await sessionQuestions(env, g.ses.id, g.ses.test_id)).filter((q) => q.kind === 'writing').map((q) => ({ id: q.id, order_no: q.order_no, stem_text: q.stem_text, points: q.points, solution_text: q.solution_text }));
   const { results: marks } = await env.DB.prepare('SELECT student_id, question_id, score FROM writing_marks WHERE session_id = ?1').bind(g.ses.id).all();
   return json({ questions: qs, marks });
 }

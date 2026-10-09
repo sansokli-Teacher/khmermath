@@ -307,6 +307,32 @@ function restoreCard(backups) {
   ]);
 }
 
+// Housekeeping: prove the backup works, and free space taken by pictures nobody uses.
+function maintenanceCard() {
+  const out = h('div', {});
+  return h('div', { style: 'margin-top:18px;' }, [
+    h('h3', {}, '🧰 ថែទាំប្រព័ន្ធ'),
+    h('div', { class: 'row', style: 'gap:8px;flex-wrap:wrap;' }, [
+      h('button', { class: 'secondary', onclick: async () => {
+        out.innerHTML = '';
+        try {
+          const r = await api('/api/admin/backup-check', { method: 'POST' });
+          out.append(h('div', { class: `callout ${r.ok ? 'good' : 'bad'}` }, r.ok ? `✓ ការបម្រុងទុកចុងក្រោយ (${fmtDateTime(r.at)}) អាចអានបាន — សិស្ស ${r.tables.students}, លទ្ធផល ${r.tables.results}។ ប្រព័ន្ធពិនិត្យដោយស្វ័យប្រវត្តិរៀងរាល់សប្តាហ៍។` : `✗ មានបញ្ហា៖ ${r.problem}`));
+        } catch (e) { out.append(h('div', { class: 'error' }, e.message)); }
+      } }, '✅ ពិនិត្យថាការបម្រុងទុកអាចប្រើបាន'),
+      h('button', { class: 'secondary', onclick: async () => {
+        out.innerHTML = '';
+        try {
+          const r = await api('/api/admin/images/unused');
+          out.append(h('div', { class: 'callout' }, `រូបភាពសរុប ${r.total} (${r.total_kb} KB) · មិនប្រើ ${r.unused} (${r.unused_kb} KB)`),
+            r.unused ? h('button', { class: 'danger btn-sm', onclick: async () => { if (!(await Exam.confirm(`លុបរូបភាពមិនប្រើ ${r.unused}? រូបភាពដែលសំណួរ ឬវិញ្ញាបនបត្រកំពុងប្រើ មិនត្រូវបានលុបទេ។`))) return; const d = await api('/api/admin/images/cleanup', { method: 'POST' }); out.append(h('div', { class: 'callout good' }, `✓ បានលុប ${d.deleted}`)); } }, '🗑 លុបរូបភាពមិនប្រើ') : null);
+        } catch (e) { out.append(h('div', { class: 'error' }, e.message)); }
+      } }, '🖼 ពិនិត្យរូបភាពមិនប្រើ'),
+    ]),
+    out,
+  ]);
+}
+
 async function settingsCard() {
   const st = await api('/api/admin/settings');
   const open = h('input', { type: 'checkbox', checked: st.signup_open ? 'checked' : null, style: 'width:18px;height:18px;' });
@@ -333,6 +359,7 @@ async function settingsCard() {
     } }, '💾 បម្រុងទុកឥឡូវនេះ'),
     backupBox,
     restoreCard(backups),
+    maintenanceCard(),
   ];
   return h('div', { class: 'card' }, [
     h('h2', {}, '⚙ ការកំណត់'),

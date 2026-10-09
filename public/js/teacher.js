@@ -108,6 +108,29 @@ function showLocked(tab) {
   ]));
 }
 
+// ---------- question variants (different numbers per student) ----------
+function variantsBlock(getFields, initial = '') {
+  const params = h('textarea', { placeholder: 'ឧ.\na = 2..9\nb = 3..9', style: 'min-height:70px;font-family:monospace;' });
+  params.value = initial || '';
+  const out = h('div', {});
+  const box = h('details', { style: 'margin-top:10px;' }, [
+    h('summary', { style: 'cursor:pointer;font-weight:600;' }, '🎲 លេខខុសគ្នាសម្រាប់សិស្សម្នាក់ៗ (មិនចាំបាច់)'),
+    h('p', { class: 'muted', style: 'margin:6px 0;' }, 'សរសេរ [[a]] ក្នុងអត្ថបទ ឬជម្រើស ហើយកំណត់អថេរខាងក្រោម (a = 2..9 ឬ c = {2,4,5} ឬ d = a + b)។ ជម្រើសអាចជាកន្សោម ឧ. [[a+b]]។ ជម្រើសទី១ ដែលជាចម្លើយត្រឹមត្រូវ ត្រូវតែគណនាតាមអថេរ។'),
+    params,
+    h('button', { type: 'button', class: 'secondary btn-sm', style: 'margin-top:6px;', onclick: async () => {
+      out.innerHTML = '';
+      try {
+        const f = getFields();
+        const r = await api('/api/variants/preview', { method: 'POST', body: { params: params.value, stem_text: f.stem_text, options: f.options, solution_text: f.solution_text, n: 3 } });
+        r.samples.forEach((sm, i) => out.append(h('div', { class: 'callout' }, [h('b', {}, `ឧទាហរណ៍ ${i + 1}៖ `), mathEl('span', {}, sm.stem_text), h('div', {}, sm.options.map((o, j) => mathEl('span', { style: 'margin-right:14px;' }, `${['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'][j]}. ${o}`)))])));
+      } catch (e) { out.append(h('div', { class: 'error' }, e.message)); }
+    } }, '👁 មើលឧទាហរណ៍'),
+    out,
+  ]);
+  if (initial) box.open = true;
+  return { box, params };
+}
+
 // ---------- exam readiness checklist ----------
 function showReadiness(rd, { confirmLabel = 'ดำเนินការต่อ', viewOnly = false } = {}) {
   return new Promise((resolve) => {
@@ -811,11 +834,12 @@ async function drawTestBuilder(container) {
           h('button', { class: 'danger btn-sm', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
         ]),
       ]),
-      mathEl('div', {}, q.stem_text),
+      mathEl('div', {}, Exam.withSample(q).stem_text),
+      q.params ? h('div', { class: 'callout', style: 'margin:6px 0;' }, '🎲 សំណួរមានអថេរ — សិស្សម្នាក់ៗទទួលលេខខុសគ្នា (កំពុងបង្ហាញឧទាហរណ៍មួយ)') : null,
       q.image_key ? h('img', { src: `/api/images/${q.image_key}` }) : null,
       q.kind === 'writing'
         ? (q.solution_text ? mathEl('div', { class: 'p-key', style: 'white-space:pre-line;margin-top:8px;padding:6px 10px;background:#f1f6ff;border-left:4px solid #2260d6;' }, q.solution_text) : null)
-        : h('div', { class: 'radio-list' }, q.options.map((opt, idx) => h('div', { class: `radio-opt${idx === q.correct_index ? ' selected' : ''}` }, [
+        : h('div', { class: 'radio-list' }, Exam.withSample(q).options.map((opt, idx) => h('div', { class: `radio-opt${idx === q.correct_index ? ' selected' : ''}` }, [
             h('span', {}, idx === q.correct_index ? '✓' : '○'), mathEl('span', { class: 'opt-body' }, opt),
           ]))),
       h('div', { class: 'muted' }, `${q.points} ពិន្ទុ`),
@@ -864,6 +888,7 @@ async function buildQuestionForm(test, container, opts = {}) {
   ]);
   const solutionInput = h('textarea', { id: 'q-solution', placeholder: 'ចម្លើយគំរូ និងរបៀបដាក់ពិន្ទុ (បង្ហាញក្នុង PDF សម្រាប់គ្រូប៉ុណ្ណោះ)' });
   const mcqSolution = h('textarea', { placeholder: 'ឧ. 3 + 4 = 7 ដូច្នេះចម្លើយគឺ ខ' });
+  const addVariants = variantsBlock(() => ({ stem_text: stemInput.value, options: optionInputs.map((i) => i.value.trim()).filter(Boolean), solution_text: mcqSolution.value }));
   const mcqBlock = h('div', {}, [
     h('label', {}, 'ជម្រើសចម្លើយ'),
     ...optionInputs.flatMap((inp) => [inp, Exam.mathPreview(inp)]),
@@ -871,6 +896,7 @@ async function buildQuestionForm(test, container, opts = {}) {
     correctSelect,
     h('label', {}, 'ការពន្យល់ចម្លើយ (សិស្សឃើញក្រោយប្រកាសលទ្ធផល — មិនចាំបាច់)'),
     mcqSolution,
+    addVariants.box,
   ]);
   const writingBlock = h('div', { hidden: 'hidden' }, [h('label', {}, 'ចម្លើយគំរូ / របៀបដាក់ពិន្ទុ'), solutionInput]);
   kindSelect.onchange = () => { mcqBlock.hidden = kindSelect.value === 'writing'; writingBlock.hidden = kindSelect.value !== 'writing'; };
@@ -911,7 +937,7 @@ async function buildQuestionForm(test, container, opts = {}) {
           stem_text: stemInput.value.trim(), options, correct_index: Number(correctSelect.value),
           points: Number(pointsInput.value) || 1, image_key,
           kind: isWriting ? 'writing' : 'mcq', solution_text: isWriting ? solutionInput.value.trim() : (mcqSolution.value.trim() || null),
-          topic: topicInput.value.trim(), level: levelInput.value, shuffle: shuffleInput.checked && !isWriting, ...gl.get(),
+          topic: topicInput.value.trim(), level: levelInput.value, shuffle: shuffleInput.checked && !isWriting, params: isWriting ? null : addVariants.params.value.trim() || null, ...gl.get(),
         } });
         done();
       } }, 'បញ្ចូលសំណួរ'),
@@ -988,6 +1014,7 @@ render.schedule = async function (preSelectedTestId = null) {
         ]),
       ]),
       h('div', { class: 'row', style: 'gap:6px;' }, [
+        s.my_role === 'reviewer' ? null : h('button', { class: 'secondary btn-sm', title: 'កំណត់ពេលតេស្តនេះម្តងទៀត (ថ្នាក់ផ្សេង ឬប្រឡងជួសជុល)', onclick: () => { render.schedule(s.test_id); document.getElementById('sch-test')?.scrollIntoView({ behavior: 'smooth' }); } }, '↻ ប្រើម្តងទៀត'),
         h('button', { class: 'secondary btn-sm', title: 'ពិនិត្យថាតើការប្រឡងនេះរួចរាល់ឬនៅ', onclick: async () => {
           try { showReadiness(await api(`/api/sessions/${s.id}/readiness`), { viewOnly: true }); } catch (e) { Exam.notify(e.message); }
         } }, '📋 ពិនិត្យ'),
@@ -1353,6 +1380,7 @@ async function renderAnalysis(session) {
   const questionsCard = h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;' }, [
       h('h2', { style: 'margin:0;' }, '📊 ការវិភាគសំណួរ'),
+      h('a', { class: 'btn secondary btn-sm', target: '_blank', href: `classreport.html?session=${session.id}` }, '🖨 របាយការណ៍ថ្នាក់'),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'order'; drawQuestions(); } }, 'តាមលំដាប់'),
         h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'hard'; drawQuestions(); } }, 'ពិបាកបំផុតមុន'),
@@ -1714,7 +1742,71 @@ async function renderGradingSession(container) {
     ]),
   ]);
   container.append(headerCard, stageCard, integrityCard, toolsCard, tableCard);
+  if (hasWriting && session.my_role !== 'reviewer' && session.roster.some((r) => r.submitted_at)) {
+    try { container.append(await writingGridCard(session, refresh)); } catch { /* optional */ }
+  }
+  container.append(suspicionCard(session));
   try { container.append(await renderAnalysis(session)); } catch (e) { /* analysis is optional */ }
+}
+
+// ---------- mark one writing question down the whole class ----------
+async function writingGridCard(session, onDone) {
+  const d = await api(`/api/sessions/${session.id}/writing-marks`);
+  const card = h('div', { class: 'card no-print' });
+  if (!d.questions.length) return card;
+  const students = session.roster.filter((s) => s.submitted_at);
+  const marks = {};
+  for (const m of d.marks) (marks[m.question_id] ||= {})[m.student_id] = m.score;
+  let qi = 0;
+  const draw = () => {
+    const q = d.questions[qi];
+    card.innerHTML = '';
+    const inputs = students.map((s) => h('input', { type: 'number', step: '0.25', min: '0', max: String(q.points), inputmode: 'decimal', 'data-s': s.id, value: marks[q.id] && marks[q.id][s.id] != null ? marks[q.id][s.id] : '', style: 'width:80px;' }));
+    const count = h('span', { class: 'muted' }, '');
+    const update = () => { const n = inputs.filter((i) => i.value !== '').length; count.textContent = `បានដាក់ ${n}/${students.length} នាក់`; };
+    inputs.forEach((inp, i) => {
+      inp.addEventListener('input', update);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); (inputs[i + 1] || inp).focus(); (inputs[i + 1] || inp).select(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (inputs[i - 1] || inp).focus(); } });
+    });
+    update();
+    card.append(
+      h('h2', { style: 'margin:0 0 6px;' }, '✎ ដាក់ពិន្ទុសរសេរតាមសំណួរ (លឿនជាង)'),
+      h('p', { class: 'muted', style: 'margin:0 0 8px;' }, 'ដាក់ពិន្ទុសំណួរមួយ ឱ្យសិស្សទាំងអស់ជាប់គ្នា — ចុច Enter ដើម្បីទៅសិស្សបន្ទាប់។ ពិន្ទុសរុបត្រូវបានគណនាឱ្យដោយស្វ័យប្រវត្តិ។'),
+      h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;margin-bottom:8px;' }, d.questions.map((x, i) => h('button', { class: `secondary btn-sm${i === qi ? ' on' : ''}`, onclick: () => { qi = i; draw(); } }, `សំណួរ ${i + 1} (${x.points} ពិន្ទុ)`))),
+      mathEl('div', { class: 'callout', style: 'white-space:pre-line;' }, q.stem_text),
+      q.solution_text ? mathEl('div', { class: 'callout good', style: 'white-space:pre-line;' }, `ចម្លើយគំរូ៖ ${q.solution_text}`) : null,
+      h('div', { style: 'max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:6px;' }, h('table', {}, [
+        h('thead', {}, h('tr', {}, ['ឈ្មោះ', `ពិន្ទុ (0–${q.points})`].map((t) => h('th', {}, t)))),
+        h('tbody', {}, students.map((s, i) => h('tr', {}, [h('td', {}, `${s.surname} ${s.first_name}`), h('td', {}, inputs[i])]))),
+      ])),
+      h('div', { class: 'row', style: 'justify-content:space-between;margin-top:10px;' }, [count, h('button', { onclick: async () => {
+        const scores = {}; for (const inp of inputs) scores[inp.dataset.s] = inp.value;
+        try { await api(`/api/sessions/${session.id}/writing-grid`, { method: 'POST', body: { question_id: q.id, scores } }); await Exam.notify('បានរក្សាទុកពិន្ទុសំណួរនេះ។'); onDone(); } catch (e) { Exam.notify(e.message); }
+      } }, '💾 រក្សាទុកសំណួរនេះ')]),
+    );
+  };
+  draw();
+  return card;
+}
+
+// ---------- indicators that something may be wrong ----------
+function suspicionCard(session) {
+  const out = h('div', {});
+  return h('div', { class: 'card no-print' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('h2', { style: 'margin:0;' }, '🔎 សូចនាករគួរឱ្យសង្ស័យ'), h('button', { class: 'secondary btn-sm', onclick: async (e) => {
+      e.target.disabled = true; out.innerHTML = '';
+      try {
+        const d = await api(`/api/sessions/${session.id}/suspicion`);
+        out.append(h('div', { class: 'callout warn' }, 'នេះគ្រាន់តែជាសញ្ញាប្រាប់ឱ្យពិនិត្យបន្ត មិនមែនជាភស្តុតាងទេ។ សិស្សពូកែអាចចប់លឿន ហើយសិស្សអង្គុយជិតគ្នាអាចខុសដូចគ្នាដោយចៃដន្យ។ សូមសួរសិស្សបន្ថែមមុនសម្រេចចិត្ត។'));
+        const sec = (title, rows, line) => out.append(h('h3', { style: 'margin:12px 0 4px;' }, `${title} (${rows.length})`), rows.length ? h('div', {}, rows.map((r) => h('div', { class: 'callout', style: 'font-weight:500;' }, line(r)))) : h('div', { class: 'muted' }, 'មិនមានទេ។'));
+        sec('ប្រគល់លឿនខុសធម្មតា ហើយពិន្ទុល្អ', d.fast, (r) => `${r.name} — ប្រើ ${r.minutes} នាទី ក្នុង ${r.of} នាទី · ពិន្ទុ ${r.pct}%`);
+        sec('ឆ្លើយខុសដូចគ្នាច្រើនពេក', d.pairs, (r) => `${r.a_name} និង ${r.b_name} — ខុសដូចគ្នា ${r.same_wrong} ក្នុងចំណោមសំណួរដែលទាំងពីរខុស ${r.both_wrong}`);
+        sec('សកម្មភាពមិនប្រក្រតីច្រើនពេលប្រឡង', d.incidents, (r) => `${r.name} — ${r.violations} លើក · ប្តូរផ្ទាំង ${r.tab_switches} ដង${r.pct != null ? ` · ពិន្ទុ ${r.pct}%` : ''}`);
+      } catch (er) { out.append(h('div', { class: 'error' }, er.message)); }
+      e.target.disabled = false;
+    } }, 'ពិនិត្យឥឡូវនេះ')]),
+    out,
+  ]);
 }
 
 // ---------- activity during the exam ----------
@@ -1888,6 +1980,7 @@ async function openQuestionEditor(q, test, container, onDone) {
   const solution = h('textarea', { style: 'min-height:70px;' }); solution.value = q.solution_text || '';
   const removeImg = h('input', { type: 'checkbox', style: 'width:18px;height:18px;' });
   const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/svg+xml' });
+  const editVariants = variantsBlock(() => ({ stem_text: stem.value, options: optInputs.map((i) => i.value.trim()).filter(Boolean), solution_text: solution.value }), q.params || '');
 
   let target = stem; const track = (f) => f.addEventListener('focus', () => { target = f; });
   track(stem); optInputs.forEach(track);
@@ -1905,6 +1998,7 @@ async function openQuestionEditor(q, test, container, onDone) {
       ]),
       h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:12px;color:var(--ink);' }, [shuffle, 'លាយលំដាប់ជម្រើសចម្លើយសម្រាប់សិស្សម្នាក់ៗ']),
       h('label', {}, 'ការពន្យល់ចម្លើយ (សិស្សឃើញក្រោយប្រកាសលទ្ធផល — មិនចាំបាច់)'), solution,
+      editVariants.box,
     ]) : h('div', {}, [h('label', {}, 'ចម្លើយគំរូ / របៀបដាក់ពិន្ទុ'), solution]),
     h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;margin-top:6px;' }, [
       h('div', {}, [h('label', {}, 'ពិន្ទុ'), points]),
@@ -1929,7 +2023,7 @@ async function openQuestionEditor(q, test, container, onDone) {
             const opts = options.slice(0, last);
             if (opts.some((o) => !o)) return Exam.notify('សូមកុំទុកជម្រើសទទេនៅចន្លោះ។ ជម្រើសទទេអាចនៅខាងចុងបានតែប៉ុណ្ណោះ។');
             body.options = opts; body.correct_index = Number(correct.value); body.alt_correct_index = alt.value === '' ? null : Number(alt.value);
-            body.shuffle = shuffle.checked; body.cancelled = cancelled.checked;
+            body.shuffle = shuffle.checked; body.cancelled = cancelled.checked; body.params = editVariants.params.value.trim();
           }
           if (removeImg.checked) body.image_key = null;
           if (file.files[0]) { const f = file.files[0]; body.image_key = (await api('/api/images', { method: 'POST', body: await f.arrayBuffer(), contentType: f.type })).key; }

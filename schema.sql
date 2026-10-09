@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS session_questions (
   topic TEXT,
   level TEXT,
   shuffle INTEGER NOT NULL DEFAULT 0,
+  params TEXT,
   frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (session_id, question_id)
 );

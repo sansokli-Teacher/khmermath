@@ -11,6 +11,9 @@ import * as year from './api/year.js';
 import * as admin from './api/admin.js';
 import * as ops from './api/ops.js';
 import * as integrity from './api/integrity.js';
+import * as extras from './api/extras.js';
+import { selfCheck } from './lib/restore.js';
+import { notifyOwner } from './lib/notify.js';
 import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
@@ -138,6 +141,14 @@ const ROUTES = [
   ['POST', '/api/student/submit', student.submit],
   ['POST', '/api/student/left-page', student.leftPage],
   ['POST', '/api/student/events', integrity.postEvents],
+  ['GET', '/api/student/practice', extras.practice],
+  ['POST', '/api/variants/preview', extras.variantPreview],
+  ['GET', '/api/student/progress', extras.progress],
+  ['GET', '/api/sessions/:sessionId/suspicion', extras.suspicion],
+  ['POST', '/api/sessions/:sessionId/writing-grid', extras.writingGrid],
+  ['GET', '/api/admin/images/unused', extras.unusedImages],
+  ['POST', '/api/admin/images/cleanup', extras.cleanupImages],
+  ['POST', '/api/admin/backup-check', extras.backupSelfCheck],
   ['POST', '/api/sessions/:sessionId/integrity', integrity.setIntegrity],
   ['POST', '/api/sessions/:sessionId/lock', integrity.lockStudent],
   ['GET', '/api/sessions/:sessionId/activity', integrity.studentActivity],
@@ -149,7 +160,13 @@ const ROUTES = [
 export default {
   // Weekly backup (cron in wrangler.toml): Sunday 20:00 UTC = Monday 03:00 in Cambodia.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runBackup(env, { reason: 'weekly' }));
+    ctx.waitUntil((async () => {
+      await runBackup(env, { reason: 'weekly' });
+      // prove the backup we just made can be read; tell the owner if not
+      const c = await selfCheck(env);
+      await env.DB.prepare("INSERT INTO audit_log (action, detail) VALUES ('backup_check', ?1)").bind(JSON.stringify(c).slice(0, 400)).run();
+      if (!c.ok) await notifyOwner(env, `⚠️ ការបម្រុងទុកប្រចាំសប្តាហ៍មានបញ្ហា៖ ${c.problem}`);
+    })());
   },
 
   async fetch(req, env, ctx) {

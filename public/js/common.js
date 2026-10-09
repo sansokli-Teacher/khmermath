@@ -43,6 +43,9 @@ Exam.h = function (tag, attrs = {}, children = []) {
   return el;
 };
 
+// A question with variants shows one sample set of numbers where a single fixed version is needed (paper, preview).
+Exam.withSample = (q) => (q.sample ? { ...q, ...q.sample } : q);
+
 Exam.typeset = function (el) {
   if (window.renderMathInElement) {
     window.renderMathInElement(el, { delimiters: [{ left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }] });

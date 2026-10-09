@@ -3,7 +3,7 @@
 // so later edits to the test cannot silently change that session's reviews or scores.
 // A deliberate answer-key correction goes through syncKeyToFrozen().
 
-const COLS = 'order_no, kind, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, points, solution_text, topic, level, shuffle';
+const COLS = 'order_no, kind, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, points, solution_text, topic, level, shuffle, params';
 
 export async function isFrozen(env, sessionId) {
   return !!(await env.DB.prepare('SELECT 1 AS x FROM session_questions WHERE session_id = ?1 LIMIT 1').bind(sessionId).first());

@@ -43,6 +43,9 @@ export async function ensureColumns(env) {
     'ALTER TABLE results ADD COLUMN last_seen TEXT',
     // optional date-of-birth check at student login
     'ALTER TABLE classes ADD COLUMN require_dob INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE test_questions ADD COLUMN params TEXT',
+    'ALTER TABLE session_questions ADD COLUMN params TEXT',
+    'ALTER TABLE images ADD COLUMN created_at TEXT',
     // exam integrity: per-session policy and per-student state
     "ALTER TABLE test_sessions ADD COLUMN integrity_mode TEXT NOT NULL DEFAULT 'warn'",
     'ALTER TABLE test_sessions ADD COLUMN max_violations INTEGER NOT NULL DEFAULT 3',
@@ -124,6 +127,7 @@ export async function ensureColumns(env) {
       topic TEXT,
       level TEXT,
       shuffle INTEGER NOT NULL DEFAULT 0,
+      params TEXT,
       frozen_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (session_id, question_id)
     )`),

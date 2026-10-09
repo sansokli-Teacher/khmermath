@@ -207,6 +207,7 @@ async function init() {
   if (!TEST_ID) { document.getElementById('sheet').textContent = 'រកមិនឃើញតេស្តទេ។'; return; }
   try {
     test = await api(`/api/tests/${TEST_ID}`);
+    test.questions = test.questions.map(Exam.withSample);
     profile = (await api('/api/profile/paper')).profile;
   } catch {
     await Exam.notify('សូមចូលជាគ្រូសិន ទើបអាចមើលវិញ្ញាសាបាន។');

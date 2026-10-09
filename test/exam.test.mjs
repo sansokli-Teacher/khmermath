@@ -119,3 +119,33 @@ test('restore skips rows whose parent no longer exists instead of failing', asyn
   assert.equal(done.tables.find((t) => t.table === 'results').skipped, 1);
   assert.equal(env.raw.prepare('SELECT COUNT(*) AS n FROM results').get().n, 1);
 });
+
+import { instantiate, evaluate, checkTemplate } from '../src/lib/variants.js';
+import { selfCheck } from '../src/lib/restore.js';
+
+test('variants: stable per student, different between students, choices stay distinct', () => {
+  const q = { id: 7, params: 'a = 2..9\nb = 3..9', stem_text: '[[a]] + [[b]] = ?', options_json: JSON.stringify(['[[a+b]]', '[[a+b+1]]', '[[a*b]]', '[[a-b]]']), solution_text: '[[a]]+[[b]]=[[a+b]]' };
+  const seen = new Set();
+  for (let i = 0; i < 30; i++) {
+    const x = instantiate(q, 1, `s${i}`), again = instantiate(q, 1, `s${i}`);
+    assert.equal(x.stem_text, again.stem_text);                       // same student, same numbers
+    const opts = JSON.parse(x.options_json);
+    assert.equal(new Set(opts).size, opts.length);                    // never two identical choices
+    const [a, b] = x.stem_text.split(' + ').map((t) => parseInt(t));
+    assert.equal(opts[0], String(a + b));                             // the right answer follows the numbers
+    seen.add(x.stem_text);
+  }
+  assert.ok(seen.size > 5);                                           // students really get different numbers
+  assert.equal(evaluate('2+3*(4-1)^2', {}), 29);
+  assert.throws(() => checkTemplate({ ...q, stem_text: '[[nope]]' }), /មិនស្គាល់អថេរ/);
+  assert.equal(instantiate({ id: 1, stem_text: 'plain', options_json: '["x"]' }, 1, 's').stem_text, 'plain');   // no params: untouched
+});
+
+test('backup self-check passes on a healthy backup and fails when there is none', async () => {
+  const env = await seed();
+  assert.equal((await selfCheck(env)).ok, false);
+  await runBackup(env, { reason: 'test' });
+  const c = await selfCheck(env);
+  assert.equal(c.ok, true);
+  assert.equal(c.tables.students, 3);
+});

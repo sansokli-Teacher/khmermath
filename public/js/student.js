@@ -80,7 +80,7 @@ async function bootPreview() {
   currentStudent = { id: 'PREVIEW', name: 'សិស្សសាកល្បង' };
   testState = {
     session_id: null, test_title: test.title, end_at: Date.now() + minutes * 60000, current: 0,
-    questions: test.questions.map((q) => ({ id: q.id, stem_text: q.stem_text, image_key: q.image_key, kind: q.kind, points: q.points, options: q.options, selected_index: null })),
+    questions: test.questions.map(Exam.withSample).map((q) => ({ id: q.id, stem_text: q.stem_text, image_key: q.image_key, kind: q.kind, points: q.points, options: q.options, selected_index: null })),
   };
   showView('test');
   document.getElementById('preview-banner').hidden = false;
@@ -161,6 +161,10 @@ function renderHome(data) {
   body.innerHTML = '';
 
   if (data.year) body.append(yearCard(data.year));
+  const progressHolder = h('div', {});
+  body.append(progressHolder);
+  fillProgress(progressHolder);
+  body.append(installCard());
 
   // --- upcoming / open tests
   body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));
@@ -188,6 +192,58 @@ function renderHome(data) {
     if (views.home.hidden || document.hidden || body.querySelector('input:focus')) return;
     try { const d = await api('/api/student/status'); syncClock(d.server_now); renderHome(d); } catch {}
   }, 30000);
+}
+
+// ---------- progress over the year, practice, install ----------
+async function fillProgress(holder) {
+  let d;
+  try { d = await api('/api/student/progress'); } catch { return; }
+  if (!d.exams.length) return;
+  const pts = d.exams.filter((e) => e.pct != null);
+  const W = 300, H = 70, step = pts.length > 1 ? (W - 20) / (pts.length - 1) : 0;
+  const xy = pts.map((e, i) => [10 + i * step, H - 8 - (e.pct / 100) * (H - 16)]);
+  const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="ពិន្ទុតាមការប្រឡង"><line x1="0" y1="${H - 8 - (H - 16) * 0.5}" x2="${W}" y2="${H - 8 - (H - 16) * 0.5}" stroke="#dce1d9" stroke-dasharray="3 4"/>`
+    + (xy.length > 1 ? `<polyline fill="none" stroke="#285b55" stroke-width="2.5" points="${xy.map((p) => p.join(',')).join(' ')}"/>` : '')
+    + xy.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="4" fill="#285b55"><title>${String(pts[i].title).replace(/[<&]/g, '')}: ${pts[i].pct}%</title></circle>`).join('') + '</svg>';
+  const trend = (t) => {
+    const s = t.series.filter((x) => x.pct != null);
+    if (s.length < 2) return '';
+    const dlt = s[s.length - 1].pct - s[s.length - 2].pct;
+    return dlt >= 8 ? ' ↑' : dlt <= -8 ? ' ↓' : ' →';
+  };
+  const weak = d.topics.slice(0, 6);
+  const chart = h('div', {}); chart.innerHTML = svg;
+  holder.append(h('div', { class: 'year-card', style: 'margin-top:12px;' }, [
+    h('h2', { style: 'margin:0 0 6px;' }, '📚 ការរីកចម្រើនរបស់ខ្ញុំ'),
+    h('div', { class: 'muted', style: 'font-size:13px;' }, `ពិន្ទុ ${pts.length} ការប្រឡងចុងក្រោយ (${pts.map((e) => e.pct + '%').join(' → ')})`),
+    chart,
+    weak.length ? h('div', { style: 'margin-top:8px;' }, [h('div', { style: 'font-weight:700;margin-bottom:4px;' }, 'ប្រធានបទដែលត្រូវរៀនបន្ថែមមុនគេ'), ...weak.map((t) => {
+      const col = t.pct >= 70 ? '#16a34a' : t.pct >= 50 ? '#d97706' : '#dc2626';
+      return h('div', { class: 'topic-row', style: 'cursor:default;' }, [
+        h('div', { style: 'flex:1;min-width:0;font-weight:600;' }, t.name),
+        h('div', { class: 'bar', style: 'width:36%;' }, h('div', { class: 'bar-fill', style: `width:${t.pct}%;background:${col};` })),
+        h('div', { style: `width:64px;text-align:right;font-weight:700;color:${col};` }, `${t.pct}%${trend(t)}`),
+      ]);
+    })]) : null,
+    d.wrong_count ? h('div', { style: 'margin-top:12px;' }, h('a', { class: 'btn btn-block', href: 'practice.html' }, `🔁 ហាត់សំណួរដែលធ្លាប់ខុស (${d.wrong_count})`)) : null,
+  ]));
+}
+
+let installEvent = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; });
+function installCard() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) return h('div', {});
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const box = h('div', { class: 'callout', style: 'margin-top:14px;' });
+  const draw = () => {
+    box.innerHTML = '';
+    if (installEvent) box.append('📲 ដាក់កម្មវិធីនេះលើអេក្រង់ដើមទូរស័ព្ទ ដើម្បីបើកបានលឿន។ ', h('button', { class: 'btn-sm', onclick: async () => { installEvent.prompt(); await installEvent.userChoice.catch(() => {}); installEvent = null; box.remove(); } }, 'ដំឡើង'));
+    else if (ios) box.append('📲 លើ iPhone/iPad៖ ចុចប៊ូតុង «ចែករំលែក» (Share) រួចជ្រើស «Add to Home Screen» ដើម្បីបើកបានលឿន។');
+    else box.hidden = true;
+  };
+  draw(); setTimeout(draw, 1500);
+  return box;
 }
 
 function yearCard(y) {

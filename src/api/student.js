@@ -6,6 +6,7 @@ import { allow } from '../lib/limits.js';
 import { isRight, submitStudent } from '../lib/scoring.js';
 import { studentYear } from './year.js';
 import { sessionQuestions, ensureFrozen } from '../lib/frozen.js';
+import { instantiate } from '../lib/variants.js';
 
 export { ensureColumns };
 
@@ -261,7 +262,8 @@ export async function getTest(req, env) {
     end_at: active.window.end,
     server_now: Date.now(),
     integrity,
-    questions: questions.map((q) => {
+    questions: questions.map((q0) => {
+      const q = instantiate(q0, active.id, studentSession.id);      // this student's own numbers, if the question has variants
       let options = JSON.parse(q.options_json);
       let sel = savedByQuestion[q.id] ?? null;
       if (q.kind !== 'writing' && q.shuffle && options.length > 1) {
@@ -388,7 +390,7 @@ async function buildReview(env, sessionId, studentId, { onlyIfPublished }) {
   if (!result || !result.submitted_at) return { error: err('សិស្សនេះមិនបានប្រគល់ការប្រឡងនេះទេ។', 404) };
   if (onlyIfPublished && !result.published_at) return { error: err('លទ្ធផលមិនទាន់ត្រូវបានប្រកាសនៅឡើយទេ។', 403) };
 
-  const qs = await sessionQuestions(env, sessionId, ses.test_id);
+  const qs = (await sessionQuestions(env, sessionId, ses.test_id)).map((q) => instantiate(q, sessionId, studentId));
   const { results: rs } = await env.DB.prepare('SELECT question_id, selected_index FROM responses WHERE session_id = ?1 AND student_id = ?2')
     .bind(sessionId, studentId).all();
   const chosen = Object.fromEntries(rs.map((r) => [r.question_id, r.selected_index]));
