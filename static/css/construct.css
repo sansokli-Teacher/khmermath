@@ -216,3 +216,27 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-circle-faint { stroke-width: 1.6; stroke-dasharray: 5 5; opacity: .55; }
 .cx-ghost { fill: none; stroke: #c9862b; stroke-width: 2.4; stroke-dasharray: 4 3; }
 .cx-ghost-fill { fill: rgba(201, 134, 43, .22); stroke: #c9862b; stroke-width: 2.4; stroke-dasharray: 6 4; }
+
+/* ---- 3D solids and nets (solids.html) ---- */
+.cx-face { stroke-width: 1.8; stroke-linejoin: round; }
+.cx-face-front { fill: rgba(46, 122, 112, .26); stroke: #2e7a70; }
+.cx-face-top { fill: rgba(45, 106, 168, .22); stroke: #2d6aa8; }
+.cx-face-side { fill: rgba(201, 134, 43, .24); stroke: #c9862b; }
+.cx-face-base { fill: rgba(180, 84, 106, .22); stroke: #b4546a; }
+.cx-face-back { fill: rgba(106, 120, 138, .15); stroke: #6a788a; stroke-dasharray: 4 4; }
+.cx-flap { fill: rgba(106, 120, 138, .12); stroke: #6a788a; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.cx-fold { stroke: #2d6aa8; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.cx-dim { stroke: #8a5a1f; stroke-width: 1.2; }
+.cx-dim-text { font: 600 13px 'Kantumruy Pro', system-ui, sans-serif; fill: #8a5a1f; }
+
+/* ---- pie chart (pie-chart.html) ---- */
+.cx-pie-s1 { fill: rgba(46, 122, 112, .35); stroke: #2e7a70; stroke-width: 2; }
+.cx-pie-s2 { fill: rgba(45, 106, 168, .32); stroke: #2d6aa8; stroke-width: 2; }
+.cx-pie-s3 { fill: rgba(201, 134, 43, .35); stroke: #c9862b; stroke-width: 2; }
+.cx-pie-s4 { fill: rgba(180, 84, 106, .32); stroke: #b4546a; stroke-width: 2; }
+.cx-pie-s5 { fill: rgba(82, 148, 138, .35); stroke: #3e887d; stroke-width: 2; }
+.cx-pie-label { font: 700 13px 'Kantumruy Pro', system-ui, sans-serif; fill: #132238; paint-order: stroke; stroke: #fffefa; stroke-width: 3px; }
+.cx-pie-pct { font: 700 14px 'Times New Roman', serif; fill: #132238; paint-order: stroke; stroke: #fffefa; stroke-width: 3px; }
+.cx-table-bg { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; rx: 6px; }
+.cx-th { font: 700 12px 'Kantumruy Pro', system-ui, sans-serif; fill: #1e293b; }
+.cx-td { font: 500 12px 'Kantumruy Pro', system-ui, sans-serif; fill: #334155; }

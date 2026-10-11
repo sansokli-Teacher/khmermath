@@ -3642,6 +3642,609 @@
     if (drag) el('circle', { cx: p[0], cy: p[1], r: 22, class: 'cx-grab', 'data-drag': drag }, g);
   }
 
+
+  // ---------------------------------------------------- Quadrilaterals & Solids & Pie Chart ---
+  // CX['rectangle']: Constructing rectangle ABCD given AB = a (6 cm) and AD = b (slider)
+  CX['rectangle'] = {
+    steps: 6,
+    start: { k: 4 },
+    kScale: 1,
+    kOk: function (k) { return k >= 2 && k <= 6; },
+    kText: function (s) {
+      return 'AB = 6 cm, AD = ' + cmText(s.k) + '  (S = ' + (6 * s.k) + ' cm², P = ' + (2 * (6 + s.k)) + ' cm)';
+    },
+    fill: function (s) { return { b: String(s.k) }; },
+    presets: {
+      b3: function (s) { s.k = 3; },
+      b4: function (s) { s.k = 4; },
+      b5: function (s) { s.k = 5; }
+    },
+    figure: function (s) {
+      var A = [160, 360], a = 6, b = s.k;
+      var B = add(A, [a * CM, 0]);
+      var D = add(A, [0, -b * CM]);
+      var C = add(B, [0, -b * CM]);
+      return {
+        meet: true, a: a, b: b, A: A, B: B, C: C, D: D,
+        arcD: { c: D, r: a * CM, t1: -0.35, t2: 0.35 },
+        arcB: { c: B, r: b * CM, t1: -Math.PI / 2 - 0.35, t2: -Math.PI / 2 + 0.35 }
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      given(ink, 'AB = 6 cm    AD = ' + cmText(f.b));
+      if (i < 1) return;
+      segLine(ink, f.A, f.B, 'cx-seg');
+      if (i >= 2) {
+        segLine(ink, f.A, add(f.D, [0, -25]), 'cx-line cx-line-2');
+        label(ink, add(f.D, [0, -38]), 'x', 'cx-label');
+        el('path', { d: 'M' + (f.A[0] + 16) + ' ' + f.A[1] + 'v-16h-16', class: 'cx-right' }, ink);
+        dot(ink, f.D);
+        point(ink, f.D, 'D', [-1, 0], 'cx-pt-m', null, 22);
+        sideNote(marks, f.A, f.D, f.B, cmText(f.b));
+      }
+      if (i >= 3) {
+        el('path', { d: arcPath(f.D, f.a * CM, f.arcD.t1, f.arcD.t2), class: 'cx-arc' }, ink);
+        if (i === 3) segLine(marks, f.D, f.C, 'cx-radius');
+      }
+      if (i >= 4) {
+        el('path', { d: arcPath(f.B, f.b * CM, f.arcB.t1, f.arcB.t2), class: 'cx-arc' }, ink);
+        dot(ink, f.C);
+        point(ink, f.C, 'C', [0.8, -0.6], 'cx-pt-m', null, 24);
+      }
+      if (i >= 5) {
+        segLine(ink, f.D, f.C, 'cx-seg');
+        segLine(ink, f.B, f.C, 'cx-seg');
+        el('polygon', { points: [f.A, f.B, f.C, f.D].map(function (p) { return p.join(','); }).join(' '), class: 'cx-tri', opacity: 0.25 }, marks);
+        el('path', { d: 'M' + (f.B[0] - 16) + ' ' + f.B[1] + 'v-16h16', class: 'cx-right' }, ink);
+        el('path', { d: 'M' + (f.C[0] - 16) + ' ' + f.C[1] + 'v16h16', class: 'cx-right' }, ink);
+        el('path', { d: 'M' + (f.D[0] + 16) + ' ' + f.D[1] + 'v16h-16', class: 'cx-right' }, ink);
+        sideNote(marks, f.A, f.B, f.D, cmText(f.a));
+        sideNote(marks, f.D, f.C, f.A, cmText(f.a));
+        sideNote(marks, f.B, f.C, f.A, cmText(f.b));
+      }
+      point(ink, f.A, 'A', [-0.85, 0.65], null, null, 22);
+      point(ink, f.B, 'B', [0.85, 0.65], null, null, 22);
+
+      if (i === 1) drawCmRuler(tools, f.A, RIGHT, 8, DOWN);
+      if (i === 2) drawSetSquare(tools, f.A, UP, RIGHT, 160, 100);
+      if (i === 3) drawCompass(tools, f.D, f.C);
+      if (i === 4) drawCompass(tools, f.B, f.C);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.a, 8, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: [
+        { dur: 700, draw: function (t, drawn, tools) { drawSetSquare(tools, f.A, UP, RIGHT, 160, 100, 0.3 + 0.7 * t); } },
+        { dur: 900, draw: function (t, drawn, tools) {
+          drawSetSquare(tools, f.A, UP, RIGHT, 160, 100);
+          segLine(drawn, f.A, add(f.A, mul(UP, (f.b * CM + 25) * t)), 'cx-line cx-line-2');
+          el('circle', { cx: f.D[0], cy: f.D[1], r: 4 * Math.min(1, t * 2), class: 'cx-mark' }, drawn);
+        } }
+      ] };
+      if (i === 3) return { phases: compassPhases(f.A, f.a, 8, f.D, f.arcD) };
+      if (i === 4) return { phases: compassPhases(f.A, f.b, 8, f.B, f.arcB) };
+      if (i === 5) return { rulers: [[f.D, f.C], [f.B, f.C]] };
+      return null;
+    }
+  };
+
+  // CX['square']: Constructing square ABCD given side a (slider)
+  CX['square'] = {
+    steps: 6,
+    start: { k: 5 },
+    kScale: 1,
+    kOk: function (k) { return k >= 3 && k <= 7; },
+    kText: function (s) {
+      return 'ជ្រុង a = ' + cmText(s.k) + '  (S = ' + (s.k * s.k) + ' cm², P = ' + (4 * s.k) + ' cm)';
+    },
+    fill: function (s) { return { a: String(s.k) }; },
+    presets: {
+      a4: function (s) { s.k = 4; },
+      a5: function (s) { s.k = 5; },
+      a6: function (s) { s.k = 6; }
+    },
+    figure: function (s) {
+      var A = [180, 370], a = s.k;
+      var B = add(A, [a * CM, 0]);
+      var D = add(A, [0, -a * CM]);
+      var C = add(B, [0, -a * CM]);
+      return {
+        meet: true, a: a, A: A, B: B, C: C, D: D,
+        arcA: { c: A, r: a * CM, t1: -Math.PI / 2 - 0.35, t2: -Math.PI / 2 + 0.35 },
+        arcD: { c: D, r: a * CM, t1: -0.35, t2: 0.35 },
+        arcB: { c: B, r: a * CM, t1: -Math.PI / 2 - 0.35, t2: -Math.PI / 2 + 0.35 }
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      given(ink, 'ជ្រុង a = ' + cmText(f.a));
+      if (i < 1) return;
+      segLine(ink, f.A, f.B, 'cx-seg');
+      if (i >= 2) {
+        segLine(ink, f.A, add(f.D, [0, -25]), 'cx-line cx-line-2');
+        el('path', { d: 'M' + (f.A[0] + 16) + ' ' + f.A[1] + 'v-16h-16', class: 'cx-right' }, ink);
+        el('path', { d: arcPath(f.A, f.a * CM, f.arcA.t1, f.arcA.t2), class: 'cx-arc' }, ink);
+        dot(ink, f.D);
+        point(ink, f.D, 'D', [-1, 0], 'cx-pt-m', null, 22);
+      }
+      if (i >= 3) {
+        el('path', { d: arcPath(f.D, f.a * CM, f.arcD.t1, f.arcD.t2), class: 'cx-arc' }, ink);
+        if (i === 3) segLine(marks, f.D, f.C, 'cx-radius');
+      }
+      if (i >= 4) {
+        el('path', { d: arcPath(f.B, f.a * CM, f.arcB.t1, f.arcB.t2), class: 'cx-arc' }, ink);
+        dot(ink, f.C);
+        point(ink, f.C, 'C', [0.8, -0.6], 'cx-pt-m', null, 24);
+      }
+      if (i >= 5) {
+        segLine(ink, f.D, f.C, 'cx-seg');
+        segLine(ink, f.B, f.C, 'cx-seg');
+        el('polygon', { points: [f.A, f.B, f.C, f.D].map(function (p) { return p.join(','); }).join(' '), class: 'cx-tri', opacity: 0.25 }, marks);
+        el('path', { d: 'M' + (f.B[0] - 16) + ' ' + f.B[1] + 'v-16h16', class: 'cx-right' }, ink);
+        el('path', { d: 'M' + (f.C[0] - 16) + ' ' + f.C[1] + 'v16h16', class: 'cx-right' }, ink);
+        el('path', { d: 'M' + (f.D[0] + 16) + ' ' + f.D[1] + 'v16h-16', class: 'cx-right' }, ink);
+        var midAB = mul(add(f.A, f.B), 0.5), midBC = mul(add(f.B, f.C), 0.5), midCD = mul(add(f.C, f.D), 0.5), midDA = mul(add(f.D, f.A), 0.5);
+        segLine(marks, add(midAB, [0, -8]), add(midAB, [0, 8]), 'cx-tick');
+        segLine(marks, add(midCD, [0, -8]), add(midCD, [0, 8]), 'cx-tick');
+        segLine(marks, add(midBC, [-8, 0]), add(midBC, [8, 0]), 'cx-tick');
+        segLine(marks, add(midDA, [-8, 0]), add(midDA, [8, 0]), 'cx-tick');
+        sideNote(marks, f.A, f.B, f.D, cmText(f.a));
+      }
+      point(ink, f.A, 'A', [-0.85, 0.65], null, null, 22);
+      point(ink, f.B, 'B', [0.85, 0.65], null, null, 22);
+
+      if (i === 1) drawCmRuler(tools, f.A, RIGHT, 8, DOWN);
+      if (i === 2) drawCompass(tools, f.A, f.D);
+      if (i === 3) drawCompass(tools, f.D, f.C);
+      if (i === 4) drawCompass(tools, f.B, f.C);
+    },
+    anim: function (f, i) {
+      if (i === 1) return { phases: cmSegmentPhases(f.A, RIGHT, f.a, 8, DOWN, 'cx-seg') };
+      if (i === 2) return { phases: compassPhases(f.A, f.a, 8, f.A, f.arcA) };
+      if (i === 3) return { phases: compassPhases(f.A, f.a, 8, f.D, f.arcD) };
+      if (i === 4) return { phases: compassPhases(f.A, f.a, 8, f.B, f.arcB) };
+      if (i === 5) return { rulers: [[f.D, f.C], [f.B, f.C]] };
+      return null;
+    }
+  };
+
+  // CX['cube-net']: 2D net and 3D folding of a cube
+  CX['cube-net'] = {
+    steps: 6,
+    start: { k: 0 },
+    kScale: 1,
+    kText: function (s) {
+      if (s.k === 0) return 'ប្លង់លាត 2D រាបស្មើ (0°) — មុខ ៦ ជាការ៉េ a × a';
+      if (s.k === 90) return 'គូប 3D ពេញលេញ (90°) — St = 6a² = 150 cm², V = a³ = 125 cm³';
+      return 'កម្រិតបត់ ' + s.k + '° (កំពុងបត់ផ្គុំទៅជារូបរាង 3D)';
+    },
+    presets: {
+      flat: function (s) { s.k = 0; },
+      half: function (s) { s.k = 45; },
+      solid: function (s) { s.k = 90; }
+    },
+    figure: function (s) {
+      var cx = 310, cy = 230, S = 64;
+      var t = Math.max(0, Math.min(90, s.k)) / 90;
+      var theta = t * Math.PI / 2;
+      var c30 = Math.cos(30 * Math.PI / 180), s30 = Math.sin(30 * Math.PI / 180);
+
+      function proj(x, y, z) {
+        var px = cx + (1 - t) * x + t * (x - y) * c30;
+        var py = cy + (1 - t) * y + t * ((x + y) * s30 - z);
+        return [px, py];
+      }
+
+      // Bottom face F0: [-S/2, -S/2] to [S/2, S/2] at Z = 0
+      var b0 = proj(-S/2, -S/2, 0), b1 = proj(S/2, -S/2, 0), b2 = proj(S/2, S/2, 0), b3 = proj(-S/2, S/2, 0);
+
+      // Right face F5: X = S/2 + u cos(theta), Z = u sin(theta) for u in [0, S]
+      var r0 = b1, r3 = b2;
+      var r1 = proj(S/2 + S * Math.cos(theta), -S/2, S * Math.sin(theta));
+      var r2 = proj(S/2 + S * Math.cos(theta), S/2, S * Math.sin(theta));
+
+      // Left face F4: X = -S/2 - u cos(theta), Z = u sin(theta)
+      var l0 = b0, l3 = b3;
+      var l1 = proj(-S/2 - S * Math.cos(theta), -S/2, S * Math.sin(theta));
+      var l2 = proj(-S/2 - S * Math.cos(theta), S/2, S * Math.sin(theta));
+
+      // Front face F1: Y = S/2 + u cos(theta), Z = u sin(theta)
+      var f0 = b3, f1 = b2;
+      var f3 = proj(-S/2, S/2 + S * Math.cos(theta), S * Math.sin(theta));
+      var f2 = proj(S/2, S/2 + S * Math.cos(theta), S * Math.sin(theta));
+
+      // Back face F2: Y = -S/2 - u cos(theta), Z = u sin(theta)
+      var k0 = b0, k1 = b1;
+      var k3 = proj(-S/2, -S/2 - S * Math.cos(theta), S * Math.sin(theta));
+      var k2 = proj(S/2, -S/2 - S * Math.cos(theta), S * Math.sin(theta));
+
+      // Top face F3: attaches to outer edge of Back face
+      var hy = -S/2 - S * Math.cos(theta), hz = S * Math.sin(theta);
+      var ty = hy - S * Math.cos(2 * theta), tz = hz + S * Math.sin(2 * theta);
+      var top0 = k3, top1 = k2;
+      var top3 = proj(-S/2, ty, tz), top2 = proj(S/2, ty, tz);
+
+      return {
+        meet: true, t: t, deg: s.k, S: S, cx: cx, cy: cy,
+        f0: [b0, b1, b2, b3],
+        f1: [f0, f1, f2, f3],
+        f2: [k0, k1, k2, k3],
+        f3: [top0, top1, top2, top3],
+        f4: [l0, l1, l2, l3],
+        f5: [r0, r1, r2, r3]
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      given(ink, 'គូប៖ ទ្រនុង a = 5 cm    ' + (f.t === 0 ? '(ប្លង់លាត 2D)' : f.t === 1 ? '(គូប 3D)' : '(កម្រិតបត់ ' + f.deg + '°)'));
+
+      var drawPoly = function (pts, cls) {
+        return el('polygon', { points: pts.map(function (p) { return p.join(','); }).join(' '), class: cls }, ink);
+      };
+
+      // Draw faces in back-to-front depth order
+      if (i >= 1) {
+        // Back face F2
+        drawPoly(f.f2, 'cx-face cx-face-back');
+        // Left & Right faces
+        drawPoly(f.f4, 'cx-face cx-face-side');
+        drawPoly(f.f5, 'cx-face cx-face-side');
+        // Bottom face F0
+        drawPoly(f.f0, 'cx-face cx-face-base');
+        // Front face F1
+        drawPoly(f.f1, 'cx-face cx-face-front');
+        // Top face F3
+        if (i >= 2) drawPoly(f.f3, 'cx-face cx-face-top');
+      }
+
+      // Flaps in 2D net (when step >= 3 and t is small)
+      if (i >= 3 && f.t < 0.25) {
+        var op = Math.max(0, 1 - f.t * 4);
+        var flap = function (p1, p2, outDir, w) {
+          var d = unit(sub(p2, p1)), n = outDir;
+          var q1 = add(add(p1, mul(d, w)), mul(n, w));
+          var q2 = add(add(p2, mul(d, -w)), mul(n, w));
+          el('polygon', { points: [p1, q1, q2, p2].map(function (p) { return p.join(','); }).join(' '), class: 'cx-flap', opacity: op }, marks);
+        };
+        // Flaps on F1 (front) and F3 (top) and F4 (left)
+        flap(f.f1[2], f.f1[3], [0, 1], 14);
+        flap(f.f5[1], f.f5[2], [1, 0], 14);
+        flap(f.f4[1], f.f4[2], [-1, 0], 14);
+      }
+
+      // Labels on faces
+      if (f.t < 0.3) {
+        var mid = function (pts) { return mul(add(add(pts[0], pts[1]), add(pts[2], pts[3])), 0.25); };
+        label(marks, mid(f.f0), 'បាតក្រោម', 'cx-note');
+        label(marks, mid(f.f1), 'មុខមុខ', 'cx-note');
+        label(marks, mid(f.f2), 'មុខក្រោយ', 'cx-note');
+        if (i >= 2) label(marks, mid(f.f3), 'បាតលើ', 'cx-note');
+        label(marks, mid(f.f4), 'មុខឆ្វេង', 'cx-note');
+        label(marks, mid(f.f5), 'មុខស្ដាំ', 'cx-note');
+      } else if (f.t > 0.8) {
+        // 3D formula badge
+        var card = el('g', {}, marks);
+        el('rect', { x: 420, y: 30, width: 200, height: 95, rx: 8, class: 'cx-table-bg' }, card);
+        label(card, [520, 52], 'រូបមន្តគូប (Cube)', 'cx-th');
+        label(card, [520, 78], 'St = 6a² = 150 cm²', 'cx-note cx-r');
+        label(card, [520, 104], 'V = a³ = 125 cm³', 'cx-note');
+      }
+
+      // Fold lines (dashed)
+      if (f.t < 0.85) {
+        segLine(marks, f.f0[0], f.f0[1], 'cx-fold');
+        segLine(marks, f.f0[1], f.f0[2], 'cx-fold');
+        segLine(marks, f.f0[2], f.f0[3], 'cx-fold');
+        segLine(marks, f.f0[3], f.f0[0], 'cx-fold');
+        if (i >= 2) segLine(marks, f.f2[2], f.f2[3], 'cx-fold');
+      }
+    }
+  };
+
+  // CX['cuboid-net']: 2D net and 3D folding of a cuboid (rectangular prism)
+  CX['cuboid-net'] = {
+    steps: 6,
+    start: { k: 0 },
+    kScale: 1,
+    kText: function (s) {
+      if (s.k === 0) return 'ប្លង់លាត 2D រាបស្មើ (0°) — មុខ ៦ ជាចតុកោណកែង ៣ គូ';
+      if (s.k === 90) return 'ប្រលេពីប៉ែតកែង 3D (90°) — St = 126 cm², V = 75 cm³';
+      return 'កម្រិតបត់ ' + s.k + '° (កំពុងបត់ផ្គុំទៅជារូបរាង 3D)';
+    },
+    presets: {
+      flat: function (s) { s.k = 0; },
+      half: function (s) { s.k = 45; },
+      solid: function (s) { s.k = 90; }
+    },
+    figure: function (s) {
+      var cx = 310, cy = 230, a = 90, b = 55, c = 45;
+      var t = Math.max(0, Math.min(90, s.k)) / 90;
+      var theta = t * Math.PI / 2;
+      var c30 = Math.cos(30 * Math.PI / 180), s30 = Math.sin(30 * Math.PI / 180);
+
+      function proj(x, y, z) {
+        var px = cx + (1 - t) * x + t * (x - y) * c30;
+        var py = cy + (1 - t) * y + t * ((x + y) * s30 - z);
+        return [px, py];
+      }
+
+      // Bottom face F0: a x b
+      var b0 = proj(-a/2, -b/2, 0), b1 = proj(a/2, -b/2, 0), b2 = proj(a/2, b/2, 0), b3 = proj(-a/2, b/2, 0);
+
+      // Right face F5: width c
+      var r0 = b1, r3 = b2;
+      var r1 = proj(a/2 + c * Math.cos(theta), -b/2, c * Math.sin(theta));
+      var r2 = proj(a/2 + c * Math.cos(theta), b/2, c * Math.sin(theta));
+
+      // Left face F4: width c
+      var l0 = b0, l3 = b3;
+      var l1 = proj(-a/2 - c * Math.cos(theta), -b/2, c * Math.sin(theta));
+      var l2 = proj(-a/2 - c * Math.cos(theta), b/2, c * Math.sin(theta));
+
+      // Front face F1: height c
+      var f0 = b3, f1 = b2;
+      var f3 = proj(-a/2, b/2 + c * Math.cos(theta), c * Math.sin(theta));
+      var f2 = proj(a/2, b/2 + c * Math.cos(theta), c * Math.sin(theta));
+
+      // Back face F2: height c
+      var k0 = b0, k1 = b1;
+      var k3 = proj(-a/2, -b/2 - c * Math.cos(theta), c * Math.sin(theta));
+      var k2 = proj(a/2, -b/2 - c * Math.cos(theta), c * Math.sin(theta));
+
+      // Top face F3: a x b attached to Back face
+      var hy = -b/2 - c * Math.cos(theta), hz = c * Math.sin(theta);
+      var ty = hy - b * mathCos(2 * theta), tz = hz + b * mathSin(2 * theta);
+      var top0 = k3, top1 = k2;
+      var top3 = proj(-a/2, ty, tz), top2 = proj(a/2, ty, tz);
+
+      return {
+        meet: true, t: t, deg: s.k, a: a, b: b, c: c,
+        f0: [b0, b1, b2, b3],
+        f1: [f0, f1, f2, f3],
+        f2: [k0, k1, k2, k3],
+        f3: [top0, top1, top2, top3],
+        f4: [l0, l1, l2, l3],
+        f5: [r0, r1, r2, r3]
+      };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      given(ink, 'ប្រលេពីប៉ែតកែង៖ a = 6 cm, b = 3.5 cm, c = 3 cm');
+
+      var drawPoly = function (pts, cls) {
+        return el('polygon', { points: pts.map(function (p) { return p.join(','); }).join(' '), class: cls }, ink);
+      };
+
+      if (i >= 1) {
+        drawPoly(f.f2, 'cx-face cx-face-back');
+        drawPoly(f.f4, 'cx-face cx-face-side');
+        drawPoly(f.f5, 'cx-face cx-face-side');
+        drawPoly(f.f0, 'cx-face cx-face-base');
+        drawPoly(f.f1, 'cx-face cx-face-front');
+        if (i >= 2) drawPoly(f.f3, 'cx-face cx-face-top');
+      }
+
+      if (f.t < 0.3) {
+        var mid = function (pts) { return mul(add(add(pts[0], pts[1]), add(pts[2], pts[3])), 0.25); };
+        label(marks, mid(f.f0), 'បាត (a×b)', 'cx-note');
+        label(marks, mid(f.f1), 'មុខ (a×c)', 'cx-note');
+        label(marks, mid(f.f2), 'ក្រោយ (a×c)', 'cx-note');
+        if (i >= 2) label(marks, mid(f.f3), 'បាតលើ (a×b)', 'cx-note');
+        label(marks, mid(f.f4), 'ឆ្វេង', 'cx-note');
+        label(marks, mid(f.f5), 'ស្ដាំ', 'cx-note');
+      } else if (f.t > 0.8) {
+        var card = el('g', {}, marks);
+        el('rect', { x: 410, y: 30, width: 215, height: 105, rx: 8, class: 'cx-table-bg' }, card);
+        label(card, [517, 50], 'ប្រលេពីប៉ែតកែង (Cuboid)', 'cx-th');
+        label(card, [517, 72], 'Sl = 2(a+b)c = 57 cm²', 'cx-note');
+        label(card, [517, 94], 'St = Sl + 2ab = 99 cm²', 'cx-note cx-r');
+        label(card, [517, 116], 'V = abc = 63 cm³', 'cx-note');
+      }
+    }
+  };
+
+  function mathCos(x) { return Math.cos(x); }
+  function mathSin(x) { return Math.sin(x); }
+
+  // CX['cylinder-net']: 2D net and 3D rolling of a cylinder
+  CX['cylinder-net'] = {
+    steps: 6,
+    start: { k: 0 },
+    kScale: 1,
+    kText: function (s) {
+      if (s.k === 0) return 'ប្លង់លាត 2D រាបស្មើ (0%) — ផ្ទៃខាងចតុកោណកែង 2πR × h + បាតរង្វង់ ២';
+      if (s.k === 100) return 'ស៊ីឡាំង 3D (100%) — St = 2πRh + 2πR² ≈ 102.8 cm², V = πR²h ≈ 70.7 cm³';
+      return 'កម្រិតរមូរ ' + s.k + '% (កំពុងរមូរផ្គុំជាស៊ីឡាំង 3D)';
+    },
+    presets: {
+      flat: function (s) { s.k = 0; },
+      half: function (s) { s.k = 50; },
+      solid: function (s) { s.k = 100; }
+    },
+    figure: function (s) {
+      var cx = 310, cy = 230, R = 32, h = 95, L = 200;
+      var t = Math.max(0, Math.min(100, s.k)) / 100;
+      return { meet: true, t: t, R: R, h: h, L: L, cx: cx, cy: cy };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks;
+      given(ink, 'ស៊ីឡាំង៖ កាំបាត R = 2.5 cm, កម្ពស់ h = 4 cm (យក π ≈ 3.14)');
+
+      var t = f.t, cx = f.cx, cy = f.cy, R = f.R, h = f.h, L = f.L;
+      var curW = (1 - t) * L + t * (2 * R);
+      var rx = R, ry = (1 - t) * R + t * (R * 0.35);
+
+      if (i < 1) return;
+
+      if (t < 0.95) {
+        // Lateral rectangle
+        el('rect', {
+          x: cx - curW / 2, y: cy - h / 2, width: curW, height: h,
+          class: 'cx-face cx-face-front', rx: t * 12
+        }, ink);
+        // Dimensions in 2D
+        if (t === 0) {
+          sideNote(marks, [cx - L / 2, cy - h / 2], [cx + L / 2, cy - h / 2], [cx, cy - h], 'L = 2πR ≈ 15.7 cm');
+          sideNote(marks, [cx + L / 2, cy - h / 2], [cx + L / 2, cy + h / 2], [cx + L, cy], 'h = 4 cm');
+        }
+      }
+
+      // Bases (circles/ellipses)
+      if (i >= 3) {
+        var topY = (1 - t) * (cy - h / 2 - R) + t * (cy - h / 2);
+        var botY = (1 - t) * (cy + h / 2 + R) + t * (cy + h / 2);
+
+        // In 3D: bottom base back arc dashed, front solid
+        if (t > 0.6) {
+          el('ellipse', { cx: cx, cy: botY, rx: rx, ry: ry, class: 'cx-face cx-face-base' }, ink);
+          // 3D cylinder sides
+          el('rect', { x: cx - rx, y: cy - h / 2, width: 2 * rx, height: h, class: 'cx-face cx-face-front' }, ink);
+          el('ellipse', { cx: cx, cy: botY, rx: rx, ry: ry, class: 'cx-face cx-face-front' }, ink);
+          el('ellipse', { cx: cx, cy: topY, rx: rx, ry: ry, class: 'cx-face cx-face-top' }, ink);
+        } else {
+          el('ellipse', { cx: cx, cy: topY, rx: rx, ry: ry, class: 'cx-face cx-face-top' }, ink);
+          el('ellipse', { cx: cx, cy: botY, rx: rx, ry: ry, class: 'cx-face cx-face-base' }, ink);
+        }
+
+        if (t === 0) {
+          label(marks, [cx, topY], 'បាតលើ (កាំ R)', 'cx-note');
+          label(marks, [cx, botY], 'បាតក្រោម (កាំ R)', 'cx-note');
+          segLine(marks, [cx, topY], [cx + R, topY], 'cx-radius');
+          segLine(marks, [cx, botY], [cx + R, botY], 'cx-radius');
+        }
+      }
+
+      if (t > 0.8) {
+        var card = el('g', {}, marks);
+        el('rect', { x: 420, y: 30, width: 205, height: 105, rx: 8, class: 'cx-table-bg' }, card);
+        label(card, [522, 50], 'ស៊ីឡាំង (Cylinder)', 'cx-th');
+        label(card, [522, 72], 'Sl = 2πRh ≈ 62.8 cm²', 'cx-note');
+        label(card, [522, 94], 'St = Sl + 2πR² ≈ 102.1 cm²', 'cx-note cx-r');
+        label(card, [522, 116], 'V = πR²h ≈ 78.5 cm³', 'cx-note');
+      }
+    }
+  };
+
+  // CX['pie-chart']: Constructing a pie chart step-by-step with protractor
+  CX['pie-chart'] = {
+    steps: 6,
+    start: { k: 180, preset: 'farm' },
+    kScale: 1,
+    kText: function (s) {
+      return 'មុំចម្រៀកទី ១ = ' + s.k + '°  (ស្មើនឹង ' + Math.round(s.k / 360 * 1000) / 10 + '% នៃទិន្នន័យសរុប)';
+    },
+    presets: {
+      farm: function (s) { s.preset = 'farm'; s.k = 180; },
+      crops: function (s) { s.preset = 'crops'; s.k = 120; },
+      sports: function (s) { s.preset = 'sports'; s.k = 144; }
+    },
+    figure: function (s) {
+      var O = [235, 240], R = 135;
+      var data;
+      if (s.preset === 'crops') {
+        data = [
+          { name: 'ស្រូវ', pct: '33.3%', deg: s.k, cls: 'cx-pie-s1' },
+          { name: 'ពោត', pct: '30.6%', deg: 110, cls: 'cx-pie-s3' },
+          { name: 'សណ្ដែក', pct: '22.2%', deg: 80, cls: 'cx-pie-s2' },
+          { name: 'ល្ង', pct: '13.9%', deg: 50, cls: 'cx-pie-s4' }
+        ];
+      } else if (s.preset === 'sports') {
+        data = [
+          { name: 'បាល់ទាត់', pct: '40%', deg: s.k, cls: 'cx-pie-s1' },
+          { name: 'បាល់ទះ', pct: '30%', deg: 108, cls: 'cx-pie-s2' },
+          { name: 'រត់ប្រណាំង', pct: '20%', deg: 72, cls: 'cx-pie-s3' },
+          { name: 'ហែលទឹក', pct: '10%', deg: 36, cls: 'cx-pie-s5' }
+        ];
+      } else {
+        data = [
+          { name: 'មាន់', pct: '50%', deg: s.k, cls: 'cx-pie-s1' },
+          { name: 'ទា', pct: '33.3%', deg: Math.round((360 - s.k) * 2 / 3), cls: 'cx-pie-s2' },
+          { name: 'ក្ងាន', pct: '16.7%', deg: Math.round((360 - s.k) / 3), cls: 'cx-pie-s3' }
+        ];
+      }
+      return { meet: true, O: O, R: R, data: data, k: s.k };
+    },
+    draw: function (f, i, g, layer) {
+      var ink = layer.ink, marks = layer.marks, tools = layer.tools;
+      var O = f.O, R = f.R, data = f.data;
+      given(ink, 'ក្រាបផ្លិត៖ ផលបូកមុំផ្ចិត = 360°');
+
+      // Table on the right side
+      var card = el('g', {}, marks);
+      el('rect', { x: 410, y: 35, width: 215, height: 45 + data.length * 36 + 32, rx: 8, class: 'cx-table-bg' }, card);
+      label(card, [517, 56], 'តារាងបម្លែងមុំផ្ចិត', 'cx-th');
+      el('line', { x1: 420, y1: 72, x2: 615, y2: 72, stroke: '#cbd5e1', 'stroke-width': 1 }, card);
+
+      var currAngle = 0;
+      data.forEach(function (row, idx) {
+        var y = 92 + idx * 36;
+        el('rect', { x: 422, y: y - 8, width: 14, height: 14, rx: 3, class: row.cls }, card);
+        label(card, [465, y], row.name, 'cx-td');
+        label(card, [530, y], row.pct, 'cx-td');
+        label(card, [585, y], row.deg + '°', 'cx-td');
+      });
+      var sumY = 92 + data.length * 36;
+      el('line', { x1: 420, y1: sumY - 14, x2: 615, y2: sumY - 14, stroke: '#cbd5e1', 'stroke-width': 1 }, card);
+      label(card, [465, sumY], 'សរុប', 'cx-th');
+      label(card, [530, sumY], '100%', 'cx-th');
+      label(card, [585, sumY], '360°', 'cx-th');
+
+      // Step 1: Center O
+      dot(ink, O, 4);
+      point(ink, O, 'O', [-1, -1], 'cx-pt-m', null, 20);
+
+      // Step 2: Circle
+      if (i >= 1) {
+        el('circle', { cx: O[0], cy: O[1], r: R, fill: 'none', stroke: '#132238', 'stroke-width': 2.4 }, ink);
+      }
+
+      // Step 3: Reference radius OA (0 deg, to the right)
+      if (i >= 2) {
+        var A = add(O, [R, 0]);
+        segLine(ink, O, A, 'cx-seg');
+        point(ink, A, 'A', [1, 0], null, null, 18);
+      }
+
+      // Draw sectors step-by-step
+      var startDeg = 0;
+      for (var sIdx = 0; sIdx < data.length; sIdx++) {
+        var sec = data[sIdx];
+        var endDeg = startDeg + sec.deg;
+        var showSec = (sIdx === 0 && i >= 3) || (sIdx === 1 && i >= 4) || (sIdx >= 2 && i >= 5);
+
+        if (showSec) {
+          // Draw sector
+          var t1 = -startDeg * Math.PI / 180, t2 = -endDeg * Math.PI / 180;
+          var p1 = onCircle(O, R, t1), p2 = onCircle(O, R, t2);
+          var large = sec.deg > 180 ? 1 : 0;
+          var pathD = 'M' + O.join(' ') + 'L' + p1.join(' ') + 'A' + R + ' ' + R + ' 0 ' + large + ' 0 ' + p2.join(' ') + 'Z';
+          el('path', { d: pathD, class: sec.cls }, ink);
+          segLine(ink, O, p2, 'cx-seg');
+
+          // Centroid label for sector
+          var midDeg = (startDeg + endDeg) / 2;
+          var labelDist = R * 0.65;
+          var lblPos = onCircle(O, labelDist, -midDeg * Math.PI / 180);
+          label(marks, lblPos, sec.name + ' ' + sec.pct, 'cx-pie-label');
+        }
+
+        // Show Protractor at appropriate steps
+        if (sIdx === 0 && i === 3) {
+          drawProt(tools, O, 0, 0.95, [0, sec.deg]);
+        } else if (sIdx === 1 && i === 4) {
+          drawProt(tools, O, -startDeg, 0.95, [0, sec.deg]);
+        }
+
+        startDeg = endDeg;
+      }
+
+      // Compass at step 1
+      if (i === 1) drawCompass(tools, O, add(O, [R, 0]));
+      // Ruler at step 2
+      if (i === 2) drawCmRuler(tools, O, RIGHT, 5, DOWN);
+    }
+  };
+
   // ---------------------------------------------------------- player ---
   function Player(root) {
     var def = CX[root.getAttribute('data-cx')];
