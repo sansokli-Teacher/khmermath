@@ -1252,7 +1252,7 @@
       return Math.abs(h - Math.abs(dO)) >= 26 && inside(X1) && inside(X2);
     });
     var mark = function (c, X, sg) { var t = aimAt(c, X); return { c: c, r: r, t1: t - sg * 0.2, t2: t + sg * 0.2 }; };
-    return { M: M, u: u, n: n, arcs: [mark(P, X1, 1), mark(P, X2, 1), mark(Q, X1, -1), mark(Q, X2, -1)],
+    return { M: M, u: u, n: n, h: h, r: r, X1: X1, X2: X2, arcs: [mark(P, X1, 1), mark(P, X2, 1), mark(Q, X1, -1), mark(Q, X2, -1)],
       e1: add(M, mul(n, Math.max(h + 24, dO + 34))), e2: add(M, mul(n, Math.min(-h - 24, dO - 34))) };
   }
   CX['circumcircle'] = {
@@ -2898,6 +2898,47 @@
 
   // a line of the working, below the one before it (the lines of the steps so far stay)
   var says = function (g, n, text) { el('text', { x: 22, y: 30 + 24 * n, class: 'cx-given', 'dominant-baseline': 'central' }, g).textContent = text; };
+  CX['g7-l15-median'] = scripted({
+    steps: 6,
+    start: { A: [250, 100], B: [140, 320], C: [500, 320] },
+    limit: function (s, key, p) {
+      var t = triangleOf({ A: key === 'A' ? p : s.A, B: key === 'B' ? p : s.B, C: key === 'C' ? p : s.C });
+      var A = key === 'A' ? p : s.A, B = key === 'B' ? p : s.B, C = key === 'C' ? p : s.C;
+      return p[0] >= 40 && p[0] <= W - 40 && p[1] >= 40 && p[1] <= H - 40 &&
+        t.least >= 150 && Math.min.apply(null, t.angles) >= 0.50 && Math.max.apply(null, t.angles) <= 1.8 &&
+        A[1] <= Math.min(B[1], C[1]) - 80;
+    },
+    figure: function (s) {
+      var f = triangleOf(s);
+      f.md = mediatorOf(f.B, f.C, f.A);
+      f.M = f.md.M;
+      f.p1 = add(f.M, mul(f.md.n, f.md.h + 24));
+      f.p2 = add(f.M, mul(f.md.n, -f.md.h - 24));
+      return f;
+    },
+    base: function (f, ink) { triDrawn(f, ink); },
+    top: function (f, ink) { triCorners(f, ink); },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [],
+        [['arc', f.md.arcs[0]], ['arc', f.md.arcs[1]]],
+        [['arc', f.md.arcs[2]], ['arc', f.md.arcs[3]], ['pt', f.md.X1, 'P', [1, 0], 'cx-pt-m', 20], ['pt', f.md.X2, 'Q', [1, 0], 'cx-pt-m', 20]],
+        [
+          ['seg', f.p1, f.p2, aux],
+          ['pt', f.M, 'M', DOWN, null, 22],
+          ['mark', function (g) { tick(g, f.B, f.M); tick(g, f.M, f.C); }]
+        ],
+        [['seg', f.A, f.M, 'cx-line']],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'AM ជាមេដ្យាននៃត្រីកោណ ABC (MB = MC)');
+          }]
+        ],
+      ];
+    },
+  });
+
   var deg = function (n) { return n + '°'; };
   CX['g7-l15-angle-sum'] = scripted({
     steps: 5,
