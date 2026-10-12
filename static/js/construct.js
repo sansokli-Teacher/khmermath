@@ -4113,6 +4113,117 @@
     },
   });
 
+  // Grade 7, Lesson 12, Practice (ប្រតិបត្តិ): Compare segments AB, BC, CD and AC using compass
+  CX['g7-l12-compare-segments'] = scripted({
+    steps: 6,
+    start: {},
+    limit: function () { return true; },
+    figure: function () {
+      var y = 240;
+      var A = [80, y], B = [190, y], C = [350, y], D = [540, y];
+      var rAB = 110, rBC = 160, rCD = 190;
+      var B1 = [B[0] + rAB, y];
+      var C1 = [C[0] + rBC, y];
+      var A1 = [A[0] + rCD, y];
+
+      var arcAB = { c: A, r: rAB, t1: -0.42, t2: 0.42 };
+      var arcB1 = { c: B, r: rAB, t1: -0.42, t2: 0.42 };
+      var arcBC = { c: B, r: rBC, t1: -0.40, t2: 0.40 };
+      var arcC1 = { c: C, r: rBC, t1: -0.40, t2: 0.40 };
+      var arcCD = { c: C, r: rCD, t1: -0.38, t2: 0.38 };
+      var arcA1 = { c: A, r: rCD, t1: -0.38, t2: 0.38 };
+
+      return {
+        y: y, A: A, B: B, C: C, D: D,
+        rAB: rAB, rBC: rBC, rCD: rCD,
+        B1: B1, C1: C1, A1: A1,
+        arcAB: arcAB, arcB1: arcB1,
+        arcBC: arcBC, arcC1: arcC1,
+        arcCD: arcCD, arcA1: arcA1
+      };
+    },
+    base: function (f, ink) {
+      el('line', { x1: 30, y1: f.y, x2: 610, y2: f.y, class: 'cx-seg' }, ink);
+      label(ink, [40, f.y - 14], 'x', 'cx-label');
+      label(ink, [600, f.y - 14], 'y', 'cx-label');
+    },
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [0, 1.4], null, null, 22);
+      point(ink, f.B, 'B', [0, 1.4], null, null, 22);
+      point(ink, f.C, 'C', [0, 1.4], null, null, 22);
+      point(ink, f.D, 'D', [0, 1.4], null, null, 22);
+    },
+    script: function (f) {
+      function dimBar(g, x1, x2, y, text, color) {
+        el('line', { x1: x1, y1: y, x2: x2, y2: y, stroke: color, 'stroke-width': 2.2 }, g);
+        el('line', { x1: x1, y1: y - 5, x2: x1, y2: y + 5, stroke: color, 'stroke-width': 2.2 }, g);
+        el('line', { x1: x2, y1: y - 5, x2: x2, y2: y + 5, stroke: color, 'stroke-width': 2.2 }, g);
+        if (text) {
+          var ty = y > f.y ? y + 16 : y - 8;
+          var t = el('text', { x: (x1 + x2) / 2, y: ty, 'text-anchor': 'middle', class: 'cx-note', fill: color, 'font-weight': 'bold' }, g);
+          t.textContent = text;
+        }
+      }
+
+      return [
+        [['mark', function (g) {
+          dimBar(g, f.A[0], f.B[0], 295, 'AB', '#2d6aa8');
+          dimBar(g, f.B[0], f.C[0], 295, 'BC', '#2e7a70');
+          dimBar(g, f.C[0], f.D[0], 295, 'CD', '#c9862b');
+          says(g, 0, '១. គេមានបន្ទាត់ xy និងចំណុច ៤៖ A, B, C, D (រៀបតាមលំដាប់)');
+          says(g, 1, '• គោលបំណង៖ ប្រៀបធៀបអង្កត់ដោយប្រើដែកឈាន (មិនប្រើបន្ទាត់ក្រិត)');
+        }]],
+        [['arc', f.arcAB],
+         ['mark', function (g) {
+           dimBar(g, f.A[0], f.B[0], 295, 'AB (កាំដែកឈាន)', '#2d6aa8');
+           says(g, 0, '១. គេមានចំណុច A, B, C, D លើបន្ទាត់ xy');
+           says(g, 1, '២. ក. ដាក់ម្ជុលដែកឈានត្រង់ A ខ្មៅដៃត្រង់ B វាស់ប្រវែង AB (កាំ r = AB)');
+         }]],
+        [['arc', f.arcB1],
+         ['pt', f.B1, "B₁", [0, -1.2], 'cx-pt-m', 20],
+         ['mark', function (g) {
+           dimBar(g, f.B[0], f.B1[0], 295, 'BB₁ = AB', '#2d6aa8');
+           dimBar(g, f.B[0], f.C[0], 335, 'BC', '#2e7a70');
+           el('rect', { x: 260, y: 70, width: 330, height: 42, rx: 6, fill: '#ebf8ff', stroke: '#3182ce', 'stroke-width': 1.5 }, g);
+           var res = el('text', { x: 425, y: 96, 'text-anchor': 'middle', class: 'cx-note', fill: '#2b6cb0', 'font-size': '16px', 'font-weight': 'bold' }, g);
+           res.textContent = 'ក. ធ្នូធ្លាក់មុន C ⟹ AB < BC (AB ខ្លីជាង BC)';
+           says(g, 0, '២. ក. លើកដែកឈានកាំ AB មកដាក់ត្រង់ B រួចគូសធ្នូកាត់លើ [BC]');
+           says(g, 1, '   ⟹ ចំណុចកាត់ B₁ ស្ថិតនៅចន្លោះ B និង C (មុន C) នាំឱ្យ AB < BC');
+         }]],
+        [['arc', f.arcC1],
+         ['pt', f.C1, "C₁", [0, -1.2], 'cx-pt-m', 20],
+         ['mark', function (g) {
+           dimBar(g, f.C[0], f.C1[0], 295, 'CC₁ = BC', '#2e7a70');
+           dimBar(g, f.C[0], f.D[0], 335, 'CD', '#c9862b');
+           el('rect', { x: 260, y: 70, width: 330, height: 42, rx: 6, fill: '#f0fff4', stroke: '#38a169', 'stroke-width': 1.5 }, g);
+           var res = el('text', { x: 425, y: 96, 'text-anchor': 'middle', class: 'cx-note', fill: '#276749', 'font-size': '16px', 'font-weight': 'bold' }, g);
+           res.textContent = 'ខ. ធ្នូធ្លាក់មុន D ⟹ BC < CD  ឬ  CD > BC';
+           says(g, 0, '៣. ខ. វាស់ [BC] រួចលើកម្ជុលមកដាក់ត្រង់ C គូសធ្នូកាត់លើ [CD]');
+           says(g, 1, '   ⟹ ចំណុចកាត់ C₁ ស្ថិតនៅចន្លោះ C និង D (មុន D) នាំឱ្យ CD > BC');
+         }]],
+        [['arc', f.arcCD],
+         ['mark', function (g) {
+           dimBar(g, f.C[0], f.D[0], 295, 'CD (កាំដែកឈាន)', '#c9862b');
+           says(g, 0, 'លទ្ធផលមុន ៖ ក. AB < BC    |    ខ. CD > BC');
+           says(g, 1, '៤. គ. ដាក់ដែកឈានវាស់អង្កត់ CD (ម្ជុលត្រង់ C ខ្មៅដៃត្រង់ D ទទួលបានកាំ CD)');
+         }]],
+        [['arc', f.arcA1],
+         ['pt', f.A1, "A₁", [0, -1.2], 'cx-pt-m', 20],
+         ['mark', function (g) {
+           dimBar(g, f.A[0], f.A1[0], 180, 'AA₁ = CD', '#c9862b');
+           dimBar(g, f.A[0], f.C[0], 140, 'AC = AB + BC', '#2e7a70');
+           el('rect', { x: 50, y: 360, width: 540, height: 75, rx: 8, fill: '#f7fafc', stroke: '#cbd5e0', 'stroke-width': 1.5 }, g);
+           var t1 = el('text', { x: 320, y: 386, 'text-anchor': 'middle', class: 'cx-note', fill: '#1a202c', 'font-size': '16px', 'font-weight': 'bold' }, g);
+           t1.textContent = 'សន្និដ្ឋានចម្លើយទាំងបី (ក, ខ, គ) ៖';
+           var t2 = el('text', { x: 320, y: 418, 'text-anchor': 'middle', class: 'cx-note', fill: '#2b6cb0', 'font-size': '15px' }, g);
+           t2.textContent = 'ក. AB < BC      |      ខ. CD > BC      |      គ. AC > CD';
+           says(g, 0, '៥. គ. លើកដែកឈានកាំ CD មកដាក់ត្រង់ A រួចគូសធ្នូកាត់លើ [AC]');
+           says(g, 1, '   ⟹ ចំណុចកាត់ A₁ ធ្លាក់មុន C (A₁ ស្ថិតនៅចន្លោះ A និង C) នាំឱ្យ AC > CD');
+         }]],
+      ];
+    },
+  });
+
   var lineMeet = function (p1, p2, p3, p4) {                // where the line p1p2 meets the line p3p4
     var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
     var a = p1[0] * p2[1] - p1[1] * p2[0], b = p3[0] * p4[1] - p3[1] * p4[0];
