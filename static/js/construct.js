@@ -36,6 +36,12 @@
     if (parent) parent.appendChild(e);
     return e;
   }
+  function poly(g, pts, attrs) {
+    var pStr = pts.map(function (x) { return x[0].toFixed(1) + ',' + x[1].toFixed(1); }).join(' ');
+    var a = { points: pStr };
+    if (attrs) for (var k in attrs) a[k] = attrs[k];
+    return el('polygon', a, g);
+  }
   var add = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
   var sub = function (a, b) { return [a[0] - b[0], a[1] - b[1]]; };
   var mul = function (a, k) { return [a[0] * k, a[1] * k]; };
