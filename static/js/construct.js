@@ -3591,7 +3591,522 @@
     },
   });
 
-  // ===== Grade 7, lesson 14 §4-5: the set square, perpendiculars, parallels and altitudes ===============
+  // ===== Grade 7, lesson 19 Exercises: Interactive step-by-step constructions =====
+  // Exercise 2: Point reflection on grid A(-1, 2), B(1, 2), C(1, 1) about O(0, 0)
+  CX['g7-l19-ex02'] = scripted({
+    steps: 5,
+    start: { A: [272, 134], B: [368, 134], C: [368, 182] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var O = [320, 230], u = 48;
+      var A = [272, 134], B = [368, 134], C = [368, 182];
+      var Ap = [O[0] + (O[0] - A[0]), O[1] + (O[1] - A[1])];
+      var Bp = [O[0] + (O[0] - B[0]), O[1] + (O[1] - B[1])];
+      var Cp = [O[0] + (O[0] - C[0]), O[1] + (O[1] - C[1])];
+      return { O: O, u: u, A: A, B: B, C: C, Ap: Ap, Bp: Bp, Cp: Cp };
+    },
+    base: function (f, ink) {
+      var u = f.u, ox = f.O[0], oy = f.O[1];
+      for (var gx = -4; gx <= 4; gx++) {
+        el('line', { x1: ox + gx * u, y1: oy - 3 * u, x2: ox + gx * u, y2: oy + 3 * u, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      for (var gy = -3; gy <= 3; gy++) {
+        el('line', { x1: ox - 4 * u, y1: oy + gy * u, x2: ox + 4 * u, y2: oy + gy * u, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+    },
+    top: function (f, ink) {
+      point(ink, f.O, 'O', [0.8, 0.8], null, null, 18);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.B, f.C, 'cx-line'],
+         ['pt', f.A, 'A(-1, 2)', [-1, -0.8], null, 24], ['pt', f.B, 'B(1, 2)', [1, -0.8], null, 24], ['pt', f.C, 'C(1, 1)', [1, 0.2], null, 24],
+         ['mark', function (g) {
+           says(g, 0, '១. គេមានក្រឡាក្រដាស ផ្ចិត O(0,0) និងចំណុច A(-1, 2), B(1, 2), C(1, 1)');
+         }]],
+        [['seg', f.A, f.Ap, aux], ['pt', f.Ap, "A'(1, -2)", [1, 0.8], null, 24],
+         ['mark', function (g) {
+           tick(g, f.A, f.O); tick(g, f.O, f.Ap);
+           says(g, 1, '២. គូសបន្ទាត់ AO បន្លាយឱ្យបាន OA\' = OA គេបាន A\'(1, -2) ឆ្លុះ A');
+         }]],
+        [['seg', f.B, f.Bp, aux], ['pt', f.Bp, "B'(-1, -2)", [-1, 0.8], null, 24],
+         ['mark', function (g) {
+           tick2(g, f.B, f.O); tick2(g, f.O, f.Bp);
+           says(g, 2, '៣. គូសបន្ទាត់ BO បន្លាយឱ្យបាន OB\' = OB គេបាន B\'(-1, -2) ឆ្លុះ B');
+         }]],
+        [['seg', f.C, f.Cp, aux], ['pt', f.Cp, "C'(-1, -1)", [-1, -0.2], null, 24],
+         ['mark', function (g) {
+           says(g, 3, '៤. គូសបន្ទាត់ CO បន្លាយឱ្យបាន OC\' = OC គេបាន C\'(-1, -1) ឆ្លុះ C');
+         }]],
+        [['seg', f.Ap, f.Bp, 'cx-line'], ['seg', f.Bp, f.Cp, 'cx-line'],
+         ['mark', function (g) {
+           says(g, 4, '៥. ភ្ជាប់ A\'B\' និង B\'C\' គេបានរូបឆ្លុះធៀបនឹងផ្ចិត O (A\'B\' = AB, B\'C\' = BC)');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 3: Angle reflection on grid about O
+  CX['g7-l19-ex03'] = scripted({
+    steps: 5,
+    start: { A: [272, 134], B: [368, 134], C: [368, 182] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var O = [320, 230], u = 48;
+      var A = [272, 134], B = [368, 134], C = [368, 182];
+      var Ap = [O[0] + (O[0] - A[0]), O[1] + (O[1] - A[1])];
+      var Bp = [O[0] + (O[0] - B[0]), O[1] + (O[1] - B[1])];
+      var Cp = [O[0] + (O[0] - C[0]), O[1] + (O[1] - C[1])];
+      return { O: O, u: u, A: A, B: B, C: C, Ap: Ap, Bp: Bp, Cp: Cp };
+    },
+    base: function (f, ink) {
+      var u = f.u, ox = f.O[0], oy = f.O[1];
+      for (var gx = -4; gx <= 4; gx++) {
+        el('line', { x1: ox + gx * u, y1: oy - 3 * u, x2: ox + gx * u, y2: oy + 3 * u, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      for (var gy = -3; gy <= 3; gy++) {
+        el('line', { x1: ox - 4 * u, y1: oy + gy * u, x2: ox + 4 * u, y2: oy + gy * u, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+    },
+    top: function (f, ink) {
+      point(ink, f.O, 'O', [0.8, 0.8], null, null, 18);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.A, f.C, 'cx-line'],
+         ['pt', f.A, 'A', [-1, -0.8], null, 22], ['pt', f.B, 'B', [1, -0.8], null, 22], ['pt', f.C, 'C', [1, 0.4], null, 22],
+         ['mark', function (g) {
+           wedgeBetween(g, f.C, f.A, f.B, 32, 'a');
+           says(g, 0, '១. គេមានមុំ ∠BAC កំពូល A និងកន្លះបន្ទាត់ AB, AC ព្រមទាំងផ្ចិត O');
+         }]],
+        [['seg', f.A, f.Ap, aux], ['pt', f.Ap, "A'", [1, 0.8], null, 22],
+         ['mark', function (g) {
+           tick(g, f.A, f.O); tick(g, f.O, f.Ap);
+           says(g, 1, '២. សង់កំពូល A\' ឆ្លុះនឹង A ធៀបនឹង O (OA\' = OA)');
+         }]],
+        [['seg', f.B, f.Bp, aux], ['pt', f.Bp, "B'", [-1, 0.8], null, 22], ['seg', f.Ap, f.Bp, 'cx-line'],
+         ['mark', function (g) {
+           tick2(g, f.B, f.O); tick2(g, f.O, f.Bp);
+           says(g, 2, '៣. សង់ B\' ឆ្លុះនឹង B ធៀបនឹង O (OB\' = OB) រួចគូសកន្លះបន្ទាត់ A\'B\'');
+         }]],
+        [['seg', f.C, f.Cp, aux], ['pt', f.Cp, "C'", [-1, -0.4], null, 22], ['seg', f.Ap, f.Cp, 'cx-line'],
+         ['mark', function (g) {
+           says(g, 3, '៤. សង់ C\' ឆ្លុះនឹង C ធៀបនឹង O (OC\' = OC) រួចគូសកន្លះបន្ទាត់ A\'C\'');
+         }]],
+        [['mark', function (g) {
+           wedgeBetween(g, f.Cp, f.Ap, f.Bp, 32, 'a');
+           says(g, 4, '៥. មុំ ∠B\'A\'C\' ឆ្លុះនឹង ∠BAC ធៀប O ⟹ ∠B\'A\'C\' = ∠BAC (មុំប៉ុនគ្នា)');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 4: Triangle ABC with median AI, and points D, H symmetric to B, I about C
+  CX['g7-l19-ex04'] = scripted({
+    steps: 5,
+    start: { A: [270, 150], B: [160, 340] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var C = [320, 340];
+      var B = [160, 340];
+      var I = [240, 340];
+      var H = [400, 340];
+      var D = [480, 340];
+      var A = [s.A[0], Math.max(100, Math.min(220, s.A[1]))];
+      return { A: A, B: B, C: C, I: I, H: H, D: D };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [0, -1], null, 'A', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.B, f.C, 'cx-line'], ['seg', f.A, f.B, 'cx-line'], ['seg', f.A, f.C, 'cx-line'], ['seg', f.A, f.I, aux],
+         ['pt', f.B, 'B', [0, 1], null, 22], ['pt', f.C, 'C', [0, 1], null, 22], ['pt', f.I, 'I', [0, 1], null, 20],
+         ['mark', function (g) {
+           triFill(g, f.A, f.B, f.C);
+           tick(g, f.B, f.I); tick(g, f.I, f.C);
+           label(g, add(mul(add(f.A, f.I), 0.5), [-24, 0]), '[AI]', 'cx-note');
+           says(g, 0, '១. គូសត្រីកោណ ABC និងមេដ្យាន AI (I ជាចំណុចកណ្ដាលនៃ BC)');
+         }]],
+        [['seg', f.C, f.D, 'cx-line'], ['pt', f.D, 'D', [0, 1], null, 22],
+         ['mark', function (g) {
+           tick2(g, f.B, f.C); tick2(g, f.C, f.D);
+           says(g, 1, '២. បន្លាយ BC ឱ្យបាន CD = CB (D ជាចំណុចឆ្លុះនៃ B ធៀបនឹង C)');
+         }]],
+        [['pt', f.H, 'H', [0, 1], null, 20],
+         ['mark', function (g) {
+           tick(g, f.C, f.H); tick(g, f.H, f.D);
+           says(g, 2, '៣. សង់ H លើបន្ទាត់ដោយ CH = CI (H ជាចំណុចឆ្លុះនៃ I ធៀបនឹង C)');
+         }]],
+        [['seg', f.A, f.D, 'cx-line'], ['seg', f.A, f.H, aux],
+         ['mark', function (g) {
+           poly(g, [f.A, f.C, f.D], { fill: 'rgba(56, 161, 105, 0.12)', stroke: 'none' });
+           label(g, add(mul(add(f.A, f.H), 0.5), [24, 0]), '[AH]', 'cx-note');
+           says(g, 3, '៤. គូសជ្រុង AD បង្កើតបានត្រីកោណ ADC រួចគូសអង្កត់ AH');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. ដោយ CH = CI = ½ CD នាំឱ្យ H ជាចំណុចកណ្ដាលនៃ CD ⟹ AH ជាមេដ្យាននៃ ADC');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 5: Isosceles triangle ABC, point D symmetric to C across A
+  CX['g7-l19-ex05'] = scripted({
+    steps: 5,
+    start: { B: [435, 316] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var A = [320, 220], R = 150;
+      var C = [190, 295];
+      var D = [450, 145];
+      var B = [435, 316];
+      var arcA = { c: A, r: R, t1: -Math.PI / 4, t2: 0 };
+      return { A: A, B: B, C: C, D: D, R: R, arcA: arcA };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [-1, -0.6], null, null, 20);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.A, f.C, 'cx-line'], ['seg', f.B, f.C, 'cx-line'],
+         ['pt', f.B, 'B', [1, 0.8], null, 22], ['pt', f.C, 'C', [-1, 0.8], null, 22],
+         ['mark', function (g) {
+           triFill(g, f.A, f.B, f.C);
+           tick(g, f.A, f.B); tick(g, f.A, f.C);
+           says(g, 0, '១. សង់ត្រីកោណសមបាត ABC កំពូល A (AB = AC)');
+         }]],
+        [['seg', f.A, f.D, aux],
+         ['mark', function (g) {
+           says(g, 1, '២. គូសបន្ទាត់ CA រួចបន្លាយខាង A ឱ្យហួសពីកំពូល A');
+         }]],
+        [['arc', f.arcA], ['pt', f.D, 'D', [1, -0.6], null, 22],
+         ['mark', function (g) {
+           tick(g, f.A, f.D);
+           says(g, 2, '៣. គូសធ្នូកាំ AC ផ្ចិត A កាត់បន្ទាត់ត្រង់ D គេបាន AD = AC (D ឆ្លុះ C ធៀប A)');
+         }]],
+        [['seg', f.B, f.D, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.A, f.B, f.D], { fill: 'rgba(56, 161, 105, 0.12)', stroke: 'none' });
+           says(g, 3, '៤. គូសអង្កត់ BD គេបានត្រីកោណ ABD');
+         }]],
+        [['mark', function (g) {
+           rightMark(g, f.B, unit(sub(f.C, f.B)), unit(sub(f.D, f.B)));
+           says(g, 4, '៥. ដោយ AB = AC និង AD = AC ⟹ AB = AD នាំឱ្យ △ABD ជាត្រីកោណសមបាតកំពូល A');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 6: Line reflection of points A, B, C across line d on grid
+  CX['g7-l19-ex06'] = scripted({
+    steps: 5,
+    start: { A: [190, 174], B: [302, 286] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var dY = 230, u = 56;
+      var A = [190, 174], B = [302, 286], C = [414, 230];
+      var Ap = [190, 286], Bp = [302, 174], Cp = [414, 230];
+      var Ha = [190, 230], Hb = [302, 230];
+      return { dY: dY, u: u, A: A, B: B, C: C, Ap: Ap, Bp: Bp, Cp: Cp, Ha: Ha, Hb: Hb };
+    },
+    base: function (f, ink) {
+      var u = f.u;
+      for (var x = 134; x <= 470; x += u) {
+        el('line', { x1: x, y1: 118, x2: x, y2: 342, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      for (var y = 118; y <= 342; y += u) {
+        el('line', { x1: 134, y1: y, x2: 470, y2: y, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      el('line', { x1: 100, y1: f.dY, x2: 504, y2: f.dY, class: 'cx-line', 'stroke-width': 2.5 }, ink);
+      label(ink, [516, f.dY - 10], 'd', 'cx-label');
+    },
+    top: function (f, ink) {},
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['pt', f.A, 'A', [0, -1], null, 22], ['pt', f.B, 'B', [0, 1], null, 22], ['pt', f.C, 'C', [0.8, -0.8], null, 22],
+         ['mark', function (g) {
+           says(g, 0, '១. គេមានបន្ទាត់ d និងចំណុច A (លើ d ១ ការ៉ូ), B (ក្រោម d ១ ការ៉ូ), C (លើ d)');
+         }]],
+        [['seg', f.A, f.Ap, aux], ['pt', f.Ap, "A'", [0, 1], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.Ha, [1, 0], [0, -1]);
+           tick(g, f.A, f.Ha); tick(g, f.Ha, f.Ap);
+           says(g, 1, '២. គូសពី A កែងនឹង d ចុះក្រោម ១ ការ៉ូ បានចំណុច A\' ឆ្លុះនឹង A ធៀបនឹង d');
+         }]],
+        [['seg', f.B, f.Bp, aux], ['pt', f.Bp, "B'", [0, -1], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.Hb, [1, 0], [0, 1]);
+           tick2(g, f.B, f.Hb); tick2(g, f.Hb, f.Bp);
+           says(g, 2, '៣. គូសពី B កែងនឹង d ឡើងលើ ១ ការ៉ូ បានចំណុច B\' ឆ្លុះនឹង B ធៀបនឹង d');
+         }]],
+        [['mark', function (g) {
+           label(g, add(f.C, [14, 18]), "C' ≡ C", 'cx-note');
+           says(g, 3, '៤. ដោយចំណុច C ឋិតនៅលើបន្ទាត់ d ស្រាប់ នាំឱ្យចំណុចឆ្លុះ C\' ត្រួតលើ C ផ្ទាល់');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. រូបរួចរាល់៖ បន្ទាត់ d ជាមេដ្យាទ័រនៃ AA\' និង BB\' (ចម្ងាយស្មើគ្នាធៀប d)');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 7: Line reflection of triangle ABC across line d on grid
+  CX['g7-l19-ex07'] = scripted({
+    steps: 5,
+    start: { A: [180, 334], B: [284, 282], C: [388, 334] },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var dY = 230, u = 52;
+      var A = [180, 334], B = [284, 282], C = [388, 334];
+      var Ap = [180, 126], Bp = [284, 178], Cp = [388, 126];
+      return { dY: dY, u: u, A: A, B: B, C: C, Ap: Ap, Bp: Bp, Cp: Cp };
+    },
+    base: function (f, ink) {
+      var u = f.u;
+      for (var x = 128; x <= 440; x += u) {
+        el('line', { x1: x, y1: 100, x2: x, y2: 360, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      for (var y = 126; y <= 334; y += u) {
+        el('line', { x1: 128, y1: y, x2: 440, y2: y, stroke: '#cbd5e1', 'stroke-width': 1 }, ink);
+      }
+      el('line', { x1: 100, y1: f.dY, x2: 470, y2: f.dY, class: 'cx-line', 'stroke-width': 2.5 }, ink);
+      label(ink, [482, f.dY - 10], 'd', 'cx-label');
+    },
+    top: function (f, ink) {},
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.B, f.C, 'cx-line'], ['seg', f.C, f.A, 'cx-line'],
+         ['pt', f.A, 'A', [0, 1], null, 22], ['pt', f.B, 'B', [0.8, -0.6], null, 22], ['pt', f.C, 'C', [0, 1], null, 22],
+         ['mark', function (g) {
+           triFill(g, f.A, f.B, f.C);
+           says(g, 0, '១. គេមានត្រីកោណ ABC នៅខាងក្រោមបន្ទាត់ d (A, C នៅក្រោម ២ ការ៉ូ, B នៅក្រោម ១ ការ៉ូ)');
+         }]],
+        [['seg', f.A, f.Ap, aux], ['pt', f.Ap, "A'", [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 1, '២. គូសពី A កែងនឹង d ឡើងលើ ២ ការ៉ូ បានចំណុច A\' ឆ្លុះនឹង A ធៀបនឹង d');
+         }]],
+        [['seg', f.B, f.Bp, aux], ['seg', f.C, f.Cp, aux], ['pt', f.Bp, "B'", [0.8, 0.6], null, 22], ['pt', f.Cp, "C'", [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. សង់ B\' (ឡើងលើ ១ ការ៉ូ) និង C\' (ឡើងលើ ២ ការ៉ូ) ឆ្លុះនឹង B និង C ធៀប d');
+         }]],
+        [['seg', f.Ap, f.Bp, 'cx-line'], ['seg', f.Bp, f.Cp, 'cx-line'], ['seg', f.Cp, f.Ap, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.Ap, f.Bp, f.Cp], { fill: 'rgba(56, 161, 105, 0.14)', stroke: 'none' });
+           says(g, 3, '៤. ភ្ជាប់ A\'B\', B\'C\' និង C\'A\' គេបានត្រីកោណ A\'B\'C\' ឆ្លុះនឹង △ABC');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. ត្រីកោណទាំងពីរមានទំហំប៉ុនគ្នា (A\'B\'=AB, B\'C\'=BC, C\'A\'=CA) បត់តាម d ត្រួតស៊ីគ្នា');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 8: Axes of symmetry of equilateral triangle, rectangle, regular hexagon
+  CX['g7-l19-ex08'] = scripted({
+    steps: 5,
+    start: {},
+    limit: function () { return true; },
+    figure: function () {
+      var c1 = [125, 230], r1 = 70;
+      var triA = [c1[0], c1[1] - r1];
+      var triB = [c1[0] - r1 * Math.cos(Math.PI / 6), c1[1] + r1 * Math.sin(Math.PI / 6)];
+      var triC = [c1[0] + r1 * Math.cos(Math.PI / 6), c1[1] + r1 * Math.sin(Math.PI / 6)];
+
+      var c2 = [320, 230], rw = 150, rh = 100;
+      var rectA = [c2[0] - rw / 2, c2[1] - rh / 2];
+      var rectB = [c2[0] + rw / 2, c2[1] - rh / 2];
+      var rectC = [c2[0] + rw / 2, c2[1] + rh / 2];
+      var rectD = [c2[0] - rw / 2, c2[1] + rh / 2];
+
+      var c3 = [515, 230], r3 = 70;
+      var hexPts = [];
+      for (var k = 0; k < 6; k++) {
+        var th = k * Math.PI / 3;
+        hexPts.push([c3[0] + r3 * Math.cos(th), c3[1] + r3 * Math.sin(th)]);
+      }
+      return { c1: c1, triA: triA, triB: triB, triC: triC,
+               c2: c2, rw: rw, rh: rh, rectA: rectA, rectB: rectB, rectC: rectC, rectD: rectD,
+               c3: c3, r3: r3, hexPts: hexPts };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {},
+    script: function (f) {
+      var ax = 'cx-line cx-line-2';
+      return [
+        [['seg', f.triA, f.triB, 'cx-line'], ['seg', f.triB, f.triC, 'cx-line'], ['seg', f.triC, f.triA, 'cx-line'],
+         ['seg', f.rectA, f.rectB, 'cx-line'], ['seg', f.rectB, f.rectC, 'cx-line'], ['seg', f.rectC, f.rectD, 'cx-line'], ['seg', f.rectD, f.rectA, 'cx-line'],
+         ['seg', f.hexPts[0], f.hexPts[1], 'cx-line'], ['seg', f.hexPts[1], f.hexPts[2], 'cx-line'], ['seg', f.hexPts[2], f.hexPts[3], 'cx-line'],
+         ['seg', f.hexPts[3], f.hexPts[4], 'cx-line'], ['seg', f.hexPts[4], f.hexPts[5], 'cx-line'], ['seg', f.hexPts[5], f.hexPts[0], 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.triA, f.triB, f.triC);
+           poly(g, [f.rectA, f.rectB, f.rectC, f.rectD], { fill: 'rgba(56, 161, 105, 0.12)', stroke: 'none' });
+           poly(g, f.hexPts, { fill: 'rgba(45, 106, 168, 0.12)', stroke: 'none' });
+           label(g, add(f.c1, [0, 110]), 'ក. ត្រីកោណសម័ង្ស', 'cx-note');
+           label(g, add(f.c2, [0, 110]), 'ខ. ចតុកោណកែង', 'cx-note');
+           label(g, add(f.c3, [0, 110]), 'គ. ឆកោណនិយ័ត', 'cx-note');
+           says(g, 0, '១. គេមានរូបធរណីមាត្រទាំងបី៖ ត្រីកោណសម័ង្ស, ចតុកោណកែង និងឆកោណនិយ័ត');
+         }]],
+        [['seg', [f.c1[0], f.c1[1] - 95], [f.c1[0], f.c1[1] + 55], ax],
+         ['seg', add(f.c1, mul(unit(sub(f.triB, f.c1)), 95)), add(f.c1, mul(unit(sub(f.c1, f.triB)), 55)), ax],
+         ['seg', add(f.c1, mul(unit(sub(f.triC, f.c1)), 95)), add(f.c1, mul(unit(sub(f.c1, f.triC)), 55)), ax],
+         ['mark', function (g) {
+           label(g, add(f.c1, [0, 130]), 'អ័ក្សឆ្លុះ = ៣', 'cx-label');
+           says(g, 1, '២. ត្រីកោណសម័ង្សមានអ័ក្សឆ្លុះ ៣ (មេដ្យាទ័រនៃជ្រុងទាំង ៣ កាត់តាមកំពូលឈម)');
+         }]],
+        [['seg', [f.c2[0], f.c2[1] - 75], [f.c2[0], f.c2[1] + 75], ax],
+         ['seg', [f.c2[0] - 100, f.c2[1]], [f.c2[0] + 100, f.c2[1]], ax],
+         ['mark', function (g) {
+           label(g, add(f.c2, [0, 130]), 'អ័ក្សឆ្លុះ = ២', 'cx-label');
+           says(g, 2, '៣. ចតុកោណកែងមានអ័ក្សឆ្លុះ ២ (មេដ្យាទ័រនៃជ្រុងឈមទាំងពីរគូ បញ្ឈរ និងផ្តេក)');
+         }]],
+        [['seg', [f.c3[0] - 90, f.c3[1]], [f.c3[0] + 90, f.c3[1]], ax],
+         ['seg', add(f.c3, mul(unit(sub(f.hexPts[1], f.c3)), 90)), add(f.c3, mul(unit(sub(f.hexPts[4], f.c3)), 90)), ax],
+         ['seg', add(f.c3, mul(unit(sub(f.hexPts[2], f.c3)), 90)), add(f.c3, mul(unit(sub(f.hexPts[5], f.c3)), 90)), ax],
+         ['seg', [f.c3[0], f.c3[1] - 80], [f.c3[0], f.c3[1] + 80], ax],
+         ['seg', add(f.c3, [-69, -40]), add(f.c3, [69, 40]), ax],
+         ['seg', add(f.c3, [-69, 40]), add(f.c3, [69, -40]), ax],
+         ['mark', function (g) {
+           label(g, add(f.c3, [0, 130]), 'អ័ក្សឆ្លុះ = ៦', 'cx-label');
+           says(g, 3, '៤. ឆកោណនិយ័តមានអ័ក្សឆ្លុះ ៦ (៣ កាត់តាមកំពូលឈមគ្នា និង ៣ ជាមេដ្យាទ័រជ្រុង)');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. សន្និដ្ឋាន៖ ត្រីកោណសម័ង្សមាន ៣ អ័ក្ស, ចតុកោណកែងមាន ២ អ័ក្ស, ឆកោណនិយ័តមាន ៦ អ័ក្ស');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 10: Reflections of trapezoid ABCD about point O and line L
+  CX['g7-l19-ex10'] = scripted({
+    steps: 5,
+    start: {},
+    limit: function () { return true; },
+    figure: function () {
+      var O = [160, 230];
+      var A = [90, 170], B = [150, 140], C = [190, 185], D = [100, 220];
+      var Ap = [2 * O[0] - A[0], 2 * O[1] - A[1]];
+      var Bp = [2 * O[0] - B[0], 2 * O[1] - B[1]];
+      var Cp = [2 * O[0] - C[0], 2 * O[1] - C[1]];
+      var Dp = [2 * O[0] - D[0], 2 * O[1] - D[1]];
+
+      var Lx = 470;
+      var A2 = [435, 170], D2 = [385, 140], C2 = [350, 230], B2 = [425, 255];
+      var A2p = [2 * Lx - A2[0], A2[1]];
+      var D2p = [2 * Lx - D2[0], D2[1]];
+      var C2p = [2 * Lx - C2[0], C2[1]];
+      var B2p = [2 * Lx - B2[0], B2[1]];
+
+      return { O: O, A: A, B: B, C: C, D: D, Ap: Ap, Bp: Bp, Cp: Cp, Dp: Dp,
+               Lx: Lx, A2: A2, D2: D2, C2: C2, B2: B2, A2p: A2p, D2p: D2p, C2p: C2p, B2p: B2p };
+    },
+    base: function (f, ink) {
+      el('line', { x1: 315, y1: 50, x2: 315, y2: 410, stroke: '#e2e8f0', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }, ink);
+      el('line', { x1: f.Lx, y1: 80, x2: f.Lx, y2: 380, class: 'cx-line', 'stroke-width': 2.5 }, ink);
+      label(ink, [f.Lx + 14, 95], 'L', 'cx-label');
+    },
+    top: function (f, ink) {
+      point(ink, f.O, 'O', [0.8, 0.8], null, null, 18);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.B, f.C, 'cx-line'], ['seg', f.C, f.D, 'cx-line'], ['seg', f.D, f.A, 'cx-line'],
+         ['pt', f.A, 'A', [-1, -0.6], null, 20], ['pt', f.B, 'B', [0, -1], null, 20], ['pt', f.C, 'C', [1, 0], null, 20], ['pt', f.D, 'D', [-1, 0.6], null, 20],
+         ['seg', f.A2, f.D2, 'cx-line'], ['seg', f.D2, f.C2, 'cx-line'], ['seg', f.C2, f.B2, 'cx-line'], ['seg', f.B2, f.A2, 'cx-line'],
+         ['pt', f.A2, 'A', [1, -0.6], null, 20], ['pt', f.D2, 'D', [0, -1], null, 20], ['pt', f.C2, 'C', [-1, 0], null, 20], ['pt', f.B2, 'B', [-0.6, 1], null, 20],
+         ['mark', function (g) {
+           poly(g, [f.A, f.B, f.C, f.D], { fill: 'rgba(45, 106, 168, 0.14)', stroke: 'none' });
+           poly(g, [f.A2, f.D2, f.C2, f.B2], { fill: 'rgba(45, 106, 168, 0.14)', stroke: 'none' });
+           label(g, [160, 395], 'ក. ឆ្លុះធៀបនឹងចំណុច O', 'cx-label');
+           label(g, [470, 395], 'ខ. ឆ្លុះធៀបនឹងបន្ទាត់ L', 'cx-label');
+           says(g, 0, '១. គេមានចតុកោណព្នាយ ABCD៖ ករណី ក ធៀបផ្ចិត O និងករណី ខ ធៀបបន្ទាត់ L');
+         }]],
+        [['seg', f.A, f.Ap, aux], ['seg', f.B, f.Bp, aux], ['seg', f.C, f.Cp, aux], ['seg', f.D, f.Dp, aux],
+         ['pt', f.Ap, "A'", [1, 0.6], null, 20], ['pt', f.Bp, "B'", [0, 1], null, 20], ['pt', f.Cp, "C'", [-1, 0], null, 20], ['pt', f.Dp, "D'", [1, -0.6], null, 20],
+         ['mark', function (g) {
+           says(g, 1, '២. ករណី ក៖ គូសពី A, B, C, D កាត់ O បន្លាយឱ្យបាន OA\'=OA, OB\'=OB...');
+         }]],
+        [['seg', f.Ap, f.Bp, 'cx-line'], ['seg', f.Bp, f.Cp, 'cx-line'], ['seg', f.Cp, f.Dp, 'cx-line'], ['seg', f.Dp, f.Ap, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.Ap, f.Bp, f.Cp, f.Dp], { fill: 'rgba(56, 161, 105, 0.14)', stroke: 'none' });
+           says(g, 2, '៣. ភ្ជាប់ A\'B\'C\'D\' គេបានចតុកោណព្នាយឆ្លុះនឹង ABCD ធៀបនឹងចំណុច O');
+         }]],
+        [['seg', f.A2, f.A2p, aux], ['seg', f.D2, f.D2p, aux], ['seg', f.C2, f.C2p, aux], ['seg', f.B2, f.B2p, aux],
+         ['pt', f.A2p, "A'", [1, -0.6], null, 20], ['pt', f.D2p, "D'", [0, -1], null, 20], ['pt', f.C2p, "C'", [1, 0], null, 20], ['pt', f.B2p, "B'", [0.6, 1], null, 20],
+         ['mark', function (g) {
+           says(g, 3, '៤. ករណី ខ៖ គូសពី A, B, C, D កែងនឹង L បន្លាយស្មើចម្ងាយទៅម្ខាងទៀតនៃ L');
+         }]],
+        [['seg', f.A2p, f.D2p, 'cx-line'], ['seg', f.D2p, f.C2p, 'cx-line'], ['seg', f.C2p, f.B2p, 'cx-line'], ['seg', f.B2p, f.A2p, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.A2p, f.D2p, f.C2p, f.B2p], { fill: 'rgba(56, 161, 105, 0.14)', stroke: 'none' });
+           says(g, 4, '៥. ភ្ជាប់ A\'B\'C\'D\' គេបានចតុកោណព្នាយឆ្លុះនឹង ABCD ធៀបនឹងបន្ទាត់ L');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 11: Two equal circles and their two axes of symmetry
+  CX['g7-l19-ex11'] = scripted({
+    steps: 5,
+    start: { O1: [210, 230], O2: [430, 230] },
+    limit: function (s, key, p) {
+      if (key === 'O1') return p[0] >= 140 && p[0] <= s.O2[0] - 140;
+      if (key === 'O2') return p[0] >= s.O1[0] + 140 && p[0] <= 500;
+      return true;
+    },
+    figure: function (s) {
+      var O1 = [s.O1[0], 230], O2 = [s.O2[0], 230], R = 85;
+      var M = [mul(add(O1, O2), 0.5)[0], 230];
+      var d1_left = [50, 230], d1_right = [590, 230];
+      var d2_top = [M[0], 60], d2_bot = [M[0], 400];
+      return { O1: O1, O2: O2, R: R, M: M, d1_left: d1_left, d1_right: d1_right, d2_top: d2_top, d2_bot: d2_bot };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.O1, 'O₁', [-1, 1], null, 'O1', 22);
+      point(ink, f.O2, 'O₂', [1, 1], null, 'O2', 22);
+    },
+    script: function (f) {
+      var ax = 'cx-line cx-line-2';
+      return [
+        [['circ', f.O1, add(f.O1, [f.R, 0])], ['circ', f.O2, add(f.O2, [f.R, 0])],
+         ['mark', function (g) {
+           el('circle', { cx: f.O1[0], cy: f.O1[1], r: f.R, fill: 'rgba(45, 106, 168, 0.10)', stroke: 'none' }, g);
+           el('circle', { cx: f.O2[0], cy: f.O2[1], r: f.R, fill: 'rgba(56, 161, 105, 0.10)', stroke: 'none' }, g);
+           says(g, 0, '១. គូសរង្វង់ពីរមានកាំ R ប៉ុនគ្នា ដែលមានផ្ចិត O₁ និង O₂');
+         }]],
+        [['seg', f.O1, f.O2, 'cx-line'], ['pt', f.M, 'M', [0.8, 1], null, 20],
+         ['mark', function (g) {
+           tick(g, f.O1, f.M); tick(g, f.M, f.O2);
+           says(g, 1, '២. គូសអង្កត់តភ្ជាប់ផ្ចិត [O₁O₂] និងកំណត់ចំណុចកណ្ដាល M (MO₁ = MO₂)');
+         }]],
+        [['seg', f.d1_left, f.d1_right, ax],
+         ['mark', function (g) {
+           label(g, add(f.d1_right, [-25, -14]), 'd₁ (បន្ទាត់ផ្ចិត)', 'cx-label');
+           says(g, 2, '៣. គូសបន្ទាត់ d₁ កាត់តាម O₁ និង O₂៖ ជាអ័ក្សឆ្លុះទីមួយ (រង្វង់ឆ្លុះលើខ្លួនឯង)');
+         }]],
+        [['seg', f.d2_top, f.d2_bot, ax],
+         ['mark', function (g) {
+           rightMark(g, f.M, [1, 0], [0, -1]);
+           label(g, add(f.d2_top, [45, 14]), 'd₂ (មេដ្យាទ័រ)', 'cx-label');
+           says(g, 3, '៤. គូសបន្ទាត់ d₂ ⊥ [O₁O₂] ត្រង់ M (មេដ្យាទ័រ)៖ ជាអ័ក្សឆ្លុះទីពីរ (ឆ្លុះរង្វង់ O₁ ទៅ O₂)');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. សន្និដ្ឋាន៖ រង្វង់ពីរមានកាំប៉ុនគ្នា តែងតែមានអ័ក្សឆ្លុះចំនួន ២ (បន្ទាត់ផ្ចិត d₁ និងមេដ្យាទ័រ d₂)');
+         }]],
+      ];
+    },
+  });
+
   var lineMeet = function (p1, p2, p3, p4) {                // where the line p1p2 meets the line p3p4
     var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
     var a = p1[0] * p2[1] - p1[1] * p2[0], b = p3[0] * p4[1] - p3[1] * p4[0];
