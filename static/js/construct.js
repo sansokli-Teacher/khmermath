@@ -3116,6 +3116,481 @@
     },
   });
 
+  // ===== Grade 7, lesson 15 Exercises: Interactive step-by-step constructions =====
+  // Exercise 3: Isosceles triangle ISO (OS = 32mm, IS = IO = 52mm, altitude IH)
+  CX['g7-l15-ex03'] = scripted({
+    steps: 5,
+    start: { O: [248, 360], S: [392, 360] },
+    limit: function (s, key, p) {
+      if (key === 'O') return p[0] >= 60 && p[0] <= s.S[0] - 80;
+      if (key === 'S') return p[0] >= s.O[0] + 80 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var d = Math.max(80, Math.min(220, s.S[0] - s.O[0]));
+      var O = [s.O[0], 360];
+      var S = [O[0] + d, 360];
+      var H = [O[0] + d / 2, 360];
+      var r = d * 1.625;
+      var h = Math.sqrt(Math.max(0, r * r - (d / 2) * (d / 2)));
+      var I = [H[0], 360 - h];
+      var angO = Math.atan2(h, d / 2);
+      var arcO = { c: O, r: r, t1: -angO - 0.16, t2: -angO + 0.16 };
+      var arcS = { c: S, r: r, t1: -(Math.PI - angO) - 0.16, t2: -(Math.PI - angO) + 0.16 };
+      return { O: O, S: S, H: H, I: I, d: d, r: r, h: h, arcO: arcO, arcS: arcS };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.O, 'O', [-1, 1], null, 'O', 22);
+      point(ink, f.S, 'S', [1, 1], null, 'S', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.O, f.S, 'cx-line'], ['pt', f.O, 'O', [-1, 1], null, 22], ['pt', f.S, 'S', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(f.H, [0, 24]), '32 mm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់បាត OS = 32 mm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['arc', f.arcO],
+         ['mark', function (g) {
+           says(g, 1, '២. បើកដែកឈានកាំ 52 mm ផ្ចិត O គូសធ្នូរង្វង់ទីមួយ');
+         }]],
+        [['arc', f.arcS], ['pt', f.I, 'I', [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. រក្សាកាំ 52 mm ផ្ចិត S គូសធ្នូរង្វង់ទីពីរកាត់ត្រង់ I');
+         }]],
+        [['seg', f.I, f.O, 'cx-line'], ['seg', f.I, f.S, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.O, f.S, f.I);
+           tick(g, f.I, f.O); tick(g, f.I, f.S);
+           label(g, add(mul(add(f.I, f.O), 0.5), [-32, -6]), '52 mm', 'cx-note');
+           label(g, add(mul(add(f.I, f.S), 0.5), [32, -6]), '52 mm', 'cx-note');
+           says(g, 3, '៤. គូស IO និង IS បានត្រីកោណសមបាត ISO (IO = IS = 52 mm)');
+         }]],
+        [['seg', f.I, f.H, aux], ['pt', f.H, 'H', [0, 1], null, 20],
+         ['mark', function (g) {
+           rightMark(g, f.H, [1, 0], [0, -1]);
+           label(g, add(f.H, [48, -f.h / 2]), 'IH ≈ 49.5 mm', 'cx-note');
+           says(g, 4, '៥. កំណត់ចំណុចកណ្ដាល H (16 mm) គូសកម្ពស់ IH ⊥ OS (IH ≈ 49.5 mm)');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 4: Equilateral triangle OUI with median OM
+  CX['g7-l15-ex04'] = scripted({
+    steps: 5,
+    start: { I: [200, 360], U: [440, 360] },
+    limit: function (s, key, p) {
+      if (key === 'I') return p[0] >= 60 && p[0] <= s.U[0] - 120;
+      if (key === 'U') return p[0] >= s.I[0] + 120 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var a = Math.max(120, Math.min(320, s.U[0] - s.I[0]));
+      var I = [s.I[0], 360];
+      var U = [I[0] + a, 360];
+      var M = [I[0] + a / 2, 360];
+      var O = [M[0], 360 - a * Math.sqrt(3) / 2];
+      var arcI = { c: I, r: a, t1: -Math.PI / 3 - 0.2, t2: -Math.PI / 3 + 0.2 };
+      var arcU = { c: U, r: a, t1: -2 * Math.PI / 3 - 0.2, t2: -2 * Math.PI / 3 + 0.2 };
+      return { I: I, U: U, M: M, O: O, a: a, arcI: arcI, arcU: arcU };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.I, 'I', [-1, 1], null, 'I', 22);
+      point(ink, f.U, 'U', [1, 1], null, 'U', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.I, f.U, 'cx-line'], ['pt', f.I, 'I', [-1, 1], null, 22], ['pt', f.U, 'U', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(f.M, [0, 24]), '4 cm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់បាត IU = 4 cm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['arc', f.arcI],
+         ['mark', function (g) {
+           says(g, 1, '២. បើកដែកឈានកាំ 4 cm ផ្ចិត I គូសធ្នូរង្វង់ទីមួយ');
+         }]],
+        [['arc', f.arcU], ['pt', f.O, 'O', [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. រក្សាកាំ 4 cm ផ្ចិត U គូសធ្នូរង្វង់ទីពីរកាត់ត្រង់កំពូល O');
+         }]],
+        [['seg', f.O, f.I, 'cx-line'], ['seg', f.O, f.U, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.I, f.U, f.O);
+           tick(g, f.O, f.I); tick(g, f.O, f.U); tick(g, f.I, f.U);
+           label(g, add(mul(add(f.O, f.I), 0.5), [-28, -6]), '4 cm', 'cx-note');
+           label(g, add(mul(add(f.O, f.U), 0.5), [28, -6]), '4 cm', 'cx-note');
+           says(g, 3, '៤. គូស OI និង OU បានត្រីកោណសម័ង្ស OUI (OI = OU = IU = 4 cm)');
+         }]],
+        [['seg', f.O, f.M, aux], ['pt', f.M, 'M', [0, 1], null, 20],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.I, f.M), 0.5), [0, -14]), '2 cm', 'cx-note');
+           label(g, add(mul(add(f.M, f.U), 0.5), [0, -14]), '2 cm', 'cx-note');
+           says(g, 4, '៥. កំណត់ចំណុចកណ្ដាល M (MI = MU = 2 cm) គូសមេដ្យាន OM ចេញពី O');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 5: Right triangle REC right at E (EC = 8cm, ER = 6cm, RC = 10cm)
+  CX['g7-l15-ex05'] = scripted({
+    steps: 5,
+    start: { E: [180, 360], C: [460, 360] },
+    limit: function (s, key, p) {
+      if (key === 'E') return p[0] >= 60 && p[0] <= s.C[0] - 120;
+      if (key === 'C') return p[0] >= s.E[0] + 120 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var d = Math.max(120, Math.min(300, s.C[0] - s.E[0]));
+      var E = [s.E[0], 360];
+      var C = [E[0] + d, 360];
+      var h = d * 0.75;
+      var R = [E[0], 360 - h];
+      var Ex = [E[0], R[1] - 35];
+      return { E: E, C: C, R: R, Ex: Ex, d: d, h: h };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.E, 'E', [-1, 1], null, 'E', 22);
+      point(ink, f.C, 'C', [1, 1], null, 'C', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.E, f.C, 'cx-line'], ['pt', f.E, 'E', [-1, 1], null, 22], ['pt', f.C, 'C', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.E, f.C), 0.5), [0, 24]), 'EC = 8 cm', 'cx-note');
+           says(g, 0, '១. គូសជ្រុងមុំកែងដេក EC = 8 cm ដោយបន្ទាត់ក្រិត');
+         }]],
+        [['seg', f.E, f.Ex, aux], ['pt', f.Ex, 'x', [0, -1], null, 16],
+         ['mark', function (g) {
+           rightMark(g, f.E, [1, 0], [0, -1]);
+           says(g, 1, '២. សង់កន្លះបន្ទាត់កែង Ex ⊥ EC (∠E = 90°) ដោយកែវកែង');
+         }]],
+        [['pt', f.R, 'R', [-1, 0], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.E, f.R), 0.5), [-38, 0]), 'ER = 6 cm', 'cx-note');
+           says(g, 2, '៣. នៅលើកន្លះបន្ទាត់ Ex កំណត់ចំណុច R ដោយ ER = 6 cm');
+         }]],
+        [['seg', f.E, f.R, 'cx-line'], ['seg', f.R, f.C, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.E, f.C, f.R);
+           says(g, 3, '៤. គូសអ៊ីប៉ូតេនុស RC គេបានត្រីកោណកែង REC ត្រង់ E');
+         }]],
+        [['mark', function (g) {
+           label(g, add(mul(add(f.R, f.C), 0.5), [24, -18]), 'RC = 10 cm', 'cx-note');
+           says(g, 4, '៥. តាមពីតាករ៖ RC² = 6² + 8² = 100 ⟹ អ៊ីប៉ូតេនុស RC = 10 cm');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 6: Triangle LAC (CL = 11cm, AC = 8cm, LA = 6cm)
+  CX['g7-l15-ex06'] = scripted({
+    steps: 5,
+    start: { C: [140, 360], L: [500, 360] },
+    limit: function (s, key, p) {
+      if (key === 'C') return p[0] >= 60 && p[0] <= s.L[0] - 180;
+      if (key === 'L') return p[0] >= s.C[0] + 180 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var d = Math.max(180, Math.min(380, s.L[0] - s.C[0]));
+      var C = [s.C[0], 360];
+      var L = [C[0] + d, 360];
+      var rC = d * (8 / 11);
+      var rL = d * (6 / 11);
+      var cosC = 149 / 176;
+      var sinC = Math.sqrt(1 - cosC * cosC);
+      var A = [C[0] + rC * cosC, 360 - rC * sinC];
+      var angC = Math.atan2(rC * sinC, rC * cosC);
+      var arcC = { c: C, r: rC, t1: -angC - 0.16, t2: -angC + 0.16 };
+      var angL = Math.atan2(rC * sinC, d - rC * cosC);
+      var arcL = { c: L, r: rL, t1: -(Math.PI - angL) - 0.16, t2: -(Math.PI - angL) + 0.16 };
+      return { C: C, L: L, A: A, d: d, rC: rC, rL: rL, arcC: arcC, arcL: arcL };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.C, 'C', [-1, 1], null, 'C', 22);
+      point(ink, f.L, 'L', [1, 1], null, 'L', 22);
+    },
+    script: function (f) {
+      return [
+        [['seg', f.C, f.L, 'cx-line'], ['pt', f.C, 'C', [-1, 1], null, 22], ['pt', f.L, 'L', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.C, f.L), 0.5), [0, 24]), 'CL = 11 cm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់បាត CL = 11 cm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['arc', f.arcC],
+         ['mark', function (g) {
+           says(g, 1, '២. បើកដែកឈានកាំ 8 cm ផ្ចិត C គូសធ្នូរង្វង់ទីមួយ');
+         }]],
+        [['arc', f.arcL], ['pt', f.A, 'A', [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. បើកដែកឈានកាំ 6 cm ផ្ចិត L គូសធ្នូរង្វង់ទីពីរកាត់ត្រង់ A');
+         }]],
+        [['seg', f.C, f.A, 'cx-line'], ['seg', f.L, f.A, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.C, f.L, f.A);
+           label(g, add(mul(add(f.C, f.A), 0.5), [-30, -6]), 'AC = 8 cm', 'cx-note');
+           label(g, add(mul(add(f.L, f.A), 0.5), [30, -6]), 'LA = 6 cm', 'cx-note');
+           says(g, 3, '៤. គូសអង្កត់ AC និង LA គេបានត្រីកោណ LAC តាមតម្រូវការ');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. គណនាបរិមាត្រ៖ P = LA + AC + CL = 6 + 8 + 11 = 25 cm');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 10: Quadrilateral ABCD (BC = 7cm, ∠B = 70°, AB = 5cm, ∠C = 90°, CD = 10cm)
+  CX['g7-l15-ex10'] = scripted({
+    steps: 5,
+    start: { B: [160, 360], C: [342, 360] },
+    limit: function (s, key, p) {
+      if (key === 'B') return p[0] >= 60 && p[0] <= s.C[0] - 100;
+      if (key === 'C') return p[0] >= s.B[0] + 100 && p[0] <= 450;
+      return true;
+    },
+    figure: function (s) {
+      var d = Math.max(120, Math.min(220, s.C[0] - s.B[0]));
+      var B = [s.B[0], 360];
+      var C = [B[0] + d, 360];
+      var sc = d / 7;
+      var lenBA = 5 * sc;
+      var lenCD = 10 * sc;
+      var rad70 = 70 * Math.PI / 180;
+      var A = [B[0] + lenBA * Math.cos(rad70), 360 - lenBA * Math.sin(rad70)];
+      var Bx = [B[0] + (lenBA + 35) * Math.cos(rad70), 360 - (lenBA + 35) * Math.sin(rad70)];
+      var D = [C[0], 360 - lenCD];
+      var Cy = [C[0], D[1] - 30];
+      return { B: B, C: C, A: A, D: D, Bx: Bx, Cy: Cy, sc: sc };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.B, 'B', [-1, 1], null, 'B', 22);
+      point(ink, f.C, 'C', [1, 1], null, 'C', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.B, f.C, 'cx-line'], ['pt', f.B, 'B', [-1, 1], null, 22], ['pt', f.C, 'C', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.B, f.C), 0.5), [0, 24]), 'BC = 7 cm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់បាត BC = 7 cm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['seg', f.B, f.Bx, aux], ['pt', f.Bx, 'x', [-0.6, -0.8], null, 16], ['pt', f.A, 'A', [-1, 0], null, 22],
+         ['mark', function (g) {
+           wedgeBetween(g, f.C, f.B, f.Bx, 34, 'a');
+           label(g, add(f.B, [34, -20]), '70°', 'cx-note');
+           label(g, add(mul(add(f.B, f.A), 0.5), [-34, 0]), 'AB = 5 cm', 'cx-note');
+           says(g, 1, '២. ត្រង់ B សង់មុំ ∠CBx = 70° រួចកំណត់ A ដោយ BA = 5 cm');
+         }]],
+        [['seg', f.C, f.Cy, aux], ['pt', f.Cy, 'y', [0, -1], null, 16], ['pt', f.D, 'D', [1, 0], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.C, [-1, 0], [0, -1]);
+           label(g, add(mul(add(f.C, f.D), 0.5), [44, 0]), 'CD = 10 cm', 'cx-note');
+           says(g, 2, '៣. ត្រង់ C សង់កន្លះបន្ទាត់កែង Cy ⊥ BC រួចកំណត់ D ដោយ CD = 10 cm');
+         }]],
+        [['seg', f.A, f.D, 'cx-line'], ['seg', f.B, f.A, 'cx-line'], ['seg', f.C, f.D, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.B, f.C, f.D, f.A], { fill: 'rgba(45, 106, 168, 0.12)', stroke: 'none' });
+           says(g, 3, '៤. គូសភ្ជាប់អង្កត់ AD គេបានចតុកោណ ABCD តាមតម្រូវការ');
+         }]],
+        [['mark', function (g) {
+           says(g, 4, '៥. រូបរួចរាល់៖ ចតុកោណ ABCD ផ្ទៀងផ្ទាត់លក្ខខណ្ឌប្រធានគ្រប់ជ្រុង និងមុំ');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 11: Rectangle ABCD (AB = 5cm, AD = 7cm)
+  CX['g7-l15-ex11'] = scripted({
+    steps: 5,
+    start: { A: [240, 360], B: [400, 360] },
+    limit: function (s, key, p) {
+      if (key === 'A') return p[0] >= 60 && p[0] <= s.B[0] - 100;
+      if (key === 'B') return p[0] >= s.A[0] + 100 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var w = Math.max(100, Math.min(220, s.B[0] - s.A[0]));
+      var A = [s.A[0], 360];
+      var B = [A[0] + w, 360];
+      var h = w * 1.4;
+      var D = [A[0], 360 - h];
+      var C = [B[0], 360 - h];
+      var Ax = [A[0], D[1] - 30];
+      var By = [B[0], C[1] - 30];
+      return { A: A, B: B, C: C, D: D, Ax: Ax, By: By, w: w, h: h };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [-1, 1], null, 'A', 22);
+      point(ink, f.B, 'B', [1, 1], null, 'B', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['pt', f.A, 'A', [-1, 1], null, 22], ['pt', f.B, 'B', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.A, f.B), 0.5), [0, 24]), 'AB = 5 cm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់ទទឹង AB = 5 cm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['seg', f.A, f.Ax, aux], ['pt', f.D, 'D', [-1, 0], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.A, [1, 0], [0, -1]);
+           label(g, add(mul(add(f.A, f.D), 0.5), [-34, 0]), 'AD = 7 cm', 'cx-note');
+           says(g, 1, '២. ត្រង់ A សង់ Ax ⊥ AB រួចកំណត់ D ដោយ AD = 7 cm');
+         }]],
+        [['seg', f.B, f.By, aux], ['pt', f.C, 'C', [1, 0], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.B, [-1, 0], [0, -1]);
+           label(g, add(mul(add(f.B, f.C), 0.5), [34, 0]), 'BC = 7 cm', 'cx-note');
+           says(g, 2, '៣. ត្រង់ B សង់ By ⊥ AB រួចកំណត់ C ដោយ BC = 7 cm');
+         }]],
+        [['seg', f.D, f.C, 'cx-line'], ['seg', f.A, f.D, 'cx-line'], ['seg', f.B, f.C, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.A, f.B, f.C, f.D], { fill: 'rgba(45, 106, 168, 0.12)', stroke: 'none' });
+           label(g, add(mul(add(f.D, f.C), 0.5), [0, -18]), 'CD = 5 cm', 'cx-note');
+           says(g, 3, '៤. គូសភ្ជាប់ DC គេបានចតុកោណកែង ABCD (CD = 5 cm)');
+         }]],
+        [['mark', function (g) {
+           rightMark(g, f.D, [1, 0], [0, 1]);
+           rightMark(g, f.C, [-1, 0], [0, 1]);
+           tick(g, f.A, f.B); tick(g, f.D, f.C);
+           tick2(g, f.A, f.D); tick2(g, f.B, f.C);
+           says(g, 4, '៥. រូបរួចរាល់៖ ចតុកោណកែង ABCD មានមុំកែង ៤ និងជ្រុងឈមស្មើគ្នាពីរៗ');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 12: Rectangle ABCD (AB = 64mm, ∠BAC = 50°)
+  CX['g7-l15-ex12'] = scripted({
+    steps: 5,
+    start: { A: [220, 360], B: [400, 360] },
+    limit: function (s, key, p) {
+      if (key === 'A') return p[0] >= 60 && p[0] <= s.B[0] - 100;
+      if (key === 'B') return p[0] >= s.A[0] + 100 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var w = Math.max(100, Math.min(220, s.B[0] - s.A[0]));
+      var A = [s.A[0], 360];
+      var B = [A[0] + w, 360];
+      var h = w * Math.tan(50 * Math.PI / 180);
+      var C = [B[0], 360 - h];
+      var D = [A[0], 360 - h];
+      var By = [B[0], C[1] - 35];
+      var Ax = [C[0] + 25, C[1] - 25 * Math.tan(50 * Math.PI / 180)];
+      return { A: A, B: B, C: C, D: D, By: By, Ax: Ax, w: w, h: h };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [-1, 1], null, 'A', 22);
+      point(ink, f.B, 'B', [1, 1], null, 'B', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['pt', f.A, 'A', [-1, 1], null, 22], ['pt', f.B, 'B', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.A, f.B), 0.5), [0, 24]), 'AB = 64 mm', 'cx-note');
+           says(g, 0, '១. គូសអង្កត់បាត AB = 64 mm (6.4 cm) ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['seg', f.B, f.By, aux], ['pt', f.By, 'd', [0, -1], null, 16],
+         ['mark', function (g) {
+           rightMark(g, f.B, [-1, 0], [0, -1]);
+           says(g, 1, '២. ត្រង់ B សង់បន្ទាត់កែង d ⊥ AB (∠B = 90°)');
+         }]],
+        [['seg', f.A, f.C, aux], ['pt', f.C, 'C', [1, -0.6], null, 22],
+         ['mark', function (g) {
+           wedgeBetween(g, f.B, f.A, f.C, 40, 'a');
+           label(g, add(f.A, [52, -18]), '50°', 'cx-note');
+           says(g, 2, '៣. ត្រង់ A សង់មុំ ∠BAC = 50° កាត់បន្ទាត់កែង d ត្រង់ចំណុច C');
+         }]],
+        [['seg', f.A, f.D, aux], ['seg', f.C, f.D, aux], ['pt', f.D, 'D', [-1, -0.6], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.A, [1, 0], [0, -1]);
+           rightMark(g, f.C, [-1, 0], [0, 1]);
+           says(g, 3, '៤. តាម A គូសស្របនឹង BC និងតាម C គូសស្របនឹង AB កាត់គ្នាត្រង់ D');
+         }]],
+        [['seg', f.A, f.D, 'cx-line'], ['seg', f.D, f.C, 'cx-line'], ['seg', f.B, f.C, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.A, f.B, f.C, f.D], { fill: 'rgba(45, 106, 168, 0.12)', stroke: 'none' });
+           rightMark(g, f.D, [1, 0], [0, 1]);
+           says(g, 4, '៥. រូបរួចរាល់៖ គេបានចតុកោណកែង ABCD ដែលមាន AB = 64 mm និង ∠BAC = 50°');
+         }]],
+      ];
+    },
+  });
+
+  // Exercise 13: Square ABCD (side = 3.5cm)
+  CX['g7-l15-ex13'] = scripted({
+    steps: 5,
+    start: { A: [224, 350], B: [416, 350] },
+    limit: function (s, key, p) {
+      if (key === 'A') return p[0] >= 60 && p[0] <= s.B[0] - 100;
+      if (key === 'B') return p[0] >= s.A[0] + 100 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var a = Math.max(100, Math.min(220, s.B[0] - s.A[0]));
+      var A = [s.A[0], 350];
+      var B = [A[0] + a, 350];
+      var D = [A[0], 350 - a];
+      var C = [B[0], 350 - a];
+      var Ax = [A[0], D[1] - 30];
+      var arcA = { c: A, r: a, t1: -Math.PI / 2 - 0.2, t2: -Math.PI / 2 + 0.2 };
+      var arcD = { c: D, r: a, t1: -0.2, t2: 0.2 };
+      var arcB = { c: B, r: a, t1: -Math.PI / 2 - 0.2, t2: -Math.PI / 2 + 0.2 };
+      return { A: A, B: B, C: C, D: D, Ax: Ax, a: a, arcA: arcA, arcD: arcD, arcB: arcB };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.A, 'A', [-1, 1], null, 'A', 22);
+      point(ink, f.B, 'B', [1, 1], null, 'B', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      return [
+        [['seg', f.A, f.B, 'cx-line'], ['pt', f.A, 'A', [-1, 1], null, 22], ['pt', f.B, 'B', [1, 1], null, 22],
+         ['mark', function (g) {
+           label(g, add(mul(add(f.A, f.B), 0.5), [0, 24]), 'AB = 3.5 cm', 'cx-note');
+           says(g, 0, '១. គូសជ្រុងបាត AB = 3.5 cm ដោយប្រើបន្ទាត់ក្រិត');
+         }]],
+        [['seg', f.A, f.Ax, aux], ['arc', f.arcA], ['pt', f.D, 'D', [-1, 0], null, 22],
+         ['mark', function (g) {
+           rightMark(g, f.A, [1, 0], [0, -1]);
+           tick(g, f.A, f.B); tick(g, f.A, f.D);
+           says(g, 1, '២. សង់កន្លះបន្ទាត់កែង Ax ⊥ AB គូសធ្នូកាំ AB កាត់ត្រង់ D (AD = 3.5 cm)');
+         }]],
+        [['arc', f.arcD], ['arc', f.arcB], ['pt', f.C, 'C', [1, -0.6], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. បើកដែកឈានកាំ 3.5 cm យក B និង D ជាផ្ចិត គូសធ្នូកាត់គ្នាត្រង់ C');
+         }]],
+        [['seg', f.B, f.C, 'cx-line'], ['seg', f.D, f.C, 'cx-line'], ['seg', f.A, f.D, 'cx-line'],
+         ['mark', function (g) {
+           poly(g, [f.A, f.B, f.C, f.D], { fill: 'rgba(45, 106, 168, 0.12)', stroke: 'none' });
+           says(g, 3, '៤. គូសភ្ជាប់ BC និង DC គេបានការ៉េ ABCD');
+         }]],
+        [['mark', function (g) {
+           rightMark(g, f.B, [-1, 0], [0, -1]);
+           rightMark(g, f.C, [-1, 0], [0, 1]);
+           rightMark(g, f.D, [1, 0], [0, 1]);
+           tick(g, f.B, f.C); tick(g, f.D, f.C);
+           says(g, 4, '៥. រូបរួចរាល់៖ ការ៉េ ABCD មានជ្រុង ៤ ស្មើគ្នា (3.5 cm) និងមុំកែង ៤');
+         }]],
+      ];
+    },
+  });
+
   // ===== Grade 7, lesson 14 §4-5: the set square, perpendiculars, parallels and altitudes ===============
   var lineMeet = function (p1, p2, p3, p4) {                // where the line p1p2 meets the line p3p4
     var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
