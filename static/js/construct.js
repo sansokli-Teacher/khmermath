@@ -3005,6 +3005,117 @@
     },
   });
 
+  CX['g7-l15-right-isosceles'] = scripted({
+    steps: 5,
+    start: { A: [180, 360], C: [420, 360] },
+    limit: function (s, key, p) {
+      if (key === 'C') return p[0] >= s.A[0] + 140 && p[0] <= W - 60;
+      if (key === 'A') return p[0] >= 60 && p[0] <= s.C[0] - 140;
+      return true;
+    },
+    figure: function (s) {
+      var d = Math.max(140, Math.min(270, s.C[0] - s.A[0]));
+      var A = [s.A[0], 360];
+      var C = [A[0] + d, 360];
+      var B = [A[0], 360 - d];
+      var Ax = [C[0] + 45, 360];
+      var Ay = [A[0], B[1] - 45];
+      var arc = { c: A, r: d, t1: -Math.PI / 2 - 0.18, t2: 0.15 };
+      return { A: A, B: B, C: C, Ax: Ax, Ay: Ay, d: d, arc: arc };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.C, 'C', [0, 1], null, 'C', 22);
+    },
+    script: function (f) {
+      var aux = 'cx-line cx-line-2';
+      var uR = [1, 0], uU = [0, -1];
+      return [
+        [['seg', f.A, f.Ax, aux], ['pt', f.Ax, 'x', [1, 0], null, 16], ['pt', f.A, 'A', [-1, 1], null, 22], ['pt', f.C, 'C', [0, 1], null, 22],
+         ['mark', function (g) {
+           says(g, 0, '១. គូសកន្លះបន្ទាត់ដេក Ax និងកំណត់ចំណុច C');
+         }]],
+        [['seg', f.A, f.Ay, aux], ['pt', f.Ay, 'y', [0, -1], null, 16],
+         ['mark', function (g) {
+           rightMark(g, f.A, uR, uU);
+           says(g, 1, '២. សង់កន្លះបន្ទាត់កែង Ay ⊥ Ax (∠BAC = 90°)');
+         }]],
+        [['arc', f.arc], ['pt', f.B, 'B', [-1, 0], null, 22],
+         ['mark', function (g) {
+           tick(g, f.A, f.B); tick(g, f.A, f.C);
+           says(g, 2, '៣. គូសធ្នូកាំ AC ផ្ចិត A កាត់ Ay ត្រង់ B (AB = AC)');
+         }]],
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.A, f.C, 'cx-line'], ['seg', f.B, f.C, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.A, f.B, f.C);
+           says(g, 3, '៤. គូសអ៊ីប៉ូតេនុស BC បានត្រីកោណកែងសមបាត ABC');
+         }]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.B, f.C, f.A, 36, 'a');
+          wedgeBetween(g, f.C, f.A, f.B, 36, 'a');
+          label(g, add(f.B, [24, 38]), '45°', 'cx-note');
+          label(g, add(f.C, [-44, -14]), '45°', 'cx-note');
+          says(g, 4, '៥. មុំបាតស្មើគ្នា៖ ∠B = ∠C = (180° - 90°) ÷ 2 = 45°');
+        }]],
+      ];
+    },
+  });
+
+  CX['g7-l15-equilateral'] = scripted({
+    steps: 5,
+    start: { B: [170, 360], C: [470, 360] },
+    limit: function (s, key, p) {
+      if (key === 'B') return p[0] >= 60 && p[0] <= s.C[0] - 160;
+      if (key === 'C') return p[0] >= s.B[0] + 160 && p[0] <= W - 60;
+      return true;
+    },
+    figure: function (s) {
+      var a = Math.max(160, Math.min(360, s.C[0] - s.B[0]));
+      var B = [s.B[0], 360];
+      var C = [B[0] + a, 360];
+      var A = [B[0] + a / 2, 360 - a * Math.sqrt(3) / 2];
+      var arcB = { c: B, r: a, t1: -Math.PI / 3 - 0.22, t2: -Math.PI / 3 + 0.22 };
+      var arcC = { c: C, r: a, t1: -2 * Math.PI / 3 - 0.22, t2: -2 * Math.PI / 3 + 0.22 };
+      return { A: A, B: B, C: C, a: a, arcB: arcB, arcC: arcC };
+    },
+    base: function (f, ink) {},
+    top: function (f, ink) {
+      point(ink, f.B, 'B', [-1, 1], null, 'B', 22);
+      point(ink, f.C, 'C', [1, 1], null, 'C', 22);
+    },
+    script: function (f) {
+      return [
+        [['seg', f.B, f.C, 'cx-line'], ['pt', f.B, 'B', [-1, 1], null, 22], ['pt', f.C, 'C', [1, 1], null, 22],
+         ['mark', function (g) {
+           says(g, 0, '១. គូសអង្កត់បាត BC មានប្រវែង a');
+         }]],
+        [['arc', f.arcB],
+         ['mark', function (g) {
+           says(g, 1, '២. បើកដែកឈានកាំ a ផ្ចិត B គូសធ្នូទីមួយ');
+         }]],
+        [['arc', f.arcC], ['pt', f.A, 'A', [0, -1], null, 22],
+         ['mark', function (g) {
+           says(g, 2, '៣. រក្សាកាំ a ផ្ចិត C គូសធ្នូទីពីរកាត់ត្រង់ A');
+         }]],
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.A, f.C, 'cx-line'],
+         ['mark', function (g) {
+           triFill(g, f.A, f.B, f.C);
+           tick(g, f.A, f.B); tick(g, f.B, f.C); tick(g, f.C, f.A);
+           says(g, 3, '៤. គូស AB និង AC បាន AB = BC = CA = a');
+         }]],
+        [['mark', function (g) {
+          wedgeBetween(g, f.A, f.B, f.C, 36, 'a');
+          wedgeBetween(g, f.B, f.C, f.A, 36, 'a');
+          wedgeBetween(g, f.C, f.A, f.B, 36, 'a');
+          label(g, add(f.A, [0, 48]), '60°', 'cx-note');
+          label(g, add(f.B, [44, -18]), '60°', 'cx-note');
+          label(g, add(f.C, [-44, -18]), '60°', 'cx-note');
+          says(g, 4, '៥. ជ្រុងទាំងបីស្មើគ្នា នាំឱ្យ ∠A = ∠B = ∠C = 180° ÷ 3 = 60°');
+        }]],
+      ];
+    },
+  });
+
   // ===== Grade 7, lesson 14 §4-5: the set square, perpendiculars, parallels and altitudes ===============
   var lineMeet = function (p1, p2, p3, p4) {                // where the line p1p2 meets the line p3p4
     var d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
