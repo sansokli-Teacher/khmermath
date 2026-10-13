@@ -570,3 +570,33 @@ details.ans[open] > summary { margin-bottom: 8px; background: #faece8; border-co
 /* an app of construct/apps/ in place of a picture (its height is told by the app: static/js/lesson.js) */
 .app-inline-wrap { margin: 10px 0 18px; }
 .app-inline { display: block; width: 100%; max-width: 820px; height: 560px; margin: 0 auto; border: 0; background: transparent; }
+
+/* the printed page of the textbook, beside a heading */
+.ls-paper .pg { float: right; margin-left: 10px; padding: 1px 9px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface-2); color: var(--ink-3); font-size: 12.5px; font-weight: 600; line-height: 1.6; }
+
+.ls-paper img.illus { max-width: min(100%, 460px); height: auto; border-radius: 10px; }
+
+/* the rules to remember — «ជាទូទៅ», «វិធាន», «លក្ខណៈ», «ទ្រឹស្តីបទ» ...: a dark panel with gold title */
+.ls-paper .bx-rule {
+  --accent: #ffd277; margin: 28px 0; padding: 0; overflow: hidden; border: 0; border-radius: 20px; color: #fff;
+  background: linear-gradient(135deg, #16324a, #1f5a63); box-shadow: 0 14px 28px -14px rgba(22, 50, 74, .8);
+}
+.bx-rule > .bx-h { margin: 0; padding: 12px 24px 0; gap: 10px; align-items: center; color: #ffd277; font-size: 20px; flex-wrap: nowrap; }
+.bx-rule > .bx-h b { font-weight: 800; }
+.bx-rule > .bx-h::after { content: ""; flex: 1; height: 2px; background: linear-gradient(90deg, rgba(255, 210, 119, .45), transparent); }
+.bx-rule > .bx-b { padding: 6px 24px 14px; font-size: 17.5px; line-height: 1.95; color: #fff; }
+.bx-rule > .bx-b > :first-child { margin-top: 0; }
+.bx-rule a { color: #ffd277; }
+.bx-rule .md {
+  margin: 10px auto; padding: 8px 14px; max-width: 100%; text-align: center; color: #fff;
+  background: rgba(255, 255, 255, .1); border: 1.5px solid rgba(255, 210, 119, .6); border-radius: 12px;
+}
+.bx-rule .list { counter-reset: rl; list-style: none; padding-left: 0; }
+.bx-rule .list > li { position: relative; counter-increment: rl; margin: 8px 0; padding-left: 42px; }
+.bx-rule .list > li::before {
+  content: counter(rl); position: absolute; left: 4px; top: 4px; display: grid; place-items: center; width: 27px; height: 27px;
+  border-radius: 50%; background: #ffd277; color: #16324a; font-size: 14.5px; font-weight: 700; line-height: 1;
+}
+.bx-rule .list > li > p { margin: 0; }
+.bx-rule .fig, .bx-rule img.fig { background: #fff; border-radius: 10px; padding: 6px; }
+@media (max-width: 640px) { .bx-rule > .bx-b { padding: 6px 16px 12px; font-size: 16.5px; } .bx-rule > .bx-h { padding: 10px 16px 0; } }

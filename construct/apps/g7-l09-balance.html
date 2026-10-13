@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ជញ្ជីងសមីការ — ថ្នាក់ទី ៧ · មេរៀនទី ៩</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --amber: #b7791f; --amber-fill: #f6c453; --coral: #e0533d; --coral-fill: #f7a090;
+  --green: #1b8a5a; --beam: #475569; --pan: #94a3b8;
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08); --radius: 12px; --radius-sm: 8px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20,184,166,.15); --amber: #fbbf24; --amber-fill: #d99a1c; --coral: #fb7a64; --coral-fill: #b4402f;
+    --green: #22c55e; --beam: #94a3b8; --pan: #64748b;
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20,184,166,.15); --amber: #fbbf24; --amber-fill: #d99a1c; --coral: #fb7a64; --coral-fill: #b4402f;
+  --green: #22c55e; --beam: #94a3b8; --pan: #64748b;
+}
+body { font-family: var(--font-km); background: var(--bg); color: var(--ink); min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start; line-height: 1.6; }
+.app-container { width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; }
+.app-header { padding: 16px 22px 12px; border-bottom: 1px solid var(--surface-border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge { font-size: 13px; font-weight: 600; color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: 9999px; width: fit-content; }
+h1 { font-size: 21px; font-weight: 700; }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.theme-btn { border: 1px solid var(--surface-border); background: var(--surface-2); border-radius: 50%; width: 38px; height: 38px; cursor: pointer; font-size: 17px; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 22px 0; }
+.pick button { font-family: var(--font-km); font-size: 18px; font-weight: 600; padding: 6px 14px; border-radius: 9999px; border: 1px solid var(--surface-border); background: var(--surface-2); color: var(--ink-secondary); cursor: pointer; }
+.pick button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.board { padding: 6px 12px 0; }
+svg { width: 100%; height: auto; display: block; }
+.eq { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: .02em; padding: 2px 12px; min-height: 52px; font-family: "STIX Two Text", "Times New Roman", serif; }
+.eq i { font-style: italic; }
+.eq.dim { color: var(--ink-muted); font-size: 20px; font-family: var(--font-km); font-weight: 600; }
+.say { margin: 6px 22px 0; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--teal-soft); color: var(--ink); font-size: 17px; min-height: 52px; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 22px 8px; }
+.btn { font-family: var(--font-km); font-size: 16px; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--surface-border); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.dots { display: flex; gap: 6px; margin-left: auto; }
+.dots b { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-border); }
+.dots b.on { background: var(--teal); }
+.play { margin: 4px 22px 18px; padding: 10px 14px; border: 1px dashed var(--surface-border); border-radius: var(--radius-sm); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; color: var(--ink-secondary); }
+.play .btn { font-size: 14px; padding: 6px 12px; }
+.chip { transition: transform .55s ease, opacity .5s ease; }
+.chip.gone { opacity: 0; }
+.chip.new { opacity: 0; }
+text { font-family: var(--font-km); }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ៩ · សមីការ</div>
+      <h1>ជញ្ជីងសមីការ</h1>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">🌓</button>
+    </div>
+  </header>
+
+  <div class="pick" id="pick" role="group" aria-label="ជ្រើសរើសសមីការ"></div>
+
+  <div class="board">
+    <svg id="sc" viewBox="0 0 840 330" role="img" aria-label="ជញ្ជីងពីរចាន ដាក់ពែង x និងគ្រាប់ នៅលើចានទាំងពីរ">
+      <!-- the stand -->
+      <polygon points="420,90 380,270 460,270" fill="none" stroke="var(--beam)" stroke-width="5" stroke-linejoin="round"/>
+      <rect x="350" y="270" width="140" height="14" rx="5" fill="var(--beam)"/>
+      <g id="beamG">
+        <rect x="150" y="83" width="540" height="14" rx="7" fill="var(--beam)"/>
+        <circle cx="420" cy="90" r="9" fill="var(--surface)" stroke="var(--beam)" stroke-width="4"/>
+      </g>
+      <g id="strings"></g>
+      <g id="panL"></g><g id="panR"></g>
+    </svg>
+  </div>
+  <div class="eq" id="eq" aria-live="polite"></div>
+  <div class="say" id="say" aria-live="polite"></div>
+
+  <div class="ctrl">
+    <button type="button" class="btn" id="back">◀ ថយក្រោយ</button>
+    <button type="button" class="btn primary" id="next">ជំហានបន្ទាប់ ▶</button>
+    <button type="button" class="btn" id="again">ចាប់ផ្ដើមម្ដងទៀត</button>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div class="play">
+    <span>សាកល្បងខ្លួនឯង៖</span>
+    <button type="button" class="btn" id="bothUp">ថែម 1 ទាំងសងខាង</button>
+    <button type="button" class="btn" id="leftUp">ថែម 1 តែខាងឆ្វេង</button>
+    <button type="button" class="btn" id="clr">លុបអ្វីដែលបានសាកល្បង</button>
+  </div>
+</div>
+
+<script>
+/* Grade 7 · Lesson 9 · the balance: x + 3 = 5, x + 2 = 3, x − 2 = 1, 2x = −4.
+   A cup is the unknown x; a gold chip is +1 and a coral chip is −1. Whatever is done to one pan is done to the other,
+   so the beam stays level; a +1 and a −1 on the same pan cancel. */
+var EQS = [
+  { name: 'x + 3 = 5', root: 2,  L: { x: 1, p: 3, m: 0 }, R: { x: 0, p: 5, m: 0 }, ops: [['add', -3], ['cancel']], check: '2 + 3 = 5' },
+  { name: 'x + 2 = 3', root: 1,  L: { x: 1, p: 2, m: 0 }, R: { x: 0, p: 3, m: 0 }, ops: [['add', -2], ['cancel']], check: '1 + 2 = 3' },
+  { name: 'x − 2 = 1', root: 3,  L: { x: 1, p: 0, m: 2 }, R: { x: 0, p: 1, m: 0 }, ops: [['add', 2], ['cancel']],  check: '3 − 2 = 1' },
+  { name: '2x = −4',   root: -2, L: { x: 2, p: 0, m: 0 }, R: { x: 0, p: 0, m: 4 }, ops: [['divtxt', 2], ['div', 2]], check: '2(−2) = −4' }
+];
+var NS = 'http://www.w3.org/2000/svg';
+var cur = 0, step = 0, extras = [];
+var els = {};                       // chip id -> element
+var tilt = 0, tiltTo = 0, running = false;
+
+function $(id) { return document.getElementById(id); }
+function sgn(n) { return n < 0 ? '−' + (-n) : String(n); }
+function plain(t) { return t.replace(/<\/?i>/g, ''); }
+function expr(side) {               // "2x + 3", "x − 2", "−4"
+  var net = side.p - side.m, s = '';
+  if (side.x) s = (side.x > 1 ? side.x : '') + '<i>x</i>';
+  if (net) s += s ? (net > 0 ? ' + ' : ' − ') + Math.abs(net) : sgn(net);
+  return s || '0';
+}
+function count(list, t) { return list.filter(function (c) { return c.type === t; }).length; }
+
+/* The state after `n` scripted steps and then the user's own moves. Chips get ids in a fixed order, so the same
+   step always gives the same chips and the page can tell which ones appeared or vanished. */
+function build(n, ex) {
+  var eq = EQS[cur], id = 0;
+  var pan = { L: [], R: [] };
+  function add(side, type) { pan[side].push({ id: 'e' + cur + 'c' + (id++), type: type }); }
+  ['L', 'R'].forEach(function (s) {
+    var d = eq[s];
+    for (var i = 0; i < d.x; i++) add(s, 'x');
+    for (i = 0; i < d.p; i++) add(s, 'p');
+    for (i = 0; i < d.m; i++) add(s, 'm');
+  });
+  var txt = { L: expr(eq.L), R: expr(eq.R) };
+  var line = txt.L + ' = ' + txt.R;
+  var say = 'ជញ្ជីងមានលំនឹង៖ <b>' + plain(line) + '</b> ។ ពែង <b>x</b> មានទម្ងន់ប៉ុន្មាន? ត្រូវរក <b>x</b> ។';
+  var level = true;
+  function drop(side, type, k) {                      // remove the last k chips of a type
+    for (var i = pan[side].length - 1; i >= 0 && k > 0; i--) if (pan[side][i].type === type) { pan[side].splice(i, 1); k--; }
+  }
+  eq.ops.slice(0, n).forEach(function (op) {
+    if (op[0] === 'add') {
+      var c = op[1], t = c > 0 ? 'p' : 'm', k = Math.abs(c), w = c > 0 ? ' + ' + c : ' − ' + k;
+      for (var i = 0; i < k; i++) { add('L', t); add('R', t); }
+      txt.L += w; txt.R += w; line = txt.L + ' = ' + txt.R;
+      say = (c > 0 ? 'បូក ' : 'ដក ') + k + ' លើអង្គទាំងពីរ៖ ដាក់គ្រាប់ ' + (c > 0 ? '+1' : '−1') + ' ចំនួន ' + k + ' លើចានទាំងសងខាង ។ ជញ្ជីងនៅតែមានលំនឹង ។';
+    } else if (op[0] === 'cancel') {
+      ['L', 'R'].forEach(function (s) { var k = Math.min(count(pan[s], 'p'), count(pan[s], 'm')); drop(s, 'p', k); drop(s, 'm', k); });
+      txt.L = expr({ x: count(pan.L, 'x'), p: count(pan.L, 'p'), m: count(pan.L, 'm') });
+      txt.R = expr({ x: count(pan.R, 'x'), p: count(pan.R, 'p'), m: count(pan.R, 'm') });
+      line = txt.L + ' = ' + txt.R;
+      say = 'គ្រាប់ +1 និងគ្រាប់ −1 នៅចានតែមួយ សម្រួលគ្នាបាត់ ។ នៅសល់ <b>x = ' + sgn(eq.root) + '</b> ។';
+    } else if (op[0] === 'divtxt') {
+      line = txt.L + ' ÷ ' + op[1] + ' = ' + txt.R + ' ÷ ' + op[1];
+      say = 'ចែកអង្គទាំងពីរនឹង ' + op[1] + ' ៖ ចែកពែង និងគ្រាប់ជាក្រុមស្មើគ្នា លើចានទាំងពីរ ។';
+    } else if (op[0] === 'div') {
+      var k2 = op[1];
+      ['L', 'R'].forEach(function (s) {
+        ['x', 'p', 'm'].forEach(function (t) { var have = count(pan[s], t); drop(s, t, have - have / k2); });
+      });
+      txt.L = expr({ x: count(pan.L, 'x'), p: count(pan.L, 'p'), m: count(pan.L, 'm') });
+      txt.R = expr({ x: count(pan.R, 'x'), p: count(pan.R, 'p'), m: count(pan.R, 'm') });
+      line = txt.L + ' = ' + txt.R;
+      say = 'នៅសល់ពែងមួយ និង ' + Math.abs(eq.root) + ' ' + (eq.root < 0 ? 'គ្រាប់ −1' : 'គ្រាប់ +1') + ' ៖ <b>x = ' + sgn(eq.root) + '</b> ។';
+    } else if (op[0] === 'check') {
+      line = 'ផ្ទៀងផ្ទាត់៖ ' + eq.check + ' ✓';
+      say = 'ជំនួស <b>x = ' + sgn(eq.root) + '</b> ក្នុងសមីការដើម អង្គទាំងពីរស្មើគ្នា ។ ដូច្នេះ <b>x = ' + sgn(eq.root) + '</b> ជាឫស (ចម្លើយ) នៃសមីការ ។';
+    }
+  });
+  var dim = false;
+  ex.forEach(function (e) {
+    add('L', 'p'); if (e === 'both') add('R', 'p');
+    if (e === 'both') {
+      txt.L += ' + 1'; txt.R += ' + 1'; line = txt.L + ' = ' + txt.R;
+      say = 'ថែម 1 លើអង្គទាំងពីរ ជញ្ជីងនៅតែមានលំនឹង ។ ' + 'ថែមដូចគ្នាទាំងសងខាង សមភាពមិនប្រែ ។';
+    } else {
+      txt.L += ' + 1'; line = txt.L + ' ≠ ' + txt.R; dim = true;
+      say = 'ថែម 1 តែខាងឆ្វេង ៖ អង្គទាំងពីរលែងស្មើគ្នា ជញ្ជីងលំអៀង ។ ត្រូវធ្វើដូចគ្នាទាំងសងខាង ។';
+    }
+  });
+  function weight(list) { return list.reduce(function (w, c) { return w + (c.type === 'x' ? eq.root : c.type === 'p' ? 1 : -1); }, 0); }
+  return { pan: pan, line: line, say: say, dim: dim, diff: weight(pan.R) - weight(pan.L) };
+}
+
+/* ---- drawing ---- */
+var CX = 420, CY = 90, HALF = 270, DROP = 130;
+function node(tag, attrs, parent) {
+  var e = document.createElementNS(NS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function makeChip(type) {
+  var g = node('g', { 'class': 'chip' });
+  if (type === 'x') {
+    node('rect', { x: -22, y: -26, width: 44, height: 52, rx: 8, fill: 'var(--teal)' }, g);
+    node('ellipse', { cx: 0, cy: -26, rx: 22, ry: 7, fill: 'var(--teal)', stroke: '#ffffff55', 'stroke-width': 1.5 }, g);
+    var t = node('text', { x: 0, y: 9, 'text-anchor': 'middle', 'font-size': 28, 'font-style': 'italic', 'font-weight': 700, fill: '#fff', 'font-family': 'Times New Roman, serif' }, g);
+    t.textContent = 'x';
+  } else {
+    var gold = type === 'p';
+    node('circle', { r: 18, fill: gold ? 'var(--amber-fill)' : 'var(--coral-fill)', stroke: gold ? 'var(--amber)' : 'var(--coral)', 'stroke-width': 3 }, g);
+    var u = node('text', { x: 0, y: 8, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 700, fill: gold ? '#5b3a00' : '#fff' }, g);
+    u.textContent = gold ? '+' : '−';
+  }
+  return g;
+}
+function layout(list) {             // chips placed in rows on the tray, the bottom row first; (0,0) is the tray's top
+  var order = { x: 0, p: 1, m: 2 }, items = list.slice().sort(function (a, b) { return order[a.type] - order[b.type]; });
+  var rows = [], row = [], w = 0, MAXW = 180;
+  items.forEach(function (c) {
+    var cw = c.type === 'x' ? 54 : 42;
+    if (w + cw > MAXW && row.length) { rows.push(row); row = []; w = 0; }
+    row.push({ c: c, cw: cw }); w += cw;
+  });
+  if (row.length) rows.push(row);
+  var out = {}, y = 0;
+  rows.forEach(function (r) {
+    var h = r.some(function (q) { return q.c.type === 'x'; }) ? 56 : 42, total = r.reduce(function (a, q) { return a + q.cw; }, 0), x = -total / 2;
+    r.forEach(function (q) { out[q.c.id] = { x: x + q.cw / 2, y: y - (q.c.type === 'x' ? 26 : h / 2) - 2 }; x += q.cw; });
+    y -= h;
+  });
+  return out;
+}
+function show(state) {
+  var seen = {};
+  ['L', 'R'].forEach(function (s) {
+    var parent = $(s === 'L' ? 'panL' : 'panR'), pos = layout(state.pan[s]);
+    state.pan[s].forEach(function (c) {
+      seen[c.id] = true;
+      var e = els[c.id];
+      var p = pos[c.id], tr = 'translate(' + p.x + 'px,' + p.y + 'px)';
+      if (!e) {
+        e = els[c.id] = makeChip(c.type);
+        e.style.transform = tr; e.classList.add('new'); parent.appendChild(e);
+        void e.getBoundingClientRect(); e.classList.remove('new');
+      } else { e.classList.remove('gone'); e.style.transform = tr; }
+    });
+  });
+  Object.keys(els).forEach(function (k) {
+    if (!seen[k]) { var e = els[k]; e.classList.add('gone'); delete els[k]; setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 650); }
+  });
+  var eqEl = $('eq'); eqEl.innerHTML = state.line; eqEl.className = 'eq' + (state.dim ? ' dim' : '');
+  $('say').innerHTML = state.say;
+  tiltTo = Math.max(-14, Math.min(14, state.diff * 4));
+  go();
+}
+function frame() {
+  tilt += (tiltTo - tilt) * 0.14;
+  if (Math.abs(tiltTo - tilt) < 0.02) tilt = tiltTo;
+  var a = tilt * Math.PI / 180, dx = HALF * Math.cos(a), dy = HALF * Math.sin(a);
+  $('beamG').setAttribute('transform', 'rotate(' + tilt + ' ' + CX + ' ' + CY + ')');
+  var lx = CX - dx, ly = CY - dy, rx = CX + dx, ry = CY + dy;
+  $('panL').setAttribute('transform', 'translate(' + lx + ',' + (ly + DROP) + ')');
+  $('panR').setAttribute('transform', 'translate(' + rx + ',' + (ry + DROP) + ')');
+  var st = $('strings'); st.innerHTML = '';
+  [[lx, ly], [rx, ry]].forEach(function (q) {
+    [-90, 90].forEach(function (o) { node('line', { x1: q[0], y1: q[1], x2: q[0] + o, y2: q[1] + DROP, stroke: 'var(--pan)', 'stroke-width': 2.5 }, st); });
+    node('path', { d: 'M' + (q[0] - 100) + ',' + (q[1] + DROP) + ' h200 q0,22 -28,22 h-144 q-28,0 -28,-22 z', fill: 'var(--pan)' }, st);
+  });
+  if (tilt !== tiltTo) requestAnimationFrame(frame); else running = false;
+}
+function go() { if (!running) { running = true; requestAnimationFrame(frame); } }
+
+/* ---- the page ---- */
+function render() {
+  var eq = EQS[cur];
+  if (eq.ops[eq.ops.length - 1][0] !== 'check') eq.ops.push(['check']);
+  show(build(step, extras));
+  $('back').disabled = step === 0;
+  $('next').disabled = step >= eq.ops.length;
+  var d = $('dots'); d.innerHTML = '';
+  for (var i = 0; i <= eq.ops.length; i++) { var b = document.createElement('b'); if (i <= step) b.className = 'on'; d.appendChild(b); }
+  document.querySelectorAll('#pick button').forEach(function (b, i) { b.setAttribute('aria-pressed', String(i === cur)); });
+}
+function pick(i) { cur = i; step = 0; extras = []; render(); }
+EQS.forEach(function (e, i) {
+  var b = document.createElement('button'); b.type = 'button'; b.textContent = e.name;
+  b.addEventListener('click', function () { pick(i); });
+  $('pick').appendChild(b);
+});
+$('next').addEventListener('click', function () { if (step < EQS[cur].ops.length) { step++; extras = []; render(); } });
+$('back').addEventListener('click', function () { if (step > 0) { step--; extras = []; render(); } });
+$('again').addEventListener('click', function () { step = 0; extras = []; render(); });
+$('bothUp').addEventListener('click', function () { if (extras.length < 3) extras.push('both'); render(); });
+$('leftUp').addEventListener('click', function () { if (extras.length < 3) extras.push('left'); render(); });
+$('clr').addEventListener('click', function () { extras = []; render(); });
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var target = current === 'light' ? 'dark' : (current === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark'));
+  document.documentElement.setAttribute('data-theme', target);
+}
+$('panL').setAttribute('transform', 'translate(0,0)');
+pick(0);
+</script>
+<script src="../../static/js/mathfix.js?v=3bcc10b9a2"></script>
+<script src="../../static/js/km-sound.js?v=e44158d8d3"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>
