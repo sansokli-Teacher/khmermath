@@ -275,6 +275,52 @@ const el = (p, t, a, txt) => { const e = document.createElementNS(NS, t); for (c
 const gcd = (a, b) => b ? gcd(b, a % b) : a;
 const COLORS = ['#e5484d', '#f59e0b', '#2e9e5b', '#3b82f6', '#8b5cf6', '#0ea5a4', '#d9488a', '#84a31a', '#ea6c2b', '#4f6bd6', '#16a085', '#a855f7'];
 
+
+/* ---------- sound (made with the Web Audio API; no files) ---------- */
+const SND = (function () {
+  let ctx = null, on = true, master = null;
+  try { on = localStorage.getItem('km-sound') !== '0'; } catch (e) { /* no storage */ }
+  function ac() {
+    if (!on) return null;
+    try {
+      if (!ctx) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ctx = new A(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+  function tone(f, d, v, type, f2) {
+    const c = ac(); if (!c) return; const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, .004, v, d); o.connect(g); g.connect(master); o.start(t); o.stop(t + d + .05);
+  }
+  function noise(d, v, f, q, delay) {
+    const c = ac(); if (!c) return; const t = c.currentTime + (delay || 0), n = Math.max(1, Math.floor(c.sampleRate * d)), b = c.createBuffer(1, n, c.sampleRate), x = b.getChannelData(0);
+    for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = c.createBufferSource(); s.buffer = b; const fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q || 1.2;
+    const g = c.createGain(); g.gain.value = v; s.connect(fl); fl.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    get on() { return on; },
+    toggle() { on = !on; try { localStorage.setItem('km-sound', on ? '1' : '0'); } catch (e) { /* no storage */ } if (on) { SND.tick(1); } return on; },
+    unlock() { ac(); },
+    tick(k) { tone(900 + Math.random() * 160, .03, .09 * (k == null ? 1 : k), 'triangle'); noise(.02, .05 * (k == null ? 1 : k), 3000, 2); },
+    clack(k) { k = k == null ? 1 : k; noise(.07, .5 * k, 1800 + Math.random() * 900, 1.5); tone(180 + Math.random() * 60, .09, .25 * k, 'sine', 90); },
+    rattle(n) { for (let i = 0; i < n; i++) noise(.05, .22, 1500 + Math.random() * 1500, 1.4, i * .045 + Math.random() * .02); },
+    ding() { tone(880, .9, .2, 'sine'); tone(1320, .6, .08, 'sine'); },
+    good() { tone(660, .16, .18, 'triangle'); setTimeout(() => tone(880, .3, .2, 'triangle'), 130); },
+    miss() { tone(300, .22, .14, 'triangle', 220); }
+  };
+})();
+function soundButton(host) {
+  const b = document.createElement('button'); b.type = 'button'; b.id = 'snd';
+  b.style.cssText = 'position:absolute;top:8px;right:8px;z-index:3;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25);background:rgba(255,255,255,.88);font-size:19px;cursor:pointer;line-height:1';
+  const paint = () => { b.textContent = SND.on ? '🔊' : '🔇'; b.setAttribute('aria-label', SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'); b.title = SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'; };
+  paint();
+  b.addEventListener('click', e => { e.stopPropagation(); SND.toggle(); paint(); });
+  host.style.position = 'relative'; host.appendChild(b);
+}
+
 let mode = 'num', n = 6, labels = [], event = new Set(), evName = '';
 let rot = 0, spinning = false, raf = 0;
 let counts = [], trials = 0, evCount = 0, hist = [];
@@ -441,23 +487,27 @@ function describe(i) {
 
 function spinOnce() {
   if (spinning) return;
-  spinning = true; setBusy(true); const hubc = $('hub'); if (hubc) { hubc.firstChild.setAttribute('fill', '#c9c3b2'); const pr = hubc.querySelector('.sp-pulse'); if (pr) pr.remove(); }
+  SND.unlock(); spinning = true; setBusy(true); const hubc = $('hub'); if (hubc) { hubc.firstChild.setAttribute('fill', '#c9c3b2'); const pr = hubc.querySelector('.sp-pulse'); if (pr) pr.remove(); }
   $('res').textContent = 'កំពុងបង្វិល…';
   const target = Math.floor(Math.random() * n), u = .12 + Math.random() * .76, w = sectorW();
   const a = (target + u) * w;
   const d = ((((-a) - rot) % 360) + 360) % 360, total = 360 * (3 + Math.floor(Math.random() * 3)) + d;
   const r0 = rot, t0 = performance.now(), dur = 3200;
+  let lastIdx = indexAt(rot), lastSpeed = 0, lastR = rot;
   say('វិញ្ញាសា', 'កំពុងបង្វិលថាស… ចុងព្រួញនឹងឈប់ត្រង់លទ្ធផលមួយដោយចៃដន្យ។');
   (function f(now) {
     const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3.2);
     setRot(r0 + total * e);
+    const ix = indexAt(rot); if (ix !== lastIdx) { const sp = Math.abs(rot - lastR); SND.tick(Math.min(1, .35 + (1 - t) * .8)); lastIdx = ix; } lastR = rot;
     if (t < 1) { raf = requestAnimationFrame(f); return; }
     spinning = false; setBusy(false); drawWheel();
     const i = indexAt(rot); record(i); drawStats(); describe(i);
+    SND.ding(); if (event.size) setTimeout(() => event.has(i) ? SND.good() : SND.miss(), 420);
   })(t0);
 }
 function spinMany(m) {
   if (spinning) return;
+  SND.unlock(); SND.rattle(Math.min(10, 3 + Math.floor(Math.log10(m) * 2)));
   let last = 0;
   for (let k = 0; k < m; k++) { last = Math.floor(Math.random() * n); record(last); }
   setRot(rot + (((-(last + .5) * sectorW()) - rot) % 360 + 360) % 360);
@@ -487,6 +537,7 @@ function toggleTheme() {
 
 const Q = new URLSearchParams(location.search);
 if (Q.get('compact')) document.documentElement.classList.add('compact');
+soundButton(document.querySelector('.sp-board'));
 setMode(Q.get('mode') === 'abc' ? 'abc' : Q.get('mode') === 'own' ? 'own' : 'num');
 </script>
 <script src="../../static/js/mathfix.js?v=3bcc10b9a2"></script>
