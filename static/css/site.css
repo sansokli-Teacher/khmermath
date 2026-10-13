@@ -839,3 +839,6 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 @media (max-width: 640px) {
   .shorts-row { grid-template-columns: 1fr 1fr; gap: 12px; }
 }
+
+/* the closed dropdown menus near the right edge stick out of a ~1000 px window: no sideways scroll for them */
+html, body { overflow-x: clip; }

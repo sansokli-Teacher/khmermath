@@ -188,6 +188,7 @@ html.compact .app-header, html.compact .sp-tabs, html.compact .app-footer { disp
 html.compact .app-container { border:none; box-shadow:none; }
 html.compact .sp-wrap { padding:8px 4px; grid-template-columns:minmax(220px,330px) 1fr; }
 html.compact .instruction-box { margin-top:0; }
+html.compact #expcard.empty .sp-bars, html.compact #expcard.empty .sp-chart { display:none; }
 @media (max-width:760px) { .sp-wrap { grid-template-columns:1fr; } }
 @media (max-width:560px) { html.compact .sp-wrap { grid-template-columns:1fr; } }
 
@@ -257,7 +258,7 @@ html.compact .instruction-box { margin-top:0; }
         <h3>ប្រូបាបតាមទ្រឹស្តី</h3>
         <p class="sp-line tex" id="prob-line"></p>
       </div>
-      <div class="sp-card">
+      <div class="sp-card" id="expcard">
         <h3>លទ្ធផលនៃការពិសោធ</h3>
         <p class="sp-line" id="trial-line"></p>
         <div class="sp-bars" id="bars"></div>
@@ -409,6 +410,7 @@ function drawInfo() {
   $('prob-line').innerHTML = s;
 }
 function drawStats() {
+  $('expcard').classList.toggle('empty', !trials);
   const n = outcomes.length, k = outcomes.filter(pred).length, P = k / n, fr = trials ? evCount / trials : 0;
   const pc = x => String(Math.round(x * 10000) / 100).replace('.', ',');
   $('trial-line').innerHTML = trials ? 'បោះបាន <b>' + kh(trials) + '</b> ដង · ព្រឹត្តិការណ៍កើតឡើង <b>' + kh(evCount) + '</b> ដង · ប្រេកង់ធៀប <span class="tex">' + evCount + '/' + trials + ' ≈ ' + pc(fr) + '%</span>' + (k ? ' · ប្រូបាប <span class="tex">≈ ' + pc(P) + '%</span>' : '') : 'មិនទាន់បានបោះទេ ៖ ចុចលើតុ ឬ «បោះ ១ ដង» ហើយសាកល្បងបោះច្រើនដង។';
