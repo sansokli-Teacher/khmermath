@@ -93,7 +93,7 @@
     return out;
   }
 
-  function convert(text, svg) {
+  function convert(text, svg, force) {
     var pieces = [], any = false, m;
     SPLIT.lastIndex = 0;
     var last = 0;
@@ -111,7 +111,7 @@
       var tail = '';
       var k = /[.,;:]+$/.exec(core);
       if (k) { tail = k[0]; core = core.slice(0, core.length - tail.length); }
-      if (!core || !(TRIG.test(core) || (svg && /[0-9០-៩]/.test(core)))) { pieces.push(['', run]); continue; }
+      if (!core || !(TRIG.test(core) || ((svg || force) && /[0-9០-៩]/.test(core)))) { pieces.push(['', run]); continue; }
       any = true;
       if (lead) pieces.push(['', lead]);
       mathPieces(core).forEach(function (p) { pieces.push(p); });
@@ -133,7 +133,7 @@
     var p = n.parentNode;
     if (!p || SKIP.test(p.nodeName) || !n.nodeValue || !n.nodeValue.trim() || inMf(n)) return;
     var svg = p.namespaceURI === SVGNS && p.nodeName !== 'foreignObject';
-    var r = convert(n.nodeValue, svg);
+    var r = convert(n.nodeValue, svg, !svg && !!(p.closest && p.closest('.tex')));
     if (r) p.replaceChild(r, n);
   }
   function walk(node) {

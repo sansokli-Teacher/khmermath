@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បង្វិលថាស និងប្រូបាប — ថ្នាក់ទី ៧ · មេរៀនទី ២០</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Slider Bar */
+.slider-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  padding: 14px 24px; background: var(--surface-2); border-bottom: 1px solid var(--surface-border);
+  gap: 16px;
+}
+.slider-ctrl { display: flex; align-items: center; gap: 12px; }
+.slider-ctrl label { font-size: 15px; font-weight: 600; color: var(--ink); }
+.slider-ctrl input[type="range"] { width: 180px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 50px; text-align: center; padding: 3px 10px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 64px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Circle & Points */
+.locus-circle { fill: none; stroke: var(--blue); stroke-width: 3.2; stroke-linecap: round; }
+.locus-point { fill: var(--teal); stroke: #ffffff; stroke-width: 1.5; transition: all 0.15s ease; }
+.locus-point.active { fill: var(--orange); r: 6.5; }
+.radius-spoke { stroke: rgba(15, 118, 110, 0.25); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.active-radius { stroke: var(--orange); stroke-width: 2.2; }
+
+/* Compass tool */
+.tool-compass { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); pointer-events: none; }
+.c-leg { stroke: #64748b; stroke-width: 3.5; stroke-linecap: round; }
+.c-needle { fill: #334155; }
+.c-pencil { fill: #ea580c; stroke: #9a3412; stroke-width: 1; }
+.c-hinge { fill: #f59e0b; stroke: #b45309; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
+
+/* Small ruler snippet */
+.mini-ruler { fill: rgba(254, 240, 138, 0.9); stroke: #ca8a04; stroke-width: 1.2; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-toggle-circle { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
+.btn-toggle-circle.active { background: var(--blue); color: #fff; }
+.btn-play.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; gap: 12px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+
+/* spinner */
+.sp-tabs { display:flex; gap:6px; padding:10px 20px 0; flex-wrap:wrap; border-bottom:1px solid var(--surface-border); }
+.sp-tab { font-family:var(--font-km); font-size:15px; font-weight:600; padding:9px 16px; min-height:42px; border:1px solid transparent; border-bottom:none; border-radius:10px 10px 0 0; background:transparent; color:var(--ink-secondary); cursor:pointer; }
+.sp-tab[aria-selected="true"] { background:var(--surface-2); color:var(--teal); border-color:var(--surface-border); }
+.sp-wrap { padding:16px 20px; display:grid; grid-template-columns:minmax(260px,380px) 1fr; gap:18px; align-items:start; }
+.sp-board { max-width:400px; margin:0 auto; background:var(--paper-bg); border:1px solid var(--surface-border); border-radius:var(--radius); padding:8px; }
+.sp-svg { width:100%; height:auto; display:block; touch-action:manipulation; }
+.sp-sector { cursor:pointer; transition:filter .15s; }
+.sp-sector:hover { filter:brightness(1.07); }
+.sp-pulse { transform-box: fill-box; transform-origin: center; animation: spPulse 1.6s ease-out infinite; }
+@keyframes spPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.45); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sp-pulse { animation: none; } }
+.sp-res { margin:10px 0 0; min-height:2.6em; text-align:center; font-size:18px; font-weight:700; color:var(--ink); line-height:1.7; }
+.sp-lab { font-family:var(--font-math); font-style:italic; font-weight:700; font-size:26px; fill:#fff; text-anchor:middle; dominant-baseline:central; pointer-events:none; paint-order:stroke; stroke:rgba(0,0,0,.25); stroke-width:3px; }
+.sp-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; justify-content:center; }
+.sp-chip { min-width:42px; min-height:42px; padding:4px 10px; border-radius:10px; border:1.5px solid var(--surface-border); background:var(--surface); color:var(--ink); font-family:var(--font-math); font-style:italic; font-weight:700; font-size:18px; cursor:pointer; }
+.sp-chip[aria-pressed="true"] { background:var(--orange-soft); border-color:var(--orange); color:var(--orange); box-shadow:inset 0 0 0 1px var(--orange); }
+.sp-side { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.sp-card { background:var(--surface-2); border:1px solid var(--surface-border); border-radius:var(--radius); padding:12px 16px; }
+.sp-card h3 { margin:0 0 6px; font-size:15px; color:var(--ink-secondary); font-weight:700; }
+.sp-presets { display:flex; flex-wrap:wrap; gap:6px; }
+.sp-presets .btn { min-height:38px; padding:6px 12px; font-size:14px; }
+.sp-line { font-size:16px; line-height:1.9; color:var(--ink); }
+.sp-big { font-size:20px; font-weight:700; }
+.frac { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 3px; line-height:1.15; }
+.frac > span:first-child { border-bottom:1.5px solid currentColor; padding:0 4px; }
+.sp-bars { display:grid; grid-template-columns:auto 1fr auto; gap:4px 10px; align-items:center; font-size:15px; }
+.sp-bar { height:14px; background:var(--grid-line); border-radius:7px; overflow:hidden; position:relative; }
+.sp-bar > i { position:absolute; left:0; top:0; bottom:0; background:var(--primary); border-radius:7px; transition:width .25s; }
+.sp-bar > i.ev { background:var(--orange); }
+.sp-bar > b { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--green); }
+.sp-chart { width:100%; height:auto; background:var(--paper-bg); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
+.sp-result { display:inline-block; min-width:2.2em; padding:2px 12px; border-radius:var(--radius-full); background:var(--teal); color:#fff; font-family:var(--font-math); font-style:italic; font-weight:700; }
+.sp-n { display:flex; align-items:center; gap:10px; font-weight:600; }
+.sp-n input { accent-color:var(--teal); width:160px; }
+.sp-n[hidden] { display:none; }
+.btn:disabled { opacity:.55; cursor:default; }
+html.compact .app-header, html.compact .sp-tabs, html.compact .app-footer { display:none; }
+html.compact .app-container { border:none; box-shadow:none; }
+html.compact .sp-wrap { padding:8px 4px; grid-template-columns:minmax(220px,330px) 1fr; }
+html.compact .instruction-box { margin-top:0; }
+@media (max-width:760px) { .sp-wrap { grid-template-columns:1fr; } }
+@media (max-width:560px) { html.compact .sp-wrap { grid-template-columns:1fr; } }
+
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ២០ · ប្រូបាប</div>
+      <h1>បង្វិលថាស និងប្រូបាប</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="sp-tabs" role="tablist" aria-label="ជ្រើសរើសថាស">
+    <button type="button" class="sp-tab" role="tab" id="tab-num" aria-selected="true">ថាស ៦ លេខ</button>
+    <button type="button" class="sp-tab" role="tab" id="tab-abc" aria-selected="false">ថាស ៤ អក្សរ</button>
+    <button type="button" class="sp-tab" role="tab" id="tab-own" aria-selected="false">ថាសផ្ទាល់ខ្លួន</button>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">វិញ្ញាសា</span>
+    <p class="instruction-text" id="step-text"></p>
+  </div>
+
+  <div class="sp-wrap">
+    <div>
+      <div class="sp-board">
+        <svg class="sp-svg" id="wheel" viewBox="0 0 360 380" role="img" aria-label="ថាសមានចុងព្រួញ ចុចលើថាសដើម្បីបង្វិល" tabindex="0"></svg>
+      </div>
+      <p class="sp-res" id="res" aria-live="polite">👆 ចុចលើថាស ដើម្បីបង្វិល</p>
+      <div class="sp-chips" id="chips" role="group" aria-label="លទ្ធផលនៃថាស (ចុចដើម្បីបន្ថែមក្នុងព្រឹត្តិការណ៍)"></div>
+    </div>
+
+    <div class="sp-side">
+      <div class="sp-card">
+        <h3>ព្រឹត្តិការណ៍ដែលចង់បាន <span style="font-weight:500">(ជ្រើសលេខខាងក្រោមថាស ឬប៊ូតុងខាងក្រោម)</span></h3>
+        <div class="sp-presets" id="presets"></div>
+        <p class="sp-line" id="ev-line"></p>
+      </div>
+
+      <div class="sp-card">
+        <h3>ប្រូបាបតាមទ្រឹស្តី</h3>
+        <p class="sp-line tex" id="prob-line"></p>
+      </div>
+
+      <div class="sp-card">
+        <h3>លទ្ធផលនៃការពិសោធ</h3>
+        <p class="sp-line" id="trial-line"></p>
+        <div class="sp-bars" id="bars"></div>
+        <svg class="sp-chart" id="chart" viewBox="0 0 420 150" role="img" aria-label="ប្រេកង់ធៀបនៃព្រឹត្តិការណ៍ ខិតចូលជិតប្រូបាប"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-area">
+    <div class="sp-n" id="own-ctrl" hidden>
+      <label for="sl-n">ចំនួនផ្នែកនៃថាស (២ ដល់ ១២) ៖</label>
+      <input type="range" id="sl-n" min="2" max="12" value="8">
+      <span class="val-badge" id="val-n">៨</span>
+    </div>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-primary" id="b1">🎯 បង្វិល ១ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b10">បង្វិល ១០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b100">បង្វិល ១០០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b1000">បង្វិល ១ ០០០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="breset">↺ សម្អាតលទ្ធផល</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ២០</span>
+    <span>ប្រូបាប = ករណីស្របតាមបំណងប្រាថ្នា ÷ ករណីអាចកើតមានឡើង</span>
+  </footer>
+</div>
+
+<script>
+const KD = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+const kh = n => String(n).replace(/[0-9]/g, d => KD[+d]);
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (p, t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; if (p) p.appendChild(e); return e; };
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+const COLORS = ['#e5484d', '#f59e0b', '#2e9e5b', '#3b82f6', '#8b5cf6', '#0ea5a4', '#d9488a', '#84a31a', '#ea6c2b', '#4f6bd6', '#16a085', '#a855f7'];
+
+let mode = 'num', n = 6, labels = [], event = new Set(), evName = '';
+let rot = 0, spinning = false, raf = 0;
+let counts = [], trials = 0, evCount = 0, hist = [];
+
+function sectorW() { return 360 / n; }
+function indexAt(r) { return Math.floor((((-r) % 360) + 360) % 360 / sectorW()) % n; }
+
+/* ---------- presets of events ---------- */
+function presets() {
+  const idx = f => labels.map((l, i) => f(l, i)).map((b, i) => b ? i : -1).filter(i => i >= 0);
+  if (mode === 'abc') return [
+    ['អក្សរ A', idx(l => l === 'A')], ['A ឬ B', idx(l => l === 'A' || l === 'B')],
+    ['A, B ឬ C', idx(l => l !== 'D')], ['ទាំងអស់', idx(() => true)], ['គ្មាន', []]];
+  const out = [['លេខគូ', idx(l => l % 2 === 0)], ['លេខសេស', idx(l => l % 2 === 1)],
+    ['ពហុគុណនៃ ៣', idx(l => l % 3 === 0)]];
+  if (n >= 5) out.push(['លេខធំជាង ៤', idx(l => l > 4)]);
+  out.push(['លេខ ២', idx(l => l === 2)], ['លេខ ១', idx(l => l === 1)], ['ទាំងអស់', idx(() => true)], ['គ្មាន', []]);
+  return out;
+}
+
+/* ---------- drawing ---------- */
+function drawWheel() {
+  const svg = $('wheel'); svg.innerHTML = '';
+  const cx = 180, cy = 205, R = 150, w = sectorW();
+  el(svg, 'circle', { cx, cy, r: R + 8, fill: '#3a2b14' });
+  const g = el(svg, 'g', { id: 'rotor', transform: 'rotate(' + rot + ' ' + cx + ' ' + cy + ')' });
+  for (let i = 0; i < n; i++) {
+    const a0 = i * w, a1 = (i + 1) * w, P = a => [cx + R * Math.sin(a * Math.PI / 180), cy - R * Math.cos(a * Math.PI / 180)];
+    const [x0, y0] = P(a0), [x1, y1] = P(a1);
+    const sel = event.has(i);
+    const path = el(g, 'path', { d: 'M' + cx + ' ' + cy + 'L' + x0 + ' ' + y0 + 'A' + R + ' ' + R + ' 0 ' + (w > 180 ? 1 : 0) + ' 1 ' + x1 + ' ' + y1 + 'Z',
+      fill: COLORS[i % COLORS.length], stroke: sel ? '#fff7d6' : '#fff', 'stroke-width': sel ? 5 : 2, class: 'sp-sector', 'data-i': i });
+    if (sel) path.setAttribute('filter', 'drop-shadow(0 0 6px #ffd24a)');
+    const am = (a0 + a1) / 2, rr = R * (n <= 4 ? .58 : .66);
+    el(g, 'text', { x: cx + rr * Math.sin(am * Math.PI / 180), y: cy - rr * Math.cos(am * Math.PI / 180), class: 'sp-lab', transform: 'rotate(' + am + ' ' + (cx + rr * Math.sin(am * Math.PI / 180)) + ' ' + (cy - rr * Math.cos(am * Math.PI / 180)) + ')' }, labels[i]);
+    if (sel) el(g, 'circle', { cx: cx + R * .9 * Math.sin(am * Math.PI / 180), cy: cy - R * .9 * Math.cos(am * Math.PI / 180), r: 5, fill: '#fff7d6', stroke: '#e8710a', 'stroke-width': 2, 'pointer-events': 'none' });
+  }
+  const hub = el(svg, 'g', { id: 'hub', style: 'cursor:pointer' });
+  el(hub, 'circle', { cx, cy, r: 30, fill: spinning ? '#c9c3b2' : '#fff7d6', stroke: '#3a2b14', 'stroke-width': 3 });
+  el(hub, 'text', { x: cx, y: cy + 1, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 13, 'font-weight': 700, fill: '#3a2b14', 'pointer-events': 'none' }, 'បង្វិល');
+  if (!spinning) { const ring = el(hub, 'circle', { cx, cy, r: 30, fill: 'none', stroke: '#e8710a', 'stroke-width': 3, class: 'sp-pulse', 'pointer-events': 'none' }); }
+  svg.onclick = () => spinOnce();
+  svg.style.cursor = 'pointer';
+  el(svg, 'path', { d: 'M' + cx + ' ' + (cy - R - 2) + 'l-14 -34 h28z', fill: '#d6423a', stroke: '#7d1d19', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+  el(svg, 'circle', { cx, cy: cy - R - 40, r: 4, fill: '#7d1d19' });
+}
+function setRot(r) { rot = r; const g = $('rotor'); if (g) g.setAttribute('transform', 'rotate(' + r.toFixed(2) + ' 180 205)'); }
+
+function drawChips() {
+  const c = $('chips'); c.innerHTML = '';
+  labels.forEach((l, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sp-chip tex'; b.textContent = l;
+    b.setAttribute('aria-pressed', event.has(i)); b.setAttribute('aria-label', 'លទ្ធផល ' + l);
+    b.addEventListener('click', () => toggle(i)); c.appendChild(b);
+  });
+}
+function drawPresets() {
+  const c = $('presets'); c.innerHTML = '';
+  presets().forEach(([name, ids]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-secondary'; b.textContent = name;
+    b.addEventListener('click', () => { event = new Set(ids); evName = name; changed(true); });
+    c.appendChild(b);
+  });
+}
+
+function frac(a, b) { return '<span class="frac tex"><span>' + a + '</span><span>' + b + '</span></span>'; }
+function evList() { return [...event].sort((a, b) => a - b).map(i => labels[i]).join(', '); }
+
+function drawInfo() {
+  const k = event.size;
+  const name = evName || 'ព្រឹត្តិការណ៍ដែលបានជ្រើស';
+  $('ev-line').innerHTML = k ? name + ' <span class="tex">= { ' + evList() + ' }</span> មាន <b>' + kh(k) + '</b> ករណី · លទ្ធផលអាចកើតមាន <b>' + kh(n) + '</b> ករណី'
+    : 'មិនទាន់មានព្រឹត្តិការណ៍ទេ ៖ ជ្រើសផ្នែកនៃថាស ឬចុចប៊ូតុងខាងលើ។ លទ្ធផលអាចកើតមាន <b>' + kh(n) + '</b> ករណី';
+  const d = gcd(k, n) || 1, sk = k / d, sn = n / d;
+  const pct = (k / n * 100);
+  const pctS = (Math.round(pct * 100) / 100).toString().replace('.', ',');
+  let s = '<span class="sp-big tex">P = ' + frac(k, n) + (d > 1 && k ? ' = ' + (sn === 1 ? sk : frac(sk, sn)) : '') + ' ≈ ' + pctS + '%</span>';
+  if (k === 0) s += '<br>ព្រឹត្តិការណ៍មិនអាចកើតឡើង៖ ប្រូបាប <span class="tex">= 0</span>។';
+  else if (k === n) s += '<br>ព្រឹត្តិការណ៍ប្រាកដកើតឡើង៖ ប្រូបាប <span class="tex">= 1</span>។';
+  $('prob-line').innerHTML = s;
+}
+
+function drawStats() {
+  const k = event.size, P = k / n;
+  const fr = trials ? evCount / trials : 0;
+  $('trial-line').innerHTML = trials
+    ? 'បង្វិលបាន <b>' + kh(trials) + '</b> ដង · ព្រឹត្តិការណ៍កើតឡើង <b>' + kh(evCount) + '</b> ដង · ប្រេកង់ធៀប <span class="tex">' + evCount + '/' + trials + ' ≈ ' + (Math.round(fr * 10000) / 100).toString().replace('.', ',') + '%</span>'
+      + (k ? ' · ប្រូបាប <span class="tex">≈ ' + (Math.round(P * 10000) / 100).toString().replace('.', ',') + '%</span>' : '')
+    : 'មិនទាន់បានបង្វិលទេ ៖ ចុច «បង្វិល ១ ដង» ឬបង្វិលច្រើនដងដើម្បីមើលប្រេកង់។';
+  const bars = $('bars'); bars.innerHTML = '';
+  const mx = Math.max(1, ...counts);
+  labels.forEach((l, i) => {
+    const a = document.createElement('span'); a.className = 'tex'; a.textContent = l; a.style.fontWeight = 700;
+    const bar = document.createElement('div'); bar.className = 'sp-bar';
+    const f = document.createElement('i'); f.style.width = (counts[i] / mx * 100) + '%'; if (event.has(i)) f.className = 'ev';
+    bar.appendChild(f);
+    const m = document.createElement('b'); m.style.left = (trials ? Math.min(100, (trials / n) / mx * 100) : 0) + '%'; if (trials) bar.appendChild(m);
+    const c = document.createElement('span'); c.textContent = kh(counts[i]);
+    bars.append(a, bar, c);
+  });
+  drawChart();
+}
+
+function drawChart() {
+  const svg = $('chart'); svg.innerHTML = '';
+  const L = 38, T = 12, W = 420 - L - 12, H = 150 - T - 26, k = event.size, P = k / n;
+  const y = v => T + H - v * H;
+  [0, .5, 1].forEach(v => {
+    el(svg, 'line', { x1: L, x2: L + W, y1: y(v), y2: y(v), stroke: 'var(--grid-line-major)', 'stroke-width': 1 });
+    el(svg, 'text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-muted)' }, v === 0 ? '0' : v === 1 ? '1' : '0,5');
+  });
+  if (k) {
+    el(svg, 'line', { x1: L, x2: L + W, y1: y(P), y2: y(P), stroke: '#1b8a5a', 'stroke-width': 2, 'stroke-dasharray': '6 4' });
+    el(svg, 'text', { x: L + W, y: y(P) - 5, 'text-anchor': 'end', 'font-size': 12, fill: '#1b8a5a', 'font-weight': 700 }, 'P');
+  }
+  if (hist.length > 1) {
+    const N = hist.length, step = Math.max(1, Math.floor(N / 240));
+    const pts = []; for (let i = 0; i < N; i += step) pts.push((L + (i / (N - 1)) * W).toFixed(1) + ',' + y(hist[i]).toFixed(1));
+    pts.push((L + W) + ',' + y(hist[N - 1]).toFixed(1));
+    el(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#e8710a', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+  } else el(svg, 'text', { x: L + W / 2, y: T + H / 2, 'text-anchor': 'middle', 'font-size': 13, fill: 'var(--ink-muted)' }, 'ខ្សែកោងប្រេកង់ធៀបនឹងបង្ហាញនៅទីនេះ');
+  el(svg, 'text', { x: L + W, y: 150 - 8, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-muted)' }, 'ចំនួនដងបង្វិល →');
+}
+
+function say(badge, text) { $('step-badge').textContent = badge; $('step-text').innerHTML = text; }
+
+/* ---------- state changes ---------- */
+function toggle(i) {
+  if (event.has(i)) event.delete(i); else event.add(i);
+  evName = ''; changed(true);
+}
+function changed(reset) {
+  if (reset) { counts = labels.map(() => 0); trials = 0; evCount = 0; hist = []; }
+  drawWheel(); drawChips(); drawInfo(); drawStats();
+}
+function setMode(m) {
+  mode = m; spinning = false; cancelAnimationFrame(raf);
+  ['num', 'abc', 'own'].forEach(x => $('tab-' + x).setAttribute('aria-selected', x === m));
+  $('own-ctrl').hidden = m !== 'own';
+  if (m === 'num') { n = 6; labels = ['1', '2', '3', '4', '5', '6']; }
+  else if (m === 'abc') { n = 4; labels = ['A', 'B', 'C', 'D']; }
+  else { n = +$('sl-n').value; labels = Array.from({ length: n }, (_, i) => String(i + 1)); }
+  event = new Set(); evName = ''; rot = -sectorW() / 2;
+  drawPresets();
+  if (m === 'num') { const c = document.documentElement.classList.contains('compact'); event = c ? new Set([1]) : new Set([1, 3, 5]); evName = c ? 'លេខ ២' : 'លេខគូ'; }
+  if (m === 'abc') { event = new Set([0]); evName = 'អក្សរ A'; }
+  if (m === 'own') { event = new Set(labels.map((l, i) => +l % 2 === 0 ? i : -1).filter(i => i >= 0)); evName = 'លេខគូ'; }
+  changed(true);
+  say('វិញ្ញាសា', m === 'abc'
+    ? 'វិញ្ញាសា គឺការបង្វិលថាសមួយមានអក្សរ A, B, C, D ។ ចុចបង្វិល រួចរកប្រូបាបដែលចុងព្រួញចង្អុលត្រង់អក្សរ <span class="tex">A</span> ។'
+    : 'វិញ្ញាសា គឺការបង្វិលថាស។ លទ្ធផលគឺលេខដែលចុងព្រួញចង្អុល ហើយព្រឹត្តិការណ៍គឺសំណុំនៃលទ្ធផលដែលយើងចង់បាន។');
+}
+
+function record(i) {
+  counts[i]++; trials++; if (event.has(i)) evCount++;
+  hist.push(evCount / trials);
+}
+function describe(i) {
+  const hit = event.has(i);
+  $('res').innerHTML = 'លទ្ធផល ៖ <span class="sp-result">' + labels[i] + '</span> ' + (event.size ? (hit ? '<span style="color:var(--green)">✅ ព្រឹត្តិការណ៍កើតឡើង</span>' : '<span style="color:var(--orange)">✖ ព្រឹត្តិការណ៍មិនកើតឡើង</span>') : '') + '<br><span style="font-weight:500;font-size:15px;color:var(--ink-secondary)">ចុចលើថាសម្ដងទៀត ដើម្បីបង្វិលបន្ត</span>';
+  say('លទ្ធផល', 'ចុងព្រួញចង្អុលត្រង់ <span class="sp-result">' + labels[i] + '</span> ដូច្នេះលទ្ធផលគឺ <span class="tex">' + labels[i] + '</span> ។ ' +
+    (event.size ? (hit ? '✅ ព្រឹត្តិការណ៍ដែលចង់បានកើតឡើង។' : '✖ ព្រឹត្តិការណ៍ដែលចង់បានមិនកើតឡើងទេ។') : 'សូមជ្រើសព្រឹត្តិការណ៍ជាមុនសិន ដើម្បីរាប់ប្រេកង់។'));
+}
+
+function spinOnce() {
+  if (spinning) return;
+  spinning = true; setBusy(true); const hubc = $('hub'); if (hubc) { hubc.firstChild.setAttribute('fill', '#c9c3b2'); const pr = hubc.querySelector('.sp-pulse'); if (pr) pr.remove(); }
+  $('res').textContent = 'កំពុងបង្វិល…';
+  const target = Math.floor(Math.random() * n), u = .12 + Math.random() * .76, w = sectorW();
+  const a = (target + u) * w;
+  const d = ((((-a) - rot) % 360) + 360) % 360, total = 360 * (3 + Math.floor(Math.random() * 3)) + d;
+  const r0 = rot, t0 = performance.now(), dur = 3200;
+  say('វិញ្ញាសា', 'កំពុងបង្វិលថាស… ចុងព្រួញនឹងឈប់ត្រង់លទ្ធផលមួយដោយចៃដន្យ។');
+  (function f(now) {
+    const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3.2);
+    setRot(r0 + total * e);
+    if (t < 1) { raf = requestAnimationFrame(f); return; }
+    spinning = false; setBusy(false); drawWheel();
+    const i = indexAt(rot); record(i); drawStats(); describe(i);
+  })(t0);
+}
+function spinMany(m) {
+  if (spinning) return;
+  let last = 0;
+  for (let k = 0; k < m; k++) { last = Math.floor(Math.random() * n); record(last); }
+  setRot(rot + (((-(last + .5) * sectorW()) - rot) % 360 + 360) % 360);
+  drawStats();
+  $('res').innerHTML = 'លទ្ធផលចុងក្រោយ ៖ <span class="sp-result">' + labels[last] + '</span>';
+  const k = event.size;
+  say('ប្រេកង់', 'បានបង្វិល <b>' + kh(trials) + '</b> ដង៖ ប្រេកង់ធៀបនៃព្រឹត្តិការណ៍ ' + (k ? 'ខិតចូលជិតប្រូបាប <span class="tex">P = ' + k + '/' + n + '</span> កាលណាបង្វិលកាន់តែច្រើនដង។' : 'មិនទាន់មានព្រឹត្តិការណ៍ទេ។'));
+}
+function setBusy(b) { ['b1', 'b10', 'b100', 'b1000'].forEach(x => $(x).disabled = b); }
+
+$('b1').addEventListener('click', spinOnce);
+$('wheel').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); spinOnce(); } });
+$('b10').addEventListener('click', () => spinMany(10));
+$('b100').addEventListener('click', () => spinMany(100));
+$('b1000').addEventListener('click', () => spinMany(1000));
+$('breset').addEventListener('click', () => { if (spinning) return; changed(true); say('វិញ្ញាសា', 'បានសម្អាតលទ្ធផលហើយ។ ចុចបង្វិលដើម្បីចាប់ផ្ដើមម្ដងទៀត។'); });
+$('tab-num').addEventListener('click', () => setMode('num'));
+$('tab-abc').addEventListener('click', () => setMode('abc'));
+$('tab-own').addEventListener('click', () => setMode('own'));
+$('sl-n').addEventListener('input', () => { $('val-n').textContent = kh($('sl-n').value); setMode('own'); });
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : cur === 'dark' ? 'light' : (dark ? 'light' : 'dark'));
+}
+
+const Q = new URLSearchParams(location.search);
+if (Q.get('compact')) document.documentElement.classList.add('compact');
+setMode(Q.get('mode') === 'abc' ? 'abc' : Q.get('mode') === 'own' ? 'own' : 'num');
+</script>
+<script src="../../static/js/mathfix.js?v=3bcc10b9a2"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

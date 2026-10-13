@@ -437,4 +437,14 @@
     initCalculator();
   }
 
+
+  // an app in the lesson (<iframe class="app-inline">) tells its height
+  window.addEventListener('message', function (e) {
+    if (!e.data || typeof e.data.kmFrameH !== 'number') return;
+    var fs = document.querySelectorAll('iframe.app-inline');
+    for (var k = 0; k < fs.length; k++) {
+      if (fs[k].contentWindow === e.source) fs[k].style.height = Math.min(Math.max(e.data.kmFrameH, 240), 3000) + 'px';
+    }
+  });
+
 })();
