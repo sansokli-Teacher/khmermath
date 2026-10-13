@@ -40,3 +40,13 @@
   .al-grid { grid-template-columns: 1fr; }
   .al-turn input[type=range] { flex-basis: 100%; order: 5; }
 }
+
+/* ---- «អាលីដាតពីរ៉ាប៉ទ័រ» (construct/alidade-diy.html) ---- */
+.al-h { margin: 6px 0 0; font-size: 22px; }
+.al-build { background: #f4efe0; cursor: default; touch-action: pan-y; }
+.d-row { align-items: center; }
+.d-lab { min-width: 8.5em; font-weight: 600; color: var(--ink-2); }
+.al-straw { background: #1b1b1b; }
+.al-note { color: var(--ink-3); font-size: 15px; }
+@media (max-width: 760px) { .d-lab { flex-basis: 100%; } }
+.al-build { max-height: 440px; }
