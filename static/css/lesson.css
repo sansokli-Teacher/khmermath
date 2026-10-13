@@ -591,6 +591,11 @@ details.ans[open] > summary { margin-bottom: 8px; background: #faece8; border-co
   margin: 10px auto; padding: 8px 14px; max-width: 100%; text-align: center; color: #fff;
   background: rgba(255, 255, 255, .1); border: 1.5px solid rgba(255, 210, 119, .6); border-radius: 12px;
 }
+/* a white example box inside a rule card keeps dark ink (the card's white text was invisible on it) */
+.bx-rule .bx { color: #16324a; box-shadow: none; margin: 12px 0; }
+.bx-rule .bx .bx-b { color: #16324a; }
+.bx-rule .bx .md { color: #16324a; background: none; border: 0; margin: 4px auto; padding: 2px 6px; }
+.bx-rule .bx .bx-h { color: var(--teal-d, #1f5a63); }
 .bx-rule .list { counter-reset: rl; list-style: none; padding-left: 0; }
 .bx-rule .list > li { position: relative; counter-increment: rl; margin: 8px 0; padding-left: 42px; }
 .bx-rule .list > li::before {
