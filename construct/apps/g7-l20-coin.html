@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បោះកាក់ និងប្រូបាប — ថ្នាក់ទី ៧ · មេរៀនទី ២០</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Slider Bar */
+.slider-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  padding: 14px 24px; background: var(--surface-2); border-bottom: 1px solid var(--surface-border);
+  gap: 16px;
+}
+.slider-ctrl { display: flex; align-items: center; gap: 12px; }
+.slider-ctrl label { font-size: 15px; font-weight: 600; color: var(--ink); }
+.slider-ctrl input[type="range"] { width: 180px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 50px; text-align: center; padding: 3px 10px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 64px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Circle & Points */
+.locus-circle { fill: none; stroke: var(--blue); stroke-width: 3.2; stroke-linecap: round; }
+.locus-point { fill: var(--teal); stroke: #ffffff; stroke-width: 1.5; transition: all 0.15s ease; }
+.locus-point.active { fill: var(--orange); r: 6.5; }
+.radius-spoke { stroke: rgba(15, 118, 110, 0.25); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.active-radius { stroke: var(--orange); stroke-width: 2.2; }
+
+/* Compass tool */
+.tool-compass { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); pointer-events: none; }
+.c-leg { stroke: #64748b; stroke-width: 3.5; stroke-linecap: round; }
+.c-needle { fill: #334155; }
+.c-pencil { fill: #ea580c; stroke: #9a3412; stroke-width: 1; }
+.c-hinge { fill: #f59e0b; stroke: #b45309; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
+
+/* Small ruler snippet */
+.mini-ruler { fill: rgba(254, 240, 138, 0.9); stroke: #ca8a04; stroke-width: 1.2; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-toggle-circle { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
+.btn-toggle-circle.active { background: var(--blue); color: #fff; }
+.btn-play.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; gap: 12px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+
+/* spinner */
+.sp-tabs { display:flex; gap:6px; padding:10px 20px 0; flex-wrap:wrap; border-bottom:1px solid var(--surface-border); }
+.sp-tab { font-family:var(--font-km); font-size:15px; font-weight:600; padding:9px 16px; min-height:42px; border:1px solid transparent; border-bottom:none; border-radius:10px 10px 0 0; background:transparent; color:var(--ink-secondary); cursor:pointer; }
+.sp-tab[aria-selected="true"] { background:var(--surface-2); color:var(--teal); border-color:var(--surface-border); }
+.sp-wrap { padding:16px 20px; display:grid; grid-template-columns:minmax(260px,380px) 1fr; gap:18px; align-items:start; }
+.sp-board { max-width:400px; margin:0 auto; background:var(--paper-bg); border:1px solid var(--surface-border); border-radius:var(--radius); padding:8px; }
+.sp-svg { width:100%; height:auto; display:block; touch-action:manipulation; }
+.sp-sector { cursor:pointer; transition:filter .15s; }
+.sp-sector:hover { filter:brightness(1.07); }
+.sp-pulse { transform-box: fill-box; transform-origin: center; animation: spPulse 1.6s ease-out infinite; }
+@keyframes spPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.45); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sp-pulse { animation: none; } }
+.sp-res { margin:10px 0 0; min-height:2.6em; text-align:center; font-size:18px; font-weight:700; color:var(--ink); line-height:1.7; }
+.sp-lab { font-family:var(--font-math); font-style:italic; font-weight:700; font-size:26px; fill:#fff; text-anchor:middle; dominant-baseline:central; pointer-events:none; paint-order:stroke; stroke:rgba(0,0,0,.25); stroke-width:3px; }
+.sp-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; justify-content:center; }
+.sp-chip { min-width:42px; min-height:42px; padding:4px 10px; border-radius:10px; border:1.5px solid var(--surface-border); background:var(--surface); color:var(--ink); font-family:var(--font-math); font-style:italic; font-weight:700; font-size:18px; cursor:pointer; }
+.sp-chip[aria-pressed="true"] { background:var(--orange-soft); border-color:var(--orange); color:var(--orange); box-shadow:inset 0 0 0 1px var(--orange); }
+.sp-side { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.sp-card { background:var(--surface-2); border:1px solid var(--surface-border); border-radius:var(--radius); padding:12px 16px; }
+.sp-card h3 { margin:0 0 6px; font-size:15px; color:var(--ink-secondary); font-weight:700; }
+.sp-presets { display:flex; flex-wrap:wrap; gap:6px; }
+.sp-presets .btn { min-height:38px; padding:6px 12px; font-size:14px; }
+.sp-line { font-size:16px; line-height:1.9; color:var(--ink); }
+.sp-big { font-size:20px; font-weight:700; }
+.frac { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 3px; line-height:1.15; }
+.frac > span:first-child { border-bottom:1.5px solid currentColor; padding:0 4px; }
+.sp-bars { display:grid; grid-template-columns:auto 1fr auto; gap:4px 10px; align-items:center; font-size:15px; }
+.sp-bar { height:14px; background:var(--grid-line); border-radius:7px; overflow:hidden; position:relative; }
+.sp-bar > i { position:absolute; left:0; top:0; bottom:0; background:var(--primary); border-radius:7px; transition:width .25s; }
+.sp-bar > i.ev { background:var(--orange); }
+.sp-bar > b { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--green); }
+.sp-chart { width:100%; height:auto; background:var(--paper-bg); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
+.sp-result { display:inline-block; min-width:2.2em; padding:2px 12px; border-radius:var(--radius-full); background:var(--teal); color:#fff; font-family:var(--font-math); font-style:italic; font-weight:700; }
+.sp-n { display:flex; align-items:center; gap:10px; font-weight:600; }
+.sp-n input { accent-color:var(--teal); width:160px; }
+.sp-n[hidden] { display:none; }
+.btn:disabled { opacity:.55; cursor:default; }
+html.compact .app-header, html.compact .sp-tabs, html.compact .app-footer { display:none; }
+html.compact .app-container { border:none; box-shadow:none; }
+html.compact .sp-wrap { padding:8px 4px; grid-template-columns:minmax(220px,330px) 1fr; }
+html.compact .instruction-box { margin-top:0; }
+html.compact #expcard.empty .sp-bars, html.compact #expcard.empty .sp-chart { display:none; }
+@media (max-width:760px) { .sp-wrap { grid-template-columns:1fr; } }
+@media (max-width:560px) { html.compact .sp-wrap { grid-template-columns:1fr; } }
+
+
+/* coin */
+.cn-stage { position:relative; height:250px; border-radius:var(--radius); overflow:hidden; cursor:pointer; background:radial-gradient(ellipse at 50% 72%, #5b4a8a 0%, #3f3366 55%, #2c2349 100%); border:1px solid #241c3d; perspective:900px; user-select:none; -webkit-user-select:none; outline:none; }
+.cn-stage:focus-visible { box-shadow:0 0 0 3px var(--teal); }
+.cn-stage.hit { box-shadow:inset 0 0 0 4px #ffd24a, 0 0 18px rgba(255,210,74,.6); }
+.cn-hint { position:absolute; left:0; right:0; bottom:8px; text-align:center; color:#f1ecff; font-weight:700; font-size:15px; text-shadow:0 1px 3px rgba(0,0,0,.5); pointer-events:none; transition:opacity .3s; }
+.cn-cam { position:absolute; left:50%; top:52%; width:0; height:0; transform-style:preserve-3d; transform:rotateX(58deg); }
+.cn-slot { position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d; }
+.cn-coin { position:absolute; left:-62px; top:-62px; width:124px; height:124px; transform-style:preserve-3d; }
+.cn-face, .cn-rim { position:absolute; inset:0; border-radius:50%; }
+.cn-face { backface-visibility:hidden; }
+.cn-face svg { width:100%; height:100%; display:block; }
+.cn-sh { position:absolute; left:-60px; top:-60px; width:120px; height:120px; border-radius:50%; background:rgba(0,0,0,.45); filter:blur(5px); }
+html.compact .app-header, html.compact .sp-tabs, html.compact .app-footer { display:none; }
+html.compact .app-container { border:none; box-shadow:none; }
+html.compact .sp-wrap { padding:8px 4px; grid-template-columns:minmax(220px,330px) 1fr; }
+html.compact .instruction-box { margin-top:0; }
+html.compact #expcard.empty .sp-bars, html.compact #expcard.empty .sp-chart { display:none; }
+@media (max-width:560px) { html.compact .sp-wrap { grid-template-columns:1fr; } }
+
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ២០ · ប្រូបាប</div>
+      <h1>បោះកាក់ និងប្រូបាប</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="sp-tabs" role="tablist" aria-label="ចំនួនកាក់">
+    <button type="button" class="sp-tab" role="tab" id="tab-1" aria-selected="true">កាក់ ១ គ្រាប់</button>
+    <button type="button" class="sp-tab" role="tab" id="tab-2" aria-selected="false">កាក់ ២ គ្រាប់</button>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">វិញ្ញាសា</span>
+    <p class="instruction-text" id="step-text"></p>
+  </div>
+
+  <div class="sp-wrap">
+    <div>
+      <div class="cn-stage" id="stage" tabindex="0" role="button" aria-label="ចុចដើម្បីបោះកាក់">
+        <div class="cn-cam" id="cam"></div>
+        <div class="cn-hint" id="hint">👆 ចុចលើតុ ដើម្បីបោះកាក់</div>
+      </div>
+      <p class="sp-res" id="res" aria-live="polite"></p>
+      <div class="sp-chips" id="chips" role="group" aria-label="លទ្ធផលនៃកាក់"></div>
+    </div>
+
+    <div class="sp-side">
+      <div class="sp-card">
+        <h3>ព្រឹត្តិការណ៍ដែលចង់បាន <span style="font-weight:500">(ជ្រើសប៊ូតុង ឬខាងក្រោមតុ)</span></h3>
+        <div class="sp-presets" id="presets"></div>
+        <p class="sp-line" id="ev-line"></p>
+      </div>
+      <div class="sp-card">
+        <h3>ប្រូបាបតាមទ្រឹស្តី</h3>
+        <p class="sp-line tex" id="prob-line"></p>
+      </div>
+      <div class="sp-card" id="expcard">
+        <h3>លទ្ធផលនៃការពិសោធ</h3>
+        <p class="sp-line" id="trial-line"></p>
+        <div class="sp-bars" id="bars"></div>
+        <svg class="sp-chart" id="chart" viewBox="0 0 420 150" role="img" aria-label="ប្រេកង់ធៀបនៃព្រឹត្តិការណ៍ ខិតចូលជិតប្រូបាប"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-area">
+    <div class="buttons-row">
+      <button type="button" class="btn btn-primary" id="b1">🪙 បោះ ១ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b10">បោះ ១០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b100">បោះ ១០០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="b1000">បោះ ១ ០០០ ដង</button>
+      <button type="button" class="btn btn-secondary" id="breset">↺ សម្អាតលទ្ធផល</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ២០</span>
+    <span>ប្រូបាប = ករណីស្របតាមបំណងប្រាថ្នា ÷ ករណីអាចកើតមានឡើង</span>
+  </footer>
+</div>
+
+<script>
+const KD = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+const kh = n => String(n).replace(/[0-9]/g, d => KD[+d]);
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (p, t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; if (p) p.appendChild(e); return e; };
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+/* ---------- sound (made with the Web Audio API; no files) ---------- */
+const SND = (function () {
+  let ctx = null, on = true, master = null;
+  try { on = localStorage.getItem('km-sound') !== '0'; } catch (e) { /* no storage */ }
+  function ac() {
+    if (!on) return null;
+    try {
+      if (!ctx) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ctx = new A(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
+  }
+  function env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+  function tone(f, d, v, type, f2) {
+    const c = ac(); if (!c) return; const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    env(g, t, .004, v, d); o.connect(g); g.connect(master); o.start(t); o.stop(t + d + .05);
+  }
+  function noise(d, v, f, q, delay) {
+    const c = ac(); if (!c) return; const t = c.currentTime + (delay || 0), n = Math.max(1, Math.floor(c.sampleRate * d)), b = c.createBuffer(1, n, c.sampleRate), x = b.getChannelData(0);
+    for (let i = 0; i < n; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = c.createBufferSource(); s.buffer = b; const fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = q || 1.2;
+    const g = c.createGain(); g.gain.value = v; s.connect(fl); fl.connect(g); g.connect(master); s.start(t);
+  }
+  return {
+    get on() { return on; },
+    toggle() { on = !on; try { localStorage.setItem('km-sound', on ? '1' : '0'); } catch (e) { /* no storage */ } if (on) { SND.tick(1); } return on; },
+    unlock() { ac(); },
+    tick(k) { tone(900 + Math.random() * 160, .03, .09 * (k == null ? 1 : k), 'triangle'); noise(.02, .05 * (k == null ? 1 : k), 3000, 2); },
+    clack(k) { k = k == null ? 1 : k; noise(.07, .5 * k, 1800 + Math.random() * 900, 1.5); tone(180 + Math.random() * 60, .09, .25 * k, 'sine', 90); },
+    rattle(n) { for (let i = 0; i < n; i++) noise(.05, .22, 1500 + Math.random() * 1500, 1.4, i * .045 + Math.random() * .02); },
+    ding() { tone(880, .9, .2, 'sine'); tone(1320, .6, .08, 'sine'); },
+    good() { tone(660, .16, .18, 'triangle'); setTimeout(() => tone(880, .3, .2, 'triangle'), 130); },
+    whoosh() { noise(.25, .18, 1200, .8); },
+    clink(k) { k = k == null ? 1 : k; tone(2400 + Math.random() * 400, .18, .2 * k, 'sine'); tone(3700, .12, .08 * k, 'sine'); noise(.03, .25 * k, 4000, 2); },
+    ring() { tone(2600, .6, .14, 'sine'); tone(3900, .4, .06, 'sine'); },
+    miss() { tone(300, .22, .14, 'triangle', 220); }
+  };
+})();
+function soundButton(host) {
+  const b = document.createElement('button'); b.type = 'button'; b.id = 'snd';
+  b.style.cssText = 'position:absolute;top:8px;right:8px;z-index:3;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25);background:rgba(255,255,255,.88);font-size:19px;cursor:pointer;line-height:1';
+  const paint = () => { b.textContent = SND.on ? '🔊' : '🔇'; b.setAttribute('aria-label', SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'); b.title = SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'; };
+  paint();
+  b.addEventListener('click', e => { e.stopPropagation(); SND.toggle(); paint(); });
+  host.style.position = 'relative'; host.appendChild(b);
+}
+
+let coins = 1, outcomes = [], labels = [], pred = () => false, evName = '', evSet = new Set();
+let counts = [], trials = 0, evCount = 0, hist = [], busy = false;
+const SIDE = ['ខាងរូប', 'ខាងលេខ'], LET = ['H', 'T'];
+
+/* ---------- the coin ---------- */
+const FRONT = `<svg viewBox="0 0 100 100"><defs><radialGradient id="g1" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#fff2a8"/><stop offset=".55" stop-color="#e3b12f"/><stop offset="1" stop-color="#a87412"/></radialGradient></defs>
+<circle cx="50" cy="50" r="49" fill="url(#g1)" stroke="#8a5d0b" stroke-width="2"/><circle cx="50" cy="50" r="42" fill="none" stroke="#9a6a10" stroke-width="1.6"/>
+<g fill="#7a4f08"><path d="M24 66h52v5H24z"/><path d="M30 66V54h6v-6h-3l3-6 3 6h-3v6h6V66z"/><path d="M44 66V50h12v16z"/><path d="M47 50l3-12 3 12z"/><path d="M64 66V54h6V66z"/><path d="M62 54v-6h-3l3-6 3 6h-3v6z" /></g>
+<text x="50" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="#7a4f08" font-family="system-ui,sans-serif">ខាងរូប</text></svg>`;
+const BACK = `<svg viewBox="0 0 100 100"><defs><radialGradient id="g2" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#e9ecef"/><stop offset=".55" stop-color="#b8bec6"/><stop offset="1" stop-color="#7d858f"/></radialGradient></defs>
+<circle cx="50" cy="50" r="49" fill="url(#g2)" stroke="#5d646d" stroke-width="2"/><circle cx="50" cy="50" r="42" fill="none" stroke="#6b727c" stroke-width="1.6"/>
+<text x="50" y="58" text-anchor="middle" font-size="30" font-weight="800" fill="#3d434a" font-family="system-ui,sans-serif">500</text><text x="50" y="76" text-anchor="middle" font-size="10" font-weight="700" fill="#3d434a" font-family="system-ui,sans-serif">រៀល</text><text x="50" y="26" text-anchor="middle" font-size="9" font-weight="700" fill="#3d434a" font-family="system-ui,sans-serif">ខាងលេខ</text></svg>`;
+function buildCoins() {
+  const cam = $('cam'); cam.innerHTML = '';
+  for (let k = 0; k < coins; k++) {
+    const slot = document.createElement('div'); slot.className = 'cn-slot'; slot.id = 'slot' + k;
+    const sh = document.createElement('div'); sh.className = 'cn-sh'; sh.id = 'sh' + k; slot.appendChild(sh);
+    const c = document.createElement('div'); c.className = 'cn-coin'; c.id = 'coin' + k;
+    for (let z = -2; z <= 2; z++) { const r = document.createElement('div'); r.className = 'cn-rim'; r.style.background = z % 2 ? '#a87412' : '#8a5d0b'; r.style.transform = 'translateZ(' + z + 'px)'; c.appendChild(r); }
+    const f = document.createElement('div'); f.className = 'cn-face'; f.style.transform = 'translateZ(3px)'; f.innerHTML = FRONT; c.appendChild(f);
+    const b = document.createElement('div'); b.className = 'cn-face'; b.style.transform = 'rotateX(180deg) translateZ(3px)'; b.innerHTML = BACK; c.appendChild(b);
+    slot.appendChild(c); cam.appendChild(slot);
+  }
+}
+function restX(k) { return coins === 1 ? 0 : (k === 0 ? -72 : 72); }
+function pose(k, x, h, ang, wob) {
+  $('slot' + k).style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
+  $('coin' + k).style.transform = 'translateZ(' + (h + 3).toFixed(1) + 'px) rotateX(' + ang.toFixed(1) + 'deg) rotateZ(' + (wob || 0).toFixed(1) + 'deg)';
+  const s = $('sh' + k); s.style.transform = 'scale(' + (1 - Math.min(.55, h / 330)).toFixed(3) + ')'; s.style.opacity = (0.95 - Math.min(.6, h / 190)).toFixed(2);
+}
+function rest(k, v, wob) { pose(k, restX(k), 0, v === 0 ? 0 : 180, wob || 0); }
+
+/* ---------- outcomes and events ---------- */
+function setupSpace() {
+  if (coins === 1) { outcomes = [[0], [1]]; labels = ['H', 'T']; }
+  else { outcomes = [[0, 0], [0, 1], [1, 0], [1, 1]]; labels = ['HH', 'HT', 'TH', 'TT']; }
+}
+function presets() {
+  if (coins === 1) return [['ខាងរូប (H)', o => o[0] === 0], ['ខាងលេខ (T)', o => o[0] === 1], ['រូប ឬ លេខ (ប្រាកដ)', o => true], ['កាក់ឈរបញ្ឈរ (មិនអាច)', o => false]];
+  return [['រូបទាំងពីរ (HH)', o => o[0] === 0 && o[1] === 0], ['រូបយ៉ាងហោចណាស់ ១', o => o[0] === 0 || o[1] === 0], ['រូបមួយ លេខមួយ', o => o[0] !== o[1]],
+    ['ទាំងពីរដូចគ្នា', o => o[0] === o[1]], ['គ្មានរូបទាល់តែសោះ', o => o[0] === 1 && o[1] === 1]];
+}
+function usePreset(i) { const p = presets()[i]; pred = p[1]; evName = p[0]; evSet = new Set(); }
+function drawChips() {
+  const c = $('chips'); c.innerHTML = '';
+  if (coins !== 1) return;
+  [0, 1].forEach(v => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sp-chip tex'; b.textContent = LET[v]; b.style.minWidth = '58px';
+    b.setAttribute('aria-pressed', pred([v])); b.setAttribute('aria-label', SIDE[v]);
+    b.addEventListener('click', () => { if (!evSet.size && evName) evSet = new Set(outcomes.filter(pred).map(o => o[0])); if (evSet.has(v)) evSet.delete(v); else evSet.add(v); const s = evSet; pred = o => s.has(o[0]); evName = ''; changed(true); });
+    c.appendChild(b);
+  });
+}
+function drawPresets() {
+  const c = $('presets'); c.innerHTML = '';
+  presets().forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-secondary'; b.textContent = p[0]; b.addEventListener('click', () => { usePreset(i); changed(true); }); c.appendChild(b); });
+}
+function frac(a, b) { return '<span class="frac tex"><span>' + a + '</span><span>' + b + '</span></span>'; }
+function evList() { return outcomes.filter(pred).map(o => o.map(v => LET[v]).join('')).join(', '); }
+function drawInfo() {
+  const n = outcomes.length, k = outcomes.filter(pred).length, name = evName || 'ព្រឹត្តិការណ៍ដែលបានជ្រើស';
+  $('ev-line').innerHTML = (k ? name + ' <span class="tex">= { ' + evList() + ' }</span> មាន <b>' + kh(k) + '</b> ករណី' : 'មិនទាន់មានព្រឹត្តិការណ៍ទេ ៖ ជ្រើសប៊ូតុង') + ' · លទ្ធផលអាចកើតមាន <b>' + kh(n) + '</b> ករណី';
+  const d = gcd(k, n) || 1, sk = k / d, sn = n / d, pct = Math.round(k / n * 10000) / 100;
+  let s = '<span class="sp-big tex">P = ' + frac(k, n) + (d > 1 && k ? ' = ' + (sn === 1 ? sk : frac(sk, sn)) : '') + ' ≈ ' + String(pct).replace('.', ',') + '%</span>';
+  if (k === 0) s += '<br>ព្រឹត្តិការណ៍មិនអាចកើតឡើង៖ ប្រូបាប <span class="tex">= 0</span>។';
+  else if (k === n) s += '<br>ព្រឹត្តិការណ៍ប្រាកដកើតឡើង៖ ប្រូបាប <span class="tex">= 1</span>។';
+  $('prob-line').innerHTML = s;
+}
+function drawStats() {
+  $('expcard').classList.toggle('empty', !trials);
+  const n = outcomes.length, k = outcomes.filter(pred).length, P = k / n, fr = trials ? evCount / trials : 0;
+  const pc = x => String(Math.round(x * 10000) / 100).replace('.', ',');
+  $('trial-line').innerHTML = trials ? 'បោះបាន <b>' + kh(trials) + '</b> ដង · ព្រឹត្តិការណ៍កើតឡើង <b>' + kh(evCount) + '</b> ដង · ប្រេកង់ធៀប <span class="tex">' + evCount + '/' + trials + ' ≈ ' + pc(fr) + '%</span>' + (k ? ' · ប្រូបាប <span class="tex">≈ ' + pc(P) + '%</span>' : '') : 'មិនទាន់បានបោះទេ ៖ ចុចលើតុ ឬ «បោះ ១ ដង» ហើយសាកល្បងបោះច្រើនដង។';
+  const bars = $('bars'); bars.innerHTML = '';
+  const mx = Math.max(1, ...counts, trials / n);
+  labels.forEach((l, i) => {
+    const a = document.createElement('span'); a.className = 'tex'; a.textContent = l; a.style.fontWeight = 700;
+    const bar = document.createElement('div'); bar.className = 'sp-bar';
+    const f = document.createElement('i'); f.style.width = (counts[i] / mx * 100) + '%'; if (pred(outcomes[i])) f.className = 'ev'; bar.appendChild(f);
+    if (trials) { const m = document.createElement('b'); m.style.left = Math.min(100, trials / n / mx * 100) + '%'; bar.appendChild(m); }
+    const c = document.createElement('span'); c.textContent = kh(counts[i]);
+    bars.append(a, bar, c);
+  });
+  drawChart(k, P);
+}
+function drawChart(k, P) {
+  const svg = $('chart'); svg.innerHTML = '';
+  const L = 38, T = 12, W = 420 - L - 12, H = 150 - T - 26, y = v => T + H - v * H;
+  [0, .5, 1].forEach(v => { el(svg, 'line', { x1: L, x2: L + W, y1: y(v), y2: y(v), stroke: 'var(--grid-line-major)', 'stroke-width': 1 }); el(svg, 'text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-muted)' }, v === 0 ? '0' : v === 1 ? '1' : '0,5'); });
+  if (k) { el(svg, 'line', { x1: L, x2: L + W, y1: y(P), y2: y(P), stroke: '#1b8a5a', 'stroke-width': 2, 'stroke-dasharray': '6 4' }); el(svg, 'text', { x: L + W, y: y(P) - 5, 'text-anchor': 'end', 'font-size': 12, fill: '#1b8a5a', 'font-weight': 700 }, 'P'); }
+  if (hist.length > 1) {
+    const N = hist.length, st = Math.max(1, Math.floor(N / 240)), pts = [];
+    for (let i = 0; i < N; i += st) pts.push((L + (i / (N - 1)) * W).toFixed(1) + ',' + y(hist[i]).toFixed(1));
+    pts.push((L + W) + ',' + y(hist[N - 1]).toFixed(1));
+    el(svg, 'polyline', { points: pts.join(' '), fill: 'none', stroke: '#e8710a', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+  } else el(svg, 'text', { x: L + W / 2, y: T + H / 2, 'text-anchor': 'middle', 'font-size': 13, fill: 'var(--ink-muted)' }, 'ខ្សែកោងប្រេកង់ធៀបនឹងបង្ហាញនៅទីនេះ');
+  el(svg, 'text', { x: L + W, y: 142, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-muted)' }, 'ចំនួនដងបោះ →');
+}
+function say(b, t) { $('step-badge').textContent = b; $('step-text').innerHTML = t; }
+function changed(reset) { if (reset) { counts = labels.map(() => 0); trials = 0; evCount = 0; hist = []; } drawChips(); drawInfo(); drawStats(); }
+
+/* ---------- tossing ---------- */
+function bucket(o) { return coins === 1 ? o[0] : o[0] * 2 + o[1]; }
+function record(o) { counts[bucket(o)]++; trials++; const hit = pred(o); if (hit) evCount++; hist.push(evCount / trials); return hit; }
+function pick() { return Array.from({ length: coins }, () => Math.random() < .5 ? 0 : 1); }
+const nameOf = o => o.map(v => LET[v]).join('');
+
+function tossOnce() {
+  if (busy) return;
+  SND.unlock(); SND.whoosh(); busy = true; setBusy(true); $('stage').classList.remove('hit'); $('hint').style.opacity = 0; $('res').textContent = 'កំពុងបោះ…';
+  const o = pick(), t0 = performance.now(), dur = 1900, flips = [], hmax = [], delay = [];
+  for (let k = 0; k < coins; k++) { flips.push((5 + Math.floor(Math.random() * 4)) * 2 + (o[k] ? 1 : 0)); hmax.push(120 + Math.random() * 40); delay.push(k * .05); }
+  let bn = 0;
+  (function f(now) {
+    const tt = Math.min(1, (now - t0) / dur);
+    for (let k = 0; k < coins; k++) {
+      const t = Math.max(0, Math.min(1, (tt - delay[k]) / (1 - delay[k])));
+      let h, ang, wob = 0;
+      if (t < .78) { const u = t / .78; h = hmax[k] * 4 * u * (1 - u); ang = flips[k] * 180 * (1 - Math.pow(1 - u, 1.6)); }
+      else { const u = (t - .78) / .22; h = 20 * Math.abs(Math.sin(u * Math.PI * 2)) * (1 - u); ang = flips[k] * 180; wob = 6 * Math.sin(u * Math.PI * 5) * (1 - u); if (u > .5 && bn < 2 + k * 0) { /* bounce sounds below */ } }
+      pose(k, restX(k), h, ang, wob);
+    }
+    const bounceNow = tt > .78 ? Math.floor((tt - .78) / .22 * 2) + 1 : 0;
+    if (bounceNow > bn) { bn = bounceNow; SND.clink(bn === 1 ? 1 : .5); }
+    if (tt < 1) { requestAnimationFrame(f); return; }
+    for (let k = 0; k < coins; k++) rest(k, o[k], 0);
+    busy = false; setBusy(false);
+    const hit = record(o); drawStats(); describe(o, hit);
+    SND.ring(); if (outcomes.some(pred)) setTimeout(() => hit ? SND.good() : SND.miss(), 380);
+  })(t0);
+}
+function describe(o, hit) {
+  const txt = coins === 1 ? o.map(v => LET[v]).join('') : nameOf(o), full = coins === 1 ? SIDE[o[0]] : o.map(v => SIDE[v]).join(' + ');
+  const ev = outcomes.some(pred);
+  $('stage').classList.toggle('hit', ev && hit);
+  $('res').innerHTML = 'លទ្ធផល ៖ <span class="sp-result tex">' + txt + '</span> <span style="font-weight:600;font-size:15px">(' + full + ')</span> ' + (ev ? (hit ? '<span style="color:var(--green)">✅ ព្រឹត្តិការណ៍កើតឡើង</span>' : '<span style="color:var(--orange)">✖ ព្រឹត្តិការណ៍មិនកើតឡើង</span>') : '') + '<br><span style="font-weight:500;font-size:15px;color:var(--ink-secondary)">ចុចលើតុម្ដងទៀត ដើម្បីបោះបន្ត</span>';
+  say('លទ្ធផល', 'កាក់ចេញ <b>' + full + '</b> ដូច្នេះលទ្ធផលគឺ <span class="tex">' + txt + '</span> ។ ' + (ev ? (hit ? 'ព្រឹត្តិការណ៍ដែលចង់បានកើតឡើង។' : 'ព្រឹត្តិការណ៍ដែលចង់បានមិនកើតឡើងទេ។') : 'សូមជ្រើសព្រឹត្តិការណ៍ ដើម្បីរាប់ប្រេកង់។'));
+}
+function tossMany(m) {
+  if (busy) return;
+  SND.unlock(); SND.rattle(Math.min(10, 3 + Math.floor(Math.log10(m) * 2)));
+  let o = null; for (let i = 0; i < m; i++) { o = pick(); record(o); }
+  for (let k = 0; k < coins; k++) rest(k, o[k], 0);
+  drawStats(); $('hint').style.opacity = 0;
+  $('res').innerHTML = 'លទ្ធផលចុងក្រោយ ៖ <span class="sp-result tex">' + nameOf(o) + '</span>';
+  const k = outcomes.filter(pred).length;
+  say('ប្រេកង់', 'បានបោះ <b>' + kh(trials) + '</b> ដង៖ ប្រេកង់ធៀបនៃព្រឹត្តិការណ៍ ' + (k ? 'ខិតចូលជិតប្រូបាប <span class="tex">P = ' + k + '/' + outcomes.length + '</span> កាលណាបោះកាន់តែច្រើនដង។' : 'មិនទាន់មានព្រឹត្តិការណ៍ទេ។'));
+}
+function setBusy(b) { ['b1', 'b10', 'b100', 'b1000'].forEach(x => $(x).disabled = b); }
+
+function setCoins(n, evKey) {
+  coins = n; busy = false; $('tab-1').setAttribute('aria-selected', n === 1); $('tab-2').setAttribute('aria-selected', n === 2);
+  setupSpace(); drawPresets(); buildCoins();
+  usePreset(0);
+  if (evKey === 'none') { pred = () => false; evName = ''; }
+  if (evKey === 't' && n === 1) usePreset(1);
+  $('stage').classList.remove('hit'); $('hint').style.opacity = 1; $('res').textContent = '';
+  for (let k = 0; k < n; k++) rest(k, k === 0 ? 0 : 1, 0);
+  changed(true);
+  say('វិញ្ញាសា', n === 1 ? 'វិញ្ញាសា គឺការបោះកាក់មួយ។ កាក់អាចចេញខាងរូប <span class="tex">H</span> ឬខាងលេខ <span class="tex">T</span> ហៅថា <b>លទ្ធផលនៃវិញ្ញាសា</b> ។ ចុចលើតុ ដើម្បីបោះ។'
+    : 'បោះកាក់ពីរគ្រាប់ព្រមគ្នា ៖ លទ្ធផលអាចកើតមាន <span class="tex">HH, HT, TH, TT</span> ពោលគឺ ៤ ករណី។ ជ្រើសព្រឹត្តិការណ៍ រួចចុចលើតុដើម្បីបោះ។');
+}
+$('stage').addEventListener('click', tossOnce);
+$('stage').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tossOnce(); } });
+$('b1').addEventListener('click', tossOnce);
+$('b10').addEventListener('click', () => tossMany(10));
+$('b100').addEventListener('click', () => tossMany(100));
+$('b1000').addEventListener('click', () => tossMany(1000));
+$('breset').addEventListener('click', () => { if (busy) return; changed(true); $('res').textContent = ''; say('វិញ្ញាសា', 'បានសម្អាតលទ្ធផលហើយ។ ចុចលើតុដើម្បីបោះម្ដងទៀត។'); });
+$('tab-1').addEventListener('click', () => setCoins(1, 'h'));
+$('tab-2').addEventListener('click', () => setCoins(2, ''));
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme'), dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : cur === 'dark' ? 'light' : (dark ? 'light' : 'dark'));
+}
+const Q = new URLSearchParams(location.search);
+if (Q.get('compact')) document.documentElement.classList.add('compact');
+soundButton($('stage'));
+setCoins(Q.get('coins') === '2' ? 2 : 1, Q.get('event') || 'h');
+</script>
+<script src="../../static/js/mathfix.js?v=3bcc10b9a2"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>
