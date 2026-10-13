@@ -1,0 +1,1700 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បូក និងដក អង្កត់ ដោយប្រើដែកឈាន — ថ្នាក់ទី ៧ · មេរៀនទី ១២</title>
+<style>
+/* CSS Reset & Design System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --grey-blue: #627d98;
+  --grey-blue-light: #9fb3c8;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.03);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --primary: #3b82f6;
+    --primary-soft: rgba(59, 130, 246, 0.15);
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --orange: #fb923c;
+    --orange-soft: rgba(251, 146, 60, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+    --grey-blue: #829ab1;
+    --grey-blue-light: #486581;
+    
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --primary: #3b82f6;
+  --primary-soft: rgba(59, 130, 246, 0.15);
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --grey-blue: #829ab1;
+  --grey-blue-light: #486581;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --grey-blue: #627d98;
+  --grey-blue-light: #9fb3c8;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mode Switcher Tabs */
+.mode-tabs {
+  display: flex;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.mode-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-km);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-tab-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.theme-btn:hover {
+  background: var(--surface-border);
+}
+
+/* Step instruction banner */
+.instruction-box {
+  margin: 16px 20px 0;
+  padding: 14px 18px;
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 68px;
+}
+
+.step-indicator-badge {
+  background: var(--teal);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.instruction-text {
+  font-size: 16.5px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.55;
+  flex-grow: 1;
+}
+
+/* Canvas Stage */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 440;
+}
+
+/* SVG Elements Styling */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 20px;
+  fill: var(--ink);
+}
+
+.cx-math-text {
+  font-family: var(--font-km);
+  font-size: 14.5px;
+  font-weight: 600;
+  fill: var(--ink-secondary);
+}
+
+.cx-point {
+  fill: var(--ink);
+}
+
+.cx-point-orange {
+  fill: var(--orange);
+}
+
+.cx-point-green {
+  fill: var(--green);
+}
+
+.cx-line-ink {
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.cx-line-axis {
+  stroke: var(--ink-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.cx-arc-active {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+
+.cx-arc-history {
+  fill: none;
+  stroke: var(--grey-blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+
+.cx-seg-active {
+  stroke: var(--orange);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.cx-seg-history {
+  stroke: var(--grey-blue);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.cx-seg-final {
+  stroke: var(--green);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.cx-brace {
+  fill: none;
+  stroke: var(--ink-secondary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cx-brace-green {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Compass Tool styling */
+.tool-compass {
+  pointer-events: none;
+  filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.25));
+  transition: opacity 0.2s ease;
+}
+
+.c-leg {
+  stroke: #64748b;
+  stroke-width: 5.5;
+  stroke-linecap: round;
+}
+
+.c-leg-highlight {
+  stroke: #cbd5e1;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.c-pencil-holder {
+  stroke: #334155;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.c-pencil-body {
+  stroke: #e8710a;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.c-pencil-tip {
+  stroke: #1e293b;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+
+.c-needle {
+  stroke: #0f172a;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.c-hinge-base {
+  fill: #334155;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.c-hinge-center {
+  fill: #cbd5e1;
+}
+
+.c-handle {
+  stroke: #475569;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.c-handle-top {
+  fill: #64748b;
+  stroke: #334155;
+  stroke-width: 1.5;
+}
+
+/* Controls Toolbar */
+.controls-area {
+  padding: 6px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-km);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  min-height: 42px;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--surface-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-border);
+}
+
+.btn-autoplay.active {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: var(--orange);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Step List Navigation */
+.steps-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.step-chip {
+  flex: 1 1 0;
+  min-width: 110px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.step-chip:hover {
+  background: var(--surface-border);
+  color: var(--ink);
+}
+
+.step-chip.active {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+
+.step-chip.completed {
+  color: var(--teal);
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+/* Final Answer Banner */
+.result-banner {
+  margin: 0 20px 14px;
+  padding: 12px 18px;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.result-badge {
+  background: var(--green);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Footer info */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  body {
+    padding: 8px;
+  }
+  .app-header {
+    padding: 12px 16px;
+  }
+  h1 {
+    font-size: 18px;
+  }
+  .instruction-box {
+    margin: 12px 12px 0;
+    padding: 10px 14px;
+  }
+  .canvas-wrap {
+    padding: 12px 12px;
+  }
+  .controls-area {
+    padding: 4px 12px 12px;
+  }
+  .buttons-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .btn-autoplay {
+    grid-column: span 2;
+  }
+  .result-banner {
+    margin: 0 12px 12px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១២ · សញ្ញាណដំបូងនៃធរណីមាត្រ</div>
+      <h1 id="app-title">បូក និងដក អង្កត់ ដោយប្រើដែកឈាន</h1>
+    </div>
+
+    <div class="header-actions">
+      <!-- Mode toggle: Add vs Subtract -->
+      <div class="mode-tabs" role="tablist" aria-label="ជ្រើសរើសវិធីសាស្ត្រ">
+        <button class="mode-tab-btn active" id="tab-add" role="tab" aria-selected="true" onclick="switchMode('add')">
+          ➕ បូកអង្កត់
+        </button>
+        <button class="mode-tab-btn" id="tab-sub" role="tab" aria-selected="false" onclick="switchMode('sub')">
+          ➖ ដកអង្កត់
+        </button>
+      </div>
+
+      <!-- Theme button -->
+      <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Step instruction banner -->
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <!-- Main Canvas Board -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 440" role="img" aria-label="គំនូរបង្ហាញការបូកនិងដកអង្កត់ដោយដែកឈាន">
+        <defs>
+          <!-- Subtle Grid Background -->
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <!-- Background grid -->
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- GIVEN SEGMENTS BOX AT TOP -->
+        <g id="given-area">
+          <rect x="25" y="16" width="790" height="105" rx="10" fill="var(--surface-2)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="42" y="38" class="cx-math-text" font-weight="700" fill="var(--teal)">អង្កត់ដែលគេឱ្យ ៖ (ខ្នាត ១ cm = ៤០ px)</text>
+
+          <!-- Segment AB = 3 cm = 120 px -->
+          <g id="given-ab">
+            <line x1="80" y1="80" x2="200" y2="80" class="cx-line-ink" />
+            <circle cx="80" cy="80" r="3.5" class="cx-point" />
+            <circle cx="200" cy="80" r="3.5" class="cx-point" />
+            <text x="64" y="85" class="cx-label">A</text>
+            <text x="210" y="85" class="cx-label">B</text>
+            <text x="140" y="65" text-anchor="middle" class="cx-math-text">AB = ៣ cm</text>
+          </g>
+
+          <!-- Segment CD = 2 cm = 80 px -->
+          <g id="given-cd">
+            <line x1="330" y1="80" x2="410" y2="80" class="cx-line-ink" />
+            <circle cx="330" cy="80" r="3.5" class="cx-point" />
+            <circle cx="410" cy="80" r="3.5" class="cx-point" />
+            <text x="314" y="85" class="cx-label">C</text>
+            <text x="420" y="85" class="cx-label">D</text>
+            <text x="370" y="65" text-anchor="middle" class="cx-math-text">CD = ២ cm</text>
+          </g>
+
+          <!-- Segment EF = 1.5 cm = 60 px -->
+          <g id="given-ef">
+            <line x1="550" y1="80" x2="610" y2="80" class="cx-line-ink" />
+            <circle cx="550" cy="80" r="3.5" class="cx-point" />
+            <circle cx="610" cy="80" r="3.5" class="cx-point" />
+            <text x="534" y="85" class="cx-label">E</text>
+            <text x="620" y="85" class="cx-label">F</text>
+            <text x="580" y="65" text-anchor="middle" class="cx-math-text">EF = ១,៥ cm</text>
+          </g>
+        </g>
+
+        <!-- WORKING LINE xy -->
+        <g id="axis-xy">
+          <!-- Line with arrowheads -->
+          <line x1="45" y1="240" x2="795" y2="240" class="cx-line-axis" />
+          <polygon points="45,240 55,236 55,244" fill="var(--ink-secondary)" />
+          <polygon points="795,240 785,236 785,244" fill="var(--ink-secondary)" />
+          <text x="32" y="246" class="cx-label">x</text>
+          <text x="804" y="246" class="cx-label">y</text>
+        </g>
+
+        <!-- DYNAMIC CONSTRUCTION LAYERS -->
+        <g id="layer-history"></g>
+        <g id="layer-active"></g>
+        <g id="layer-braces"></g>
+        <g id="layer-points"></g>
+
+        <!-- COMPASS TOOL LAYER -->
+        <g id="layer-compass" class="tool-compass"></g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Result / Conclusion Bar (appears on final step) -->
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span id="result-text">A′F′ = AB + CD + EF = ៣ + ២ + ១,៥ = ៦,៥ cm</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-area">
+    <!-- Step Chips -->
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+
+    <!-- Buttons row -->
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()" aria-label="ថយក្រោយមួយជំហាន">
+        ◀ ថយក្រោយ
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()" aria-label="ទៅជំហានបន្ទាប់">
+        បន្ទាប់ ▶
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()" aria-label="ចាក់ជំហាននេះឡើងវិញ">
+        🔄 ចាក់ឡើងវិញ
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()" aria-label="ចាប់ផ្ដើមឡើងវិញ">
+        ↺ ចាប់ផ្ដើមឡើងវិញ
+      </button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()" aria-label="ចាក់ស្វ័យប្រវត្តិ">
+        ▶ ស្វ័យប្រវត្តិ
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer Source -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១២</span>
+    <span>KhmerMath · សំណង់ធរណីមាត្រ</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Interactive Geometry Teaching Animation
+ * Grade 7 · Lesson 12: Add and Subtract Segments with Compass
+ */
+
+// Khmer Digits converter
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]).replace('.', ',');
+}
+
+// Geometry configuration & Scale (1 cm = 40 px)
+const G = {
+  scale: 40,
+  AB_len: 3 * 40,   // 120 px
+  CD_len: 2 * 40,   // 80 px
+  EF_len: 1.5 * 40, // 60 px
+  
+  // Given points
+  A: [80, 80],
+  B: [200, 80],
+  C: [330, 80],
+  D: [410, 80],
+  E: [550, 80],
+  F: [610, 80],
+  
+  // Working line xy
+  yLine: 240,
+  
+  // Mode ADD points on xy
+  add: {
+    A_prime: [120, 240],
+    B_prime: [240, 240], // 120 + 120
+    D_prime: [320, 240], // 240 + 80
+    F_prime: [380, 240], // 320 + 60
+  },
+  
+  // Mode SUBTRACT points on xy
+  sub: {
+    A_prime: [180, 240],
+    B_prime: [300, 240], // 180 + 120
+    D_prime: [220, 240], // 300 - 80 (backwards!)
+  }
+};
+
+// Step definitions for both modes
+const MODES = {
+  add: {
+    title: 'បូក អង្កត់ ដោយប្រើដែកឈាន',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១',
+        text: 'យកដែកឈានវាស់ប្រវែងអង្កត់ AB (ចុងស្រួចត្រង់ A និងចុងខ្មៅដៃត្រង់ B)។',
+        action: 'measure_ab'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២',
+        text: 'រក្សាដង្កៀបដែកឈានដដែល យកចុងស្រួចដាក់ត្រង់ A′ លើបន្ទាត់ xy រួចគូសធ្នូកាត់ xy ត្រង់ B′ (A′B′ = AB)។',
+        action: 'cut_ab'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣',
+        text: 'បើកដែកឈានវាស់ CD រួចយកចុងស្រួចដាក់ត្រង់ B′ ហើយគូសធ្នូកាត់ xy ត្រង់ D′ ទៅខាងស្ដាំ (B′D′ = CD)។',
+        action: 'cut_cd'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤',
+        text: 'បើកដែកឈានវាស់ EF រួចយកចុងស្រួចដាក់ត្រង់ D′ ហើយគូសធ្នូកាត់ xy ត្រង់ F′ ទៅខាងស្ដាំ (D′F′ = EF)។',
+        action: 'cut_ef'
+      },
+      {
+        num: 5,
+        title: 'ជំហានទី ៥',
+        text: 'គេបានអង្កត់ A′F′ = AB + CD + EF = ៣ + ២ + ១,៥ = ៦,៥ cm ជាផលបូកនៃអង្កត់ទាំងបី។',
+        action: 'conclude_add'
+      }
+    ],
+    resultText: 'អង្កត់ A′F′ = AB + CD + EF = ៣ + ២ + ១,៥ = ៦,៥ cm'
+  },
+  sub: {
+    title: 'ដក អង្កត់ ដោយប្រើដែកឈាន',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១',
+        text: 'យកដែកឈានវាស់ AB រួចយកចុងស្រួចដាក់ត្រង់ A′ លើបន្ទាត់ xy ហើយគូសធ្នូកាត់ xy ត្រង់ B′ (A′B′ = AB = ៣ cm)។',
+        action: 'sub_step1'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២',
+        text: 'បើកដែកឈានវាស់ CD (២ cm) រួចដាក់ចុងស្រួចត្រង់ B′ ហើយគូសធ្នូកាត់ xy ត្រឡប់មកក្រោយ (ឆ្ពោះទៅ A′) ត្រង់ D′។',
+        action: 'sub_step2'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣',
+        text: 'គេបានអង្កត់ A′D′ = AB − CD = ៣ − ២ = ១ cm ជាផលដកនៃអង្កត់ទាំងពីរ។',
+        action: 'conclude_sub'
+      }
+    ],
+    resultText: 'អង្កត់ A′D′ = AB − CD = ៣ − ២ = ១ cm'
+  }
+};
+
+// Global App State
+let currentMode = 'add';
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animFrameId = null;
+
+// SVG Layer References
+const layerHistory = document.getElementById('layer-history');
+const layerActive = document.getElementById('layer-active');
+const layerBraces = document.getElementById('layer-braces');
+const layerPoints = document.getElementById('layer-points');
+const layerCompass = document.getElementById('layer-compass');
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const resultText = document.getElementById('result-text');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+// SVG Helpers
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    el.setAttribute(k, v);
+  }
+  return el;
+}
+
+function clearLayers() {
+  layerHistory.innerHTML = '';
+  layerActive.innerHTML = '';
+  layerBraces.innerHTML = '';
+  layerPoints.innerHTML = '';
+  layerCompass.innerHTML = '';
+}
+
+/**
+ * Generate curly brace path between (x1, y) and (x2, y)
+ * height h (positive = downward, negative = upward)
+ */
+function createCurlyBracePath(x1, x2, y, h) {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  const midX = (minX + maxX) / 2;
+  const r = Math.min(6, (maxX - minX) / 6);
+  const dir = h >= 0 ? 1 : -1;
+  const absH = Math.abs(h);
+  
+  return `M ${minX} ${y} ` +
+         `Q ${minX} ${y + dir * absH * 0.5} ${minX + r} ${y + dir * absH * 0.5} ` +
+         `L ${midX - r} ${y + dir * absH * 0.5} ` +
+         `Q ${midX} ${y + dir * absH * 0.5} ${midX} ${y + dir * absH} ` +
+         `Q ${midX} ${y + dir * absH * 0.5} ${midX + r} ${y + dir * absH * 0.5} ` +
+         `L ${maxX - r} ${y + dir * absH * 0.5} ` +
+         `Q ${maxX} ${y + dir * absH * 0.5} ${maxX} ${y}`;
+}
+
+/**
+ * Render Point with Circle and Label
+ */
+function drawPoint(container, pt, labelText, offset = [0, 22], colorClass = 'cx-point') {
+  const g = createSvgEl('g');
+  g.appendChild(createSvgEl('circle', {
+    cx: pt[0], cy: pt[1], r: 4, class: colorClass
+  }));
+  if (labelText) {
+    const text = createSvgEl('text', {
+      x: pt[0] + offset[0],
+      y: pt[1] + offset[1],
+      class: 'cx-label',
+      'text-anchor': 'middle'
+    });
+    text.textContent = labelText;
+    g.appendChild(text);
+  }
+  container.appendChild(g);
+  return g;
+}
+
+/**
+ * Render Arc SVG path
+ */
+function getArcPath(center, radius, startAngle, endAngle) {
+  const x1 = center[0] + radius * Math.cos(startAngle);
+  const y1 = center[1] + radius * Math.sin(startAngle);
+  const x2 = center[0] + radius * Math.cos(endAngle);
+  const y2 = center[1] + radius * Math.sin(endAngle);
+  const largeArc = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0;
+  const sweep = endAngle > startAngle ? 1 : 0;
+  return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
+}
+
+/**
+ * Draw Compass Tool
+ * needlePt: [x, y], pencilPt: [x, y]
+ */
+function drawCompass(needlePt, pencilPt, opacity = 1) {
+  layerCompass.innerHTML = '';
+  if (opacity <= 0) return;
+  
+  const nx = needlePt[0], ny = needlePt[1];
+  const px = pencilPt[0], py = pencilPt[1];
+  
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2;
+  const midY = (ny + py) / 2;
+  
+  // Leg length is proportional to span with realistic minimum
+  const legLen = Math.max(span * 0.7 + 65, 80);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+  
+  // Normal pointing upwards (negative y)
+  let dx = px - nx;
+  let dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen;
+  let normY = -dx / dLen;
+  if (normY > 0) {
+    normX = -normX;
+    normY = -normY;
+  }
+  
+  // Hinge point
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  
+  // Handle top
+  const handleLen = 30;
+  const hTopX = hx + normX * handleLen;
+  const hTopY = hy + normY * handleLen;
+  
+  const g = createSvgEl('g', { opacity: opacity });
+  
+  // 1. Top handle
+  g.appendChild(createSvgEl('line', {
+    x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle'
+  }));
+  g.appendChild(createSvgEl('circle', {
+    cx: hTopX, cy: hTopY, r: 5, class: 'c-handle-top'
+  }));
+  
+  // 2. Needle Leg
+  g.appendChild(createSvgEl('line', {
+    x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg'
+  }));
+  g.appendChild(createSvgEl('line', {
+    x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg-highlight'
+  }));
+  g.appendChild(createSvgEl('circle', {
+    cx: nx, cy: ny, r: 2.8, class: 'c-needle'
+  }));
+  
+  // 3. Pencil Leg & Pencil
+  g.appendChild(createSvgEl('line', {
+    x1: hx, y1: hy, x2: px, y2: py, class: 'c-pencil-holder'
+  }));
+  // Pencil wooden casing
+  const pencilMidX = (hx + px * 2) / 3;
+  const pencilMidY = (hy + py * 2) / 3;
+  g.appendChild(createSvgEl('line', {
+    x1: pencilMidX, y1: pencilMidY, x2: px, y2: py, class: 'c-pencil-body'
+  }));
+  // Pencil graphite tip
+  g.appendChild(createSvgEl('circle', {
+    cx: px, cy: py, r: 3.2, class: 'c-pencil-tip'
+  }));
+  
+  // 4. Center Hinge disc
+  g.appendChild(createSvgEl('circle', {
+    cx: hx, cy: hy, r: 8, class: 'c-hinge-base'
+  }));
+  g.appendChild(createSvgEl('circle', {
+    cx: hx, cy: hy, r: 3.5, class: 'c-hinge-center'
+  }));
+  
+  layerCompass.appendChild(g);
+}
+
+/**
+ * Animate progressive drawing
+ */
+function animateProgressive(duration, onUpdate, onComplete) {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  const startTime = performance.now();
+  
+  function loop(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / duration);
+    // Ease-in-out curve
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    
+    onUpdate(ease, t);
+    
+    if (t < 1) {
+      animFrameId = requestAnimationFrame(loop);
+    } else {
+      animFrameId = null;
+      if (onComplete) onComplete();
+    }
+  }
+  
+  animFrameId = requestAnimationFrame(loop);
+}
+
+/**
+ * Build Navigation Chips
+ */
+function renderNavChips() {
+  stepsNav.innerHTML = '';
+  const steps = MODES[currentMode].steps;
+  steps.forEach((step, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = `${step.title}`;
+    chip.onclick = () => goToStep(idx);
+    stepsNav.appendChild(chip);
+  });
+}
+
+/**
+ * Update UI text & button states
+ */
+function updateUI() {
+  const modeData = MODES[currentMode];
+  const stepData = modeData.steps[currentStep];
+  
+  stepBadge.textContent = stepData.title;
+  stepText.textContent = stepData.text;
+  
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === modeData.steps.length - 1;
+  
+  // Show / hide result banner on last step
+  if (currentStep === modeData.steps.length - 1) {
+    resultBanner.style.display = 'flex';
+    resultText.textContent = modeData.resultText;
+  } else {
+    resultBanner.style.display = 'none';
+  }
+  
+  renderNavChips();
+}
+
+/**
+ * Render Steps for Mode: ADD
+ */
+function renderAddMode(step, isReplay = false) {
+  clearLayers();
+  
+  const A_prime = G.add.A_prime;
+  const B_prime = G.add.B_prime;
+  const D_prime = G.add.D_prime;
+  const F_prime = G.add.F_prime;
+  
+  // Initial point A' always visible on xy
+  drawPoint(layerPoints, A_prime, "A′", [0, -18]);
+  
+  if (step === 0) {
+    // Step 1: Compass measures AB at top
+    if (isReplay) {
+      animateProgressive(1200, (ease) => {
+        const curPx = G.A[0] + (G.B[0] - G.A[0]) * ease;
+        drawCompass(G.A, [curPx, G.A[1]]);
+      });
+    } else {
+      drawCompass(G.A, G.B);
+    }
+  }
+  
+  else if (step === 1) {
+    // Step 2: Arc at B'
+    if (isReplay) {
+      const radius = G.AB_len;
+      const angleStart = -0.6;
+      const angleEnd = 0.6;
+      
+      animateProgressive(1300, (ease) => {
+        const curAngle = angleStart + (angleEnd - angleStart) * ease;
+        const px = A_prime[0] + radius * Math.cos(curAngle);
+        const py = A_prime[1] + radius * Math.sin(curAngle);
+        
+        layerActive.innerHTML = '';
+        const path = createSvgEl('path', {
+          d: getArcPath(A_prime, radius, angleStart, curAngle),
+          class: 'cx-arc-active'
+        });
+        layerActive.appendChild(path);
+        
+        drawCompass(A_prime, [px, py]);
+      }, () => {
+        drawPoint(layerPoints, B_prime, "B′", [0, -18], 'cx-point-orange');
+        const seg = createSvgEl('line', {
+          x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-active'
+        });
+        layerActive.appendChild(seg);
+        handleAutoplayNext();
+      });
+    } else {
+      const path = createSvgEl('path', {
+        d: getArcPath(A_prime, G.AB_len, -0.6, 0.6),
+        class: 'cx-arc-active'
+      });
+      layerActive.appendChild(path);
+      const seg = createSvgEl('line', {
+        x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-active'
+      });
+      layerActive.appendChild(seg);
+      drawPoint(layerPoints, B_prime, "B′", [0, -18], 'cx-point-orange');
+      drawCompass(A_prime, [A_prime[0] + G.AB_len * Math.cos(0.5), A_prime[1] + G.AB_len * Math.sin(0.5)]);
+    }
+  }
+  
+  else if (step === 2) {
+    // Step 3: Compass moves to B', draws arc at D'
+    // Prior step 2 items become history
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-history'
+    }));
+    drawPoint(layerPoints, B_prime, "B′", [0, -18]);
+    
+    if (isReplay) {
+      const radius = G.CD_len;
+      const angleStart = -0.65;
+      const angleEnd = 0.65;
+      
+      animateProgressive(1300, (ease) => {
+        const curAngle = angleStart + (angleEnd - angleStart) * ease;
+        const px = B_prime[0] + radius * Math.cos(curAngle);
+        const py = B_prime[1] + radius * Math.sin(curAngle);
+        
+        layerActive.innerHTML = '';
+        const path = createSvgEl('path', {
+          d: getArcPath(B_prime, radius, angleStart, curAngle),
+          class: 'cx-arc-active'
+        });
+        layerActive.appendChild(path);
+        
+        drawCompass(B_prime, [px, py]);
+      }, () => {
+        drawPoint(layerPoints, D_prime, "D′", [0, -18], 'cx-point-orange');
+        const seg = createSvgEl('line', {
+          x1: B_prime[0], y1: B_prime[1], x2: D_prime[0], y2: D_prime[1], class: 'cx-seg-active'
+        });
+        layerActive.appendChild(seg);
+        handleAutoplayNext();
+      });
+    } else {
+      const path = createSvgEl('path', {
+        d: getArcPath(B_prime, G.CD_len, -0.65, 0.65), class: 'cx-arc-active'
+      });
+      layerActive.appendChild(path);
+      const seg = createSvgEl('line', {
+        x1: B_prime[0], y1: B_prime[1], x2: D_prime[0], y2: D_prime[1], class: 'cx-seg-active'
+      });
+      layerActive.appendChild(seg);
+      drawPoint(layerPoints, D_prime, "D′", [0, -18], 'cx-point-orange');
+      drawCompass(B_prime, [B_prime[0] + G.CD_len * Math.cos(0.55), B_prime[1] + G.CD_len * Math.sin(0.55)]);
+    }
+  }
+  
+  else if (step === 3) {
+    // Step 4: Compass moves to D', draws arc at F'
+    // Previous arcs in history
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(B_prime, G.CD_len, -0.65, 0.65), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: B_prime[0], y1: B_prime[1], x2: D_prime[0], y2: D_prime[1], class: 'cx-seg-history'
+    }));
+    drawPoint(layerPoints, B_prime, "B′", [0, -18]);
+    drawPoint(layerPoints, D_prime, "D′", [0, -18]);
+    
+    if (isReplay) {
+      const radius = G.EF_len;
+      const angleStart = -0.7;
+      const angleEnd = 0.7;
+      
+      animateProgressive(1300, (ease) => {
+        const curAngle = angleStart + (angleEnd - angleStart) * ease;
+        const px = D_prime[0] + radius * Math.cos(curAngle);
+        const py = D_prime[1] + radius * Math.sin(curAngle);
+        
+        layerActive.innerHTML = '';
+        const path = createSvgEl('path', {
+          d: getArcPath(D_prime, radius, angleStart, curAngle),
+          class: 'cx-arc-active'
+        });
+        layerActive.appendChild(path);
+        
+        drawCompass(D_prime, [px, py]);
+      }, () => {
+        drawPoint(layerPoints, F_prime, "F′", [0, -18], 'cx-point-orange');
+        const seg = createSvgEl('line', {
+          x1: D_prime[0], y1: D_prime[1], x2: F_prime[0], y2: F_prime[1], class: 'cx-seg-active'
+        });
+        layerActive.appendChild(seg);
+        handleAutoplayNext();
+      });
+    } else {
+      const path = createSvgEl('path', {
+        d: getArcPath(D_prime, G.EF_len, -0.7, 0.7), class: 'cx-arc-active'
+      });
+      layerActive.appendChild(path);
+      const seg = createSvgEl('line', {
+        x1: D_prime[0], y1: D_prime[1], x2: F_prime[0], y2: F_prime[1], class: 'cx-seg-active'
+      });
+      layerActive.appendChild(seg);
+      drawPoint(layerPoints, F_prime, "F′", [0, -18], 'cx-point-orange');
+      drawCompass(D_prime, [D_prime[0] + G.EF_len * Math.cos(0.6), D_prime[1] + G.EF_len * Math.sin(0.6)]);
+    }
+  }
+  
+  else if (step === 4) {
+    // Step 5: Final sum A'F' = 6.5 cm with braces
+    // All arcs in history
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(B_prime, G.CD_len, -0.65, 0.65), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(D_prime, G.EF_len, -0.7, 0.7), class: 'cx-arc-history'
+    }));
+    
+    // Segment A'F' highlighted in bold green
+    const finalSeg = createSvgEl('line', {
+      x1: A_prime[0], y1: A_prime[1], x2: F_prime[0], y2: F_prime[1], class: 'cx-seg-final'
+    });
+    layerActive.appendChild(finalSeg);
+    
+    drawPoint(layerPoints, B_prime, "B′", [0, -18]);
+    drawPoint(layerPoints, D_prime, "D′", [0, -18]);
+    drawPoint(layerPoints, F_prime, "F′", [0, -18], 'cx-point-green');
+    
+    // Individual braces under each piece (y = 265)
+    // Brace 1: A'B'
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(A_prime[0], B_prime[0], 255, 14), class: 'cx-brace'
+    }));
+    const t1 = createSvgEl('text', {
+      x: (A_prime[0] + B_prime[0]) / 2, y: 286, 'text-anchor': 'middle', class: 'cx-math-text'
+    });
+    t1.textContent = 'AB = ៣ cm';
+    layerBraces.appendChild(t1);
+    
+    // Brace 2: B'D'
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(B_prime[0], D_prime[0], 255, 14), class: 'cx-brace'
+    }));
+    const t2 = createSvgEl('text', {
+      x: (B_prime[0] + D_prime[0]) / 2, y: 286, 'text-anchor': 'middle', class: 'cx-math-text'
+    });
+    t2.textContent = 'CD = ២ cm';
+    layerBraces.appendChild(t2);
+    
+    // Brace 3: D'F'
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(D_prime[0], F_prime[0], 255, 14), class: 'cx-brace'
+    }));
+    const t3 = createSvgEl('text', {
+      x: (D_prime[0] + F_prime[0]) / 2, y: 286, 'text-anchor': 'middle', class: 'cx-math-text'
+    });
+    t3.textContent = 'EF = ១,៥ cm';
+    layerBraces.appendChild(t3);
+    
+    // Total brace spanning A' to F' (y = 315)
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(A_prime[0], F_prime[0], 310, 18), class: 'cx-brace-green'
+    }));
+    const tTot = createSvgEl('text', {
+      x: (A_prime[0] + F_prime[0]) / 2, y: 350, 'text-anchor': 'middle', class: 'cx-math-text',
+      fill: 'var(--green)', 'font-weight': '700', 'font-size': '16px'
+    });
+    tTot.textContent = 'A′F′ = AB + CD + EF = ៣ + ២ + ១,៥ = ៦,៥ cm';
+    layerBraces.appendChild(tTot);
+  }
+}
+
+/**
+ * Render Steps for Mode: SUBTRACT
+ */
+function renderSubMode(step, isReplay = false) {
+  clearLayers();
+  
+  const A_prime = G.sub.A_prime;
+  const B_prime = G.sub.B_prime;
+  const D_prime = G.sub.D_prime;
+  
+  // Point A'
+  drawPoint(layerPoints, A_prime, "A′", [0, -18]);
+  
+  if (step === 0) {
+    // Step 1: Copy AB on xy from A' to B'
+    if (isReplay) {
+      const radius = G.AB_len;
+      const angleStart = -0.6;
+      const angleEnd = 0.6;
+      
+      animateProgressive(1300, (ease) => {
+        const curAngle = angleStart + (angleEnd - angleStart) * ease;
+        const px = A_prime[0] + radius * Math.cos(curAngle);
+        const py = A_prime[1] + radius * Math.sin(curAngle);
+        
+        layerActive.innerHTML = '';
+        const path = createSvgEl('path', {
+          d: getArcPath(A_prime, radius, angleStart, curAngle), class: 'cx-arc-active'
+        });
+        layerActive.appendChild(path);
+        drawCompass(A_prime, [px, py]);
+      }, () => {
+        drawPoint(layerPoints, B_prime, "B′", [0, -18], 'cx-point-orange');
+        const seg = createSvgEl('line', {
+          x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-active'
+        });
+        layerActive.appendChild(seg);
+        handleAutoplayNext();
+      });
+    } else {
+      const path = createSvgEl('path', {
+        d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-active'
+      });
+      layerActive.appendChild(path);
+      const seg = createSvgEl('line', {
+        x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-active'
+      });
+      layerActive.appendChild(seg);
+      drawPoint(layerPoints, B_prime, "B′", [0, -18], 'cx-point-orange');
+      drawCompass(A_prime, [B_prime[0], B_prime[1]]);
+    }
+  }
+  
+  else if (step === 1) {
+    // Step 2: Open CD (2 cm), pivot B', arc cuts xy BACKWARDS towards A' at D'
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: A_prime[0], y1: A_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-history'
+    }));
+    drawPoint(layerPoints, B_prime, "B′", [0, -18]);
+    
+    if (isReplay) {
+      const radius = G.CD_len;
+      // Arc backwards: around angle PI (180 deg)
+      const angleStart = Math.PI - 0.65;
+      const angleEnd = Math.PI + 0.65;
+      
+      animateProgressive(1300, (ease) => {
+        const curAngle = angleStart + (angleEnd - angleStart) * ease;
+        const px = B_prime[0] + radius * Math.cos(curAngle);
+        const py = B_prime[1] + radius * Math.sin(curAngle);
+        
+        layerActive.innerHTML = '';
+        const path = createSvgEl('path', {
+          d: getArcPath(B_prime, radius, angleStart, curAngle), class: 'cx-arc-active'
+        });
+        layerActive.appendChild(path);
+        drawCompass(B_prime, [px, py]);
+      }, () => {
+        drawPoint(layerPoints, D_prime, "D′", [0, -18], 'cx-point-orange');
+        handleAutoplayNext();
+      });
+    } else {
+      const path = createSvgEl('path', {
+        d: getArcPath(B_prime, G.CD_len, Math.PI - 0.65, Math.PI + 0.65), class: 'cx-arc-active'
+      });
+      layerActive.appendChild(path);
+      drawPoint(layerPoints, D_prime, "D′", [0, -18], 'cx-point-orange');
+      drawCompass(B_prime, [D_prime[0], D_prime[1]]);
+    }
+  }
+  
+  else if (step === 2) {
+    // Step 3: Conclude A'D' = AB - CD = 1 cm
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(A_prime, G.AB_len, -0.6, 0.6), class: 'cx-arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: getArcPath(B_prime, G.CD_len, Math.PI - 0.65, Math.PI + 0.65), class: 'cx-arc-history'
+    }));
+    
+    // Segment A'D' highlighted in green
+    const greenSeg = createSvgEl('line', {
+      x1: A_prime[0], y1: A_prime[1], x2: D_prime[0], y2: D_prime[1], class: 'cx-seg-final'
+    });
+    layerActive.appendChild(greenSeg);
+    
+    // Segment D'B' in history
+    const historySubSeg = createSvgEl('line', {
+      x1: D_prime[0], y1: D_prime[1], x2: B_prime[0], y2: B_prime[1], class: 'cx-seg-history'
+    });
+    layerActive.appendChild(historySubSeg);
+    
+    drawPoint(layerPoints, D_prime, "D′", [0, -18], 'cx-point-green');
+    drawPoint(layerPoints, B_prime, "B′", [0, -18]);
+    
+    // Upper brace for whole A'B'
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(A_prime[0], B_prime[0], 200, -14), class: 'cx-brace'
+    }));
+    const tAB = createSvgEl('text', {
+      x: (A_prime[0] + B_prime[0]) / 2, y: 180, 'text-anchor': 'middle', class: 'cx-math-text'
+    });
+    tAB.textContent = 'AB = ៣ cm';
+    layerBraces.appendChild(tAB);
+    
+    // Brace for subtracted piece D'B' = CD
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(D_prime[0], B_prime[0], 255, 14), class: 'cx-brace'
+    }));
+    const tCD = createSvgEl('text', {
+      x: (D_prime[0] + B_prime[0]) / 2, y: 286, 'text-anchor': 'middle', class: 'cx-math-text'
+    });
+    tCD.textContent = 'CD = ២ cm';
+    layerBraces.appendChild(tCD);
+    
+    // Final green brace for remaining A'D'
+    layerBraces.appendChild(createSvgEl('path', {
+      d: createCurlyBracePath(A_prime[0], D_prime[0], 310, 16), class: 'cx-brace-green'
+    }));
+    const tAns = createSvgEl('text', {
+      x: (A_prime[0] + D_prime[0]) / 2, y: 345, 'text-anchor': 'middle', class: 'cx-math-text',
+      fill: 'var(--green)', 'font-weight': '700', 'font-size': '16px'
+    });
+    tAns.textContent = 'A′D′ = AB − CD = ៣ − ២ = ១ cm';
+    layerBraces.appendChild(tAns);
+  }
+}
+
+/**
+ * Master step render function
+ */
+function renderStep(isReplay = false) {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  updateUI();
+  
+  if (currentMode === 'add') {
+    renderAddMode(currentStep, isReplay);
+  } else {
+    renderSubMode(currentStep, isReplay);
+  }
+}
+
+/**
+ * Autoplay progression
+ */
+function handleAutoplayNext() {
+  if (!isAutoplaying) return;
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  
+  const maxSteps = MODES[currentMode].steps.length;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < maxSteps - 1) {
+      nextStep();
+    } else {
+      // Completed, pause autoplay
+      toggleAutoplay(false);
+    }
+  }, 2200);
+}
+
+/**
+ * Action Handlers
+ */
+function nextStep() {
+  const maxSteps = MODES[currentMode].steps.length;
+  if (currentStep < maxSteps - 1) {
+    currentStep++;
+    renderStep(true);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderStep(false);
+  }
+}
+
+function replayStep() {
+  renderStep(true);
+}
+
+function resetConstruction() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderStep(true);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  renderStep(true);
+}
+
+function switchMode(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  
+  document.getElementById('tab-add').classList.toggle('active', mode === 'add');
+  document.getElementById('tab-add').setAttribute('aria-selected', mode === 'add');
+  document.getElementById('tab-sub').classList.toggle('active', mode === 'sub');
+  document.getElementById('tab-sub').setAttribute('aria-selected', mode === 'sub');
+  
+  document.getElementById('app-title').textContent = MODES[mode].title;
+  
+  renderStep(true);
+}
+
+function toggleAutoplay(forceState) {
+  isAutoplaying = forceState !== undefined ? forceState : !isAutoplaying;
+  
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    // If at the end, reset to start
+    if (currentStep >= MODES[currentMode].steps.length - 1) {
+      currentStep = 0;
+    }
+    renderStep(true);
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  let target = 'light';
+  if (current === 'light') {
+    target = 'dark';
+  } else if (current === 'dark') {
+    target = 'light';
+  } else {
+    target = prefersDark ? 'light' : 'dark';
+  }
+  
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+// Initialization on load
+document.addEventListener('DOMContentLoaded', () => {
+  renderStep(true);
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

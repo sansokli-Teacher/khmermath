@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>រង្វង់ជាសំណុំចំណុច — ថ្នាក់ទី ៧ · មេរៀនទី ១៧</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Slider Bar */
+.slider-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  padding: 14px 24px; background: var(--surface-2); border-bottom: 1px solid var(--surface-border);
+  gap: 16px;
+}
+.slider-ctrl { display: flex; align-items: center; gap: 12px; }
+.slider-ctrl label { font-size: 15px; font-weight: 600; color: var(--ink); }
+.slider-ctrl input[type="range"] { width: 180px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 50px; text-align: center; padding: 3px 10px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 64px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Circle & Points */
+.locus-circle { fill: none; stroke: var(--blue); stroke-width: 3.2; stroke-linecap: round; }
+.locus-point { fill: var(--teal); stroke: #ffffff; stroke-width: 1.5; transition: all 0.15s ease; }
+.locus-point.active { fill: var(--orange); r: 6.5; }
+.radius-spoke { stroke: rgba(15, 118, 110, 0.25); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.active-radius { stroke: var(--orange); stroke-width: 2.2; }
+
+/* Compass tool */
+.tool-compass { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); pointer-events: none; }
+.c-leg { stroke: #64748b; stroke-width: 3.5; stroke-linecap: round; }
+.c-needle { fill: #334155; }
+.c-pencil { fill: #ea580c; stroke: #9a3412; stroke-width: 1; }
+.c-hinge { fill: #f59e0b; stroke: #b45309; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
+
+/* Small ruler snippet */
+.mini-ruler { fill: rgba(254, 240, 138, 0.9); stroke: #ca8a04; stroke-width: 1.2; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-toggle-circle { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
+.btn-toggle-circle.active { background: var(--blue); color: #fff; }
+.btn-play.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; gap: 12px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៧ · រង្វង់</div>
+<h1>រង្វង់ជាសំណុំចំណុច</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Slider -->
+  <div class="slider-bar">
+    <div class="slider-ctrl">
+      <label for="slider-n">ចំនួនចំណុច (៤ ដល់ ៦០) ៖</label>
+      <input type="range" id="slider-n" min="4" max="60" value="20" oninput="onSliderChange()">
+      <span class="val-badge" id="val-n">២០</span>
+    </div>
+    <div style="font-size: 14.5px; font-weight: 600; color: var(--ink-secondary);">
+      ចម្ងាយថេរ OM = កាំ R = ២ cm (១៤០ px)
+    </div>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">សញ្ញាណរង្វង់</span>
+    <p class="instruction-text" id="step-text">
+      ដៅចំណុចយ៉ាងតិច ២០ ដែលនៅចម្ងាយស្មើគ្នា ២ cm ពីផ្ចិត O ៖ កាលណាដៅចំណុចកាន់តែច្រើន ចំណុចទាំងនោះផ្គុំបានជាខ្សែកោងបិទជិតហៅថា «រង្វង់»។
+    </p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរសំណុំចំណុចនៃរង្វង់">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <!-- Dimension Box -->
+        <g id="scale-box" transform="translate(30, 24)">
+          <rect width="250" height="40" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="25" class="cx-math-text" font-weight="700" fill="var(--teal)">កាំរង្វង់ R = ២ cm (១៤០ px)</text>
+        </g>
+
+        <!-- Construction layers -->
+        <g id="layer-spokes"></g>
+        <g id="layer-circle"></g>
+        <g id="layer-points"></g>
+        <g id="layer-ruler"></g>
+        <g id="layer-compass"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <span class="result-badge">និយមន័យរង្វង់</span>
+    <span>រង្វង់ គឺជាសំណុំចំណុចទាំងអស់ក្នុងប្លង់ ដែលឋិតនៅចម្ងាយស្មើគ្នា (កាំ R = ២ cm) ពីចំណុចនឹងមួយហៅថា ផ្ចិត O</span>
+  </div>
+
+  <div class="controls-area">
+    <div class="buttons-row">
+      <button type="button" class="btn btn-primary btn-play" id="btn-play" onclick="startStampAnimation()">
+        ▶ ចាក់ចលនាដៅចំណុចដោយដែកឈាន
+      </button>
+      <button type="button" class="btn btn-toggle-circle" id="btn-circle" onclick="toggleCircleLine()">
+        ⭕ គូសខ្សែរង្វង់ភ្ជាប់ចំណុច
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="resetAll()">
+        ↺ ចាប់ផ្ដើមឡើងវិញ
+      </button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៧</span>
+    <span>ខ្សែកោងបិទជិតដែលមានចម្ងាយថេរពីផ្ចិត O ហៅថា «រង្វង់»</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Center O and Radius R = 2 cm = 140 px
+const O = { x: 420, y: 240 };
+const R = 140;
+
+let pointCount = 20;
+let stampedCount = 20; // number of points currently drawn
+let showFullCircle = false;
+let stampTimer = null;
+let currentActiveIdx = -1;
+
+const sliderN = document.getElementById('slider-n');
+const valN = document.getElementById('val-n');
+const btnPlay = document.getElementById('btn-play');
+const btnCircle = document.getElementById('btn-circle');
+const stepText = document.getElementById('step-text');
+
+const layerSpokes = document.getElementById('layer-spokes');
+const layerCircle = document.getElementById('layer-circle');
+const layerPoints = document.getElementById('layer-points');
+const layerRuler = document.getElementById('layer-ruler');
+const layerCompass = document.getElementById('layer-compass');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function drawCompassTool(needlePt, pencilPt) {
+  const g = createSvgEl('g', { class: 'tool-compass' });
+  const nx = needlePt.x, ny = needlePt.y;
+  const px = pencilPt.x, py = pencilPt.y;
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2, midY = (ny + py) / 2;
+  const legLen = Math.max(span * 0.7 + 60, 80);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+
+  let dx = px - nx, dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen, normY = -dx / dLen;
+  if (normY > 0) { normX = -normX; normY = -normY; }
+
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  const hTopX = hx + normX * 30;
+  const hTopY = hy + normY * 30;
+
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: nx, cy: ny, r: 3, class: 'c-needle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: px, y2: py, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: px, cy: py, r: 3.5, class: 'c-pencil' }));
+  g.appendChild(createSvgEl('circle', { cx: hx, cy: hy, r: 6.5, class: 'c-hinge' }));
+
+  return g;
+}
+
+function renderScene() {
+  layerSpokes.innerHTML = '';
+  layerCircle.innerHTML = '';
+  layerPoints.innerHTML = '';
+  layerRuler.innerHTML = '';
+  layerCompass.innerHTML = '';
+
+  // Center point O
+  layerPoints.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: 5, fill: 'var(--ink)' }));
+  const lblO = createSvgEl('text', { x: O.x - 18, y: O.y + 20, class: 'cx-label' });
+  lblO.textContent = 'O';
+  layerPoints.appendChild(lblO);
+
+  // Full circle line if enabled
+  if (showFullCircle) {
+    layerCircle.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: R, class: 'locus-circle'
+    }));
+  }
+
+  // Draw stamped points around circle
+  const stepAngle = (2 * Math.PI) / pointCount;
+  for (let i = 0; i < stampedCount; i++) {
+    const angle = i * stepAngle;
+    const px = O.x + R * Math.cos(angle);
+    const py = O.y + R * Math.sin(angle);
+
+    // Dotted spoke from O to point
+    layerSpokes.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: px, y2: py, class: 'radius-spoke'
+    }));
+
+    // Point
+    const isAct = (i === currentActiveIdx);
+    const ptCircle = createSvgEl('circle', {
+      cx: px, cy: py, r: isAct ? 6 : 4.5,
+      class: `locus-point ${isAct ? 'active' : ''}`
+    });
+    layerPoints.appendChild(ptCircle);
+
+    // Label on first point M
+    if (i === 0) {
+      const lblM = createSvgEl('text', {
+        x: px + 14, y: py + 5, class: 'cx-label', fill: 'var(--teal)'
+      });
+      lblM.textContent = 'M';
+      layerPoints.appendChild(lblM);
+    }
+  }
+
+  // If a point is currently active (stamping animation)
+  if (currentActiveIdx >= 0 && currentActiveIdx < pointCount) {
+    const angle = currentActiveIdx * stepAngle;
+    const curP = { x: O.x + R * Math.cos(angle), y: O.y + R * Math.sin(angle) };
+
+    // Active highlighted radius line
+    layerSpokes.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: curP.x, y2: curP.y, class: 'active-radius'
+    }));
+
+    // Mini ruler showing 2 cm along radius
+    const rulerG = createSvgEl('g', {
+      transform: `translate(${O.x}, ${O.y}) rotate(${angle * 180 / Math.PI})`
+    });
+    rulerG.appendChild(createSvgEl('rect', { x: 0, y: -16, width: R, height: 14, rx: 3, class: 'mini-ruler' }));
+    rulerG.appendChild(createSvgEl('text', {
+      x: R / 2, y: -5, 'text-anchor': 'middle', 'font-size': '11px',
+      'font-family': 'var(--font-km)', 'font-weight': '700', fill: '#854d0e'
+    })).textContent = '២ cm';
+    layerRuler.appendChild(rulerG);
+
+    // Compass tool at O pointing to curP
+    layerCompass.appendChild(drawCompassTool(O, curP));
+  }
+}
+
+function onSliderChange() {
+  if (stampTimer) clearInterval(stampTimer);
+  btnPlay.classList.remove('active');
+  btnPlay.innerHTML = '▶ ចាក់ចលនាដៅចំណុចដោយដែកឈាន';
+
+  pointCount = parseInt(sliderN.value, 10);
+  valN.textContent = toKhmer(pointCount);
+  stampedCount = pointCount;
+  currentActiveIdx = -1;
+
+  stepText.textContent = `បានដៅចំនួន ${toKhmer(pointCount)} ចំណុចជុំវិញផ្ចិត O ៖ កាលណាដៅចំណុចកាន់តែច្រើន ចម្ងាយរវាងចំណុចកាន់តែជិតគ្នា បង្កើតបានជាខ្សែកោងរលីងស្អាត (រង្វង់)។`;
+  renderScene();
+}
+
+function startStampAnimation() {
+  if (stampTimer) {
+    clearInterval(stampTimer);
+    stampTimer = null;
+    btnPlay.classList.remove('active');
+    btnPlay.innerHTML = '▶ ចាក់ចលនាដៅចំណុចដោយដែកឈាន';
+    return;
+  }
+
+  btnPlay.classList.add('active');
+  btnPlay.innerHTML = '⏸ ផ្អាកការដៅ';
+
+  stampedCount = 0;
+  currentActiveIdx = 0;
+  renderScene();
+
+  const delay = Math.max(50, Math.min(180, Math.floor(3600 / pointCount)));
+  stampTimer = setInterval(() => {
+    stampedCount++;
+    currentActiveIdx = stampedCount - 1;
+    renderScene();
+
+    if (stampedCount >= pointCount) {
+      clearInterval(stampTimer);
+      stampTimer = null;
+      btnPlay.classList.remove('active');
+      btnPlay.innerHTML = '🔄 ចាក់ដៅឡើងវិញ';
+      showFullCircle = true;
+      btnCircle.classList.add('active');
+      currentActiveIdx = -1;
+      renderScene();
+    }
+  }, delay);
+}
+
+function toggleCircleLine() {
+  showFullCircle = !showFullCircle;
+  btnCircle.classList.toggle('active', showFullCircle);
+  renderScene();
+}
+
+function resetAll() {
+  if (stampTimer) clearInterval(stampTimer);
+  stampTimer = null;
+  btnPlay.classList.remove('active');
+  btnPlay.innerHTML = '▶ ចាក់ចលនាដៅចំណុចដោយដែកឈាន';
+  showFullCircle = false;
+  btnCircle.classList.remove('active');
+  currentActiveIdx = -1;
+  stampedCount = pointCount;
+  renderScene();
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  onSliderChange();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

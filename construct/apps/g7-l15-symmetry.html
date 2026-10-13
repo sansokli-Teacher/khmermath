@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>អង្កត់ទ្រូង និងអ័ក្សឆ្លុះនៃចតុកោណកែង និងការ៉េ — ថ្នាក់ទី ៧ · មេរៀនទី ១៥</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+    --rose: #fb7185; --rose-soft: rgba(251, 113, 133, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  --rose: #fb7185; --rose-soft: rgba(251, 113, 133, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed; --rose: #e11d48;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Shape switcher tab bar */
+.tabs-wrap {
+  display: flex; gap: 8px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 20px; font-family: var(--font-km); font-size: 15px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.shape-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+.shape-outline { fill: rgba(241, 245, 249, 0.45); stroke: var(--ink); stroke-width: 3.5; stroke-linecap: round; }
+[data-theme="dark"] .shape-outline { fill: rgba(30, 41, 59, 0.45); }
+.diag-line { stroke: var(--purple); stroke-width: 2.8; stroke-dasharray: 6 4; }
+.axis-line { stroke: var(--rose); stroke-width: 2.4; stroke-dasharray: 8 5; }
+.axis-line.active { stroke: var(--rose); stroke-width: 3.8; stroke-dasharray: none; filter: drop-shadow(0 0 4px rgba(225, 29, 72, 0.4)); }
+.axis-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 16px; fill: var(--rose); }
+.tick-mark { stroke: var(--purple); stroke-width: 2; stroke-linecap: round; }
+.right-mark-center { fill: none; stroke: var(--purple); stroke-width: 2; }
+.folded-half { fill: rgba(225, 29, 72, 0.25); stroke: var(--rose); stroke-width: 2.5; stroke-dasharray: 4 3; pointer-events: none; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.axes-selector-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.axis-chip {
+  padding: 6px 14px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+}
+.axis-chip:hover { border-color: var(--rose); color: var(--rose); }
+.axis-chip.active { background: var(--rose-soft); color: var(--rose); border-color: var(--rose); font-weight: 700; }
+
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-toggle-diag { background: var(--purple-soft); color: var(--purple); border-color: var(--purple); }
+.btn-toggle-diag.active { background: var(--purple); color: #fff; }
+.btn-fold { background: var(--rose-soft); color: var(--rose); border-color: var(--rose); }
+.btn-fold.active { background: var(--rose); color: #fff; }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 12px 18px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 2px 8px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៥ · រូបធរណីមាត្រមានវិមាត្រពីរ</div>
+      <h1>អង្កត់ទ្រូង និងអ័ក្សឆ្លុះនៃចតុកោណកែង និងការ៉េ</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Shape Mode Tabs -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-rect" role="tab" onclick="switchShape('rect')">
+      ចតុកោណកែង (២ អ័ក្សឆ្លុះ)
+    </button>
+    <button type="button" class="tab-btn" id="tab-square" role="tab" onclick="switchShape('square')">
+      ការ៉េ (៤ អ័ក្សឆ្លុះ)
+    </button>
+  </nav>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="shape-badge" id="shape-badge">ចតុកោណកែង</span>
+    <p class="instruction-text" id="instruction-text">កំពុងបង្ហាញ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរអង្កត់ទ្រូងនិងអ័ក្សឆ្លុះ">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Count Info Box -->
+        <g id="count-info" transform="translate(30, 24)">
+          <rect width="320" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="26" class="cx-math-text" id="count-info-text" font-weight="700" fill="var(--teal)">
+            ចតុកោណកែង ២ អ័ក្ស · ការ៉េ ៤ អ័ក្ស
+          </text>
+        </g>
+
+        <!-- Dynamic geometry layers -->
+        <g id="layer-shape"></g>
+        <g id="layer-diagonals"></g>
+        <g id="layer-axes"></g>
+        <g id="layer-folding"></g>
+        <g id="layer-points"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span id="result-text">ចតុកោណកែងមាន ២ អ័ក្សឆ្លុះ · ការ៉េមាន ៤ អ័ក្សឆ្លុះ</span>
+  </div>
+
+  <div class="controls-area">
+    <!-- Axes selector buttons -->
+    <div class="axes-selector-row" id="axes-chips"></div>
+
+    <!-- Main action buttons -->
+    <div class="buttons-row">
+      <button type="button" class="btn btn-toggle-diag" id="btn-diag" onclick="toggleDiagonals()">📐 គូសអង្កត់ទ្រូង</button>
+      <button type="button" class="btn btn-fold" id="btn-fold" onclick="toggleFoldAnimation()">🔄 បត់តាមអ័ក្សឆ្លុះ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetView()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៥</span>
+    <span>លក្ខណៈអ័ក្សឆ្លុះ ៖ បត់តាមអ័ក្សឆ្លុះ ផ្នែកទាំងពីរត្រួតស៊ីគ្នាឥតចន្លោះ</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Center of SVG
+const O = { x: 420, y: 240 };
+
+// Rectangle geometry (Width 280, Height 180)
+const RECT = {
+  A: { x: 420 - 140, y: 240 - 90 }, // 280, 150
+  B: { x: 420 + 140, y: 240 - 90 }, // 560, 150
+  C: { x: 420 + 140, y: 240 + 90 }, // 560, 330
+  D: { x: 420 - 140, y: 240 + 90 }  // 280, 330
+};
+
+// Square geometry (Side 220)
+const SQ = {
+  A: { x: 420 - 110, y: 240 - 110 }, // 310, 130
+  B: { x: 420 + 110, y: 240 - 110 }, // 530, 130
+  C: { x: 420 + 110, y: 240 + 110 }, // 530, 350
+  D: { x: 420 - 110, y: 240 + 110 }  // 310, 350
+};
+
+let currentMode = 'rect'; // 'rect' or 'square'
+let showDiagonals = true;
+let selectedAxisIdx = 0; // index of active axis
+let foldProgress = 0; // 0 = flat, 1 = fully folded
+let isFolding = false;
+let animFrameId = null;
+
+// DOM
+const layerShape = document.getElementById('layer-shape');
+const layerDiagonals = document.getElementById('layer-diagonals');
+const layerAxes = document.getElementById('layer-axes');
+const layerFolding = document.getElementById('layer-folding');
+const layerPoints = document.getElementById('layer-points');
+const tabRect = document.getElementById('tab-rect');
+const tabSquare = document.getElementById('tab-square');
+const shapeBadge = document.getElementById('shape-badge');
+const instructionText = document.getElementById('instruction-text');
+const countInfoText = document.getElementById('count-info-text');
+const resultText = document.getElementById('result-text');
+const btnDiag = document.getElementById('btn-diag');
+const btnFold = document.getElementById('btn-fold');
+const axesChips = document.getElementById('axes-chips');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function getAxesList() {
+  if (currentMode === 'rect') {
+    return [
+      { id: 'v', name: 'អ័ក្សទី ១ (ឈរ)', desc: 'មេដ្យាទ័រនៃជ្រុងផ្តេក AB និង DC (បន្ទាត់កាត់តាមចំណុចកណ្ដាល)' },
+      { id: 'h', name: 'អ័ក្សទី ២ (ដេក)', desc: 'មេដ្យាទ័រនៃជ្រុងឈរ AD និង BC (បន្ទាត់កាត់តាមចំណុចកណ្ដាល)' }
+    ];
+  } else {
+    return [
+      { id: 'v', name: 'អ័ក្សទី ១ (ឈរ)', desc: 'មេដ្យាទ័រនៃជ្រុងផ្តេក AB និង DC' },
+      { id: 'h', name: 'អ័ក្សទី ២ (ដេក)', desc: 'មេដ្យាទ័រនៃជ្រុងឈរ AD និង BC' },
+      { id: 'd1', name: 'អ័ក្សទី ៣ (អង្កត់ទ្រូង AC)', desc: 'បន្ទាត់ទ្រូង AC (អ័ក្សឆ្លុះអង្កត់ទ្រូងទីមួយ)' },
+      { id: 'd2', name: 'អ័ក្សទី ៤ (អង្កត់ទ្រូង BD)', desc: 'បន្ទាត់ទ្រូង BD (អ័ក្សឆ្លុះអង្កត់ទ្រូងទីពីរ)' }
+    ];
+  }
+}
+
+function renderScene() {
+  layerShape.innerHTML = '';
+  layerDiagonals.innerHTML = '';
+  layerAxes.innerHTML = '';
+  layerFolding.innerHTML = '';
+  layerPoints.innerHTML = '';
+
+  const geom = currentMode === 'rect' ? RECT : SQ;
+  const axes = getAxesList();
+  if (selectedAxisIdx >= axes.length) selectedAxisIdx = 0;
+
+  // Header & info texts
+  if (currentMode === 'rect') {
+    tabRect.classList.add('active');
+    tabSquare.classList.remove('active');
+    shapeBadge.textContent = 'ចតុកោណកែង';
+    instructionText.textContent = `ចតុកោណកែងមាន ២ អ័ក្សឆ្លុះ (អ័ក្សឈរ និងអ័ក្សដេក) ។ អង្កត់ទ្រូងស្មើគ្នា AC = BD កាត់គ្នាត្រង់ O (OA = OB = OC = OD) ប៉ុន្តែមិនកែងគ្នាទេ ។`;
+    countInfoText.textContent = 'ចតុកោណកែង ៖ ២ អ័ក្សឆ្លុះ';
+    resultText.textContent = 'ចតុកោណកែងមាន ២ អ័ក្សឆ្លុះ · អង្កត់ទ្រូងស្មើគ្នា AC = BD (កាត់គ្នាត្រង់ O តែមិនកែងគ្នា)';
+  } else {
+    tabRect.classList.remove('active');
+    tabSquare.classList.add('active');
+    shapeBadge.textContent = 'ការ៉េ';
+    instructionText.textContent = `ការ៉េមាន ៤ អ័ក្សឆ្លុះ (អ័ក្សឈរ, អ័ក្សដេក, និងអង្កត់ទ្រូងទាំងពីរ AC, BD) ។ អង្កត់ទ្រូងស្មើគ្នា AC = BD ហើយកាត់គ្នាកែងត្រង់ O (AC ⟂ BD) !`;
+    countInfoText.textContent = 'ការ៉េ ៖ ៤ អ័ក្សឆ្លុះ';
+    resultText.textContent = 'ការ៉េមាន ៤ អ័ក្សឆ្លុះ · អង្កត់ទ្រូងស្មើគ្នា AC = BD និងកាត់គ្នាកែងត្រង់ O (AC ⟂ BD)';
+  }
+
+  // Axes chips
+  axesChips.innerHTML = '';
+  axes.forEach((ax, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `axis-chip ${idx === selectedAxisIdx ? 'active' : ''}`;
+    chip.textContent = ax.name;
+    chip.onclick = () => {
+      selectedAxisIdx = idx;
+      foldProgress = 0;
+      isFolding = false;
+      renderScene();
+    };
+    axesChips.appendChild(chip);
+  });
+
+  function addPoint(pt, name, offX = 0, offY = 24, col = 'var(--ink)') {
+    const g = createSvgEl('g');
+    g.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 4.5, fill: col }));
+    const t = createSvgEl('text', { x: pt.x + offX, y: pt.y + offY, class: 'cx-label', fill: col });
+    t.textContent = name;
+    g.appendChild(t);
+    layerPoints.appendChild(g);
+  }
+
+  // Draw Base Shape
+  layerShape.appendChild(createSvgEl('polygon', {
+    points: `${geom.A.x},${geom.A.y} ${geom.B.x},${geom.B.y} ${geom.C.x},${geom.C.y} ${geom.D.x},${geom.D.y}`,
+    class: 'shape-outline'
+  }));
+
+  addPoint(geom.A, 'A', -20, -8);
+  addPoint(geom.B, 'B', 14, -8);
+  addPoint(geom.C, 'C', 14, 24);
+  addPoint(geom.D, 'D', -20, 24);
+
+  // Diagonals AC and BD
+  if (showDiagonals) {
+    btnDiag.classList.add('active');
+    layerDiagonals.appendChild(createSvgEl('line', {
+      x1: geom.A.x, y1: geom.A.y, x2: geom.C.x, y2: geom.C.y, class: 'diag-line'
+    }));
+    layerDiagonals.appendChild(createSvgEl('line', {
+      x1: geom.B.x, y1: geom.B.y, x2: geom.D.x, y2: geom.D.y, class: 'diag-line'
+    }));
+
+    addPoint(O, 'O', 14, -6, 'var(--purple)');
+
+    // Equal halves ticks on OA, OB, OC, OD
+    [
+      { x: (geom.A.x + O.x)/2, y: (geom.A.y + O.y)/2 },
+      { x: (geom.B.x + O.x)/2, y: (geom.B.y + O.y)/2 },
+      { x: (geom.C.x + O.x)/2, y: (geom.C.y + O.y)/2 },
+      { x: (geom.D.x + O.x)/2, y: (geom.D.y + O.y)/2 }
+    ].forEach(pt => {
+      layerDiagonals.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 3.2, fill: 'var(--purple)' }));
+    });
+
+    // If Square: right angle mark at O (AC ⟂ BD)
+    if (currentMode === 'square') {
+      const s = 12;
+      layerDiagonals.appendChild(createSvgEl('polyline', {
+        points: `${O.x - s*0.707},${O.y - s*0.707} ${O.x},${O.y - s*1.414} ${O.x + s*0.707},${O.y - s*0.707}`,
+        class: 'right-mark-center'
+      }));
+    }
+  } else {
+    btnDiag.classList.remove('active');
+  }
+
+  // Draw Axes of Symmetry
+  // 1. Vertical axis (d1)
+  const isVActive = selectedAxisIdx === 0;
+  const lineV = createSvgEl('line', {
+    x1: O.x, y1: 50, x2: O.x, y2: 430,
+    class: `axis-line ${isVActive ? 'active' : ''}`
+  });
+  layerAxes.appendChild(lineV);
+  const lblV = createSvgEl('text', { x: O.x + 8, y: 64, class: 'axis-label' });
+  lblV.textContent = 'd₁';
+  layerAxes.appendChild(lblV);
+
+  // 2. Horizontal axis (d2)
+  const isHActive = selectedAxisIdx === 1;
+  const lineH = createSvgEl('line', {
+    x1: 180, y1: O.y, x2: 660, y2: O.y,
+    class: `axis-line ${isHActive ? 'active' : ''}`
+  });
+  layerAxes.appendChild(lineH);
+  const lblH = createSvgEl('text', { x: 670, y: O.y + 5, class: 'axis-label' });
+  lblH.textContent = 'd₂';
+  layerAxes.appendChild(lblH);
+
+  // Square has 2 diagonal axes
+  if (currentMode === 'square') {
+    // 3. Diagonal axis AC (d3)
+    const isD1Active = selectedAxisIdx === 2;
+    const lineD1 = createSvgEl('line', {
+      x1: O.x - 170, y1: O.y - 170, x2: O.x + 170, y2: O.y + 170,
+      class: `axis-line ${isD1Active ? 'active' : ''}`
+    });
+    layerAxes.appendChild(lineD1);
+    const lblD1 = createSvgEl('text', { x: O.x + 176, y: O.y + 176, class: 'axis-label' });
+    lblD1.textContent = 'd₃ (AC)';
+    layerAxes.appendChild(lblD1);
+
+    // 4. Diagonal axis BD (d4)
+    const isD2Active = selectedAxisIdx === 3;
+    const lineD2 = createSvgEl('line', {
+      x1: O.x + 170, y1: O.y - 170, x2: O.x - 170, y2: O.y + 170,
+      class: `axis-line ${isD2Active ? 'active' : ''}`
+    });
+    layerAxes.appendChild(lineD2);
+    const lblD2 = createSvgEl('text', { x: O.x - 180, y: O.y + 176, class: 'axis-label' });
+    lblD2.textContent = 'd₄ (BD)';
+    layerAxes.appendChild(lblD2);
+  }
+
+  // FOLDING SIMULATION
+  // foldProgress goes from 0 (unfolded) to 1 (folded completely over the other half)
+  if (foldProgress > 0) {
+    btnFold.classList.add('active');
+    const curAx = axes[selectedAxisIdx];
+    const t = foldProgress;
+    // We compute the transformed polygon for the folded half
+    // When t = 1, folded half lands exactly on the other half!
+    if (curAx.id === 'v') {
+      // Fold left half over right half:
+      // Left points: A, D, (top-mid, bottom-mid)
+      // Mirroring horizontally around x = O.x: x' = O.x + (O.x - x) * t
+      const fAx = geom.A.x + (2 * (O.x - geom.A.x)) * t;
+      const fDx = geom.D.x + (2 * (O.x - geom.D.x)) * t;
+      layerFolding.appendChild(createSvgEl('polygon', {
+        points: `${O.x},${geom.A.y} ${fAx},${geom.A.y} ${fDx},${geom.D.y} ${O.x},${geom.D.y}`,
+        class: 'folded-half'
+      }));
+    } else if (curAx.id === 'h') {
+      // Fold top half over bottom half:
+      // Top points: A, B
+      // Mirroring vertically around y = O.y: y' = O.y + (O.y - y) * t
+      const fAy = geom.A.y + (2 * (O.y - geom.A.y)) * t;
+      const fBy = geom.B.y + (2 * (O.y - geom.B.y)) * t;
+      layerFolding.appendChild(createSvgEl('polygon', {
+        points: `${geom.A.x},${O.y} ${geom.A.x},${fAy} ${geom.B.x},${fBy} ${geom.B.x},${O.y}`,
+        class: 'folded-half'
+      }));
+    } else if (curAx.id === 'd1' && currentMode === 'square') {
+      // Fold triangle ABC over triangle ADC across diagonal AC
+      // Point B(530, 130) reflects across AC to D(310, 350)
+      // Vector: B -> D
+      const curBx = geom.B.x + (geom.D.x - geom.B.x) * t;
+      const curBy = geom.B.y + (geom.D.y - geom.B.y) * t;
+      layerFolding.appendChild(createSvgEl('polygon', {
+        points: `${geom.A.x},${geom.A.y} ${curBx},${curBy} ${geom.C.x},${geom.C.y}`,
+        class: 'folded-half'
+      }));
+    } else if (curAx.id === 'd2' && currentMode === 'square') {
+      // Fold triangle ABD over triangle CBD across diagonal BD
+      // Point A(310, 130) reflects across BD to C(530, 350)
+      const curAx = geom.A.x + (geom.C.x - geom.A.x) * t;
+      const curAy = geom.A.y + (geom.C.y - geom.A.y) * t;
+      layerFolding.appendChild(createSvgEl('polygon', {
+        points: `${geom.B.x},${geom.B.y} ${curAx},${curAy} ${geom.D.x},${geom.D.y}`,
+        class: 'folded-half'
+      }));
+    }
+  } else {
+    btnFold.classList.remove('active');
+  }
+}
+
+function switchShape(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+  selectedAxisIdx = 0;
+  foldProgress = 0;
+  isFolding = false;
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  renderScene();
+}
+
+function toggleDiagonals() {
+  showDiagonals = !showDiagonals;
+  renderScene();
+}
+
+function toggleFoldAnimation() {
+  if (isFolding) return;
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+
+  const startVal = foldProgress;
+  const targetVal = foldProgress > 0.5 ? 0 : 1;
+  const duration = 900; // ms
+  const startTime = performance.now();
+  isFolding = true;
+
+  function loop(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    // Smooth easeInOut
+    const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+    foldProgress = startVal + (targetVal - startVal) * ease;
+    renderScene();
+
+    if (progress < 1) {
+      animFrameId = requestAnimationFrame(loop);
+    } else {
+      foldProgress = targetVal;
+      isFolding = false;
+      renderScene();
+    }
+  }
+
+  animFrameId = requestAnimationFrame(loop);
+}
+
+function resetView() {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  foldProgress = 0;
+  isFolding = false;
+  selectedAxisIdx = 0;
+  showDiagonals = true;
+  renderScene();
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ផ្ទាំងបត់នៃព្រីស និងស៊ីឡាំង — ថ្នាក់ទី ៧ · មេរៀនទី ១៨</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Tabs */
+.tabs-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 18px; font-family: var(--font-km); font-size: 14.5px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* Control Panel */
+.sliders-panel {
+  display: flex; flex-wrap: wrap; gap: 16px; padding: 14px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-border); align-items: center; justify-content: space-between;
+}
+.slider-group { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.slider-group input[type="range"] { width: 160px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 50px; text-align: center; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 15.5px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 18px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 13.5px; font-weight: 600; fill: var(--ink-secondary); }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 14.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 95px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-formula { font-size: 17px; color: var(--ink); font-weight: 800; }
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៨ · សូលីត</div>
+      <h1>ផ្ទាំងបត់នៃព្រីស និងស៊ីឡាំង</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Tabs for Solids -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-tri-prism" role="tab" onclick="switchSolid('tri_prism')">
+      ១. ព្រីសត្រីកោណកែង 
+    </button>
+    <button type="button" class="tab-btn" id="tab-cuboid" role="tab" onclick="switchSolid('cuboid')">
+      ២. ប្រលេពីប៉ែតកែង 
+    </button>
+    <button type="button" class="tab-btn" id="tab-cylinder" role="tab" onclick="switchSolid('cylinder')">
+      ៣. ស៊ីឡាំង 
+    </button>
+  </nav>
+
+  <!-- Control Sliders -->
+  <div class="sliders-panel">
+    <div class="slider-group">
+      <label for="fold-slider">បត់ ↔ លាត:</label>
+      <input type="range" id="fold-slider" min="0" max="100" value="0" oninput="onFoldSliderChange()">
+      <span class="val-badge" id="val-fold">០%</span>
+    </div>
+    <div id="solid-dims-info" style="font-size: 14px; font-weight: 600; color: var(--ink-secondary);">
+      <!-- Dynamic dimension labels -->
+    </div>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរផ្ទាំងបត់សូលីត">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <linearGradient id="grad-lateral" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#0284c7" stop-opacity="0.85"/>
+          </linearGradient>
+          <linearGradient id="grad-base" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#34d399" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#059669" stop-opacity="0.9"/>
+          </linearGradient>
+          <linearGradient id="grad-cylinder-tube" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0284c7" stop-opacity="0.8"/>
+            <stop offset="50%" stop-color="#bae6fd" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#0369a1" stop-opacity="0.85"/>
+          </linearGradient>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <!-- Info Header inside SVG -->
+        <g id="svg-legend" transform="translate(25, 20)">
+          <rect width="360" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <circle cx="20" cy="21" r="7" fill="#059669" />
+<text x="34" y="25" class="cx-math-text" font-weight="700">បាត</text>
+          <circle cx="130" cy="21" r="7" fill="#0284c7" />
+<text x="144" y="25" class="cx-math-text" font-weight="700">ផ្ទៃខាង</text>
+          <text x="290" y="25" class="cx-math-text" id="svg-state-tag" fill="var(--teal)" font-weight="800">ផ្ទាំងលាត ២D</text>
+        </g>
+
+        <!-- Main rendering layers -->
+        <g id="layer-scene" transform="translate(0, 0)"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span class="result-formula" id="result-formula">𝒜_L = ... | 𝒜_T = ...</span>
+    </div>
+    <span id="result-detail" style="font-size: 14.5px; color: var(--green); font-weight: 600;">
+      រូបមន្ត៖ 𝒜_L = p × h · 𝒜_T = 𝒜_L + ២ × 𝒜_B
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៨</span>
+    <span>ផ្ទាំងបត់ = បណ្ដុំនៃផ្ទៃខាង និងផ្ទៃបាតដែលលាតរាបស្មើលើប្លង់</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/\./g, ',').replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+let activeSolid = 'tri_prism'; // 'tri_prism', 'cuboid', 'cylinder'
+let currentStep = 0;
+let foldPercent = 0; // 0 (flat net) to 100 (folded 3D)
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animTimer = null;
+
+const SOLIDS_CONFIG = {
+  tri_prism: {
+    name: 'ព្រីសត្រីកោណកែង',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ផ្ទៃបាត)',
+        text: 'ផ្ទៃបាតទាំងពីរជាត្រីកោណកែងប៉ុនគ្នា ដែលមានជ្រុង a = ៣ cm, b = ៤ cm និងអុីប៉ូតេនុស c = ៥ cm ។',
+        foldTarget: 0,
+        highlight: 'bases'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ផ្ទៃខាង)',
+        text: 'ផ្ទៃខាងលាតចេញជាចតុកោណកែងធំមួយ មានកម្ពស់ h = ៧ cm និងបណ្ដោយស្មើបរិមាត្របាត p = a + b + c = ១២ cm ។',
+        foldTarget: 0,
+        highlight: 'lateral'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ផ្ទាំងបត់ ២D)',
+        text:'ផ្ទាំងបត់ពេញលេញ រួមមានផ្ទៃមុខខាង ៣ និងផ្ទៃបាតត្រីកោណ ២ ភ្ជាប់គ្នាតាមគែម។',
+        foldTarget: 0,
+        highlight: 'all'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (ការបត់ជាសូលីត)',
+        text: 'បត់មុខខាងទាំងបី និងបត់ផ្ទាំងបាតទាំងពីរឡើង ៩០° ដើម្បីផ្គុំចេញជាព្រីសត្រីកោណកែង ៣D ។',
+        foldTarget: 75,
+        highlight: 'all'
+      },
+      {
+        num: 5,
+        title: 'ជំហានទី ៥ (រូបមន្តផ្ទៃ)',
+        text: 'ផ្ទៃក្រឡាខាង 𝒜_L = p × h = ១២ × ៧ = ៨៤ cm² · ផ្ទៃក្រឡាសរុប 𝒜_T = 𝒜_L + ២ × 𝒜_B = ៨៤ + ២(៦) = ៩៦ cm² ។',
+        foldTarget: 100,
+        highlight: 'all'
+      }
+    ],
+    info: 'បាតត្រីកោណកែង៖ a = ៣ cm, b = ៤ cm, c = ៥ cm · កម្ពស់ h = ៧ cm',
+    formula: '𝒜_L = p × h = ៨៤ cm² | 𝒜_T = ៩៦ cm²',
+    detail: 'បរិមាត្របាត p = ៣ + ៤ + ៥ = ១២ cm · ផ្ទៃបាត 𝒜_B = (៣ × ៤)/២ = ៦ cm²'
+  },
+  cuboid: {
+    name: 'ប្រលេពីប៉ែតកែង',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ផ្ទៃបាត)',
+        text: 'ផ្ទៃបាតទាំងពីរជាចតុកោណកែងប៉ុនគ្នា មានបណ្ដោយ a = ៥ cm និងទទឹង b = ៣ cm (ផ្ទៃ 𝒜_B = ១៥ cm²) ។',
+        foldTarget: 0,
+        highlight: 'bases'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ផ្ទៃមុខខាង ៤)',
+        text: 'ផ្ទៃខាងទាំងបួនលាតចេញជាខ្សែចតុកោណកែង ៤ ដែលមានកម្ពស់ h = ៤ cm និងបណ្ដោយសរុប p = ២(a + b) = ១៦ cm ។',
+        foldTarget: 0,
+        highlight: 'lateral'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ផ្ទាំងបត់ ២D)',
+        text: 'ផ្ទាំងបត់រៀបជាជួររាងឈើឆ្កាង រួមមានផ្ទៃមុខ ៤ ជួរកណ្ដាល និងបាត ២ នៅសងខាង។',
+        foldTarget: 0,
+        highlight: 'all'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (ការបត់ជាសូលីត)',
+        text: 'បត់មុខនីមួយៗតាមគែមទ្រនុងមុំ ៩០° ផ្គុំបិទជិតចេញជាប្រលេពីប៉ែតកែងបិទជិត។',
+        foldTarget: 80,
+        highlight: 'all'
+      },
+      {
+        num: 5,
+        title: 'ជំហានទី ៥ (រូបមន្តផ្ទៃ)',
+        text: 'ផ្ទៃក្រឡាខាង 𝒜_L = p × h = ១៦ × ៤ = ៦៤ cm² · ផ្ទៃក្រឡាសរុប 𝒜_T = ៦៤ + ២(១៥) = ៩៤ cm² ។',
+        foldTarget: 100,
+        highlight: 'all'
+      }
+    ],
+    info: 'បណ្ដោយ a = ៥ cm · ទទឹង b = ៣ cm · កម្ពស់ h = ៤ cm',
+    formula: '𝒜_L = p × h = ៦៤ cm² | 𝒜_T = ៩៤ cm²',
+    detail: 'បរិមាត្របាត p = ២(៥ + ៣) = ១៦ cm · ផ្ទៃបាត 𝒜_B = ៥ × ៣ = ១៥ cm²'
+  },
+  cylinder: {
+    name: 'ស៊ីឡាំង',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (បាតរង្វង់ ២)',
+        text: 'បាតទាំងពីរជារង្វង់ប៉ុនគ្នា មានកាំ r = ២,៥ cm (ផ្ទៃបាតនីមួយៗ 𝒜_B = πr² ≈ ១៩,៦៣ cm²) ។',
+        foldTarget: 0,
+        highlight: 'bases'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ផ្ទៃខាងរាងចតុកោណកែង)',
+        text: 'ផ្ទៃកោងខាងលាតរាបស្មើជាចតុកោណកែង មានកម្ពស់ h = ៦ cm និងបណ្ដោយស្មើបរិមាត្ររង្វង់បាត C = ២πr ≈ ១៥,៧ cm ។',
+        foldTarget: 0,
+        highlight: 'lateral'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ផ្ទាំងបត់ ២D)',
+        text: 'ផ្ទាំងបត់ស៊ីឡាំងរួមមាន ចតុកោណកែងផ្ទៃខាង ១ និងថាសរង្វង់បាត ២ នៅសងខាង។',
+        foldTarget: 0,
+        highlight: 'all'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (ការរមូរបត់ជាស៊ីឡាំង)',
+        text: 'រមូរផ្ទៃចតុកោណកែងកោងផ្គុំគែមចូលគ្នា ហើយបត់ផ្ទាំងរង្វង់បាតទាំងពីរមកគ្របពីលើ និងក្រោម។',
+        foldTarget: 75,
+        highlight: 'all'
+      },
+      {
+        num: 5,
+        title: 'ជំហានទី ៥ (រូបមន្តផ្ទៃ)',
+        text: 'ផ្ទៃខាង 𝒜_L = ២πrh = ១៥,៧ × ៦ = ៩៤,២ cm² · ផ្ទៃសរុប 𝒜_T = ៩៤,២ + ២(១៩,៦៣) = ១៣៣,៤៦ cm² ។',
+        foldTarget: 100,
+        highlight: 'all'
+      }
+    ],
+    info: 'កាំបាត r = ២,៥ cm (π ≈ ៣,១៤) · កម្ពស់ h = ៦ cm',
+    formula: '𝒜_L = ២πrh = ៩៤,២ cm² | 𝒜_T = ១៣៣,៤៦ cm²',
+    detail: 'បរិមាត្របាត C = ២ × ៣,១៤ × ២,៥ = ១៥,៧ cm · ផ្ទៃបាត 𝒜_B = ៣,១៤ × ២,៥² = ១៩,៦៣ cm²'
+  }
+};
+
+function switchSolid(solidKey) {
+  activeSolid = solidKey;
+  currentStep = 0;
+  foldPercent = 0;
+  document.getElementById('fold-slider').value = 0;
+  document.getElementById('val-fold').textContent = toKhmer(0) + '%';
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  if (solidKey === 'tri_prism') document.getElementById('tab-tri-prism').classList.add('active');
+  if (solidKey === 'cuboid') document.getElementById('tab-cuboid').classList.add('active');
+  if (solidKey === 'cylinder') document.getElementById('tab-cylinder').classList.add('active');
+  document.getElementById('solid-dims-info').textContent = SOLIDS_CONFIG[solidKey].info;
+  renderStepsNav();
+  updateStepView();
+}
+
+function onFoldSliderChange() {
+  foldPercent = Number(document.getElementById('fold-slider').value);
+  document.getElementById('val-fold').textContent = toKhmer(foldPercent) + '%';
+  renderScene();
+}
+
+function animateFoldTo(target, duration = 600) {
+  if (animTimer) clearInterval(animTimer);
+  const start = foldPercent;
+  const startTime = performance.now();
+  animTimer = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    // EaseInOutQuad
+    const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+    foldPercent = Math.round(start + (target - start) * ease);
+    document.getElementById('fold-slider').value = foldPercent;
+    document.getElementById('val-fold').textContent = toKhmer(foldPercent) + '%';
+    renderScene();
+    if (progress >= 1) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+  }, 16);
+}
+
+function renderStepsNav() {
+  const cfg = SOLIDS_CONFIG[activeSolid];
+  const nav = document.getElementById('steps-nav');
+  nav.innerHTML = '';
+  cfg.steps.forEach((st, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+    chip.textContent = toKhmer(idx + 1) + '. ' + st.title.split(' ')[2].replace(/[()]/g, '');
+    chip.onclick = () => goToStep(idx);
+    nav.appendChild(chip);
+  });
+}
+
+function updateStepView() {
+  const cfg = SOLIDS_CONFIG[activeSolid];
+  const st = cfg.steps[currentStep];
+  document.getElementById('step-badge').textContent = 'ជំហានទី ' + toKhmer(st.num);
+  document.getElementById('step-text').textContent = st.text;
+  document.getElementById('result-formula').textContent = cfg.formula;
+  document.getElementById('result-detail').textContent = cfg.detail;
+
+  animateFoldTo(st.foldTarget, 650);
+
+  document.querySelectorAll('.step-chip').forEach((chip, idx) => {
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+  });
+
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === cfg.steps.length - 1);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  updateStepView();
+}
+
+function nextStep() {
+  const cfg = SOLIDS_CONFIG[activeSolid];
+  if (currentStep < cfg.steps.length - 1) {
+    currentStep++;
+    updateStepView();
+  } else if (isAutoplaying) {
+    toggleAutoplay();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepView();
+  }
+}
+
+function replayStep() {
+  updateStepView();
+}
+
+function resetStep() {
+  currentStep = 0;
+  updateStepView();
+}
+
+function toggleAutoplay() {
+  isAutoplaying = !isAutoplaying;
+  const btn = document.getElementById('btn-autoplay');
+  if (isAutoplaying) {
+    btn.classList.add('active');
+    btn.textContent = '⏸ កំពុងចាក់...';
+    autoplayTimer = setInterval(() => {
+      const cfg = SOLIDS_CONFIG[activeSolid];
+      if (currentStep < cfg.steps.length - 1) {
+        nextStep();
+      } else {
+        toggleAutoplay();
+      }
+    }, 2800);
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+}
+
+/* 3D Rendering & Folding Math */
+function renderScene() {
+  const layer = document.getElementById('layer-scene');
+  layer.innerHTML = '';
+  const t = foldPercent / 100; // 0 = flat, 1 = fully folded
+  const stateTag = document.getElementById('svg-state-tag');
+  if (t === 0) stateTag.textContent ='ផ្ទាំងលាត ២D';
+  else if (t === 1) stateTag.textContent ='សូលីតបិទជិត ៣D';
+  else stateTag.textContent = 'កំពុងបត់ (' + toKhmer(Math.round(t * 100)) + '%)';
+
+  if (activeSolid === 'tri_prism') {
+    renderTriangularPrism(layer, t);
+  } else if (activeSolid === 'cuboid') {
+    renderCuboid(layer, t);
+  } else if (activeSolid === 'cylinder') {
+    renderCylinder(layer, t);
+  }
+}
+
+/* 1. Triangular Prism Rendering */
+function renderTriangularPrism(layer, t) {
+  // Dimensions in px (scale ~ 25px / cm)
+  // a = 3cm (75px), b = 4cm (100px), c = 5cm (125px), h = 7cm (175px)
+  const a = 75, b = 100, c = 125, h = 175;
+  const cx = 420, cy = 240;
+
+  // Camera angles in 3D:
+  const yaw = -25 * t * Math.PI / 180;     // the flat net faces the viewer; the view turns as it folds
+  const pitch = 20 * t * Math.PI / 180;
+
+  function project3D(x, y, z) {
+    // Center at (0, 0, 0)
+    // Rotate Yaw (around Y axis)
+    const x1 = x * Math.cos(yaw) + z * Math.sin(yaw);
+    const y1 = y;
+    const z1 = -x * Math.sin(yaw) + z * Math.cos(yaw);
+    // Rotate Pitch (around X axis)
+    const x2 = x1;
+    const y2 = y1 * Math.cos(pitch) - z1 * Math.sin(pitch);
+    const z2 = y1 * Math.sin(pitch) + z1 * Math.cos(pitch);
+    return { x: cx + x2, y: cy - y2, z: z2 };
+  }
+
+  // When flat (t=0):
+  // Central face: b x h (width 100, height 175). Lies on z=0 plane.
+  // Left face: a x h (width 75). Hinged at x = -b/2. Rotates by angle t * 90 deg forward.
+  // Right face: c x h (width 125). Hinged at x = +b/2. Rotates by angle t * 90 deg forward.
+  // Top base: Right triangle (a, b, c). Hinged at y = h/2 on central face. Folds down by t * 90 deg.
+  // Bottom base: Hinged at y = -h/2. Folds up by t * 90 deg.
+
+  const foldAngle = t * Math.PI / 2; // 0 to 90 degrees
+
+  // Central Face: [-b/2, b/2] x [-h/2, h/2] on XY plane
+  const pCentral = [
+    project3D(-b/2, -h/2, 0),
+    project3D(b/2, -h/2, 0),
+    project3D(b/2, h/2, 0),
+    project3D(-b/2, h/2, 0)
+  ];
+
+  // Left Face: Hinged at x = -b/2. Width a.
+  // Unfolded: goes from x = -b/2 to x = -b/2 - a on z=0.
+  // Folded: rotates forward along hinge line (x = -b/2, z = 0).
+  // Vector along width: [-a * cos(foldAngle), 0, a * sin(foldAngle)]
+  const pLeft = [
+    project3D(-b/2 - a * Math.cos(foldAngle), -h/2, a * Math.sin(foldAngle)),
+    project3D(-b/2, -h/2, 0),
+    project3D(-b/2, h/2, 0),
+    project3D(-b/2 - a * Math.cos(foldAngle), h/2, a * Math.sin(foldAngle))
+  ];
+
+  // Right Face (Hypotenuse face c): Hinged at x = b/2.
+  // Unfolded: goes from x = b/2 to x = b/2 + c on z=0.
+  // In folded state, it connects the ends: (b/2, 0) to (-b/2 - a*0, a*1) -> dx = -b - a*0, dz = a
+  // Angle of right face in 3D when fully folded closes the triangle.
+  const closeAngle = Math.atan2(a, b); // angle to close triangle
+  const curRightAngle = t * (Math.PI - closeAngle);
+  const pRight = [
+    project3D(b/2, -h/2, 0),
+    project3D(b/2 + c * Math.cos(curRightAngle), -h/2, c * Math.sin(curRightAngle)),
+    project3D(b/2 + c * Math.cos(curRightAngle), h/2, c * Math.sin(curRightAngle)),
+    project3D(b/2, h/2, 0)
+  ];
+
+  // Top base triangle:
+  // When t=0, extends upwards from y = h/2: vertex is (-b/2, h/2 + a, 0)
+  // When folded, folds toward positive Z by angle t * 90 deg:
+  // y = h/2 + a * cos(foldAngle), z = a * sin(foldAngle)
+  const pTopBase = [
+    project3D(-b/2, h/2, 0),
+    project3D(b/2, h/2, 0),
+    project3D(-b/2, h/2 + a * Math.cos(foldAngle), a * Math.sin(foldAngle))
+  ];
+
+  // Bottom base triangle:
+  // Extends downwards from y = -h/2
+  const pBottomBase = [
+    project3D(-b/2, -h/2, 0),
+    project3D(b/2, -h/2, 0),
+    project3D(-b/2, -h/2 - a * Math.cos(foldAngle), a * Math.sin(foldAngle))
+  ];
+
+  // Polygons with depth sorting
+  const polys = [
+    { pts: pCentral, fill: 'url(#grad-lateral)', stroke: '#0284c7', label: 'មុខខាង ២ (b × h)' },
+    { pts: pLeft, fill: 'rgba(56, 189, 248, 0.85)', stroke: '#0284c7', label: 'មុខខាង ១ (a × h)' },
+    { pts: pRight, fill: 'rgba(14, 165, 233, 0.8)', stroke: '#0369a1', label: 'មុខខាង ៣ (c × h)' },
+    { pts: pTopBase, fill: 'url(#grad-base)', stroke: '#059669', label: 'បាតលើ' },
+    { pts: pBottomBase, fill: 'url(#grad-base)', stroke: '#059669', label: 'បាតក្រោម' }
+  ];
+
+  // Compute avg Z for depth sort
+  polys.forEach(p => {
+    p.avgZ = p.pts.reduce((sum, pt) => sum + pt.z, 0) / p.pts.length;
+  });
+  polys.sort((p1, p2) => p1.avgZ - p2.avgZ);
+
+  // Draw polygons
+  polys.forEach(p => {
+    const ptsStr = p.pts.map(pt => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', ptsStr);
+    poly.setAttribute('fill', p.fill);
+    poly.setAttribute('stroke', p.stroke);
+    poly.setAttribute('stroke-width', '2');
+    poly.setAttribute('stroke-linejoin', 'round');
+    layer.appendChild(poly);
+  });
+
+  // Dimension labels when unfolded (t < 0.2)
+  if (t < 0.2) {
+    drawDimLine(layer, pCentral[0].x, pCentral[0].y + 18, pCentral[1].x, pCentral[1].y + 18, 'b = ៤ cm', '#0284c7');
+    drawDimLine(layer, pLeft[0].x, pLeft[0].y + 18, pLeft[1].x, pLeft[1].y + 18, 'a = ៣ cm', '#0284c7');
+    drawDimLine(layer, pRight[0].x, pRight[0].y + 18, pRight[1].x, pRight[1].y + 18, 'c = ៥ cm', '#0284c7');
+    drawDimLine(layer, pRight[1].x + 18, pRight[1].y, pRight[2].x + 18, pRight[2].y, 'h = ៧ cm', '#e8710a');
+  }
+}
+
+/* 2. Rectangular Prism (Cuboid) Rendering */
+function renderCuboid(layer, t) {
+  // Dimensions: a = 5cm (120px), b = 3cm (75px), h = 4cm (100px)
+  const a = 120, b = 75, h = 100;
+  const cx = 420, cy = 240;
+
+  const yaw = -30 * t * Math.PI / 180;
+  const pitch = 25 * t * Math.PI / 180;
+
+  function project3D(x, y, z) {
+    const x1 = x * Math.cos(yaw) + z * Math.sin(yaw);
+    const y1 = y;
+    const z1 = -x * Math.sin(yaw) + z * Math.cos(yaw);
+    const x2 = x1;
+    const y2 = y1 * Math.cos(pitch) - z1 * Math.sin(pitch);
+    const z2 = y1 * Math.sin(pitch) + z1 * Math.cos(pitch);
+    return { x: cx + x2, y: cy - y2, z: z2 };
+  }
+
+  const foldAngle = t * Math.PI / 2; // 0 to 90 deg
+
+  // Face 1 (Central back face): a x h at z = 0
+  const pF1 = [
+    project3D(-a/2, -h/2, 0),
+    project3D(a/2, -h/2, 0),
+    project3D(a/2, h/2, 0),
+    project3D(-a/2, h/2, 0)
+  ];
+
+  // Face 2 (Left side face): b x h, hinged at -a/2
+  const pF2 = [
+    project3D(-a/2 - b * Math.cos(foldAngle), -h/2, b * Math.sin(foldAngle)),
+    project3D(-a/2, -h/2, 0),
+    project3D(-a/2, h/2, 0),
+    project3D(-a/2 - b * Math.cos(foldAngle), h/2, b * Math.sin(foldAngle))
+  ];
+
+  // Face 3 (Right side face): b x h, hinged at +a/2
+  const pF3 = [
+    project3D(a/2, -h/2, 0),
+    project3D(a/2 + b * Math.cos(foldAngle), -h/2, b * Math.sin(foldAngle)),
+    project3D(a/2 + b * Math.cos(foldAngle), h/2, b * Math.sin(foldAngle)),
+    project3D(a/2, h/2, 0)
+  ];
+
+  // Face 4 (Front face): a x h, attached to right face and folding in front
+  // Hinge point is the outer edge of Face 3:
+  const hinge3X = a/2 + b * Math.cos(foldAngle);
+  const hinge3Z = b * Math.sin(foldAngle);
+  // Folds by another 90 degrees relative to face 3:
+  const pF4 = [
+    project3D(hinge3X, -h/2, hinge3Z),
+    project3D(hinge3X - a * Math.sin(foldAngle), -h/2, hinge3Z + a * Math.cos(foldAngle)),
+    project3D(hinge3X - a * Math.sin(foldAngle), h/2, hinge3Z + a * Math.cos(foldAngle)),
+    project3D(hinge3X, h/2, hinge3Z)
+  ];
+
+  // Top Base: a x b, hinged at top of Face 1 (y = h/2)
+  const pBaseTop = [
+    project3D(-a/2, h/2, 0),
+    project3D(a/2, h/2, 0),
+    project3D(a/2, h/2 + b * Math.cos(foldAngle), b * Math.sin(foldAngle)),
+    project3D(-a/2, h/2 + b * Math.cos(foldAngle), b * Math.sin(foldAngle))
+  ];
+
+  // Bottom Base: a x b, hinged at bottom of Face 1 (y = -h/2)
+  const pBaseBottom = [
+    project3D(-a/2, -h/2, 0),
+    project3D(a/2, -h/2, 0),
+    project3D(a/2, -h/2 - b * Math.cos(foldAngle), b * Math.sin(foldAngle)),
+    project3D(-a/2, -h/2 - b * Math.cos(foldAngle), b * Math.sin(foldAngle))
+  ];
+
+  const polys = [
+    { pts: pF1, fill: 'rgba(56, 189, 248, 0.75)', stroke: '#0284c7' },
+    { pts: pF2, fill: 'rgba(14, 165, 233, 0.8)', stroke: '#0284c7' },
+    { pts: pF3, fill: 'rgba(14, 165, 233, 0.8)', stroke: '#0284c7' },
+    { pts: pF4, fill: 'rgba(2, 132, 199, 0.85)', stroke: '#0369a1' },
+    { pts: pBaseTop, fill: 'url(#grad-base)', stroke: '#059669' },
+    { pts: pBaseBottom, fill: 'url(#grad-base)', stroke: '#059669' }
+  ];
+
+  polys.forEach(p => {
+    p.avgZ = p.pts.reduce((sum, pt) => sum + pt.z, 0) / p.pts.length;
+  });
+  polys.sort((p1, p2) => p1.avgZ - p2.avgZ);
+
+  polys.forEach(p => {
+    const ptsStr = p.pts.map(pt => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', ptsStr);
+    poly.setAttribute('fill', p.fill);
+    poly.setAttribute('stroke', p.stroke);
+    poly.setAttribute('stroke-width', '2');
+    poly.setAttribute('stroke-linejoin', 'round');
+    layer.appendChild(poly);
+  });
+
+  if (t < 0.2) {
+    drawDimLine(layer, pF1[0].x, pF1[0].y + 18, pF1[1].x, pF1[1].y + 18, 'a = ៥ cm', '#0284c7');
+    drawDimLine(layer, pF2[0].x, pF2[0].y + 18, pF2[1].x, pF2[1].y + 18, 'b = ៣ cm', '#0284c7');
+    drawDimLine(layer, pF4[1].x + 18, pF4[1].y, pF4[2].x + 18, pF4[2].y, 'h = ៤ cm', '#e8710a');
+  }
+}
+
+/* 3. Cylinder Rendering */
+function renderCylinder(layer, t) {
+  // Radius r = 60px (~2.5cm), height h = 160px (~6cm)
+  // Perimeter C = 2*pi*r = 377px
+  const r = 65, h = 160;
+  const C = 2 * Math.PI * r;
+  const cx = 420, cy = 240;
+
+  if (t < 0.05) {
+    // Pure 2D Flat Net
+    const rectX = cx - C / 2;
+    const rectY = cy - h / 2;
+
+    // Lateral Rectangle
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', rectX);
+    rect.setAttribute('y', rectY);
+    rect.setAttribute('width', C);
+    rect.setAttribute('height', h);
+    rect.setAttribute('fill', 'url(#grad-lateral)');
+    rect.setAttribute('stroke', '#0284c7');
+    rect.setAttribute('stroke-width', '2.5');
+    rect.setAttribute('rx', '2');
+    layer.appendChild(rect);
+
+    // Top Base Circle
+    const circleTop = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circleTop.setAttribute('cx', cx);
+    circleTop.setAttribute('cy', rectY - r - 2);
+    circleTop.setAttribute('r', r);
+    circleTop.setAttribute('fill', 'url(#grad-base)');
+    circleTop.setAttribute('stroke', '#059669');
+    circleTop.setAttribute('stroke-width', '2.5');
+    layer.appendChild(circleTop);
+
+    // Bottom Base Circle
+    const circleBottom = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circleBottom.setAttribute('cx', cx);
+    circleBottom.setAttribute('cy', rectY + h + r + 2);
+    circleBottom.setAttribute('r', r);
+    circleBottom.setAttribute('fill', 'url(#grad-base)');
+    circleBottom.setAttribute('stroke', '#059669');
+    circleBottom.setAttribute('stroke-width', '2.5');
+    layer.appendChild(circleBottom);
+
+    // Dimension lines
+    drawDimLine(layer, rectX, rectY + h + 18, rectX + C, rectY + h + 18, 'បរិមាត្រ C = ២πr = ១៥,៧ cm', '#0284c7');
+    drawDimLine(layer, rectX + C + 20, rectY, rectX + C + 20, rectY + h, 'កម្ពស់ h = ៦ cm', '#e8710a');
+    drawDimLine(layer, cx, rectY - r - 2, cx + r, rectY - r - 2, 'r = ២,៥ cm', '#059669');
+  } else {
+    // 3D Rolling & Folding State
+    const rollAngle = t * 2 * Math.PI; // wraps from 0 to 2*PI
+    const effRadius = (1 - t) * (C / 2) + t * r;
+    const effWidth = (1 - t) * C;
+    const ry = effRadius * 0.35; // ellipse vertical radius in perspective
+
+    // Tube side shading
+    const tubePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M ${cx - effRadius} ${cy - h/2}
+               L ${cx - effRadius} ${cy + h/2}
+               A ${effRadius} ${ry} 0 0 0 ${cx + effRadius} ${cy + h/2}
+               L ${cx + effRadius} ${cy - h/2}
+               A ${effRadius} ${ry} 0 0 1 ${cx - effRadius} ${cy - h/2} Z`;
+    tubePath.setAttribute('d', d);
+    tubePath.setAttribute('fill', 'url(#grad-cylinder-tube)');
+    tubePath.setAttribute('stroke', '#0284c7');
+    tubePath.setAttribute('stroke-width', '2');
+    layer.appendChild(tubePath);
+
+    // Top Base Disc
+    const topDisc = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    topDisc.setAttribute('cx', cx);
+    topDisc.setAttribute('cy', cy - h/2 - (1 - t) * (r * 0.8));
+    topDisc.setAttribute('rx', effRadius);
+    topDisc.setAttribute('ry', ry);
+    topDisc.setAttribute('fill', 'url(#grad-base)');
+    topDisc.setAttribute('stroke', '#059669');
+    topDisc.setAttribute('stroke-width', '2.5');
+    layer.appendChild(topDisc);
+
+    // Bottom Base Outline
+    const bottomDisc = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    bottomDisc.setAttribute('cx', cx);
+    bottomDisc.setAttribute('cy', cy + h/2 + (1 - t) * (r * 0.8));
+    bottomDisc.setAttribute('rx', effRadius);
+    bottomDisc.setAttribute('ry', ry);
+    bottomDisc.setAttribute('fill', 'url(#grad-base)');
+    bottomDisc.setAttribute('stroke', '#059669');
+    bottomDisc.setAttribute('stroke-width', '2.5');
+    layer.appendChild(bottomDisc);
+
+    if (t >= 0.9) {
+      // Radius line on top disc
+      const rLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      rLine.setAttribute('x1', cx);
+      rLine.setAttribute('y1', cy - h/2);
+      rLine.setAttribute('x2', cx + effRadius);
+      rLine.setAttribute('y2', cy - h/2);
+      rLine.setAttribute('stroke', '#0f172a');
+      rLine.setAttribute('stroke-width', '2');
+      layer.appendChild(rLine);
+
+      const rTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      rTxt.setAttribute('x', cx + effRadius / 2);
+      rTxt.setAttribute('y', cy - h/2 - 8);
+      rTxt.setAttribute('class', 'cx-math-text');
+      rTxt.setAttribute('text-anchor', 'middle');
+      rTxt.setAttribute('fill', '#0f172a');
+      rTxt.textContent = 'r = ២,៥ cm';
+      layer.appendChild(rTxt);
+    }
+  }
+}
+
+/* Helper to draw dimension line with arrowheads */
+function drawDimLine(layer, x1, y1, x2, y2, text, color = '#0284c7') {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '1.6');
+  g.appendChild(line);
+
+  // End caps
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const nx = -dy / len * 4, ny = dx / len * 4;
+
+  const cap1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  cap1.setAttribute('x1', x1 + nx); cap1.setAttribute('y1', y1 + ny);
+  cap1.setAttribute('x2', x1 - nx); cap1.setAttribute('y2', y1 - ny);
+  cap1.setAttribute('stroke', color); cap1.setAttribute('stroke-width', '1.6');
+  g.appendChild(cap1);
+
+  const cap2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  cap2.setAttribute('x1', x2 + nx); cap2.setAttribute('y1', y2 + ny);
+  cap2.setAttribute('x2', x2 - nx); cap2.setAttribute('y2', y2 - ny);
+  cap2.setAttribute('stroke', color); cap2.setAttribute('stroke-width', '1.6');
+  g.appendChild(cap2);
+
+  // Text label
+  const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  txt.setAttribute('x', (x1 + x2) / 2);
+  txt.setAttribute('y', (y1 + y2) / 2 - 6);
+  txt.setAttribute('class', 'cx-math-text');
+  txt.setAttribute('fill', color);
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('font-weight', '700');
+  txt.textContent = text;
+  g.appendChild(txt);
+
+  layer.appendChild(g);
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  try { localStorage.setItem('pisa_theme', next); } catch(e){}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('pisa_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  } catch(e){}
+  switchSolid('tri_prism');
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

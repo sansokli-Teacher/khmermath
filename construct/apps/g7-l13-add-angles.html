@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បូកមុំ ដោយប្រើដែកឈាន — ថ្នាក់ទី ៧ · មេរៀនទី ១៣</title>
+<style>
+/* CSS Reset & Design System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --orange: #ea580c;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --grey-blue: #627d98;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --blue: #3b82f6;
+    --orange: #fb923c;
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+    --grey-blue: #829ab1;
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --blue: #3b82f6;
+  --orange: #fb923c;
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --grey-blue: #829ab1;
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --orange: #ea580c;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --grey-blue: #627d98;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Instruction banner */
+.instruction-box {
+  margin: 16px 20px 0;
+  padding: 14px 18px;
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 68px;
+}
+
+.step-indicator-badge {
+  background: var(--teal);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.instruction-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.55;
+  flex-grow: 1;
+}
+
+/* Canvas Board */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 460;
+}
+
+/* SVG Typography & Styling */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 20px;
+  fill: var(--ink);
+}
+
+.cx-math-text {
+  font-family: var(--font-km);
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--ink-secondary);
+}
+
+.cx-point {
+  fill: var(--ink);
+}
+
+.line-ink {
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.line-active {
+  stroke: var(--orange);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.line-final {
+  stroke: var(--green);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.arc-active {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.arc-history {
+  fill: none;
+  stroke: var(--grey-blue);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+/* Compass tool */
+.tool-compass {
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+}
+
+.c-leg { stroke: #64748b; stroke-width: 5; stroke-linecap: round; }
+.c-needle { stroke: #0f172a; stroke-width: 2.8; stroke-linecap: round; }
+.c-pencil { stroke: #ea580c; stroke-width: 4.5; stroke-linecap: round; }
+.c-hinge { fill: #334155; stroke: #94a3b8; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 6; stroke-linecap: round; }
+
+/* Protractor SVG */
+.protractor-svg {
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+/* Controls */
+.controls-area {
+  padding: 6px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-km);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  min-height: 42px;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--surface-border);
+}
+
+.btn-autoplay.active {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: var(--orange);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.steps-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.step-chip {
+  flex: 1 1 0;
+  min-width: 110px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.step-chip:hover {
+  background: var(--surface-border);
+  color: var(--ink);
+}
+
+.step-chip.active {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+
+.step-chip.completed {
+  color: var(--teal);
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+/* Result banner */
+.result-banner {
+  margin: 0 20px 14px;
+  padding: 12px 18px;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-badge {
+  background: var(--green);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .app-header { padding: 12px 16px; }
+  h1 { font-size: 18px; }
+  .instruction-box { margin: 12px 12px 0; padding: 10px 14px; }
+  .canvas-wrap { padding: 12px 12px; }
+  .controls-area { padding: 4px 12px 14px; }
+  .buttons-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .btn-autoplay { grid-column: span 2; }
+  .result-banner { margin: 0 12px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៣ · មុំ</div>
+      <h1>បូកមុំ ដោយប្រើដែកឈាន (ABC = ៣៥° + ២៥° = ៦០°)</h1>
+    </div>
+
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+      🌓
+    </button>
+  </header>
+
+  <!-- Step instruction banner -->
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <!-- Main Canvas Board -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 460" role="img" aria-label="គំនូរសង់ផលបូកមុំពីរដោយដែកឈាន">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- GIVEN ANGLES BOX AT TOP -->
+        <g id="given-angles">
+          <rect x="25" y="16" width="790" height="115" rx="10" fill="var(--surface-2)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="40" y="38" class="cx-math-text" font-weight="700" fill="var(--teal)">មុំដែលគេឱ្យ ៖</text>
+
+          <!-- Angle 1: xOy = 35° -->
+          <g id="given-ang1">
+            <line x1="80" y1="100" x2="200" y2="100" class="line-ink" />
+            <!-- Oy at 35 deg -->
+            <line x1="80" y1="100" x2="178" y2="31" class="line-ink" />
+            <circle cx="80" cy="100" r="3.5" class="cx-point" />
+            <text x="64" y="105" class="cx-label">O</text>
+            <text x="210" y="105" class="cx-label">x</text>
+            <text x="185" y="28" class="cx-label">y</text>
+            <!-- 35 deg arc -->
+            <path d="M 125 100 A 45 45 0 0 0 117 74" fill="none" stroke="var(--blue)" stroke-width="2" />
+            <text x="140" y="86" class="cx-math-text" fill="var(--blue)">៣៥°</text>
+          </g>
+
+          <!-- Angle 2: zO'w = 25° -->
+          <g id="given-ang2">
+            <line x1="480" y1="100" x2="600" y2="100" class="line-ink" />
+            <!-- O'w at 25 deg -->
+            <line x1="480" y1="100" x2="589" y2="49" class="line-ink" />
+            <circle cx="480" cy="100" r="3.5" class="cx-point" />
+            <text x="460" y="105" class="cx-label">O′</text>
+            <text x="610" y="105" class="cx-label">z</text>
+            <text x="595" y="46" class="cx-label">w</text>
+            <!-- 25 deg arc -->
+            <path d="M 525 100 A 45 45 0 0 0 521 81" fill="none" stroke="var(--orange)" stroke-width="2" />
+            <text x="542" y="88" class="cx-math-text" fill="var(--orange)">២៥°</text>
+          </g>
+        </g>
+
+        <!-- WORKING BASE RAY Bt -->
+        <g id="layer-ray-bt">
+          <line x1="260" y1="300" x2="620" y2="300" class="line-ink" />
+          <polygon points="628,300 616,295 616,305" fill="var(--ink)" />
+          <circle cx="260" cy="300" r="4.5" class="cx-point" />
+          <text x="240" y="306" class="cx-label">B</text>
+          <text x="635" y="306" class="cx-label">t</text>
+        </g>
+
+        <!-- HISTORY & CONSTRUCTION LAYERS -->
+        <g id="layer-history"></g>
+        <g id="layer-active"></g>
+        <g id="layer-points"></g>
+
+        <!-- PROTRACTOR VERIFICATION LAYER (Step 4) -->
+        <g id="layer-protractor" class="protractor-svg" style="display: none;"></g>
+
+        <!-- COMPASS TOOL LAYER -->
+        <g id="layer-compass" class="tool-compass"></g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Result Banner -->
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span id="result-text">ABC = ABT + CBT = ៣៥° + ២៥° = ៦០°</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-area">
+    <!-- Steps Nav -->
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+
+    <!-- Buttons -->
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៣</span>
+    <span>KhmerMath · បូកមុំដោយដែកឈាន</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Grade 7 · Lesson 13 · 13-C: Add angles with compass and ruler
+ */
+
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]);
+}
+
+const B = { x: 260, y: 300 };
+const ARC_R = 140; // radius of reference arcs
+const RAY_LEN = 240;
+
+// Angles
+const ANG1 = 35; // deg
+const ANG2 = 25; // deg
+const CHORD1 = 2 * ARC_R * Math.sin((ANG1 / 2) * Math.PI / 180); // chord 35 deg
+const CHORD2 = 2 * ARC_R * Math.sin((ANG2 / 2) * Math.PI / 180); // chord 25 deg
+
+// Intersection points on working plane:
+// Ray Bt is horizontal (0 deg).
+// Point M on Bt:
+const PT_M = { x: B.x + ARC_R, y: B.y };
+// Point N1 (up 35 deg from Bt):
+const PT_N1 = {
+  x: B.x + ARC_R * Math.cos(ANG1 * Math.PI / 180),
+  y: B.y - ARC_R * Math.sin(ANG1 * Math.PI / 180)
+};
+// Point N2 (down 25 deg from Bt):
+const PT_N2 = {
+  x: B.x + ARC_R * Math.cos(ANG2 * Math.PI / 180),
+  y: B.y + ARC_R * Math.sin(ANG2 * Math.PI / 180)
+};
+
+// Endpoints of rays:
+const PT_A = {
+  x: B.x + RAY_LEN * Math.cos(ANG1 * Math.PI / 180),
+  y: B.y - RAY_LEN * Math.sin(ANG1 * Math.PI / 180)
+};
+const PT_C = {
+  x: B.x + RAY_LEN * Math.cos(ANG2 * Math.PI / 180),
+  y: B.y + RAY_LEN * Math.sin(ANG2 * Math.PI / 180)
+};
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១',
+    text: 'ចម្លងមុំ xOy (៣៥°) ដោយដែកឈាន ៖ គូសធ្នូកាំស្មើគ្នា ផ្ចិត O និងផ្ចិត B កាត់ Bt ត្រង់ M រួចផ្ទេរប្រវែងអង្កត់ធ្នូ បានកន្លះបន្ទាត់ BA (ABt = ៣៥°)។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២',
+    text: 'ចម្លងមុំទីពីរ zO′w (២៥°) ជាប់នឹងមុំទីមួយ ត្រង់កំពូល B ទៅម្ខាងទៀតនៃ Bt ៖ ផ្ទេរអង្កត់ធ្នូ ២៥° ចុះក្រោម បានចំណុចកាត់។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣',
+    text: 'គូសកន្លះបន្ទាត់ BC កាត់តាមចំណុចប្រសព្វដែលទើបទទួលបាន បានមុំ CBt = ២៥°។'
+  },
+  {
+    num: 4,
+    title: 'ជំហានទី ៤',
+    text: 'គេបានមុំ ABC = ABt + CBt = ៣៥° + ២៥° = ៦០°។ ពិនិត្យបញ្ជាក់ឡើងវិញដោយរ៉ាប៉ទ័រ ឃើញ ៦០° ត្រឹមត្រូវឥតខ្ចោះ! '
+  }
+];
+
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animFrameId = null;
+
+// DOM
+const layerHistory = document.getElementById('layer-history');
+const layerActive = document.getElementById('layer-active');
+const layerPoints = document.getElementById('layer-points');
+const layerCompass = document.getElementById('layer-compass');
+const layerProtractor = document.getElementById('layer-protractor');
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function clearLayers() {
+  layerHistory.innerHTML = '';
+  layerActive.innerHTML = '';
+  layerPoints.innerHTML = '';
+  layerCompass.innerHTML = '';
+  layerProtractor.style.display = 'none';
+}
+
+function drawPoint(container, pt, labelText, offset = [0, 20], colorClass = 'cx-point') {
+  const g = createSvgEl('g');
+  g.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 4, class: colorClass }));
+  if (labelText) {
+    const text = createSvgEl('text', {
+      x: pt.x + offset[0], y: pt.y + offset[1], class: 'cx-label', 'text-anchor': 'middle'
+    });
+    text.textContent = labelText;
+    g.appendChild(text);
+  }
+  container.appendChild(g);
+  return g;
+}
+
+/**
+ * Draw Compass
+ */
+function drawCompass(needlePt, pencilPt, opacity = 1) {
+  layerCompass.innerHTML = '';
+  if (opacity <= 0) return;
+  
+  const nx = needlePt.x, ny = needlePt.y;
+  const px = pencilPt.x, py = pencilPt.y;
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2, midY = (ny + py) / 2;
+  
+  const legLen = Math.max(span * 0.7 + 60, 75);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+  
+  let dx = px - nx, dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen, normY = -dx / dLen;
+  if (normY > 0) { normX = -normX; normY = -normY; }
+  
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  const hTopX = hx + normX * 28;
+  const hTopY = hy + normY * 28;
+  
+  const g = createSvgEl('g', { opacity: opacity });
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: nx, cy: ny, r: 2.5, class: 'c-needle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: px, y2: py, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: px, cy: py, r: 3, class: 'c-pencil' }));
+  g.appendChild(createSvgEl('circle', { cx: hx, cy: hy, r: 6.5, class: 'c-hinge' }));
+  
+  layerCompass.appendChild(g);
+}
+
+function animateProgressive(duration, onUpdate, onComplete) {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  const startTime = performance.now();
+  
+  function loop(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / duration);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    
+    onUpdate(ease, t);
+    
+    if (t < 1) {
+      animFrameId = requestAnimationFrame(loop);
+    } else {
+      animFrameId = null;
+      if (onComplete) onComplete();
+    }
+  }
+  
+  animFrameId = requestAnimationFrame(loop);
+}
+
+/**
+ * Build Protractor Overlay at vertex B
+ */
+function buildProtractorOverlay() {
+  layerProtractor.innerHTML = '';
+  const R = 210;
+  
+  // Outer semi-circle centered at B, rotated so 0 aligns with BC (-25 deg)
+  const g = createSvgEl('g', {
+    transform: `translate(${B.x}, ${B.y}) rotate(25)`
+  });
+  
+  // Protractor plate
+  g.appendChild(createSvgEl('path', {
+    d: `M ${-R} 0 A ${R} ${R} 0 0 1 ${R} 0 Z`,
+    fill: 'rgba(219, 234, 254, 0.65)',
+    stroke: 'var(--teal)',
+    'stroke-width': 1.6
+  }));
+  
+  // Center mark
+  g.appendChild(createSvgEl('circle', { cx: 0, cy: 0, r: 12, fill: 'none', stroke: 'var(--teal)', 'stroke-width': 1.2 }));
+  g.appendChild(createSvgEl('line', { x1: -R, y1: 0, x2: R, y2: 0, stroke: 'var(--teal)', 'stroke-width': 1.2 }));
+  g.appendChild(createSvgEl('line', { x1: 0, y1: 0, x2: 0, y2: -R, stroke: 'var(--teal)', 'stroke-width': 1.2 }));
+  
+  // Degree Ticks
+  for (let d = 0; d <= 180; d += 5) {
+    const rad = d * Math.PI / 180;
+    const cosR = Math.cos(rad);
+    const sinR = -Math.sin(rad);
+    const tickLen = (d % 10 === 0) ? 14 : 9;
+    
+    g.appendChild(createSvgEl('line', {
+      x1: R * cosR, y1: R * sinR,
+      x2: (R - tickLen) * cosR, y2: (R - tickLen) * sinR,
+      stroke: 'var(--teal)', 'stroke-width': (d % 10 === 0) ? 1.4 : 0.9
+    }));
+    
+    if (d === 0 || d === 25 || d === 60 || d === 90 || d === 180) {
+      const tx = (R - 26) * cosR;
+      const ty = (R - 26) * sinR + 4;
+      const t = createSvgEl('text', {
+        x: tx, y: ty, 'text-anchor': 'middle', fill: d === 60 ? 'var(--green)' : 'var(--ink-secondary)',
+        'font-size': d === 60 ? '13px' : '10px', 'font-weight': d === 60 ? '700' : '500', 'font-family': 'var(--font-km)'
+      });
+      t.textContent = toKhmer(d) + '°';
+      g.appendChild(t);
+    }
+  }
+  
+  layerProtractor.appendChild(g);
+}
+
+function renderNavChips() {
+  stepsNav.innerHTML = '';
+  STEPS.forEach((step, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = step.title;
+    chip.onclick = () => goToStep(idx);
+    stepsNav.appendChild(chip);
+  });
+}
+
+function updateUI() {
+  const stepData = STEPS[currentStep];
+  stepBadge.textContent = stepData.title;
+  stepText.textContent = stepData.text;
+  
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+  
+  if (currentStep === STEPS.length - 1) {
+    resultBanner.style.display = 'flex';
+  } else {
+    resultBanner.style.display = 'none';
+  }
+  
+  renderNavChips();
+}
+
+/**
+ * Render Step Scene
+ */
+function renderScene(isAnimated = false) {
+  clearLayers();
+  updateUI();
+  
+  if (currentStep === 0) {
+    // STEP 1: Copy angle 35 deg (arc from B cutting Bt at M, arc cutting at N1)
+    if (isAnimated) {
+      // Animate main arc around B
+      animateProgressive(1200, (ease) => {
+        const curDeg = ease * 45;
+        const rad = curDeg * Math.PI / 180;
+        const px = B.x + ARC_R * Math.cos(rad);
+        const py = B.y - ARC_R * Math.sin(rad);
+        
+        layerActive.innerHTML = '';
+        layerActive.appendChild(createSvgEl('path', {
+          d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 0 ${px} ${py}`,
+          class: 'arc-active'
+        }));
+        drawCompass(B, { x: px, y: py });
+      }, () => {
+        // Point M
+        drawPoint(layerPoints, PT_M, 'M', [0, 20]);
+        // Point N1
+        drawPoint(layerPoints, PT_N1, 'N₁', [10, -10], 'cx-point');
+        // Ray BA
+        layerActive.appendChild(createSvgEl('line', {
+          x1: B.x, y1: B.y, x2: PT_A.x, y2: PT_A.y, class: 'line-active'
+        }));
+        drawPoint(layerPoints, PT_A, 'A', [-6, -16]);
+        handleAutoplayNext();
+      });
+    } else {
+      layerActive.appendChild(createSvgEl('path', {
+        d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 0 ${B.x + ARC_R * Math.cos(0.8)} ${B.y - ARC_R * Math.sin(0.8)}`,
+        class: 'arc-active'
+      }));
+      drawPoint(layerPoints, PT_M, 'M', [0, 20]);
+      drawPoint(layerPoints, PT_N1, 'N₁', [10, -10]);
+      layerActive.appendChild(createSvgEl('line', {
+        x1: B.x, y1: B.y, x2: PT_A.x, y2: PT_A.y, class: 'line-active'
+      }));
+      drawPoint(layerPoints, PT_A, 'A', [-6, -16]);
+    }
+  }
+  
+  else if (currentStep === 1) {
+    // STEP 2: Copy second angle 25 deg downwards from Bt
+    // History from step 1
+    layerHistory.appendChild(createSvgEl('path', {
+      d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 0 ${B.x + ARC_R * Math.cos(0.8)} ${B.y - ARC_R * Math.sin(0.8)}`,
+      class: 'arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: B.x, y1: B.y, x2: PT_A.x, y2: PT_A.y, class: 'line-ink'
+    }));
+    drawPoint(layerPoints, PT_M, 'M', [0, 20]);
+    drawPoint(layerPoints, PT_N1, 'N₁', [10, -10]);
+    drawPoint(layerPoints, PT_A, 'A', [-6, -16]);
+    
+    if (isAnimated) {
+      animateProgressive(1200, (ease) => {
+        const curDeg = ease * 35;
+        const rad = curDeg * Math.PI / 180;
+        const px = B.x + ARC_R * Math.cos(rad);
+        const py = B.y + ARC_R * Math.sin(rad);
+        
+        layerActive.innerHTML = '';
+        layerActive.appendChild(createSvgEl('path', {
+          d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 1 ${px} ${py}`,
+          class: 'arc-active'
+        }));
+        drawCompass(B, { x: px, y: py });
+      }, () => {
+        drawPoint(layerPoints, PT_N2, 'N₂', [12, 14], 'cx-point');
+        handleAutoplayNext();
+      });
+    } else {
+      layerActive.appendChild(createSvgEl('path', {
+        d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 1 ${B.x + ARC_R * Math.cos(0.6)} ${B.y + ARC_R * Math.sin(0.6)}`,
+        class: 'arc-active'
+      }));
+      drawPoint(layerPoints, PT_N2, 'N₂', [12, 14]);
+    }
+  }
+  
+  else if (currentStep === 2) {
+    // STEP 3: Draw ray BC
+    layerHistory.appendChild(createSvgEl('path', {
+      d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 0 ${B.x + ARC_R * Math.cos(0.8)} ${B.y - ARC_R * Math.sin(0.8)}`,
+      class: 'arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 1 ${B.x + ARC_R * Math.cos(0.6)} ${B.y + ARC_R * Math.sin(0.6)}`,
+      class: 'arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('line', {
+      x1: B.x, y1: B.y, x2: PT_A.x, y2: PT_A.y, class: 'line-ink'
+    }));
+    drawPoint(layerPoints, PT_M, 'M', [0, 20]);
+    drawPoint(layerPoints, PT_N1, 'N₁', [10, -10]);
+    drawPoint(layerPoints, PT_N2, 'N₂', [12, 14]);
+    drawPoint(layerPoints, PT_A, 'A', [-6, -16]);
+    
+    // Animate drawing line BC
+    if (isAnimated) {
+      animateProgressive(1000, (ease) => {
+        const curX = B.x + (PT_C.x - B.x) * ease;
+        const curY = B.y + (PT_C.y - B.y) * ease;
+        layerActive.innerHTML = '';
+        layerActive.appendChild(createSvgEl('line', {
+          x1: B.x, y1: B.y, x2: curX, y2: curY, class: 'line-active'
+        }));
+      }, () => {
+        drawPoint(layerPoints, PT_C, 'C', [-6, 22]);
+        handleAutoplayNext();
+      });
+    } else {
+      layerActive.appendChild(createSvgEl('line', {
+        x1: B.x, y1: B.y, x2: PT_C.x, y2: PT_C.y, class: 'line-active'
+      }));
+      drawPoint(layerPoints, PT_C, 'C', [-6, 22]);
+    }
+  }
+  
+  else if (currentStep === 3) {
+    // STEP 4: Total angle ABC = 60 deg + Protractor check
+    layerHistory.appendChild(createSvgEl('path', {
+      d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 0 ${B.x + ARC_R * Math.cos(0.8)} ${B.y - ARC_R * Math.sin(0.8)}`,
+      class: 'arc-history'
+    }));
+    layerHistory.appendChild(createSvgEl('path', {
+      d: `M ${B.x + ARC_R} ${B.y} A ${ARC_R} ${ARC_R} 0 0 1 ${B.x + ARC_R * Math.cos(0.6)} ${B.y + ARC_R * Math.sin(0.6)}`,
+      class: 'arc-history'
+    }));
+    
+    // Rays in final green
+    layerActive.appendChild(createSvgEl('line', {
+      x1: B.x, y1: B.y, x2: PT_A.x, y2: PT_A.y, class: 'line-final'
+    }));
+    layerActive.appendChild(createSvgEl('line', {
+      x1: B.x, y1: B.y, x2: PT_C.x, y2: PT_C.y, class: 'line-final'
+    }));
+    
+    drawPoint(layerPoints, PT_A, 'A', [-6, -16], 'cx-point');
+    drawPoint(layerPoints, PT_C, 'C', [-6, 22], 'cx-point');
+    
+    // Wedge shading for total angle 60
+    const radA = -ANG1 * Math.PI / 180;
+    const radC = ANG2 * Math.PI / 180;
+    const rArc = 70;
+    const xA = B.x + rArc * Math.cos(radA), yA = B.y + rArc * Math.sin(radA);
+    const xC = B.x + rArc * Math.cos(radC), yC = B.y + rArc * Math.sin(radC);
+    
+    layerActive.appendChild(createSvgEl('path', {
+      d: `M ${xC} ${yC} A ${rArc} ${rArc} 0 0 0 ${xA} ${yA}`,
+      fill: 'none', stroke: 'var(--green)', 'stroke-width': 3
+    }));
+    
+    // Label "60°"
+    const tTot = createSvgEl('text', {
+      x: B.x + 95, y: B.y - 2, 'text-anchor': 'middle', fill: 'var(--green)',
+      'font-weight': '700', 'font-size': '18px', 'font-family': 'var(--font-km)'
+    });
+    tTot.textContent = '៦០°';
+    layerActive.appendChild(tTot);
+    
+    // Show Protractor Overlay
+    buildProtractorOverlay();
+    layerProtractor.style.display = 'block';
+  }
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderScene(true);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene(false);
+  }
+}
+
+function replayStep() {
+  renderScene(true);
+}
+
+function resetConstruction() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene(true);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  renderScene(true);
+}
+
+function handleAutoplayNext() {
+  if (!isAutoplaying) return;
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) {
+      nextStep();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2600);
+}
+
+function toggleAutoplay(forceState) {
+  isAutoplaying = forceState !== undefined ? forceState : !isAutoplaying;
+  
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderScene(true);
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let target = current === 'light' ? 'dark' : (current === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark'));
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene(true);
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

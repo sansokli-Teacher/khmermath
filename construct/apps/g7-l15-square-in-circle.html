@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>សង់ការ៉េចារឹកក្នុងរង្វង់ — ថ្នាក់ទី ៧ · មេរៀនទី ១៥</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed; --purple-soft: #ede9fe;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+.circle-base { fill: none; stroke: var(--blue); stroke-width: 2.4; }
+.seg-drawn { stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; }
+.seg-active { stroke: var(--orange); stroke-width: 3.6; stroke-linecap: round; }
+.seg-mediator { stroke: var(--teal); stroke-width: 2.2; stroke-dasharray: 6 5; }
+.seg-final { stroke: var(--green); stroke-width: 3.8; stroke-linecap: round; }
+.arc-trace { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linecap: round; }
+.right-mark { fill: none; stroke: var(--teal); stroke-width: 2; }
+.right-mark-center { fill: none; stroke: var(--purple); stroke-width: 2; }
+.tick-mark { stroke: var(--green); stroke-width: 2.2; stroke-linecap: round; }
+.tick-radius { stroke: var(--blue); stroke-width: 2; stroke-linecap: round; }
+
+/* Tools */
+.tool-ruler { filter: drop-shadow(0 5px 10px rgba(0,0,0,0.22)); pointer-events: none; }
+.ruler-body { fill: rgba(254, 240, 138, 0.85); stroke: #ca8a04; stroke-width: 1.4; }
+[data-theme="dark"] .ruler-body { fill: rgba(202, 138, 4, 0.35); stroke: #eab308; }
+
+.tool-compass { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); pointer-events: none; }
+.c-leg { stroke: #64748b; stroke-width: 3.5; stroke-linecap: round; }
+.c-needle { fill: #334155; }
+.c-pencil { fill: #ea580c; stroke: #9a3412; stroke-width: 1; }
+.c-hinge { fill: #f59e0b; stroke: #b45309; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 110px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 12px 18px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 2px 8px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៥ · រូបធរណីមាត្រមានវិមាត្រពីរ</div>
+      <h1>សង់ការ៉េចារឹកក្នុងរង្វង់ (ផ្ចិត O កាំ R = ៣ cm)</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរសង់ការ៉េចារឹកក្នុងរង្វង់">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Dimension Box -->
+        <g id="scale-info" transform="translate(30, 24)">
+          <rect width="250" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="26" class="cx-math-text" font-weight="700" fill="var(--teal)">កាំរង្វង់ R = ៣ cm (១៤០ px)</text>
+        </g>
+
+        <!-- Construction layers -->
+        <g id="layer-circle"></g>
+        <g id="layer-diagonals"></g>
+        <g id="layer-arcs"></g>
+        <g id="layer-mediator"></g>
+        <g id="layer-square"></g>
+        <g id="layer-active"></g>
+        <g id="layer-points"></g>
+        <g id="layer-tools"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span id="result-text">ការ៉េ ABCD ចារឹកក្នុងរង្វង់ ៖ OA = OB = OC = OD = ៣ cm និង AC ⟂ BD នាំឱ្យ ABCD ជាការ៉េពិតប្រាកដ</span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៥</span>
+    <span>អង្កត់ផ្ចិតកាត់គ្នាកែងត្រង់ O ចែករង្វង់ជា ៤ ធ្នូស្មើគ្នា</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Center O and Radius R = 3 cm = 140 px
+const O = { x: 420, y: 240 };
+const R = 140;
+
+// Four vertices on the circle
+const A = { x: O.x - R, y: O.y }; // 280, 240
+const C = { x: O.x + R, y: O.y }; // 560, 240
+const B = { x: O.x, y: O.y - R }; // 420, 100
+const D = { x: O.x, y: O.y + R }; // 420, 380
+
+// Compass arc intersection points P and Q (outside circle)
+const R_ARC = 200;
+const H_ARC = Math.sqrt(R_ARC * R_ARC - R * R); // sqrt(200^2 - 140^2) = sqrt(20400) ≈ 142.8
+const P = { x: O.x, y: O.y - H_ARC }; // 420, 97.2 (or near top)
+const Q = { x: O.x, y: O.y + H_ARC }; // 420, 382.8
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១',
+    text: 'គូសរង្វង់ផ្ចិត O កាំ R = ៣ cm (១៤០ px) រួចប្រើបន្ទាត់គូសអង្កត់ផ្ចិត AC = ៦ cm កាត់តាមផ្ចិត O។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២',
+    text: 'សង់មេដ្យាទ័រនៃ AC ដោយដែកឈាន ៖ យក A និង C ជាផ្ចិត គូសធ្នូកាត់គ្នាខាងលើ និងខាងក្រោម រួចគូសបន្ទាត់កាត់តាមចំណុចប្រសព្វទាំងពីរ កាត់រង្វង់ត្រង់ B និង D។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣',
+    text: 'ប្រើបន្ទាត់ ភ្ជាប់ចំណុច A, B, C, D ជាលំដាប់ ៖ គូស AB, BC, CD និង DA បានចតុកោណ ABCD។'
+  },
+  {
+    num: 4,
+    title: 'ជំហានទី ៤',
+    text: 'សន្និដ្ឋាន ៖ OA = OB = OC = OD = ៣ cm (កាំរង្វង់) និង AC ⟂ BD នាំឱ្យ ABCD ជាការ៉េចារឹកក្នុងរង្វង់ មានជ្រុងទាំង ៤ ស្មើគ្នា និងមុំទាំង ៤ ជាមុំកែង! '
+  }
+];
+
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+// Layers
+const layerCircle = document.getElementById('layer-circle');
+const layerDiagonals = document.getElementById('layer-diagonals');
+const layerArcs = document.getElementById('layer-arcs');
+const layerMediator = document.getElementById('layer-mediator');
+const layerSquare = document.getElementById('layer-square');
+const layerActive = document.getElementById('layer-active');
+const layerPoints = document.getElementById('layer-points');
+const layerTools = document.getElementById('layer-tools');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function drawRightAngleMark(pt, dirX, dirY, size = 15) {
+  return createSvgEl('polyline', {
+    points: `${pt.x + size * dirX},${pt.y} ${pt.x + size * dirX},${pt.y + size * dirY} ${pt.x},${pt.y + size * dirY}`,
+    class: 'right-mark'
+  });
+}
+
+function buildRulerSvg(lengthPx = 360, cmCount = 7) {
+  const g = createSvgEl('g', { class: 'tool-ruler' });
+  const h = 42;
+  g.appendChild(createSvgEl('rect', { x: 0, y: 0, width: lengthPx, height: h, rx: 4, class: 'ruler-body' }));
+  
+  const stepPx = lengthPx / cmCount;
+  for (let c = 0; c <= cmCount; c++) {
+    const x = c * stepPx;
+    g.appendChild(createSvgEl('line', { x1: x, y1: 0, x2: x, y2: 15, stroke: '#854d0e', 'stroke-width': 1.6 }));
+    const t = createSvgEl('text', {
+      x: x + (c === 0 ? 3 : -3), y: 28, 'font-size': '12px', 'font-family': 'var(--font-km)',
+      'font-weight': '700', fill: '#854d0e', 'text-anchor': c === 0 ? 'start' : 'end'
+    });
+    t.textContent = toKhmer(c);
+    g.appendChild(t);
+
+    if (c < cmCount) {
+      g.appendChild(createSvgEl('line', { x1: x + stepPx*0.5, y1: 0, x2: x + stepPx*0.5, y2: 10, stroke: '#a16207', 'stroke-width': 1.2 }));
+      for (let mm = 1; mm < 10; mm++) {
+        if (mm === 5) continue;
+        g.appendChild(createSvgEl('line', { x1: x + (stepPx/10)*mm, y1: 0, x2: x + (stepPx/10)*mm, y2: 6, stroke: '#ca8a04', 'stroke-width': 0.8 }));
+      }
+    }
+  }
+  return g;
+}
+
+function drawCompassTool(needlePt, pencilPt) {
+  const g = createSvgEl('g', { class: 'tool-compass' });
+  const nx = needlePt.x, ny = needlePt.y;
+  const px = pencilPt.x, py = pencilPt.y;
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2, midY = (ny + py) / 2;
+  const legLen = Math.max(span * 0.7 + 60, 80);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+
+  let dx = px - nx, dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen, normY = -dx / dLen;
+  if (normY > 0) { normX = -normX; normY = -normY; }
+
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  const hTopX = hx + normX * 30;
+  const hTopY = hy + normY * 30;
+
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: nx, cy: ny, r: 2.8, class: 'c-needle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: px, y2: py, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: px, cy: py, r: 3.2, class: 'c-pencil' }));
+  g.appendChild(createSvgEl('circle', { cx: hx, cy: hy, r: 6.5, class: 'c-hinge' }));
+
+  return g;
+}
+
+function renderScene() {
+  layerCircle.innerHTML = '';
+  layerDiagonals.innerHTML = '';
+  layerArcs.innerHTML = '';
+  layerMediator.innerHTML = '';
+  layerSquare.innerHTML = '';
+  layerActive.innerHTML = '';
+  layerPoints.innerHTML = '';
+  layerTools.innerHTML = '';
+
+  stepBadge.textContent = STEPS[currentStep].title;
+  stepText.textContent = STEPS[currentStep].text;
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+  resultBanner.style.display = currentStep === STEPS.length - 1 ? 'flex' : 'none';
+
+  stepsNav.innerHTML = '';
+  STEPS.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  function addPoint(pt, name, offX = 0, offY = 24, col = 'var(--ink)') {
+    const g = createSvgEl('g');
+    g.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 4.5, fill: col }));
+    const t = createSvgEl('text', { x: pt.x + offX, y: pt.y + offY, class: 'cx-label', fill: col });
+    t.textContent = name;
+    g.appendChild(t);
+    layerPoints.appendChild(g);
+  }
+
+  // Base Circle & Centre O always present
+  layerCircle.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: R, class: 'circle-base' }));
+  addPoint(O, 'O', 12, 18, 'var(--blue)');
+
+  // STEP 1: Draw Diameter AC
+  if (currentStep === 0) {
+    layerActive.appendChild(createSvgEl('line', { x1: A.x, y1: A.y, x2: C.x, y2: C.y, class: 'seg-active' }));
+    addPoint(A, 'A', -20, 6, 'var(--orange)');
+    addPoint(C, 'C', 14, 6, 'var(--orange)');
+
+    const ruler = buildRulerSvg(340, 6);
+    ruler.setAttribute('transform', `translate(${A.x - 30}, ${A.y + 6})`);
+    layerTools.appendChild(ruler);
+
+    const dim = createSvgEl('text', { x: O.x, y: O.y - 14, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)' });
+    dim.textContent = 'អង្កត់ផ្ចិត AC = ៦ cm (កាំ OA = OC = ៣ cm)';
+    layerActive.appendChild(dim);
+    return;
+  }
+
+  // Permanent diameter AC
+  layerDiagonals.appendChild(createSvgEl('line', { x1: A.x, y1: A.y, x2: C.x, y2: C.y, class: 'seg-drawn' }));
+  addPoint(A, 'A', -20, 6);
+  addPoint(C, 'C', 14, 6);
+
+  // STEP 2: Perpendicular bisector of AC (mediator)
+  if (currentStep === 1) {
+    // Top Arcs from A and C
+    layerArcs.appendChild(createSvgEl('path', {
+      d: `M ${O.x - 25} ${P.y - 15} A ${R_ARC} ${R_ARC} 0 0 1 ${O.x + 25} ${P.y + 20}`,
+      class: 'arc-trace'
+    }));
+    layerArcs.appendChild(createSvgEl('path', {
+      d: `M ${O.x + 25} ${P.y - 15} A ${R_ARC} ${R_ARC} 0 0 0 ${O.x - 25} ${P.y + 20}`,
+      class: 'arc-trace'
+    }));
+
+    // Bottom Arcs from A and C
+    layerArcs.appendChild(createSvgEl('path', {
+      d: `M ${O.x - 25} ${Q.y - 20} A ${R_ARC} ${R_ARC} 0 0 1 ${O.x + 25} ${Q.y + 15}`,
+      class: 'arc-trace'
+    }));
+    layerArcs.appendChild(createSvgEl('path', {
+      d: `M ${O.x + 25} ${Q.y - 20} A ${R_ARC} ${R_ARC} 0 0 0 ${O.x - 25} ${Q.y + 15}`,
+      class: 'arc-trace'
+    }));
+
+    // Mediator line through O cutting circle at B and D
+    layerActive.appendChild(createSvgEl('line', { x1: O.x, y1: 60, x2: O.x, y2: 420, class: 'seg-mediator' }));
+    
+    // Points B and D
+    addPoint(B, 'B', 12, -8, 'var(--orange)');
+    addPoint(D, 'D', 12, 22, 'var(--orange)');
+
+    // Right angle at O
+    layerActive.appendChild(drawRightAngleMark(O, 1, -1));
+
+    // Compass tool at A
+    layerTools.appendChild(drawCompassTool(A, { x: O.x, y: P.y }));
+    return;
+  }
+
+  // Permanent diameter BD & central right angle
+  layerDiagonals.appendChild(createSvgEl('line', { x1: B.x, y1: B.y, x2: D.x, y2: D.y, class: 'seg-drawn' }));
+  layerDiagonals.appendChild(drawRightAngleMark(O, 1, -1));
+  addPoint(B, 'B', 12, -8);
+  addPoint(D, 'D', 12, 22);
+
+  // STEP 3: Join AB, BC, CD, DA
+  if (currentStep === 2) {
+    layerActive.appendChild(createSvgEl('line', { x1: A.x, y1: A.y, x2: B.x, y2: B.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: B.x, y1: B.y, x2: C.x, y2: C.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: C.x, y1: C.y, x2: D.x, y2: D.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: D.x, y1: D.y, x2: A.x, y2: A.y, class: 'seg-active' }));
+
+    const ruler = buildRulerSvg(280, 5);
+    ruler.setAttribute('transform', `translate(${A.x}, ${A.y}) rotate(-45)`);
+    layerTools.appendChild(ruler);
+    return;
+  }
+
+  // Full inscribed square ABCD
+  layerSquare.appendChild(createSvgEl('line', { x1: A.x, y1: A.y, x2: B.x, y2: B.y, class: 'seg-final' }));
+  layerSquare.appendChild(createSvgEl('line', { x1: B.x, y1: B.y, x2: C.x, y2: C.y, class: 'seg-final' }));
+  layerSquare.appendChild(createSvgEl('line', { x1: C.x, y1: C.y, x2: D.x, y2: D.y, class: 'seg-final' }));
+  layerSquare.appendChild(createSvgEl('line', { x1: D.x, y1: D.y, x2: A.x, y2: A.y, class: 'seg-final' }));
+
+  // Four corner right-angle marks of square ABCD
+  // Corner at A: sides AB (45 deg) and AD (-45 deg). Right angle box corner:
+  const sqS = 14;
+  layerSquare.appendChild(createSvgEl('polyline', {
+    points: `${A.x + sqS*0.707},${A.y - sqS*0.707} ${A.x + sqS*1.414},${A.y} ${A.x + sqS*0.707},${A.y + sqS*0.707}`,
+    class: 'right-mark'
+  }));
+  layerSquare.appendChild(createSvgEl('polyline', {
+    points: `${B.x - sqS*0.707},${B.y + sqS*0.707} ${B.x},${B.y + sqS*1.414} ${B.x + sqS*0.707},${B.y + sqS*0.707}`,
+    class: 'right-mark'
+  }));
+  layerSquare.appendChild(createSvgEl('polyline', {
+    points: `${C.x - sqS*0.707},${C.y - sqS*0.707} ${C.x - sqS*1.414},${C.y} ${C.x - sqS*0.707},${C.y + sqS*0.707}`,
+    class: 'right-mark'
+  }));
+  layerSquare.appendChild(createSvgEl('polyline', {
+    points: `${D.x - sqS*0.707},${D.y - sqS*0.707} ${D.x},${D.y - sqS*1.414} ${D.x + sqS*0.707},${D.y - sqS*0.707}`,
+    class: 'right-mark'
+  }));
+
+  // Equal side tick marks on AB, BC, CD, DA
+  const sides = [
+    { x: (A.x + B.x)/2, y: (A.y + B.y)/2, rot: 45 },
+    { x: (B.x + C.x)/2, y: (B.y + C.y)/2, rot: -45 },
+    { x: (C.x + D.x)/2, y: (C.y + D.y)/2, rot: 45 },
+    { x: (D.x + A.x)/2, y: (D.y + A.y)/2, rot: -45 }
+  ];
+  sides.forEach(s => {
+    const tick = createSvgEl('line', {
+      x1: s.x - 6 * Math.sin(s.rot * Math.PI / 180), y1: s.y + 6 * Math.cos(s.rot * Math.PI / 180),
+      x2: s.x + 6 * Math.sin(s.rot * Math.PI / 180), y2: s.y - 6 * Math.cos(s.rot * Math.PI / 180),
+      class: 'tick-mark'
+    });
+    layerSquare.appendChild(tick);
+  });
+
+  // Equal radius ticks on OA, OB, OC, OD
+  [
+    { x: (A.x + O.x)/2, y: O.y },
+    { x: (C.x + O.x)/2, y: O.y },
+    { x: O.x, y: (B.y + O.y)/2 },
+    { x: O.x, y: (D.y + O.y)/2 }
+  ].forEach(pt => {
+    layerSquare.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 3, fill: 'var(--blue)' }));
+  });
+
+  const finalNote = createSvgEl('text', { x: 420, y: 460, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--green)', 'font-size': '15px' });
+  finalNote.textContent = 'ABCD ជាការ៉េចារឹកក្នុងរង្វង់ ៖ AC = BD = ៦ cm និង AC ⟂ BD';
+  layerSquare.appendChild(finalNote);
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetConstruction() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2800);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

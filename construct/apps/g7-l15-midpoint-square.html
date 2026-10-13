@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ការ៉េនៅក្នុងការ៉េ (EFGH ក្នុង ABCD) — ថ្នាក់ទី ៧ · មេរៀនទី ១៥</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed; --purple-soft: #ede9fe;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+.outer-square { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; }
+.inner-square { fill: rgba(20, 184, 166, 0.12); stroke: var(--teal); stroke-width: 3.5; stroke-linecap: round; }
+.seg-mediator { stroke: var(--orange); stroke-width: 2; stroke-dasharray: 6 5; }
+.arc-trace { fill: none; stroke: var(--orange); stroke-width: 2; }
+.tick-mark { stroke: var(--ink-secondary); stroke-width: 2; stroke-linecap: round; }
+.right-mark { fill: none; stroke: var(--teal); stroke-width: 2; }
+
+/* Folding triangles */
+.tri-aeh { fill: rgba(251, 146, 60, 0.45); stroke: #ea580c; stroke-width: 1.5; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.tri-ebf { fill: rgba(59, 130, 246, 0.45); stroke: #2563eb; stroke-width: 1.5; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.tri-fcg { fill: rgba(34, 197, 94, 0.45); stroke: #16a34a; stroke-width: 1.5; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.tri-gdh { fill: rgba(168, 85, 247, 0.45); stroke: #9333ea; stroke-width: 1.5; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Tools */
+.tool-compass { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); pointer-events: none; }
+.c-leg { stroke: #64748b; stroke-width: 3.5; stroke-linecap: round; }
+.c-needle { fill: #334155; }
+.c-pencil { fill: #ea580c; stroke: #9a3412; stroke-width: 1; }
+.c-hinge { fill: #f59e0b; stroke: #b45309; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 4; stroke-linecap: round; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-toggle-cut { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
+.btn-toggle-cut.active { background: var(--orange); color: #fff; }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 110px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 12px 18px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 2px 8px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៥ · រូបធរណីមាត្រមានវិមាត្រពីរ</div>
+      <h1>ការ៉េនៅក្នុងការ៉េ (ការ៉េពីចំណុចកណ្ដាល)</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរការ៉េនៅក្នុងការ៉េ">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Dimension Box -->
+        <g id="scale-info" transform="translate(30, 24)">
+          <rect width="250" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="26" class="cx-math-text" font-weight="700" fill="var(--teal)">ការ៉េធំ ABCD ៖ ជ្រុង ៦ cm (២៤០ px)</text>
+        </g>
+
+        <!-- Construction layers -->
+        <g id="layer-outer"></g>
+        <g id="layer-mediators"></g>
+        <g id="layer-triangles"></g>
+        <g id="layer-inner"></g>
+        <g id="layer-active"></g>
+        <g id="layer-points"></g>
+        <g id="layer-tools"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span id="result-text">ការ៉េ EFGH មានជ្រុង ៣√២ ≈ ៤,២៤ cm និងផ្ទៃក្រឡា = ១/២ ផ្ទៃការ៉េ ABCD = ១៨ cm²</span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+      <button type="button" class="btn btn-toggle-cut" id="btn-cut" onclick="toggleCutRearrange()">✂️ កាត់ ទៅ ផ្គុំ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៥</span>
+    <span>ត្រីកោណកែង ៤ នៅជ្រុងផ្គុំចូលគ្នាពេញផ្ទៃការ៉េក្នុង EFGH</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Outer square ABCD side 6cm = 240px (Scale 1cm = 40px)
+const A = { x: 300, y: 110 };
+const B = { x: 300 + 240, y: 110 }; // 540, 110
+const C = { x: 540, y: 110 + 240 }; // 540, 350
+const D = { x: 300, y: 350 };
+const O = { x: 420, y: 230 }; // Center
+
+// Midpoints of sides
+const E = { x: 420, y: 110 }; // Midpoint of AB
+const F = { x: 540, y: 230 }; // Midpoint of BC
+const G = { x: 420, y: 350 }; // Midpoint of CD
+const H = { x: 300, y: 230 }; // Midpoint of DA
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១',
+    text: 'សង់ចំណុចកណ្ដាលនៃជ្រុងនីមួយៗនៃដែកឈាន (បង្ហាញការគូសមេដ្យាទ័រលើ AB រួចកំណត់ចំណុចកណ្ដាលលើជ្រុងទាំងបីទៀត)។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២',
+    text: 'ដាក់ឈ្មោះចំណុចកណ្ដាលទាំង ៤ ៖ E នៅលើ AB, F នៅលើ BC, G នៅលើ CD, និង H នៅលើ DA។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣',
+    text: 'ប្រើបន្ទាត់ ភ្ជាប់ EF, FG, GH, HE គេបានចតុកោណ EFGH ផ្អៀងនៅខាងក្នុង។'
+  },
+  {
+    num: 4,
+    title: 'ជំហានទី ៤',
+    text: 'EFGH ជាការ៉េផ្អៀង មានជ្រុង ៣√២ ≈ ៤,២៤ cm និងផ្ទៃក្រឡា = ១៨ cm² (ស្មើនឹង ១/២ នៃផ្ទៃការ៉េ ABCD = ៣៦ cm²)។ ចុចប៊ូតុង «កាត់ ទៅ ផ្គុំ» ដើម្បីមើលការបត់ត្រីកោណទាំង ៤ ចូលក្នុង!'
+  }
+];
+
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+let isFolded = false;
+
+// Layers
+const layerOuter = document.getElementById('layer-outer');
+const layerMediators = document.getElementById('layer-mediators');
+const layerTriangles = document.getElementById('layer-triangles');
+const layerInner = document.getElementById('layer-inner');
+const layerActive = document.getElementById('layer-active');
+const layerPoints = document.getElementById('layer-points');
+const layerTools = document.getElementById('layer-tools');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const btnCut = document.getElementById('btn-cut');
+const stepsNav = document.getElementById('steps-nav');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function drawRightAngleMark(pt, dirX, dirY, size = 14) {
+  return createSvgEl('polyline', {
+    points: `${pt.x + size * dirX},${pt.y} ${pt.x + size * dirX},${pt.y + size * dirY} ${pt.x},${pt.y + size * dirY}`,
+    class: 'right-mark'
+  });
+}
+
+function drawCompassTool(needlePt, pencilPt) {
+  const g = createSvgEl('g', { class: 'tool-compass' });
+  const nx = needlePt.x, ny = needlePt.y;
+  const px = pencilPt.x, py = pencilPt.y;
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2, midY = (ny + py) / 2;
+  const legLen = Math.max(span * 0.7 + 60, 80);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+
+  let dx = px - nx, dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen, normY = -dx / dLen;
+  if (normY > 0) { normX = -normX; normY = -normY; }
+
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  const hTopX = hx + normX * 30;
+  const hTopY = hy + normY * 30;
+
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: nx, cy: ny, r: 2.8, class: 'c-needle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: px, y2: py, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: px, cy: py, r: 3.2, class: 'c-pencil' }));
+  g.appendChild(createSvgEl('circle', { cx: hx, cy: hy, r: 6.5, class: 'c-hinge' }));
+
+  return g;
+}
+
+function renderScene() {
+  layerOuter.innerHTML = '';
+  layerMediators.innerHTML = '';
+  layerTriangles.innerHTML = '';
+  layerInner.innerHTML = '';
+  layerActive.innerHTML = '';
+  layerPoints.innerHTML = '';
+  layerTools.innerHTML = '';
+
+  stepBadge.textContent = STEPS[currentStep].title;
+  stepText.textContent = STEPS[currentStep].text;
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+  resultBanner.style.display = currentStep === STEPS.length - 1 ? 'flex' : 'none';
+
+  stepsNav.innerHTML = '';
+  STEPS.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  function addPoint(pt, name, offX = 0, offY = 24, col = 'var(--ink)') {
+    const g = createSvgEl('g');
+    g.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 4.5, fill: col }));
+    const t = createSvgEl('text', { x: pt.x + offX, y: pt.y + offY, class: 'cx-label', fill: col });
+    t.textContent = name;
+    g.appendChild(t);
+    layerPoints.appendChild(g);
+  }
+
+  // Draw outer square ABCD
+  layerOuter.appendChild(createSvgEl('rect', {
+    x: A.x, y: A.y, width: 240, height: 240, class: 'outer-square'
+  }));
+  addPoint(A, 'A', -20, -8);
+  addPoint(B, 'B', 14, -8);
+  addPoint(C, 'C', 14, 24);
+  addPoint(D, 'D', -20, 24);
+
+  // Outer dimension label
+  const dim = createSvgEl('text', { x: (A.x + B.x)/2, y: A.y - 14, 'text-anchor': 'middle', class: 'cx-math-text' });
+  dim.textContent = 'AB = ៦ cm';
+  layerOuter.appendChild(dim);
+
+  // STEP 1: Construct midpoints with perpendicular bisector
+  if (currentStep === 0) {
+    // Compass arcs on AB from A and B (radius 150px)
+    layerMediators.appendChild(createSvgEl('path', {
+      d: `M ${E.x - 20} ${E.y - 35} A 150 150 0 0 1 ${E.x + 20} ${E.y - 15}`,
+      class: 'arc-trace'
+    }));
+    layerMediators.appendChild(createSvgEl('path', {
+      d: `M ${E.x + 20} ${E.y - 35} A 150 150 0 0 0 ${E.x - 20} ${E.y - 15}`,
+      class: 'arc-trace'
+    }));
+
+    // Mediator dashed line cutting AB at E
+    layerMediators.appendChild(createSvgEl('line', { x1: E.x, y1: 70, x2: E.x, y2: 150, class: 'seg-mediator' }));
+
+    // Show midpoints E, F, G, H
+    addPoint(E, 'E', 0, -10, 'var(--orange)');
+    addPoint(F, 'F', 18, 5, 'var(--orange)');
+    addPoint(G, 'G', 0, 24, 'var(--orange)');
+    addPoint(H, 'H', -22, 5, 'var(--orange)');
+
+    layerTools.appendChild(drawCompassTool(A, { x: E.x, y: E.y - 25 }));
+    return;
+  }
+
+  // STEP 2: Name midpoints E, F, G, H and equal half ticks
+  addPoint(E, 'E', 0, -10, 'var(--teal)');
+  addPoint(F, 'F', 18, 5, 'var(--teal)');
+  addPoint(G, 'G', 0, 24, 'var(--teal)');
+  addPoint(H, 'H', -22, 5, 'var(--teal)');
+
+  // Equal half ticks on all 4 sides (AE = EB = BF = FC = CG = GD = DH = HA = 3cm)
+  [
+    { x: (A.x + E.x)/2, y: A.y }, { x: (E.x + B.x)/2, y: A.y },
+    { x: B.x, y: (B.y + F.y)/2 }, { x: B.x, y: (F.y + C.y)/2 },
+    { x: (C.x + G.x)/2, y: C.y }, { x: (G.x + D.x)/2, y: C.y },
+    { x: A.x, y: (D.y + H.y)/2 }, { x: A.x, y: (H.y + A.y)/2 }
+  ].forEach(p => {
+    layerOuter.appendChild(createSvgEl('circle', { cx: p.x, cy: p.y, r: 2.8, fill: 'var(--teal)' }));
+  });
+
+  if (currentStep === 1) {
+    const lbl = createSvgEl('text', { x: 420, y: 70, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)' });
+    lbl.textContent = 'AE = EB = BF = FC = CG = GD = DH = HA = ៣ cm';
+    layerActive.appendChild(lbl);
+    return;
+  }
+
+  // STEP 3: Join EF, FG, GH, HE
+  if (currentStep === 2) {
+    layerActive.appendChild(createSvgEl('line', { x1: E.x, y1: E.y, x2: F.x, y2: F.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: F.x, y1: F.y, x2: G.x, y2: G.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: G.x, y1: G.y, x2: H.x, y2: H.y, class: 'seg-active' }));
+    layerActive.appendChild(createSvgEl('line', { x1: H.x, y1: H.y, x2: E.x, y2: E.y, class: 'seg-active' }));
+    return;
+  }
+
+  // STEP 4: Inner square EFGH completed & Cut/Rearrange demonstration
+  layerInner.appendChild(createSvgEl('polygon', {
+    points: `${E.x},${E.y} ${F.x},${F.y} ${G.x},${G.y} ${H.x},${H.y}`,
+    class: 'inner-square'
+  }));
+
+  // Right angles inside EFGH at E, F, G, H
+  const s = 12;
+  layerInner.appendChild(createSvgEl('polyline', {
+    points: `${E.x + s*0.707},${E.y + s*0.707} ${E.x},${E.y + s*1.414} ${E.x - s*0.707},${E.y + s*0.707}`,
+    class: 'right-mark'
+  }));
+
+  // Side dimension label on EF: 3√2 ≈ 4.24 cm
+  const efDim = createSvgEl('text', {
+    x: (E.x + F.x)/2 + 10, y: (E.y + F.y)/2 - 10, 'text-anchor': 'start', class: 'cx-math-text', fill: 'var(--teal)'
+  });
+  efDim.textContent = '៣√២ ≈ ៤,២៤ cm';
+  layerInner.appendChild(efDim);
+
+  // The 4 Corner Triangles
+  // In normal state:
+  // T1: A-E-H (orange)
+  // T2: E-B-F (blue)
+  // T3: F-C-G (green)
+  // T4: G-D-H (purple)
+  // In folded state: each triangle flips across its hypotenuse into EFGH, vertices A,B,C,D meet at O(420, 230)!
+  const pA = isFolded ? `${O.x},${O.y}` : `${A.x},${A.y}`;
+  const pB = isFolded ? `${O.x},${O.y}` : `${B.x},${B.y}`;
+  const pC = isFolded ? `${O.x},${O.y}` : `${C.x},${C.y}`;
+  const pD = isFolded ? `${O.x},${O.y}` : `${D.x},${D.y}`;
+
+  layerTriangles.appendChild(createSvgEl('polygon', {
+    points: `${pA} ${E.x},${E.y} ${H.x},${H.y}`, class: 'tri-aeh'
+  }));
+  layerTriangles.appendChild(createSvgEl('polygon', {
+    points: `${pB} ${E.x},${E.y} ${F.x},${F.y}`, class: 'tri-ebf'
+  }));
+  layerTriangles.appendChild(createSvgEl('polygon', {
+    points: `${pC} ${F.x},${F.y} ${G.x},${G.y}`, class: 'tri-fcg'
+  }));
+  layerTriangles.appendChild(createSvgEl('polygon', {
+    points: `${pD} ${G.x},${G.y} ${H.x},${H.y}`, class: 'tri-gdh'
+  }));
+
+  if (isFolded) {
+    btnCut.classList.add('active');
+    btnCut.innerHTML = '↺ ត្រឡប់ដើមវិញ';
+    const noteFold = createSvgEl('text', {
+      x: 420, y: 70, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--orange)', 'font-size': '15px'
+    });
+    noteFold.textContent = 'ត្រីកោណទាំង ៤ ផ្គុំចូលគ្នាពេញផ្ទៃការ៉េក្នុង EFGH ឥតចន្លោះ! នាំឱ្យ ផ្ទៃ EFGH = ១/២ ផ្ទៃ ABCD';
+    layerActive.appendChild(noteFold);
+  } else {
+    btnCut.classList.remove('active');
+    btnCut.innerHTML = '✂️ កាត់ ទៅ ផ្គុំ';
+  }
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetConstruction() {
+  currentStep = 0;
+  isFolded = false;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleCutRearrange() {
+  if (currentStep < 3) currentStep = 3;
+  isFolded = !isFolded;
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2800);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

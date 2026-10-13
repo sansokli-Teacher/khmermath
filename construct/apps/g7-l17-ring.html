@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>កងរង្វង់ និងផ្ទៃក្នុងការ៉េ — ថ្នាក់ទី ៧ · មេរៀនទី ១៧</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Tabs */
+.tabs-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 20px; font-family: var(--font-km); font-size: 15px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* Sliders Bar */
+.sliders-panel {
+  display: flex; flex-wrap: wrap; gap: 20px; padding: 14px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-border); align-items: center; justify-content: space-around;
+}
+.slider-group { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 600; }
+.slider-group input[type="range"] { width: 140px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 48px; text-align: center; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Shading styles */
+.outer-disc { fill: rgba(59, 130, 246, 0.28); stroke: var(--blue); stroke-width: 2.6; }
+.inner-disc-cut { fill: rgba(239, 68, 68, 0.18); stroke: #dc2626; stroke-width: 2.2; stroke-dasharray: 6 4; }
+.ring-filled { fill: rgba(20, 184, 166, 0.35); stroke: var(--teal); stroke-width: 2.8; }
+.square-base { fill: rgba(59, 130, 246, 0.25); stroke: var(--blue); stroke-width: 3; }
+.corner-shaded { fill: rgba(245, 158, 11, 0.38); stroke: #d97706; stroke-width: 2.6; }
+.circle-inscribed { fill: rgba(255, 255, 255, 0.85); stroke: var(--teal); stroke-width: 2.8; }
+[data-theme="dark"] .circle-inscribed { fill: #0d1524; }
+
+.dim-line { stroke: var(--ink-secondary); stroke-width: 1.8; stroke-linecap: round; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 100px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-formula { font-size: 17.5px; color: var(--ink); font-weight: 800; }
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៧ · រង្វង់</div>
+      <h1>កងរង្វង់ និងផ្ទៃក្នុងជ្រុងការ៉េ</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-ring" role="tab" onclick="switchTab('ring')">
+      ១. ផ្ទៃកងរង្វង់ 
+    </button>
+    <button type="button" class="tab-btn" id="tab-corners" role="tab" onclick="switchTab('corners')">
+      ២. ការ៉េ និងរង្វង់ចារឹកក្នុង (ជ្រុងទាំង ៤)
+    </button>
+  </nav>
+
+  <!-- Dimension Sliders (Ring mode only) -->
+  <div class="sliders-panel" id="sliders-panel">
+    <div class="slider-group">
+      <label for="slider-R">កាំធំ R ៖</label>
+      <input type="range" id="slider-R" min="4" max="6.5" step="0.5" value="5" oninput="onRingSlidersChange()">
+      <span class="val-badge" id="val-R">៥ cm</span>
+    </div>
+    <div class="slider-group">
+      <label for="slider-r">កាំតូច r ៖</label>
+      <input type="range" id="slider-r" min="1.5" max="3.5" step="0.5" value="3" oninput="onRingSlidersChange()">
+      <span class="val-badge" id="val-r">៣ cm</span>
+    </div>
+    <div style="font-size: 14.5px; font-weight: 600; color: var(--ink-secondary);">
+      តម្លៃប្រហាក់ប្រហែល π ≈ ៣,១៤
+    </div>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរកងរង្វង់និងផ្ទៃក្នុងការ៉េ">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <!-- Title info box in SVG -->
+        <g id="svg-info-box" transform="translate(30, 20)">
+          <rect width="270" height="38" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="24" class="cx-math-text" id="svg-info-title" font-weight="700" fill="var(--teal)">
+            កងរង្វង់ ៖ 𝒜 = π(R² − r²)
+          </text>
+        </g>
+
+        <!-- Construction layers -->
+        <g id="layer-shapes"></g>
+        <g id="layer-dimensions"></g>
+        <g id="layer-annotations"></g>
+        <g id="layer-points"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span class="result-formula" id="result-formula">𝒜 = π(R² − r²) = ៣,១៤ × (២៥ − ៩) = ៥០,២៤ cm²</span>
+    </div>
+    <span id="result-detail" style="font-size: 15px; color: var(--green); font-weight: 600;">
+      ផ្ទៃកងរង្វង់ = ៥០,២៤ cm²
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៧</span>
+    <span>ផ្ទៃក្រឡាផ្នែកពណ៌ = ផ្ទៃធំ ដក ផ្ទៃតូចដែលចោះចេញ</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/\./g, ',').replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+const O = { x: 420, y: 240 };
+let activeTab = 'ring'; // 'ring' or 'corners'
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+// Ring dimensions: R and r in cm (Scale: 1 cm = 32 px)
+let radR_cm = 5;
+let radr_cm = 3;
+const PI = 3.14;
+
+// Tab 2: Square side 6 cm, circle radius 3 cm
+const squareSide_cm = 6;
+const circleRadius_cm = 3;
+
+const TABS = {
+  ring: {
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ថាសធំ)',
+        text: 'ថាសរង្វង់ធំមានកាំ R ៖ ផ្ទៃក្រឡាថាសធំទាំងមូលគឺ 𝒜₁ = πR² ។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ថាសតូចក្នុង)',
+        text: 'ថាសរង្វង់តូចខាងក្នុងមានកាំ r ៖ ផ្ទៃក្រឡាថាសតូចគឺ 𝒜₂ = πr² ដែលត្រូវកាត់ចោះចេញ។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (កាត់ចោះ)',
+        text: 'កាត់ចោះថាសតូចចេញពីថាសធំ (គូសខ្សែដាច់ក្រហម) ៖ ផ្ទៃដែលនៅសល់ជាក្រវាត់ជុំវិញហៅថា «កងរង្វង់»។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (រូបមន្តសរុប)',
+        text: 'ផ្ទៃកងរង្វង់ 𝒜 = 𝒜₁ − 𝒜₂ = πR² − πr² = π(R² − r²) ។ ជំនួសតម្លៃគណនាបានលទ្ធផលច្បាស់លាស់!'
+      }
+    ]
+  },
+  corners: {
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ការ៉េធំ)',
+        text: 'ការ៉េខាងក្រៅមានជ្រុង a = ៦ cm ៖ ផ្ទៃក្រឡាការ៉េគឺ 𝒜_ការ៉េ = a² = ៦ × ៦ = ៣៦ cm²។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (រង្វង់ចារឹកក្នុង)',
+        text: 'រង្វង់ចារឹកក្នុងមានកាំ r = ៣ cm (អង្កត់ផ្ចិត d = ៦ cm ស្មើជ្រុងការ៉េ) ៖ ផ្ទៃថាស 𝒜_ថាស = πr² = ៣,១៤ × ៣² = ២៨,២៦ cm²។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ជ្រុងទាំង ៤ ពណ៌)',
+        text: 'ផ្នែកពណ៌នៅជ្រុងទាំង ៤ គឺជាផ្ទៃការ៉េ ដក ផ្ទៃថាសរង្វង់ចេញ ៖ 𝒜 = 𝒜_ការ៉េ − 𝒜_ថាស = ៣៦ − ២៨,២៦ = ៧,៧៤ cm² (ឬ ៥៤/៧ cm² ប្រសិនបើប្រើ π ≈ ២២/៧)។'
+      }
+    ]
+  }
+};
+
+const tabRingBtn = document.getElementById('tab-ring');
+const tabCornersBtn = document.getElementById('tab-corners');
+const slidersPanel = document.getElementById('sliders-panel');
+const sliderR = document.getElementById('slider-R');
+const slider_r = document.getElementById('slider-r');
+const valR = document.getElementById('val-R');
+const val_r = document.getElementById('val-r');
+const svgInfoTitle = document.getElementById('svg-info-title');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultFormula = document.getElementById('result-formula');
+const resultDetail = document.getElementById('result-detail');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+const layerShapes = document.getElementById('layer-shapes');
+const layerDimensions = document.getElementById('layer-dimensions');
+const layerAnnotations = document.getElementById('layer-annotations');
+const layerPoints = document.getElementById('layer-points');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function switchTab(tabKey) {
+  activeTab = tabKey;
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+
+  tabRingBtn.classList.toggle('active', tabKey === 'ring');
+  tabCornersBtn.classList.toggle('active', tabKey === 'corners');
+  slidersPanel.style.display = (tabKey === 'ring') ? 'flex' : 'none';
+
+  renderScene();
+}
+
+function onRingSlidersChange() {
+  radR_cm = parseFloat(sliderR.value);
+  radr_cm = parseFloat(slider_r.value);
+  if (radr_cm >= radR_cm) {
+    radr_cm = radR_cm - 0.5;
+    slider_r.value = radr_cm;
+  }
+  valR.textContent = toKhmer(radR_cm) + ' cm';
+  val_r.textContent = toKhmer(radr_cm) + ' cm';
+  renderScene();
+}
+
+function renderScene() {
+  layerShapes.innerHTML = '';
+  layerDimensions.innerHTML = '';
+  layerAnnotations.innerHTML = '';
+  layerPoints.innerHTML = '';
+
+  const cfg = TABS[activeTab];
+  stepBadge.textContent = cfg.steps[currentStep].title;
+  stepText.textContent = cfg.steps[currentStep].text;
+
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === cfg.steps.length - 1;
+
+  stepsNav.innerHTML = '';
+  cfg.steps.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  if (activeTab === 'ring') {
+    renderRing();
+  } else {
+    renderCorners();
+  }
+}
+
+// 1. RENDER ANNULUS / RING
+function renderRing() {
+  svgInfoTitle.textContent = 'កងរង្វង់ ៖ 𝒜 = π(R² − r²)';
+  const scale = 32; // 1 cm = 32 px
+  const pxR = radR_cm * scale;
+  const pxr = radr_cm * scale;
+
+  const area1 = (PI * radR_cm * radR_cm).toFixed(2);
+  const area2 = (PI * radr_cm * radr_cm).toFixed(2);
+  const ringArea = (PI * (radR_cm * radR_cm - radr_cm * radr_cm)).toFixed(2);
+
+  resultFormula.textContent = `𝒜 = π(R² − r²) = ៣,១៤ × (${toKhmer(radR_cm)}² − ${toKhmer(radr_cm)}²) = ${toKhmer(ringArea)} cm²`;
+  resultDetail.textContent = `ផ្ទៃកងរង្វង់ = ${toKhmer(ringArea)} cm²`;
+
+  // Centre O
+  layerPoints.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: 4.5, fill: 'var(--ink)' }));
+  layerPoints.appendChild(createSvgEl('text', { x: O.x - 16, y: O.y + 16, class: 'cx-label' })).textContent = 'O';
+
+  if (currentStep === 0) {
+    // Big disc only
+    layerShapes.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: pxR, class: 'outer-disc'
+    }));
+
+    const lbl = createSvgEl('text', { x: O.x, y: O.y - pxR / 2, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-weight': '700' });
+    lbl.textContent = `ផ្ទៃថាសធំ 𝒜₁ = ៣,១៤ × ${toKhmer(radR_cm)}² = ${toKhmer(area1)} cm²`;
+    layerAnnotations.appendChild(lbl);
+  } else if (currentStep === 1) {
+    // Big disc + inner disc highlighted
+    layerShapes.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: pxR, class: 'outer-disc'
+    }));
+    layerShapes.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: pxr, fill: 'rgba(239, 68, 68, 0.35)', stroke: '#dc2626', 'stroke-width': 2.4
+    }));
+
+    const lbl1 = createSvgEl('text', { x: O.x, y: O.y - (pxR + pxr)/2, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)' });
+    lbl1.textContent = `𝒜₁ = ${toKhmer(area1)} cm²`;
+    layerAnnotations.appendChild(lbl1);
+
+    const lbl2 = createSvgEl('text', { x: O.x, y: O.y + 5, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#dc2626', 'font-weight': '700' });
+    lbl2.textContent = `𝒜₂ = ៣,១៤ × ${toKhmer(radr_cm)}² = ${toKhmer(area2)} cm²`;
+    layerAnnotations.appendChild(lbl2);
+  } else {
+    // Ring (Annulus EvenOdd Path)
+    const ringPath = `M ${O.x - pxR} ${O.y} A ${pxR} ${pxR} 0 1 0 ${O.x + pxR} ${O.y} A ${pxR} ${pxR} 0 1 0 ${O.x - pxR} ${O.y} Z M ${O.x - pxr} ${O.y} A ${pxr} ${pxr} 0 1 1 ${O.x + pxr} ${O.y} A ${pxr} ${pxr} 0 1 1 ${O.x - pxr} ${O.y} Z`;
+
+    layerShapes.appendChild(createSvgEl('path', {
+      d: ringPath, 'fill-rule': 'evenodd', class: 'ring-filled'
+    }));
+
+    if (currentStep === 2) {
+      // Cut line dashed
+      layerShapes.appendChild(createSvgEl('circle', {
+        cx: O.x, cy: O.y, r: pxr, class: 'inner-disc-cut'
+      }));
+      const lblCut = createSvgEl('text', { x: O.x, y: O.y + 5, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#dc2626', 'font-weight': '700' });
+      lblCut.textContent = 'ចោះថាសតូចចេញ';
+      layerAnnotations.appendChild(lblCut);
+    } else {
+      const lblS = createSvgEl('text', { x: O.x, y: O.y - (pxR + pxr)/2, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)', 'font-size': '16px', 'font-weight': '800' });
+      lblS.textContent = `ផ្ទៃកង = ${toKhmer(ringArea)} cm²`;
+      layerAnnotations.appendChild(lblS);
+    }
+  }
+
+  // Radii dimensions:
+  // Radius R to right-top (45 deg)
+  const aR = Math.PI / 4;
+  layerDimensions.appendChild(createSvgEl('line', {
+    x1: O.x, y1: O.y, x2: O.x + pxR * Math.cos(aR), y2: O.y - pxR * Math.sin(aR),
+    stroke: 'var(--blue)', 'stroke-width': 2
+  }));
+  const lblR = createSvgEl('text', {
+    x: O.x + (pxR * 0.75) * Math.cos(aR) + 12, y: O.y - (pxR * 0.75) * Math.sin(aR),
+    class: 'cx-math-text', fill: 'var(--blue)', 'font-weight': '700'
+  });
+  lblR.textContent = `R = ${toKhmer(radR_cm)} cm`;
+  layerDimensions.appendChild(lblR);
+
+  // Radius r to left (-180 deg)
+  if (currentStep >= 1) {
+    layerDimensions.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: O.x - pxr, y2: O.y,
+      stroke: '#dc2626', 'stroke-width': 2
+    }));
+    const lblr = createSvgEl('text', {
+      x: O.x - pxr / 2, y: O.y - 8, 'text-anchor': 'middle',
+      class: 'cx-math-text', fill: '#dc2626', 'font-weight': '700'
+    });
+    lblr.textContent = `r = ${toKhmer(radr_cm)} cm`;
+    layerDimensions.appendChild(lblr);
+  }
+}
+
+// 2. RENDER SQUARE & INSCRIBED CIRCLE (4 CORNERS)
+function renderCorners() {
+  svgInfoTitle.textContent = 'ការ៉េ និងរង្វង់ចារឹកក្នុង ៖ ៤ ជ្រុងពណ៌';
+  const scale = 40; // 1 cm = 40 px
+  const sSide = squareSide_cm * scale; // 6 * 40 = 240 px
+  const cRad = circleRadius_cm * scale; // 3 * 40 = 120 px
+  const sX = O.x - sSide / 2; // 300
+  const sY = O.y - sSide / 2; // 120
+
+  const areaSquare = squareSide_cm * squareSide_cm; // 36
+  const areaDisc = (PI * circleRadius_cm * circleRadius_cm).toFixed(2); // 28.26
+  const areaCorners = (areaSquare - areaDisc).toFixed(2); // 7.74
+
+  resultFormula.textContent = `𝒜 = 𝒜_ការ៉េ − 𝒜_ថាស = ៣៦ − ៣,១៤ × ៣² = ៣៦ − ២៨,២៦ = ៧,៧៤ cm²`;
+  resultDetail.textContent = `ផ្ទៃជ្រុងទាំង ៤ = ៧,៧៤ cm² (ឬ ៥៤/៧ cm²)`;
+
+  if (currentStep === 0) {
+    // Square alone
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: sX, y: sY, width: sSide, height: sSide, class: 'square-base'
+    }));
+    const lbl = createSvgEl('text', {
+      x: O.x, y: O.y + 6, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-size': '17px', 'font-weight': '800'
+    });
+    lbl.textContent = 'ផ្ទៃការ៉េ = ៦ × ៦ = ៣៦ cm²';
+    layerAnnotations.appendChild(lbl);
+  } else if (currentStep === 1) {
+    // Square + Inscribed Disc
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: sX, y: sY, width: sSide, height: sSide, class: 'square-base'
+    }));
+    layerShapes.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: cRad, fill: 'rgba(20, 184, 166, 0.4)', stroke: 'var(--teal)', 'stroke-width': 2.8
+    }));
+
+    const lbl = createSvgEl('text', {
+      x: O.x, y: O.y + 6, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)', 'font-size': '16px', 'font-weight': '800'
+    });
+    lbl.textContent = `ផ្ទៃថាសរង្វង់ = ៣,១៤ × ៣² = ២៨,២៦ cm²`;
+    layerAnnotations.appendChild(lbl);
+  } else {
+    // Shaded Corners (Path subtracting circle from square)
+    const cornerPath = `M ${sX} ${sY} L ${sX + sSide} ${sY} L ${sX + sSide} ${sY + sSide} L ${sX} ${sY + sSide} Z M ${O.x - cRad} ${O.y} A ${cRad} ${cRad} 0 1 1 ${O.x + cRad} ${O.y} A ${cRad} ${cRad} 0 1 1 ${O.x - cRad} ${O.y} Z`;
+
+    layerShapes.appendChild(createSvgEl('path', {
+      d: cornerPath, 'fill-rule': 'evenodd', class: 'corner-shaded'
+    }));
+    layerShapes.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: cRad, class: 'circle-inscribed'
+    }));
+
+    const lbl1 = createSvgEl('text', {
+      x: O.x, y: O.y - 10, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink-secondary)', 'font-weight': '700'
+    });
+    lbl1.textContent = 'ថាសរង្វង់ (២៨,២៦ cm²)';
+    layerAnnotations.appendChild(lbl1);
+
+    const lbl2 = createSvgEl('text', {
+      x: O.x, y: O.y + 16, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#d97706', 'font-size': '15px', 'font-weight': '800'
+    });
+    lbl2.textContent = 'ផ្ទៃ ៤ ជ្រុង = ៣៦ − ២៨,២៦ = ៧,៧៤ cm²';
+    layerAnnotations.appendChild(lbl2);
+  }
+
+  // Dimension lines
+  // Square side 6 cm (top)
+  layerDimensions.appendChild(createSvgEl('line', {
+    x1: sX, y1: sY - 14, x2: sX + sSide, y2: sY - 14, class: 'dim-line'
+  }));
+  const sLbl = createSvgEl('text', {
+    x: O.x, y: sY - 22, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)', 'font-weight': '700'
+  });
+  sLbl.textContent = 'ជ្រុងការ៉េ a = ៦ cm';
+  layerDimensions.appendChild(sLbl);
+
+  // Inscribed circle radius r = 3 cm (if step >= 1)
+  if (currentStep >= 1) {
+    layerDimensions.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: O.x + cRad, y2: O.y, stroke: 'var(--teal)', 'stroke-width': 2.2
+    }));
+    const rLbl = createSvgEl('text', {
+      x: O.x + cRad / 2, y: O.y + 20, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)', 'font-weight': '700'
+    });
+    rLbl.textContent = 'កាំ r = ៣ cm';
+    layerDimensions.appendChild(rLbl);
+  }
+
+  // Center point O
+  layerPoints.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: 4.5, fill: 'var(--ink)' }));
+}
+
+function nextStep() {
+  const cfg = TABS[activeTab];
+  if (currentStep < cfg.steps.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetStep() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    const cfg = TABS[activeTab];
+    if (currentStep >= cfg.steps.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    const cfg = TABS[activeTab];
+    if (currentStep < cfg.steps.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2800);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  onRingSlidersChange();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

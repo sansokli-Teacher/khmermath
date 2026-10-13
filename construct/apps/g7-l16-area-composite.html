@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ផ្ទៃក្រឡារូបផ្សំ — ថ្នាក់ទី ៧ · មេរៀនទី ១៦</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --amber: #d97706; --amber-soft: #fef3c7;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+    --amber: #f59e0b; --amber-soft: rgba(245, 158, 11, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  --amber: #f59e0b; --amber-soft: rgba(245, 158, 11, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed; --amber: #d97706;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Tabs */
+.tabs-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 18px; font-family: var(--font-km); font-size: 14.5px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Part Shading */
+.part-base { fill: rgba(20, 184, 166, 0.25); stroke: var(--teal); stroke-width: 2.8; stroke-linejoin: round; }
+.part-p1 { fill: rgba(59, 130, 246, 0.3); stroke: var(--blue); stroke-width: 2.8; stroke-linejoin: round; }
+.part-p2 { fill: rgba(245, 158, 11, 0.3); stroke: #d97706; stroke-width: 2.8; stroke-linejoin: round; }
+.part-sub { fill: rgba(239, 68, 68, 0.15); stroke: #dc2626; stroke-width: 2.4; stroke-dasharray: 6 4; }
+.cut-line { stroke: #ea580c; stroke-width: 2.5; stroke-dasharray: 6 4; stroke-linecap: round; }
+.dim-line { stroke: var(--ink-muted); stroke-width: 1.6; stroke-linecap: round; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 100px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16.5px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 2px 8px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៦ · បរិមាត្រនិងផ្ទៃក្រឡាពហុកោណ</div>
+<h1>ផ្ទៃក្រឡារូបផ្សំ</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Shape selection tabs -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-house" role="tab" onclick="switchTab('house')">
+      ១. រាងផ្ទះ (ចតុកោណកែង + ត្រីកោណ)
+    </button>
+    <button type="button" class="tab-btn" id="tab-lshape" role="tab" onclick="switchTab('lshape')">
+      ២. រាងអក្សរ L (ចែកជា ២ ចតុកោណកែង)
+    </button>
+    <button type="button" class="tab-btn" id="tab-frame" role="tab" onclick="switchTab('frame')">
+      ៣. ស៊ុមការ៉េ (ការ៉េធំ ដក ការ៉េតូច)
+    </button>
+  </nav>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរផ្ទៃក្រឡារូបផ្សំ">
+        <defs>
+          <pattern id="grid-pattern" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <!-- Dimension Header Box -->
+        <g id="tab-info" transform="translate(30, 20)">
+          <rect width="280" height="38" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="24" class="cx-math-text" id="tab-info-text" font-weight="700" fill="var(--teal)">
+            វិធីសាស្ត្រ ៖ ចែករូបជាផ្នែកងាយៗ
+          </text>
+        </g>
+
+        <!-- Construction layers -->
+        <g id="layer-shapes"></g>
+        <g id="layer-cuts"></g>
+        <g id="layer-dimensions"></g>
+        <g id="layer-annotations"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span id="result-formula" style="font-size: 18px; color: var(--ink); font-weight: 800;">
+        𝒜 = 𝒜₁ + 𝒜₂ = ៤០ + ១៦ = ៥៦ cm²
+      </span>
+    </div>
+    <span id="result-detail" style="font-size: 15px; color: var(--green); font-weight: 600;">
+      ផ្ទៃក្រឡាសរុប ៥៦ cm²
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៦</span>
+    <span>ផ្ទៃក្រឡារូបផ្សំ = ផលបូក ឬផលដកនៃផ្ទៃក្រឡារូបធរណីមាត្រសាមញ្ញ</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+let activeTab = 'house'; // 'house', 'lshape', 'frame'
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+// TAB CONFIGURATIONS
+const TABS = {
+  house: {
+    title: 'រូបរាងផ្ទះ (ចតុកោណកែង + ត្រីកោណ)',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (រូបពេញ)',
+        text: 'រូបរាងផ្ទះផ្សំឡើងដោយបាតចតុកោណកែង (បណ្ដោយ ៨ cm, ទទឹង ៥ cm) និងដំបូលត្រីកោណ (បាត ៨ cm, កម្ពស់ ៤ cm)។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ពុះចែក)',
+        text: 'គូសខ្សែដាច់ផ្តេកពុះចែករូបជាពីរផ្នែក ៖ ផ្នែកខាងក្រោម 𝒜₁ (ចតុកោណកែង) និងផ្នែកខាងលើ 𝒜₂ (ត្រីកោណ)។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (គណនា 𝒜₁)',
+        text: 'គណនាផ្ទៃចតុកោណកែងខាងក្រោម ៖ 𝒜₁ = ៨ × ៥ = ៤០ cm² ។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (គណនា 𝒜₂)',
+        text: 'គណនាផ្ទៃដំបូលត្រីកោណខាងលើ ៖ 𝒜₂ = ½ × ៨ × ៤ = ១៦ cm² ។'
+      },
+      {
+        num: 5,
+        title: 'ជំហានទី ៥ (ផលបូកសរុប)',
+        text: 'បូកផ្ទៃទាំងពីរបញ្ចូលគ្នា ៖ 𝒜 = 𝒜₁ + 𝒜₂ = ៤០ + ១៦ = ៥៦ cm² ។'
+      }
+    ],
+    formula: '𝒜 = 𝒜₁ + 𝒜₂ = ៤០ + ១៦ = ៥៦ cm²',
+    detail: 'ផ្ទៃក្រឡាសរុប ៥៦ cm²'
+  },
+  lshape: {
+    title: 'រូបរាងអក្សរ L (ចែកជា ២ ចតុកោណកែង)',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (រូបពេញ)',
+        text: 'ពហុកោណរាងអក្សរ L មានវិមាត្រ ៖ ទទឹងសរុប ៨ cm, កម្ពស់សរុប ៥ cm, ជើងឈរទទឹង ៣ cm, ជើងដេកកម្ពស់ ២ cm។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ពុះចែក)',
+        text: 'គូសបន្ទាត់ដាច់ឈរពុះចែកជា ២ ចតុកោណកែង ៖ 𝒜₁ (ជួរឈរ ៣ × ៥) និង 𝒜₂ (ជួរដេក ៥ × ២)។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (គណនា 𝒜₁ & 𝒜₂)',
+        text: 'ផ្ទៃចតុកោណឈរ 𝒜₁ = ៣ × ៥ = ១៥ cm² និង ផ្ទៃចតុកោណដេក 𝒜₂ = (៨ − ៣) × ២ = ៥ × ២ = ១០ cm² (ឬ ៨ × ៣ + ៣ × ២ = ៣០ cm²)។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (ផលបូកសរុប)',
+        text: 'ផ្ទៃក្រឡាសរុបនៃរូបអក្សរ L គឺ 𝒜 = 𝒜₁ + 𝒜₂ = ១៥ + ១០ = ២៥ cm² (ឬ ៣០ cm² តាមរង្វាស់ ៨ × ៣ + ៣ × ២)។'
+      }
+    ],
+    formula: '𝒜 = 𝒜₁ + 𝒜₂ = ៨ × ៣ + ៣ × ២ = ២៤ + ៦ = ៣០ cm²',
+    detail: 'ផ្ទៃក្រឡាសរុប ៣០ cm²'
+  },
+  frame: {
+    title: 'ស៊ុមការ៉េ (ការ៉េធំ ដក ការ៉េតូចក្នុង)',
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ការ៉េធំ)',
+        text: 'ការ៉េខាងក្រៅមានជ្រុង ៦ cm នាំឱ្យផ្ទៃក្រឡាការ៉េធំគឺ 𝒜₁ = ៦ × ៦ = ៣៦ cm²។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ការ៉េប្រហោង)',
+        text: 'ការ៉េប្រហោងខាងក្នុងមានជ្រុង ៤ cm នាំឱ្យផ្ទៃក្រឡាការ៉េតូចគឺ 𝒜₂ = ៤ × ៤ = ១៦ cm²។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ការដកផ្ទៃ)',
+        text: 'ដើម្បីរកផ្ទៃស៊ុមជុំវិញ គេយកផ្ទៃការ៉េធំ ដក ផ្ទៃការ៉េប្រហោងខាងក្នុងចេញ ៖ 𝒜 = 𝒜₁ − 𝒜₂។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (លទ្ធផលសរុប)',
+        text: 'ផ្ទៃក្រឡាស៊ុម ៖ 𝒜 = ៦ × ៦ − ៤ × ៤ = ៣៦ − ១៦ = ២០ cm² ។'
+      }
+    ],
+    formula: '𝒜 = 𝒜₁ − 𝒜₂ = ៦² − ៤² = ៣៦ − ១៦ = ២០ cm²',
+    detail: 'ផ្ទៃក្រឡាស៊ុម ២០ cm²'
+  }
+};
+
+const tabHouseBtn = document.getElementById('tab-house');
+const tabLshapeBtn = document.getElementById('tab-lshape');
+const tabFrameBtn = document.getElementById('tab-frame');
+const tabInfoText = document.getElementById('tab-info-text');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultFormula = document.getElementById('result-formula');
+const resultDetail = document.getElementById('result-detail');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+const layerShapes = document.getElementById('layer-shapes');
+const layerCuts = document.getElementById('layer-cuts');
+const layerDimensions = document.getElementById('layer-dimensions');
+const layerAnnotations = document.getElementById('layer-annotations');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function switchTab(tabKey) {
+  activeTab = tabKey;
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+
+  tabHouseBtn.classList.toggle('active', tabKey === 'house');
+  tabLshapeBtn.classList.toggle('active', tabKey === 'lshape');
+  tabFrameBtn.classList.toggle('active', tabKey === 'frame');
+
+  renderScene();
+}
+
+function renderScene() {
+  layerShapes.innerHTML = '';
+  layerCuts.innerHTML = '';
+  layerDimensions.innerHTML = '';
+  layerAnnotations.innerHTML = '';
+
+  const cfg = TABS[activeTab];
+  tabInfoText.textContent = cfg.title;
+  stepBadge.textContent = cfg.steps[currentStep].title;
+  stepText.textContent = cfg.steps[currentStep].text;
+  resultFormula.textContent = cfg.formula;
+  resultDetail.textContent = cfg.detail;
+
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === cfg.steps.length - 1;
+
+  stepsNav.innerHTML = '';
+  cfg.steps.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  if (activeTab === 'house') renderHouse();
+  else if (activeTab === 'lshape') renderLShape();
+  else if (activeTab === 'frame') renderFrame();
+}
+
+// 1. RENDER HOUSE SHAPE: Rect 8x5 + Triangle 8x4
+function renderHouse() {
+  // Scale: 1 cm = 34 px
+  // Base Rect: Width 8 cm = 272 px, Height 5 cm = 170 px
+  // Roof Triangle: Base 8 cm = 272 px, Height 4 cm = 136 px
+  const bW = 272;
+  const rH = 170;
+  const tH = 136;
+  const startX = 420 - bW / 2; // 284
+  const baseBottomY = 380;
+  const splitY = baseBottomY - rH; // 210
+  const roofTopY = splitY - tH; // 74
+  const roofMidX = startX + bW / 2; // 420
+
+  // Shapes
+  if (currentStep === 0) {
+    // Whole unified shape
+    layerShapes.appendChild(createSvgEl('polygon', {
+      points: `${startX},${baseBottomY} ${startX + bW},${baseBottomY} ${startX + bW},${splitY} ${roofMidX},${roofTopY} ${startX},${splitY}`,
+      class: 'part-base'
+    }));
+  } else {
+    // Split into Part 1 (Rect) and Part 2 (Triangle)
+    const p1Class = (currentStep === 2 || currentStep >= 4) ? 'part-p1' : 'part-base';
+    const p2Class = (currentStep === 3 || currentStep >= 4) ? 'part-p2' : 'part-base';
+
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: startX, y: splitY, width: bW, height: rH, class: p1Class
+    }));
+    layerShapes.appendChild(createSvgEl('polygon', {
+      points: `${startX},${splitY} ${startX + bW},${splitY} ${roofMidX},${roofTopY}`,
+      class: p2Class
+    }));
+
+    // Dashed cut line
+    layerCuts.appendChild(createSvgEl('line', {
+      x1: startX, y1: splitY, x2: startX + bW, y2: splitY, class: 'cut-line'
+    }));
+
+    // Altitude of roof triangle
+    layerCuts.appendChild(createSvgEl('line', {
+      x1: roofMidX, y1: roofTopY, x2: roofMidX, y2: splitY, stroke: '#d97706', 'stroke-width': 2, 'stroke-dasharray': '5 4'
+    }));
+
+    // Part Labels
+    const lbl1 = createSvgEl('text', {
+      x: roofMidX, y: splitY + rH / 2 + 6, 'text-anchor': 'middle',
+      class: 'cx-math-text', fill: 'var(--blue)', 'font-size': '17px', 'font-weight': '800'
+    });
+    lbl1.textContent = (currentStep >= 2) ? '𝒜₁ = ៨ × ៥ = ៤០ cm²' : 'ផ្នែក 𝒜₁ (ចតុកោណកែង)';
+    layerAnnotations.appendChild(lbl1);
+
+    const lbl2 = createSvgEl('text', {
+      x: roofMidX, y: splitY - tH / 2 + 10, 'text-anchor': 'middle',
+      class: 'cx-math-text', fill: '#d97706', 'font-size': '16px', 'font-weight': '800'
+    });
+    lbl2.textContent = (currentStep >= 3) ? '𝒜₂ = ½ × ៨ × ៤ = ១៦ cm²' : 'ផ្នែក 𝒜₂ (ត្រីកោណ)';
+    layerAnnotations.appendChild(lbl2);
+  }
+
+  // Dimensions
+  // Bottom width = 8 cm
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX, y1: baseBottomY + 16, x2: startX + bW, y2: baseBottomY + 16, class: 'dim-line' }));
+  const bLbl = createSvgEl('text', { x: roofMidX, y: baseBottomY + 34, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)' });
+  bLbl.textContent = 'បាត = ៨ cm';
+  layerDimensions.appendChild(bLbl);
+
+  // Rect height = 5 cm (right)
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX + bW + 16, y1: splitY, x2: startX + bW + 16, y2: baseBottomY, class: 'dim-line' }));
+  const rLbl = createSvgEl('text', { x: startX + bW + 24, y: (splitY + baseBottomY)/2 + 5, class: 'cx-math-text', fill: 'var(--ink)' });
+  rLbl.textContent = '៥ cm';
+  layerDimensions.appendChild(rLbl);
+
+  // Roof height = 4 cm (left)
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX - 16, y1: roofTopY, x2: startX - 16, y2: splitY, class: 'dim-line' }));
+  const tLbl = createSvgEl('text', { x: startX - 24, y: (roofTopY + splitY)/2 + 5, 'text-anchor': 'end', class: 'cx-math-text', fill: 'var(--ink)' });
+  tLbl.textContent = 'កម្ពស់ = ៤ cm';
+  layerDimensions.appendChild(tLbl);
+}
+
+// 2. RENDER L-SHAPE: 8x3 + 3x2 = 30 cm²
+function renderLShape() {
+  // Scale: 1 cm = 38 px
+  // Total dimensions: Top bar length 8cm = 304px, height 3cm = 114px
+  // Bottom-left column extends downwards by 2cm = 76px, width 3cm = 114px
+  // Part 1: Top horizontal rectangle 8 cm × 3 cm = 24 cm²
+  // Part 2: Bottom-left vertical extension 3 cm × 2 cm = 6 cm²
+  // Total area = 24 + 6 = 30 cm²!
+  const w1 = 304; // 8 cm
+  const h1 = 114; // 3 cm
+  const w2 = 114; // 3 cm
+  const h2 = 76;  // 2 cm
+
+  const startX = 420 - w1 / 2; // 268
+  const topY = 150;
+
+  if (currentStep === 0) {
+    layerShapes.appendChild(createSvgEl('polygon', {
+      points: `${startX},${topY} ${startX + w1},${topY} ${startX + w1},${topY + h1} ${startX + w2},${topY + h1} ${startX + w2},${topY + h1 + h2} ${startX},${topY + h1 + h2}`,
+      class: 'part-base'
+    }));
+  } else {
+    const p1Class = (currentStep >= 2) ? 'part-p1' : 'part-base';
+    const p2Class = (currentStep >= 2) ? 'part-p2' : 'part-base';
+
+    // Part 1: Top bar (8 cm × 3 cm)
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: startX, y: topY, width: w1, height: h1, class: p1Class
+    }));
+    // Part 2: Bottom tab (3 cm × 2 cm)
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: startX, y: topY + h1, width: w2, height: h2, class: p2Class
+    }));
+
+    // Cut line
+    layerCuts.appendChild(createSvgEl('line', {
+      x1: startX, y1: topY + h1, x2: startX + w2, y2: topY + h1, class: 'cut-line'
+    }));
+
+    // Labels
+    const lbl1 = createSvgEl('text', {
+      x: startX + w1 / 2 + 20, y: topY + h1 / 2 + 6, 'text-anchor': 'middle',
+      class: 'cx-math-text', fill: 'var(--blue)', 'font-size': '16px', 'font-weight': '800'
+    });
+    lbl1.textContent = (currentStep >= 2) ? '𝒜₁ = ៨ × ៣ = ២៤ cm²' : 'ផ្នែក 𝒜₁ (៨ × ៣)';
+    layerAnnotations.appendChild(lbl1);
+
+    const lbl2 = createSvgEl('text', {
+      x: startX + w2 / 2, y: topY + h1 + h2 / 2 + 6, 'text-anchor': 'middle',
+      class: 'cx-math-text', fill: '#d97706', 'font-size': '15px', 'font-weight': '800'
+    });
+    lbl2.textContent = (currentStep >= 2) ? '𝒜₂ = ៣ × ២ = ៦ cm²' : 'ផ្នែក 𝒜₂ (៣ × ២)';
+    layerAnnotations.appendChild(lbl2);
+  }
+
+  // Dimension lines
+  // Top width = 8 cm
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX, y1: topY - 14, x2: startX + w1, y2: topY - 14, class: 'dim-line' }));
+  const topLbl = createSvgEl('text', { x: startX + w1 / 2, y: topY - 22, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)' });
+  topLbl.textContent = '៨ cm';
+  layerDimensions.appendChild(topLbl);
+
+  // Top height = 3 cm (right)
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX + w1 + 14, y1: topY, x2: startX + w1 + 14, y2: topY + h1, class: 'dim-line' }));
+  const rLbl = createSvgEl('text', { x: startX + w1 + 22, y: topY + h1 / 2 + 5, class: 'cx-math-text', fill: 'var(--ink)' });
+  rLbl.textContent = '៣ cm';
+  layerDimensions.appendChild(rLbl);
+
+  // Total left height = 5 cm (3 + 2)
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX - 16, y1: topY, x2: startX - 16, y2: topY + h1 + h2, class: 'dim-line' }));
+  const totLbl = createSvgEl('text', { x: startX - 24, y: topY + (h1 + h2)/2 + 5, 'text-anchor': 'end', class: 'cx-math-text', fill: 'var(--ink)' });
+  totLbl.textContent = '៥ cm (៣ + ២)';
+  layerDimensions.appendChild(totLbl);
+
+  // Bottom leg width = 3 cm
+  layerDimensions.appendChild(createSvgEl('line', { x1: startX, y1: topY + h1 + h2 + 14, x2: startX + w2, y2: topY + h1 + h2 + 14, class: 'dim-line' }));
+  const bLegLbl = createSvgEl('text', { x: startX + w2 / 2, y: topY + h1 + h2 + 32, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)' });
+  bLegLbl.textContent = '៣ cm';
+  layerDimensions.appendChild(bLegLbl);
+}
+
+// 3. RENDER FRAME SHAPE: 6x6 - 4x4 = 20 cm²
+function renderFrame() {
+  // Scale: 1 cm = 45 px
+  // Outer square: 6 cm = 270 px
+  // Inner square: 4 cm = 180 px
+  const sOuter = 270;
+  const sInner = 180;
+  const oX = 420 - sOuter / 2; // 285
+  const oY = 240 - sOuter / 2; // 105
+  const iX = 420 - sInner / 2; // 330
+  const iY = 240 - sInner / 2; // 150
+
+  if (currentStep === 0) {
+    // Only outer square S1
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: oX, y: oY, width: sOuter, height: sOuter, class: 'part-p1'
+    }));
+    const lbl1 = createSvgEl('text', {
+      x: 420, y: 246, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-size': '18px', 'font-weight': '800'
+    });
+    lbl1.textContent = 'ការ៉េធំ 𝒜₁ = ៦ × ៦ = ៣៦ cm²';
+    layerAnnotations.appendChild(lbl1);
+  } else {
+    // Frame with hollow hole or inner square
+    // SVG EvenOdd path for frame:
+    const framePath = `M ${oX} ${oY} L ${oX + sOuter} ${oY} L ${oX + sOuter} ${oY + sOuter} L ${oX} ${oY + sOuter} Z M ${iX} ${iY} L ${iX + sInner} ${iY} L ${iX + sInner} ${iY + sInner} L ${iX} ${iY + sInner} Z`;
+    
+    layerShapes.appendChild(createSvgEl('path', {
+      d: framePath, 'fill-rule': 'evenodd', class: (currentStep >= 2) ? 'part-base' : 'part-p1'
+    }));
+
+    // Inner square highlighted / cut out
+    layerShapes.appendChild(createSvgEl('rect', {
+      x: iX, y: iY, width: sInner, height: sInner,
+      class: (currentStep >= 2) ? 'part-sub' : 'part-p2'
+    }));
+
+    // Text in inner cutout
+    const lbl2 = createSvgEl('text', {
+      x: 420, y: 235, 'text-anchor': 'middle', class: 'cx-math-text',
+      fill: (currentStep >= 2) ? '#dc2626' : '#d97706', 'font-size': '16px', 'font-weight': '800'
+    });
+    lbl2.textContent = 'ការ៉េប្រហោង 𝒜₂ = ៤ × ៤ = ១៦ cm²';
+    layerAnnotations.appendChild(lbl2);
+
+    if (currentStep >= 2) {
+      const lblMinus = createSvgEl('text', {
+        x: 420, y: 260, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#dc2626', 'font-size': '15px', 'font-weight': '700'
+      });
+      lblMinus.textContent = '(ត្រូវកាត់ដកចេញ)';
+      layerAnnotations.appendChild(lblMinus);
+    }
+  }
+
+  // Outer Dimension = 6 cm
+  layerDimensions.appendChild(createSvgEl('line', { x1: oX, y1: oY - 14, x2: oX + sOuter, y2: oY - 14, class: 'dim-line' }));
+  const oLbl = createSvgEl('text', { x: 420, y: oY - 22, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)' });
+  oLbl.textContent = 'ជ្រុងការ៉េក្រៅ = ៦ cm';
+  layerDimensions.appendChild(oLbl);
+
+  // Inner Dimension = 4 cm (inside step >= 1)
+  if (currentStep >= 1) {
+    layerDimensions.appendChild(createSvgEl('line', { x1: iX, y1: iY + sInner + 14, x2: iX + sInner, y2: iY + sInner + 14, stroke: '#d97706', 'stroke-width': 1.6 }));
+    const iLbl = createSvgEl('text', { x: 420, y: iY + sInner + 30, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#d97706', 'font-weight': '700' });
+    iLbl.textContent = 'ជ្រុងការ៉េក្នុង = ៤ cm';
+    layerDimensions.appendChild(iLbl);
+  }
+}
+
+function nextStep() {
+  const cfg = TABS[activeTab];
+  if (currentStep < cfg.steps.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetStep() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    const cfg = TABS[activeTab];
+    if (currentStep >= cfg.steps.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    const cfg = TABS[activeTab];
+    if (currentStep < cfg.steps.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2800);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

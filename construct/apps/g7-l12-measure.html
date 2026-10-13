@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>វាស់អង្កត់ដោយបន្ទាត់ — ថ្នាក់ទី ៧ · មេរៀនទី ១២</title>
+<style>
+/* Reset & Base System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.03);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --primary: #3b82f6;
+    --primary-soft: rgba(59, 130, 246, 0.15);
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --orange: #fb923c;
+    --orange-soft: rgba(251, 146, 60, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+    --amber: #f59e0b;
+    --amber-soft: rgba(245, 158, 11, 0.15);
+    
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --primary: #3b82f6;
+  --primary-soft: rgba(59, 130, 246, 0.15);
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mode Switcher */
+.mode-tabs {
+  display: flex;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.mode-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-km);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-tab-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.theme-btn:hover {
+  background: var(--surface-border);
+}
+
+/* Instruction banner */
+.instruction-box {
+  margin: 16px 20px 0;
+  padding: 14px 18px;
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 68px;
+}
+
+.step-indicator-badge {
+  background: var(--teal);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.instruction-text {
+  font-size: 16.5px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.55;
+  flex-grow: 1;
+}
+
+/* Interactive helper bar */
+.interactive-bar {
+  margin: 12px 20px 0;
+  padding: 12px 18px;
+  background: var(--amber-soft);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.interactive-bar.show {
+  display: flex;
+}
+
+.interactive-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.interactive-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.slider-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-secondary);
+}
+
+.slider-label input[type="range"] {
+  accent-color: var(--teal);
+  width: 140px;
+}
+
+/* Canvas Board */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 460;
+  touch-action: none;
+}
+
+/* SVG Elements */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 21px;
+  fill: var(--ink);
+}
+
+.cx-math-text {
+  font-family: var(--font-km);
+  font-size: 14.5px;
+  font-weight: 600;
+  fill: var(--ink-secondary);
+}
+
+.cx-point {
+  fill: var(--ink);
+}
+
+.cx-line-segment {
+  stroke: var(--ink);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.cx-line-final {
+  stroke: var(--green);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+}
+
+.cx-line-align {
+  stroke: var(--orange);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.cx-brace-green {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Ruler SVG Styling */
+.ruler-group {
+  cursor: grab;
+  filter: drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.2));
+  transition: filter 0.2s;
+}
+
+.ruler-group.grabbing {
+  cursor: grabbing;
+  filter: drop-shadow(0px 14px 20px rgba(0, 0, 0, 0.3));
+}
+
+.ruler-body {
+  fill: rgba(254, 243, 199, 0.88);
+  stroke: #d97706;
+  stroke-width: 1.5;
+}
+
+[data-theme="dark"] .ruler-body {
+  fill: rgba(78, 59, 23, 0.88);
+  stroke: #f59e0b;
+}
+
+.ruler-tick-major {
+  stroke: #78350f;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+[data-theme="dark"] .ruler-tick-major {
+  stroke: #fde68a;
+}
+
+.ruler-tick-mid {
+  stroke: #92400e;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+[data-theme="dark"] .ruler-tick-mid {
+  stroke: #fcd34d;
+}
+
+.ruler-tick-minor {
+  stroke: #b45309;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+}
+
+[data-theme="dark"] .ruler-tick-minor {
+  stroke: #fbbf24;
+}
+
+.ruler-num {
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 700;
+  fill: #78350f;
+}
+
+[data-theme="dark"] .ruler-num {
+  fill: #fef3c7;
+}
+
+.ruler-brand {
+  font-family: var(--font-km);
+  font-size: 11px;
+  fill: #92400e;
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .ruler-brand {
+  fill: #fde68a;
+}
+
+/* Magnifier Zoom circle */
+.magnifier-circle {
+  fill: var(--surface);
+  stroke: var(--orange);
+  stroke-width: 3.5;
+  filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.3));
+}
+
+.magnifier-lens {
+  stroke: rgba(232, 113, 10, 0.4);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.magnifier-crosshair {
+  stroke: var(--orange);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+
+/* Controls Toolbar */
+.controls-area {
+  padding: 6px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-km);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  min-height: 42px;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--surface-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-border);
+}
+
+.btn-autoplay.active {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: var(--orange);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Step Navigation */
+.steps-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.step-chip {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.step-chip:hover {
+  background: var(--surface-border);
+  color: var(--ink);
+}
+
+.step-chip.active {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+
+.step-chip.completed {
+  color: var(--teal);
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+/* Result banner */
+.result-banner {
+  margin: 0 20px 14px;
+  padding: 12px 18px;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-size: 16.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.result-badge {
+  background: var(--green);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .app-header { padding: 12px 16px; }
+  h1 { font-size: 18px; }
+  .instruction-box { margin: 12px 12px 0; padding: 10px 14px; }
+  .interactive-bar { margin: 10px 12px 0; }
+  .canvas-wrap { padding: 12px 12px; }
+  .controls-area { padding: 4px 12px 12px; }
+  .buttons-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .btn-autoplay { grid-column: span 2; }
+  .result-banner { margin: 0 12px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១២ · សញ្ញាណដំបូងនៃធរណីមាត្រ</div>
+      <h1>វាស់អង្កត់ដោយបន្ទាត់</h1>
+    </div>
+
+    <div class="header-actions">
+      <!-- Mode toggle: Teaching vs Try yourself -->
+      <div class="mode-tabs" role="tablist" aria-label="ជ្រើសរើសរបៀប">
+        <button class="mode-tab-btn active" id="tab-teach" role="tab" aria-selected="true" onclick="switchMode('teach')">
+          📖 របៀបបង្រៀន
+        </button>
+        <button class="mode-tab-btn" id="tab-try" role="tab" aria-selected="false" onclick="switchMode('try')">
+          🖐️ សាកល្បងខ្លួនឯង
+        </button>
+      </div>
+
+      <!-- Theme button -->
+      <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Guided Instruction banner -->
+  <div class="instruction-box" id="instruction-banner" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <!-- Interactive Try-It-Yourself Control Bar -->
+  <div class="interactive-bar" id="interactive-bar">
+    <div class="interactive-status">
+      <span>ចំនុច B ត្រូវនឹងលេខ ៖ <b id="live-reading" style="color: var(--teal); font-size: 18px;">— cm</b></span>
+      <span id="live-match-badge" style="padding: 2px 10px; border-radius: 999px; font-size: 13.5px; background: var(--surface-border); color: var(--ink);">សូមដាក់លេខ ០ លើ A</span>
+    </div>
+    <div class="interactive-controls">
+      <label class="slider-label">
+        <span>បង្វិលបន្ទាត់ ៖</span>
+        <input type="range" id="ruler-rot-slider" min="-90" max="90" step="1" value="0" oninput="onRotateSlider(this.value)">
+        <span id="slider-deg-val" style="min-width: 40px; font-weight: 600;">០°</span>
+      </label>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="snapRulerToAB()" style="padding: 4px 12px; min-height: 32px; font-size: 13px;">
+        🎯 តម្រង់ចំ AB ស្វ័យប្រវត្តិ
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Canvas Board -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 460" role="img" aria-label="គំនូរបង្ហាញការវាស់អង្កត់ AB ដោយបន្ទាត់">
+        <defs>
+          <!-- Grid Background -->
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <!-- Grid -->
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- STATIC SEGMENT AB LAYER -->
+        <g id="layer-segment">
+          <!-- Guide line extended -->
+          <line id="seg-guideline" x1="120" y1="286" x2="680" y2="104" class="cx-line-align" opacity="0.35" />
+          <!-- Main segment AB -->
+          <line id="main-seg" x1="200" y1="260" x2="542.4" y2="148.8" class="cx-line-segment" />
+          <!-- Points A and B -->
+          <circle cx="200" cy="260" r="4.5" class="cx-point" />
+          <text x="180" y="278" class="cx-label">A</text>
+          
+          <circle cx="542.4" cy="148.8" r="4.5" class="cx-point" />
+          <text x="556" y="142" class="cx-label">B</text>
+        </g>
+
+        <!-- BRACE & RESULT HIGHLIGHT LAYER -->
+        <g id="layer-result"></g>
+
+        <!-- RULER LAYER -->
+        <g id="layer-ruler" class="ruler-group"></g>
+
+        <!-- MAGNIFIER ZOOM LAYER -->
+        <g id="layer-magnifier"></g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Final Answer Banner -->
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ចម្លើយ</span>
+    <span>ប្រវែងអង្កត់ <var style="font-family: var(--font-math); font-style: italic;">AB</var> = ៨ cm</span>
+  </div>
+
+  <!-- Controls Area -->
+  <div class="controls-area" id="controls-guided">
+    <!-- Step Chips -->
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+
+    <!-- Buttons row -->
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()" aria-label="ថយក្រោយ">
+        ◀ ថយក្រោយ
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()" aria-label="បន្ទាប់">
+        បន្ទាប់ ▶
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()" aria-label="ចាក់ឡើងវិញ">
+        🔄 ចាក់ឡើងវិញ
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()" aria-label="ចាប់ផ្ដើមឡើងវិញ">
+        ↺ ចាប់ផ្ដើមឡើងវិញ
+      </button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()" aria-label="ស្វ័យប្រវត្តិ">
+        ▶ ស្វ័យប្រវត្តិ
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer Source -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១២</span>
+    <span>KhmerMath · វាស់អង្កត់ដោយបន្ទាត់</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Interactive Geometry Teaching Animation
+ * Grade 7 · Lesson 12: Measure Segment With Ruler (12-B)
+ */
+
+// Khmer Digits converter
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]).replace('.', ',');
+}
+
+// Math and Geometry Config
+// Scale: 1 cm = 45 px (so 8 cm = 360 px)
+const SCALE = 45; // 45 px per cm (4.5 px per mm)
+const PT_A = { x: 200, y: 260 };
+// Tilt angle of AB: 18 degrees = 0.314159 rad
+const TILT_DEG = -18; // negative because screen y is inverted (going upwards right)
+const TILT_RAD = TILT_DEG * Math.PI / 180;
+const SEG_LEN_CM = 8;
+const SEG_LEN_PX = SEG_LEN_CM * SCALE; // 360 px
+const PT_B = {
+  x: PT_A.x + SEG_LEN_PX * Math.cos(TILT_RAD),
+  y: PT_A.y + SEG_LEN_PX * Math.sin(TILT_RAD)
+};
+
+// Ruler local dimensions:
+// 0 mark is at local x = 25 px, measuring edge is at local y = 0
+const RULER_ZERO_OFFSET = 25;
+const RULER_TOTAL_CM = 10;
+const RULER_WIDTH = RULER_ZERO_OFFSET * 2 + RULER_TOTAL_CM * SCALE; // 500 px
+const RULER_HEIGHT = 64; // px
+
+// State
+let currentMode = 'teach'; // 'teach' or 'try'
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animFrameId = null;
+
+// Ruler current position & angle
+let rulerState = {
+  x: 140,
+  y: 360,
+  rotDeg: 0
+};
+
+// Target aligned ruler positions for steps:
+// Step 0: Initial resting unaligned position
+const POS_STEP0 = { x: 130, y: 350, rotDeg: 0 };
+// Step 1: Rotated to match AB angle, but slightly shifted
+const POS_STEP1 = {
+  x: PT_A.x - RULER_ZERO_OFFSET * Math.cos(TILT_RAD) - 70 * Math.cos(TILT_RAD),
+  y: PT_A.y - RULER_ZERO_OFFSET * Math.sin(TILT_RAD) - 70 * Math.sin(TILT_RAD) + 20,
+  rotDeg: TILT_DEG
+};
+// Step 2 & 3 & 4: Exactly aligned: 0 mark on A, edge along AB
+const POS_ALIGNED = {
+  x: PT_A.x - RULER_ZERO_OFFSET * Math.cos(TILT_RAD),
+  y: PT_A.y - RULER_ZERO_OFFSET * Math.sin(TILT_RAD),
+  rotDeg: TILT_DEG
+};
+
+// Steps Content
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១',
+    text: 'រំកិល និងបង្វិលបន្ទាត់ឱ្យគែមរបស់វាស្រប និងនៅតាមបណ្ដោយអង្កត់ AB។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២',
+    text: 'ដាក់គំនូសលេខ ០ នៃបន្ទាត់ឱ្យចំចំណុច A (មើលកែវពង្រីកត្រង់លេខ ០ និងចំណុច A)។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣',
+    text: 'អានគំនូសលេខត្រង់ចំណុច B ៖ ចំណុច B ត្រូវនឹងលេខ ៨ cm លើបន្ទាត់។'
+  },
+  {
+    num: 4,
+    title: 'ជំហានទី ៤',
+    text: 'សន្និដ្ឋានប្រវែង ៖ អង្កត់ AB មានប្រវែងស្មើនឹង ៨ cm (AB = ៨ cm)។'
+  }
+];
+
+// DOM references
+const layerRuler = document.getElementById('layer-ruler');
+const layerResult = document.getElementById('layer-result');
+const layerMagnifier = document.getElementById('layer-magnifier');
+const mainSeg = document.getElementById('main-seg');
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+const interactiveBar = document.getElementById('interactive-bar');
+const liveReading = document.getElementById('live-reading');
+const liveMatchBadge = document.getElementById('live-match-badge');
+const rulerRotSlider = document.getElementById('ruler-rot-slider');
+const sliderDegVal = document.getElementById('slider-deg-val');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+/**
+ * Generate curly brace path
+ */
+function createCurlyBrace(x1, y1, x2, y2, h) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
+  const nx = -dy / len, ny = dx / len;
+  
+  const p1x = x1 + nx * h, p1y = y1 + ny * h;
+  const p2x = x2 + nx * h, p2y = y2 + ny * h;
+  const midBx = midX + nx * h * 1.6, midBy = midY + ny * h * 1.6;
+  
+  return `M ${x1} ${y1} Q ${p1x} ${p1y} ${(x1 + midX)/2 + nx*h} ${(y1 + midY)/2 + ny*h} ` +
+         `T ${midBx} ${midBy} ` +
+         `Q ${(midX + x2)/2 + nx*h} ${(midY + y2)/2 + ny*h} ${p2x} ${p2y} ` +
+         `T ${x2} ${y2}`;
+}
+
+/**
+ * Build Full Ruler Graphic
+ */
+function buildRulerSVG() {
+  const g = createSvgEl('g');
+  
+  // Outer Body
+  g.appendChild(createSvgEl('rect', {
+    x: 0, y: 0, width: RULER_WIDTH, height: RULER_HEIGHT, rx: 6, class: 'ruler-body'
+  }));
+  
+  // Brand Text
+  const brand = createSvgEl('text', {
+    x: RULER_WIDTH / 2, y: 44, 'text-anchor': 'middle', class: 'ruler-brand'
+  });
+  brand.textContent = 'បន្ទាត់វាស់ប្រវែង (cm & mm)';
+  g.appendChild(brand);
+  
+  // mm and cm Ticks
+  const mmStep = SCALE / 10; // 4.5 px per mm
+  const totalMm = RULER_TOTAL_CM * 10;
+  
+  for (let mm = 0; mm <= totalMm; mm++) {
+    const xPos = RULER_ZERO_OFFSET + mm * mmStep;
+    let tickLen = 7;
+    let tickClass = 'ruler-tick-minor';
+    
+    if (mm % 10 === 0) {
+      // Full Centimeter
+      tickLen = 19;
+      tickClass = 'ruler-tick-major';
+      
+      const cmVal = mm / 10;
+      const numText = createSvgEl('text', {
+        x: xPos, y: 32, 'text-anchor': 'middle', class: 'ruler-num'
+      });
+      numText.textContent = toKhmer(cmVal);
+      g.appendChild(numText);
+    } else if (mm % 5 === 0) {
+      // Half Centimeter
+      tickLen = 13;
+      tickClass = 'ruler-tick-mid';
+    }
+    
+    g.appendChild(createSvgEl('line', {
+      x1: xPos, y1: 0, x2: xPos, y2: tickLen, class: tickClass
+    }));
+  }
+  
+  // Unit indicator "cm"
+  const cmUnit = createSvgEl('text', {
+    x: RULER_WIDTH - 24, y: 18, 'text-anchor': 'middle', class: 'ruler-num', 'font-size': '11px'
+  });
+  cmUnit.textContent = 'cm';
+  g.appendChild(cmUnit);
+  
+  return g;
+}
+
+// Attach ruler DOM elements
+layerRuler.appendChild(buildRulerSVG());
+
+/**
+ * Update Ruler Transform
+ */
+function updateRulerTransform(x, y, deg) {
+  rulerState.x = x;
+  rulerState.y = y;
+  rulerState.rotDeg = deg;
+  layerRuler.setAttribute('transform', `translate(${x}, ${y}) rotate(${deg})`);
+}
+
+/**
+ * Draw Magnifier Zoom Tool at given position
+ */
+function drawMagnifier(targetPt, labelText, markVal) {
+  layerMagnifier.innerHTML = '';
+  
+  // Magnifier center offset from target
+  const magX = targetPt.x;
+  const magY = targetPt.y - 75;
+  const magR = 46;
+  
+  const g = createSvgEl('g');
+  
+  // Pointer line from target to lens
+  g.appendChild(createSvgEl('line', {
+    x1: targetPt.x, y1: targetPt.y, x2: magX, y2: magY + magR,
+    stroke: 'var(--orange)', 'stroke-width': 2.5, 'stroke-linecap': 'round'
+  }));
+  
+  // Target indicator circle
+  g.appendChild(createSvgEl('circle', {
+    cx: targetPt.x, cy: targetPt.y, r: 5, fill: 'none', stroke: 'var(--orange)', 'stroke-width': 2.5
+  }));
+  
+  // Lens circle
+  g.appendChild(createSvgEl('circle', {
+    cx: magX, cy: magY, r: magR, class: 'magnifier-circle'
+  }));
+  g.appendChild(createSvgEl('circle', {
+    cx: magX, cy: magY, r: magR - 4, class: 'magnifier-lens'
+  }));
+  
+  // Crosshair
+  g.appendChild(createSvgEl('line', {
+    x1: magX - 22, y1: magY, x2: magX + 22, y2: magY, class: 'magnifier-crosshair'
+  }));
+  g.appendChild(createSvgEl('line', {
+    x1: magX, y1: magY - 22, x2: magX, y2: magY + 22, class: 'magnifier-crosshair'
+  }));
+  
+  // Magnifier text: Large reading
+  const txt1 = createSvgEl('text', {
+    x: magX, y: magY - 10, 'text-anchor': 'middle', class: 'cx-label', fill: 'var(--ink)', 'font-size': '18px'
+  });
+  txt1.textContent = labelText;
+  g.appendChild(txt1);
+  
+  const txt2 = createSvgEl('text', {
+    x: magX, y: magY + 18, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--orange)', 'font-weight': '700', 'font-size': '16px'
+  });
+  txt2.textContent = markVal;
+  g.appendChild(txt2);
+  
+  layerMagnifier.appendChild(g);
+}
+
+/**
+ * Animate Progressive Ruler Movement
+ */
+function animateRulerTransition(fromPos, toPos, duration, onComplete) {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  const startTime = performance.now();
+  
+  function loop(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / duration);
+    // Smooth easeInOutCubic
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    
+    const curX = fromPos.x + (toPos.x - fromPos.x) * ease;
+    const curY = fromPos.y + (toPos.y - fromPos.y) * ease;
+    const curDeg = fromPos.rotDeg + (toPos.rotDeg - fromPos.rotDeg) * ease;
+    
+    updateRulerTransform(curX, curY, curDeg);
+    
+    if (t < 1) {
+      animFrameId = requestAnimationFrame(loop);
+    } else {
+      animFrameId = null;
+      if (onComplete) onComplete();
+    }
+  }
+  
+  animFrameId = requestAnimationFrame(loop);
+}
+
+/**
+ * Build step navigation chips
+ */
+function renderNavChips() {
+  stepsNav.innerHTML = '';
+  STEPS.forEach((step, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = step.title;
+    chip.onclick = () => goToStep(idx);
+    stepsNav.appendChild(chip);
+  });
+}
+
+/**
+ * Update UI text & button states
+ */
+function updateUI() {
+  const stepData = STEPS[currentStep];
+  stepBadge.textContent = stepData.title;
+  stepText.textContent = stepData.text;
+  
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+  
+  if (currentStep === STEPS.length - 1) {
+    resultBanner.style.display = 'flex';
+  } else {
+    resultBanner.style.display = 'none';
+  }
+  
+  renderNavChips();
+}
+
+/**
+ * Render Guided Step
+ */
+function renderGuidedStep(isAnimated = false) {
+  layerMagnifier.innerHTML = '';
+  layerResult.innerHTML = '';
+  mainSeg.className.baseVal = 'cx-line-segment';
+  updateUI();
+  
+  if (currentStep === 0) {
+    // Step 1: Slide & rotate ruler to align along AB
+    if (isAnimated) {
+      animateRulerTransition(POS_STEP0, POS_STEP1, 1400, () => {
+        handleAutoplayNext();
+      });
+    } else {
+      updateRulerTransform(POS_STEP1.x, POS_STEP1.y, POS_STEP1.rotDeg);
+    }
+  }
+  
+  else if (currentStep === 1) {
+    // Step 2: Put 0 exactly on A, show magnifier at A
+    if (isAnimated) {
+      animateRulerTransition(rulerState, POS_ALIGNED, 1200, () => {
+        drawMagnifier(PT_A, 'ចំណុច A', 'លេខ ០ cm');
+        handleAutoplayNext();
+      });
+    } else {
+      updateRulerTransform(POS_ALIGNED.x, POS_ALIGNED.y, POS_ALIGNED.rotDeg);
+      drawMagnifier(PT_A, 'ចំណុច A', 'លេខ ០ cm');
+    }
+  }
+  
+  else if (currentStep === 2) {
+    // Step 3: Ruler fixed, read mark at B (8 cm), show magnifier at B
+    updateRulerTransform(POS_ALIGNED.x, POS_ALIGNED.y, POS_ALIGNED.rotDeg);
+    drawMagnifier(PT_B, 'ចំណុច B', 'លេខ ៨ cm');
+    if (isAnimated) {
+      setTimeout(handleAutoplayNext, 2500);
+    }
+  }
+  
+  else if (currentStep === 3) {
+    // Step 4: Write AB = 8 cm, show green dimension & highlight
+    updateRulerTransform(POS_ALIGNED.x, POS_ALIGNED.y, POS_ALIGNED.rotDeg);
+    mainSeg.className.baseVal = 'cx-line-final';
+    
+    // Draw curly brace under AB
+    const bracePath = createCurlyBrace(PT_A.x, PT_A.y, PT_B.x, PT_B.y, 24);
+    layerResult.appendChild(createSvgEl('path', {
+      d: bracePath, class: 'cx-brace-green'
+    }));
+    
+    // Midpoint label
+    const midX = (PT_A.x + PT_B.x) / 2 + 12;
+    const midY = (PT_A.y + PT_B.y) / 2 + 38;
+    const resLabel = createSvgEl('text', {
+      x: midX, y: midY, 'text-anchor': 'middle', class: 'cx-math-text',
+      fill: 'var(--green)', 'font-size': '17px', 'font-weight': '700'
+    });
+    resLabel.textContent = 'AB = ៨ cm';
+    layerResult.appendChild(resLabel);
+  }
+}
+
+/**
+ * Guided Navigation Handlers
+ */
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderGuidedStep(true);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderGuidedStep(false);
+  }
+}
+
+function replayStep() {
+  renderGuidedStep(true);
+}
+
+function resetConstruction() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderGuidedStep(true);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  renderGuidedStep(true);
+}
+
+function handleAutoplayNext() {
+  if (!isAutoplaying) return;
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) {
+      nextStep();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2400);
+}
+
+function toggleAutoplay(forceState) {
+  isAutoplaying = forceState !== undefined ? forceState : !isAutoplaying;
+  
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderGuidedStep(true);
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+/**
+ * INTERACTIVE "TRY IT YOURSELF" MODE
+ */
+let isDragging = false;
+let dragStartPointer = { x: 0, y: 0 };
+let dragStartRuler = { x: 0, y: 0 };
+
+function initDragEvents() {
+  const svg = document.getElementById('geometry-svg');
+  
+  function getSvgCoords(evt) {
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX || (evt.touches && evt.touches[0].clientX);
+    pt.y = evt.clientY || (evt.touches && evt.touches[0].clientY);
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  
+  layerRuler.addEventListener('pointerdown', (e) => {
+    if (currentMode !== 'try') return;
+    isDragging = true;
+    layerRuler.classList.add('grabbing');
+    const p = getSvgCoords(e);
+    dragStartPointer = { x: p.x, y: p.y };
+    dragStartRuler = { x: rulerState.x, y: rulerState.y };
+    e.target.setPointerCapture(e.pointerId);
+  });
+  
+  layerRuler.addEventListener('pointermove', (e) => {
+    if (!isDragging || currentMode !== 'try') return;
+    const p = getSvgCoords(e);
+    const dx = p.x - dragStartPointer.x;
+    const dy = p.y - dragStartPointer.y;
+    
+    updateRulerTransform(dragStartRuler.x + dx, dragStartRuler.y + dy, rulerState.rotDeg);
+    checkInteractiveReading();
+  });
+  
+  const endDrag = (e) => {
+    if (isDragging) {
+      isDragging = false;
+      layerRuler.classList.remove('grabbing');
+      if (e && e.pointerId) {
+        try { e.target.releasePointerCapture(e.pointerId); } catch(err){}
+      }
+    }
+  };
+  
+  layerRuler.addEventListener('pointerup', endDrag);
+  layerRuler.addEventListener('pointercancel', endDrag);
+}
+
+function onRotateSlider(val) {
+  sliderDegVal.textContent = toKhmer(Math.round(val)) + '°';
+  updateRulerTransform(rulerState.x, rulerState.y, parseFloat(val));
+  checkInteractiveReading();
+}
+
+function snapRulerToAB() {
+  animateRulerTransition(rulerState, POS_ALIGNED, 700, () => {
+    rulerRotSlider.value = TILT_DEG;
+    sliderDegVal.textContent = toKhmer(Math.round(TILT_DEG)) + '°';
+    checkInteractiveReading();
+  });
+}
+
+/**
+ * Calculate live reading at point B
+ */
+function checkInteractiveReading() {
+  // Ruler origin is (rulerState.x, rulerState.y)
+  // Local zero tick is at (RULER_ZERO_OFFSET, 0)
+  const rad = rulerState.rotDeg * Math.PI / 180;
+  const cosR = Math.cos(rad);
+  const sinR = Math.sin(rad);
+  
+  // Real coordinates of Ruler Zero Tick
+  const zeroTickX = rulerState.x + RULER_ZERO_OFFSET * cosR;
+  const zeroTickY = rulerState.y + RULER_ZERO_OFFSET * sinR;
+  
+  // Distance from Ruler Zero to Point A
+  const distZeroToA = Math.hypot(PT_A.x - zeroTickX, PT_A.y - zeroTickY);
+  
+  // Angle difference between ruler edge and segment AB
+  const angleDiff = Math.abs(rulerState.rotDeg - TILT_DEG);
+  
+  // Vector from zero tick to Point B
+  const dxB = PT_B.x - zeroTickX;
+  const dyB = PT_B.y - zeroTickY;
+  
+  // Projection of Point B along ruler edge (unit vector: cosR, sinR)
+  const projB = (dxB * cosR + dyB * sinR);
+  // Perpendicular distance of Point B from ruler edge
+  const perpB = Math.abs(-dxB * sinR + dyB * cosR);
+  
+  const measuredCm = projB / SCALE;
+  
+  if (measuredCm >= 0 && measuredCm <= 10.2 && perpB < 35) {
+    const formattedCm = measuredCm.toFixed(1);
+    liveReading.textContent = toKhmer(formattedCm) + ' cm';
+    
+    // Check if both A is near 0 and angle is aligned
+    if (distZeroToA < 12 && angleDiff < 3.5 && perpB < 8) {
+      liveMatchBadge.textContent = 'ត្រឹមត្រូវឥតខ្ចោះ! AB = ៨ cm ✓';
+      liveMatchBadge.style.background = 'var(--green-soft)';
+      liveMatchBadge.style.color = 'var(--green)';
+      mainSeg.className.baseVal = 'cx-line-final';
+    } else if (distZeroToA < 20) {
+      liveMatchBadge.textContent = 'ចំណុច A ចំលេខ ០ ហើយ! សូមតម្រង់គែមតាម B';
+      liveMatchBadge.style.background = 'var(--amber-soft)';
+      liveMatchBadge.style.color = 'var(--amber)';
+      mainSeg.className.baseVal = 'cx-line-segment';
+    } else {
+      liveMatchBadge.textContent = 'សូមរំកិលលេខ ០ ឱ្យចំចំណុច A';
+      liveMatchBadge.style.background = 'var(--surface-border)';
+      liveMatchBadge.style.color = 'var(--ink)';
+      mainSeg.className.baseVal = 'cx-line-segment';
+    }
+  } else {
+    liveReading.textContent = '— cm';
+    liveMatchBadge.textContent = 'សូមអូសបន្ទាត់មកជិតអង្កត់ AB';
+    liveMatchBadge.style.background = 'var(--surface-border)';
+    liveMatchBadge.style.color = 'var(--ink-muted)';
+    mainSeg.className.baseVal = 'cx-line-segment';
+  }
+}
+
+/**
+ * Switch Mode: Teaching vs Try
+ */
+function switchMode(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+  
+  const tabTeach = document.getElementById('tab-teach');
+  const tabTry = document.getElementById('tab-try');
+  const instructionBanner = document.getElementById('instruction-banner');
+  const controlsGuided = document.getElementById('controls-guided');
+  
+  tabTeach.classList.toggle('active', mode === 'teach');
+  tabTeach.setAttribute('aria-selected', mode === 'teach');
+  tabTry.classList.toggle('active', mode === 'try');
+  tabTry.setAttribute('aria-selected', mode === 'try');
+  
+  if (mode === 'teach') {
+    instructionBanner.style.display = 'flex';
+    interactiveBar.classList.remove('show');
+    controlsGuided.style.display = 'flex';
+    if (isAutoplaying) toggleAutoplay(false);
+    renderGuidedStep(true);
+  } else {
+    instructionBanner.style.display = 'none';
+    interactiveBar.classList.add('show');
+    controlsGuided.style.display = 'none';
+    resultBanner.style.display = 'none';
+    layerMagnifier.innerHTML = '';
+    layerResult.innerHTML = '';
+    
+    // Position ruler for interactive play
+    updateRulerTransform(160, 320, 0);
+    rulerRotSlider.value = 0;
+    sliderDegVal.textContent = '០°';
+    checkInteractiveReading();
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  let target = 'light';
+  if (current === 'light') target = 'dark';
+  else if (current === 'dark') target = 'light';
+  else target = prefersDark ? 'light' : 'dark';
+  
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+  initDragEvents();
+  renderGuidedStep(true);
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

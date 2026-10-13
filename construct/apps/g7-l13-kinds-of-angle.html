@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ប្រភេទនៃមុំ — ថ្នាក់ទី ៧ · មេរៀនទី ១៣</title>
+<style>
+/* Reset & Theme System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --purple: #7e22ce;
+  --purple-soft: #f3e8ff;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --primary: #3b82f6;
+    --primary-soft: rgba(59, 130, 246, 0.15);
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --orange: #fb923c;
+    --orange-soft: rgba(251, 146, 60, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --primary: #3b82f6;
+  --primary-soft: rgba(59, 130, 246, 0.15);
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --primary: #1d4ed8;
+  --primary-soft: #dbeafe;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --orange: #e8710a;
+  --orange-soft: #ffedd5;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-family: var(--font-km);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn.active {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Status & Big Badge Banner */
+.status-banner {
+  margin: 16px 20px 0;
+  padding: 14px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.angle-badge-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.type-badge {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  color: #fff;
+  background: var(--teal);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.25s ease;
+}
+
+.val-badge {
+  font-family: var(--font-math);
+  font-size: 22px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--ink);
+}
+
+.angle-def-text {
+  font-size: 15px;
+  color: var(--ink-secondary);
+}
+
+/* Canvas Board */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 460;
+  touch-action: none;
+}
+
+/* SVG Typography & Elements */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 22px;
+  fill: var(--ink);
+}
+
+.cx-math-text {
+  font-family: var(--font-km);
+  font-size: 15px;
+  font-weight: 600;
+  fill: var(--ink-secondary);
+}
+
+.ray-fixed {
+  stroke: var(--ink);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.ray-moving {
+  stroke: var(--orange);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.handle-point {
+  fill: var(--orange);
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  cursor: grab;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.handle-point:active {
+  cursor: grabbing;
+}
+
+.sector-fill {
+  fill: rgba(232, 113, 10, 0.16);
+  stroke: var(--orange);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.right-angle-square {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2.2;
+}
+
+/* Protractor Overlay */
+.protractor-group {
+  opacity: 0.92;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* Slider Bar & Preset buttons */
+.controls-area {
+  padding: 6px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface-2);
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.slider-container label {
+  font-weight: 700;
+  font-size: 15.5px;
+  white-space: nowrap;
+}
+
+.angle-slider {
+  flex-grow: 1;
+  accent-color: var(--orange);
+  height: 8px;
+  cursor: pointer;
+}
+
+.slider-number {
+  min-width: 60px;
+  font-family: var(--font-math);
+  font-weight: 700;
+  font-size: 18px;
+  text-align: right;
+  color: var(--orange);
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.btn-preset {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-preset span.deg {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.btn-preset:hover {
+  background: var(--surface-border);
+}
+
+.btn-preset.active {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+.btn-preset.active span.deg {
+  color: #e0f2fe;
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .app-header { padding: 12px 16px; }
+  h1 { font-size: 18px; }
+  .status-banner { margin: 12px 12px 0; padding: 10px 14px; }
+  .canvas-wrap { padding: 12px 12px; }
+  .controls-area { padding: 4px 12px 14px; }
+  .presets-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៣ · មុំ</div>
+      <h1>ប្រភេទនៃមុំ</h1>
+    </div>
+
+    <div class="header-actions">
+      <!-- Protractor Toggle -->
+      <button type="button" class="toggle-btn" id="btn-protractor" onclick="toggleProtractor()">
+        📐 បង្ហាញរ៉ាប៉ទ័រ
+      </button>
+
+      <!-- Theme button -->
+      <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Status & Badge -->
+  <div class="status-banner">
+    <div class="angle-badge-main">
+      <span class="type-badge" id="angle-type-badge">មុំស្រួច</span>
+      <span class="val-badge" id="angle-val-badge">xOy = ៦៥°</span>
+    </div>
+    <div class="angle-def-text" id="angle-def-text">
+      មុំដែលមានរង្វាស់ធំជាង ០° និងតូចជាង ៩០°
+    </div>
+  </div>
+
+  <!-- SVG Canvas -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 460" role="img" aria-label="គំនូររង្វាស់មុំនៃប្រភេទមុំនីមួយៗ">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <!-- Grid -->
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Protractor Overlay Layer -->
+        <g id="layer-protractor" class="protractor-group" style="display: none;"></g>
+
+        <!-- Dynamic Angle Arc & Markings Layer -->
+        <g id="layer-arc"></g>
+
+        <!-- Fixed Ray Ox -->
+        <g id="layer-ray-ox">
+          <line x1="420" y1="240" x2="690" y2="240" class="ray-fixed" />
+          <polygon points="698,240 686,234 686,246" fill="var(--ink)" />
+          <circle cx="420" cy="240" r="5" fill="var(--ink)" />
+          <text x="398" y="247" class="cx-label">O</text>
+          <text x="706" y="246" class="cx-label">x</text>
+        </g>
+
+        <!-- Rotating Ray Oy -->
+        <g id="layer-ray-oy">
+          <line id="line-oy" x1="420" y1="240" x2="520" y2="80" class="ray-moving" />
+          <polygon id="arrow-oy" points="0,0 0,0 0,0" fill="var(--orange)" />
+          <circle id="handle-oy" cx="520" cy="80" r="8" class="handle-point" />
+          <text id="label-y" x="535" y="75" class="cx-label">y</text>
+        </g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Slider & Preset Buttons -->
+  <div class="controls-area">
+    <!-- Slider -->
+    <div class="slider-container">
+      <label for="angle-slider">ទំហំមុំ ៖</label>
+      <input type="range" id="angle-slider" class="angle-slider" min="0" max="360" step="1" value="65" oninput="setAngle(parseInt(this.value))">
+      <span class="slider-number" id="slider-display">៦៥°</span>
+    </div>
+
+    <!-- 7 Preset Buttons -->
+    <div class="presets-grid">
+      <button type="button" class="btn-preset" onclick="setAngle(0)">
+        <span>មុំសូន្យ</span>
+        <span class="deg">០°</span>
+      </button>
+      <button type="button" class="btn-preset active" onclick="setAngle(45)">
+        <span>មុំស្រួច</span>
+        <span class="deg">៤៥°</span>
+      </button>
+      <button type="button" class="btn-preset" onclick="setAngle(90)">
+        <span>មុំកែង</span>
+        <span class="deg">៩០°</span>
+      </button>
+      <button type="button" class="btn-preset" onclick="setAngle(135)">
+        <span>មុំទាល</span>
+        <span class="deg">១៣៥°</span>
+      </button>
+      <button type="button" class="btn-preset" onclick="setAngle(180)">
+        <span>មុំរាប</span>
+        <span class="deg">១៨០°</span>
+      </button>
+      <button type="button" class="btn-preset" onclick="setAngle(240)">
+        <span>ធំជាងមុំរាប</span>
+        <span class="deg">២៤០°</span>
+      </button>
+      <button type="button" class="btn-preset" onclick="setAngle(360)">
+        <span>មុំពេញ</span>
+        <span class="deg">៣៦០°</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៣</span>
+    <span>KhmerMath · ប្រភេទនៃមុំ</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Grade 7 · Lesson 13 · 13-A: Kinds of Angle
+ */
+
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]);
+}
+
+const O = { x: 420, y: 240 };
+const RAY_LEN = 260;
+let currentDeg = 65;
+let showProtractor = false;
+
+// DOM
+const angleSlider = document.getElementById('angle-slider');
+const sliderDisplay = document.getElementById('slider-display');
+const angleTypeBadge = document.getElementById('angle-type-badge');
+const angleValBadge = document.getElementById('angle-val-badge');
+const angleDefText = document.getElementById('angle-def-text');
+const layerArc = document.getElementById('layer-arc');
+const layerProtractor = document.getElementById('layer-protractor');
+const lineOy = document.getElementById('line-oy');
+const arrowOy = document.getElementById('arrow-oy');
+const handleOy = document.getElementById('handle-oy');
+const labelY = document.getElementById('label-y');
+const btnProtractor = document.getElementById('btn-protractor');
+const presetBtns = document.querySelectorAll('.btn-preset');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+/**
+ * Determine Angle Classification
+ */
+function getAngleCategory(deg) {
+  if (deg === 0) {
+    return {
+      name: 'មុំសូន្យ',
+      def: 'មុំដែលមានទំហំស្មើនឹង ០° (ជ្រុងទាំងពីរត្រួតស៊ីគ្នា)',
+      color: 'var(--ink-muted)'
+    };
+  } else if (deg > 0 && deg < 90) {
+    return {
+      name: 'មុំស្រួច',
+      def: 'មុំដែលមានរង្វាស់ធំជាង ០° និងតូចជាង ៩០°',
+      color: 'var(--teal)'
+    };
+  } else if (deg === 90) {
+    return {
+      name: 'មុំកែង',
+      def: 'មុំដែលមានរង្វាស់ស្មើនឹង ៩០° គត់ (ជ្រុងទាំងពីរកែងគ្នា)',
+      color: 'var(--primary)'
+    };
+  } else if (deg > 90 && deg < 180) {
+    return {
+      name: 'មុំទាល',
+      def: 'មុំដែលមានរង្វាស់ធំជាង ៩០° និងតូចជាង ១៨០°',
+      color: 'var(--orange)'
+    };
+  } else if (deg === 180) {
+    return {
+      name: 'មុំរាប',
+      def: 'មុំដែលមានរង្វាស់ស្មើនឹង ១៨០° (ជ្រុងទាំងពីរបង្កើតបានបន្ទាត់ត្រង់មួយ)',
+      color: 'var(--purple)'
+    };
+  } else if (deg > 180 && deg < 360) {
+    return {
+      name: 'មុំធំជាងមុំរាប',
+      def: 'មុំដែលមានរង្វាស់ធំជាង ១៨០° និងតូចជាង ៣៦០° (មុំឆ្លុះ)',
+      color: '#c2410c'
+    };
+  } else {
+    return {
+      name: 'មុំពេញ',
+      def: 'មុំដែលមានរង្វាស់ស្មើនឹង ៣៦០° (ការវិលបានមួយជុំពេញ)',
+      color: 'var(--green)'
+    };
+  }
+}
+
+/**
+ * Draw Protractor Overlay
+ */
+function buildProtractor() {
+  layerProtractor.innerHTML = '';
+  const R = 230;
+  
+  // Outer semi-circle disc
+  const disc = createSvgEl('path', {
+    d: `M ${O.x - R} ${O.y} A ${R} ${R} 0 0 1 ${O.x + R} ${O.y} Z`,
+    fill: 'rgba(219, 234, 254, 0.55)',
+    stroke: 'var(--primary)',
+    'stroke-width': 1.5
+  });
+  layerProtractor.appendChild(disc);
+  
+  // Origin center marker
+  layerProtractor.appendChild(createSvgEl('circle', {
+    cx: O.x, cy: O.y, r: 16, fill: 'none', stroke: 'var(--primary)', 'stroke-width': 1.2
+  }));
+  layerProtractor.appendChild(createSvgEl('line', {
+    x1: O.x - R, y1: O.y, x2: O.x + R, y2: O.y, stroke: 'var(--primary)', 'stroke-width': 1.2
+  }));
+  layerProtractor.appendChild(createSvgEl('line', {
+    x1: O.x, y1: O.y, x2: O.x, y2: O.y - R, stroke: 'var(--primary)', 'stroke-width': 1.2
+  }));
+  
+  // Graduations (0 to 180)
+  for (let deg = 0; deg <= 180; deg += 1) {
+    const rad = (180 - deg) * Math.PI / 180;
+    const cosR = Math.cos(rad);
+    const sinR = Math.sin(rad);
+    
+    let tickLen = 7;
+    let strokeW = 0.8;
+    
+    if (deg % 10 === 0) {
+      tickLen = 16;
+      strokeW = 1.4;
+      
+      // Number
+      const nr = R - 28;
+      const tx = O.x + nr * cosR;
+      const ty = O.y - nr * sinR + 4;
+      const text = createSvgEl('text', {
+        x: tx, y: ty, 'text-anchor': 'middle', fill: 'var(--ink-secondary)', 'font-size': '10.5px', 'font-family': 'var(--font-km)'
+      });
+      text.textContent = toKhmer(deg);
+      layerProtractor.appendChild(text);
+    } else if (deg % 5 === 0) {
+      tickLen = 11;
+      strokeW = 1.0;
+    }
+    
+    const x1 = O.x + R * cosR;
+    const y1 = O.y - R * sinR;
+    const x2 = O.x + (R - tickLen) * cosR;
+    const y2 = O.y - (R - tickLen) * sinR;
+    
+    layerProtractor.appendChild(createSvgEl('line', {
+      x1, y1, x2, y2, stroke: 'var(--primary)', 'stroke-width': strokeW
+    }));
+  }
+}
+
+/**
+ * Update Scene
+ */
+function updateScene() {
+  const rad = currentDeg * Math.PI / 180;
+  // Screen coordinates: positive angle is counterclockwise, so y goes down when sin is negative
+  const endX = O.x + RAY_LEN * Math.cos(rad);
+  const endY = O.y - RAY_LEN * Math.sin(rad);
+  
+  // Update Ray Oy line
+  lineOy.setAttribute('x2', endX);
+  lineOy.setAttribute('y2', endY);
+  
+  // Arrow on Oy
+  const uX = Math.cos(rad);
+  const uY = -Math.sin(rad);
+  const p1X = endX + 8 * uX;
+  const p1Y = endY + 8 * uY;
+  const p2X = endX - 12 * uX - 7 * uY;
+  const p2Y = endY - 12 * uY + 7 * uX;
+  const p3X = endX - 12 * uX + 7 * uY;
+  const p3Y = endY - 12 * uY - 7 * uX;
+  arrowOy.setAttribute('points', `${p1X},${p1Y} ${p2X},${p2Y} ${p3X},${p3Y}`);
+  
+  // Handle position
+  handleOy.setAttribute('cx', endX - 25 * uX);
+  handleOy.setAttribute('cy', endY - 25 * uY);
+  
+  // Label y position
+  labelY.setAttribute('x', endX + 16 * uX - 8 * uY);
+  labelY.setAttribute('y', endY + 16 * uY + 8 * uX + 6);
+  
+  // Redraw Sector / Arc
+  layerArc.innerHTML = '';
+  const arcR = Math.min(75, 55 + currentDeg * 0.08);
+  
+  if (currentDeg === 90) {
+    // Right angle square
+    const sqSize = 22;
+    layerArc.appendChild(createSvgEl('polyline', {
+      points: `${O.x + sqSize},${O.y} ${O.x + sqSize},${O.y - sqSize} ${O.x},${O.y - sqSize}`,
+      class: 'right-angle-square'
+    }));
+    // Dot inside
+    layerArc.appendChild(createSvgEl('circle', {
+      cx: O.x + sqSize / 2, cy: O.y - sqSize / 2, r: 2.2, fill: 'var(--teal)'
+    }));
+  } else if (currentDeg > 0 && currentDeg < 360) {
+    const largeArcFlag = currentDeg > 180 ? 1 : 0;
+    const arcStartX = O.x + arcR;
+    const arcStartY = O.y;
+    const arcEndX = O.x + arcR * Math.cos(rad);
+    const arcEndY = O.y - arcR * Math.sin(rad);
+    
+    // Wedge fill
+    const pathD = `M ${O.x} ${O.y} L ${arcStartX} ${arcStartY} A ${arcR} ${arcR} 0 ${largeArcFlag} 0 ${arcEndX} ${arcEndY} Z`;
+    layerArc.appendChild(createSvgEl('path', {
+      d: pathD, class: 'sector-fill'
+    }));
+  } else if (currentDeg === 360) {
+    // Full circle
+    layerArc.appendChild(createSvgEl('circle', {
+      cx: O.x, cy: O.y, r: arcR, class: 'sector-fill'
+    }));
+  }
+  
+  // Update Badges & Texts
+  const cat = getAngleCategory(currentDeg);
+  angleTypeBadge.textContent = cat.name;
+  angleTypeBadge.style.background = cat.color;
+  angleValBadge.textContent = `xOy = ${toKhmer(currentDeg)}°`;
+  angleDefText.textContent = cat.def;
+  
+  // Slider display
+  sliderDisplay.textContent = `${toKhmer(currentDeg)}°`;
+  angleSlider.value = currentDeg;
+  
+  // Preset buttons highlight
+  presetBtns.forEach(btn => {
+    const degStr = btn.querySelector('.deg').textContent;
+    btn.classList.toggle('active', degStr === `${toKhmer(currentDeg)}°`);
+  });
+}
+
+function setAngle(deg) {
+  currentDeg = Math.max(0, Math.min(360, Math.round(deg)));
+  updateScene();
+}
+
+function toggleProtractor() {
+  showProtractor = !showProtractor;
+  layerProtractor.style.display = showProtractor ? 'block' : 'none';
+  btnProtractor.classList.toggle('active', showProtractor);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let target = current === 'light' ? 'dark' : (current === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark'));
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+// Interactive dragging on ray Oy
+function initInteraction() {
+  const svg = document.getElementById('geometry-svg');
+  let isDragging = false;
+  
+  function getAngleFromPointer(e) {
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX || (e.touches && e.touches[0].clientX);
+    pt.y = e.clientY || (e.touches && e.touches[0].clientY);
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    const dx = svgP.x - O.x;
+    const dy = O.y - svgP.y; // invert y
+    let ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    if (ang < 0) ang += 360;
+    return Math.round(ang);
+  }
+  
+  handleOy.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    e.target.setPointerCapture(e.pointerId);
+  });
+  
+  svg.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    setAngle(getAngleFromPointer(e));
+  });
+  
+  const endDrag = (e) => {
+    if (isDragging) {
+      isDragging = false;
+      if (e && e.pointerId) {
+        try { handleOy.releasePointerCapture(e.pointerId); } catch(err){}
+      }
+    }
+  };
+  
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildProtractor();
+  initInteraction();
+  updateScene();
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

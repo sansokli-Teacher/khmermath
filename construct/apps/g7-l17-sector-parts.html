@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ចម្រៀកកងរង្វង់ និងចម្រៀករង្វង់ — ថ្នាក់ទី ៧ · មេរៀនទី ១៧</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Tabs */
+.tabs-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 20px; font-family: var(--font-km); font-size: 15px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* Sliders Bar */
+.sliders-panel {
+  display: flex; flex-wrap: wrap; gap: 20px; padding: 14px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-border); align-items: center; justify-content: space-between;
+}
+.slider-group { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 600; }
+.slider-group input[type="range"] { width: 170px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 50px; text-align: center; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Shading */
+.circle-base { fill: none; stroke: var(--grid-line-major); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.sector-full { fill: rgba(59, 130, 246, 0.25); stroke: var(--blue); stroke-width: 2.4; }
+.sector-inner { fill: rgba(239, 68, 68, 0.25); stroke: #dc2626; stroke-width: 2.2; stroke-dasharray: 5 4; }
+.sector-annulus { fill: rgba(20, 184, 166, 0.35); stroke: var(--teal); stroke-width: 2.6; }
+.tri-chord { fill: rgba(245, 158, 11, 0.35); stroke: #d97706; stroke-width: 2.4; }
+.seg-chord { stroke: #ea580c; stroke-width: 3; stroke-linecap: round; }
+.segment-filled { fill: rgba(34, 197, 94, 0.45); stroke: var(--green); stroke-width: 2.8; }
+.angle-arc { fill: none; stroke: var(--purple); stroke-width: 2.2; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 100px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-formula { font-size: 17.5px; color: var(--ink); font-weight: 800; }
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៧ · រង្វង់</div>
+      <h1>ចម្រៀកកងរង្វង់ និងចម្រៀករង្វង់</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-annulus-sector" role="tab" onclick="switchTab('annulus_sector')">
+      ១. ចម្រៀកកងរង្វង់ 
+    </button>
+    <button type="button" class="tab-btn" id="tab-segment" role="tab" onclick="switchTab('segment')">
+      ២. ចម្រៀករង្វង់ (ចន្លោះអង្កត់ធ្នូ និងធ្នូ)
+    </button>
+  </nav>
+
+  <!-- Sliders Bar -->
+  <div class="sliders-panel">
+    <div class="slider-group">
+      <label for="slider-angle">មុំផ្ចិត θ (១០°–២40°) ៖</label>
+      <input type="range" id="slider-angle" min="20" max="180" step="5" value="60" oninput="onAngleSliderChange()">
+      <span class="val-badge" id="val-angle">៦០°</span>
+    </div>
+    <div id="ring-radii-info" style="font-size: 14.5px; font-weight: 600; color: var(--ink-secondary);">
+      កាំធំ R = ៥ cm · កាំតូច r = ៣ cm (π ≈ ៣,១៤)
+    </div>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរចម្រៀកកងរង្វង់និងចម្រៀករង្វង់">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <g id="svg-info-box" transform="translate(30, 20)">
+          <rect width="320" height="38" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="24" class="cx-math-text" id="svg-info-title" font-weight="700" fill="var(--teal)">
+            រូបមន្តផ្ទៃក្រឡា
+          </text>
+        </g>
+
+        <!-- Dynamic Geometry Layers -->
+        <g id="layer-back-circles"></g>
+        <g id="layer-shapes"></g>
+        <g id="layer-chords"></g>
+        <g id="layer-dimensions"></g>
+        <g id="layer-annotations"></g>
+        <g id="layer-points"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span class="result-formula" id="result-formula">ផ្ទៃ = ...</span>
+    </div>
+    <span id="result-detail" style="font-size: 15px; color: var(--green); font-weight: 600;">
+      លទ្ធផលគណនា
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៧</span>
+    <span>ចម្រៀកកងរង្វង់ = ចម្រៀកធំ ដក ចម្រៀកតូច · ចម្រៀករង្វង់ = ចម្រៀកថាស ដក ត្រីកោណ</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/\./g, ',').replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+const O = { x: 420, y: 260 };
+const PI = 3.14;
+
+let activeTab = 'annulus_sector'; // 'annulus_sector' or 'segment'
+let currentAngleDeg = 60;
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+// Scale: 1 cm = 32 px
+const R_outer_cm = 5;
+const r_inner_cm = 3;
+const R_outer_px = R_outer_cm * 32; // 160 px
+const r_inner_px = r_inner_cm * 32; // 96 px
+
+// Tab 2 Circle Radius: 4.5 cm = 144 px
+const R_seg_cm = 4.5;
+const R_seg_px = R_seg_cm * 32;
+
+const TABS = {
+  annulus_sector: {
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ចម្រៀកធំ)',
+        text: 'ចម្រៀកថាសធំកាំ R = ៥ cm និងមុំផ្ចិត θ ៖ ផ្ទៃក្រឡាចម្រៀកធំគឺ 𝒜₁ = (θ / ៣៦០) × πR² ។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ចម្រៀកតូចក្នុង)',
+        text: 'ចម្រៀកថាសតូចកាំ r = ៣ cm និងមុំផ្ចិត θ ដដែល ៖ ផ្ទៃក្រឡាចម្រៀកតូចគឺ 𝒜₂ = (θ / ៣៦០) × πr² ។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ដកកាត់ចោះ)',
+        text: 'កាត់ចោះចម្រៀកតូចចេញពីចម្រៀកធំ ៖ នៅសល់តែផ្ទៃក្រវាត់ចម្រៀកកងរង្វង់។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (រូបមន្តសរុប)',
+        text: 'ផ្ទៃចម្រៀកកងរង្វង់ 𝒜 = (θ / ៣៦០) × π(R² − r²) ។ ជំនួសតម្លៃគណនាបានលទ្ធផលពិតប្រាកដ!'
+      }
+    ]
+  },
+  segment: {
+    steps: [
+      {
+        num: 1,
+        title: 'ជំហានទី ១ (ចម្រៀកថាស AOB)',
+        text: 'ចម្រៀកថាស AOB ខណ្ឌដោយកាំពីរ OA = OB = R និងធ្នូ AB ៖ ផ្ទៃចម្រៀកថាសគឺ 𝒜_ចម្រៀក = (θ / ៣៦០) × πR² ។'
+      },
+      {
+        num: 2,
+        title: 'ជំហានទី ២ (ត្រីកោណ OAB)',
+        text: 'គូសអង្កត់ធ្នូ AB បង្កើតបានត្រីកោណសមបាត OAB ៖ ផ្ទៃត្រីកោណ OAB គឺ 𝒜_△ = ½ × AB × OH (OH កែងនឹង AB) ។'
+      },
+      {
+        num: 3,
+        title: 'ជំហានទី ៣ (ដកកាត់ចោះ)',
+        text: 'ដកផ្ទៃត្រីកោណ OAB ចេញពីចម្រៀកថាស ៖ នៅសល់តែចំណែកផ្ទៃចន្លោះអង្កត់ធ្នូ AB និងធ្នូ AB (ហៅថា «ចម្រៀករង្វង់»)។'
+      },
+      {
+        num: 4,
+        title: 'ជំហានទី ៤ (លទ្ធផលសរុប)',
+        text: 'ផ្ទៃចម្រៀករង្វង់ 𝒜 = 𝒜_ចម្រៀកថាស − 𝒜_△OAB ។'
+      }
+    ]
+  }
+};
+
+const tabAnnulusBtn = document.getElementById('tab-annulus-sector');
+const tabSegmentBtn = document.getElementById('tab-segment');
+const sliderAngle = document.getElementById('slider-angle');
+const valAngle = document.getElementById('val-angle');
+const ringRadiiInfo = document.getElementById('ring-radii-info');
+const svgInfoTitle = document.getElementById('svg-info-title');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultFormula = document.getElementById('result-formula');
+const resultDetail = document.getElementById('result-detail');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+
+const layerBackCircles = document.getElementById('layer-back-circles');
+const layerShapes = document.getElementById('layer-shapes');
+const layerChords = document.getElementById('layer-chords');
+const layerDimensions = document.getElementById('layer-dimensions');
+const layerAnnotations = document.getElementById('layer-annotations');
+const layerPoints = document.getElementById('layer-points');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function switchTab(tabKey) {
+  activeTab = tabKey;
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+
+  tabAnnulusBtn.classList.toggle('active', tabKey === 'annulus_sector');
+  tabSegmentBtn.classList.toggle('active', tabKey === 'segment');
+
+  if (tabKey === 'annulus_sector') {
+    ringRadiiInfo.textContent = 'កាំធំ R = ៥ cm · កាំតូច r = ៣ cm (π ≈ ៣,១៤)';
+  } else {
+    ringRadiiInfo.textContent = 'កាំរង្វង់ R = ៤,៥ cm · អង្កត់ធ្នូ AB (π ≈ ៣,១៤)';
+  }
+
+  renderScene();
+}
+
+function onAngleSliderChange() {
+  currentAngleDeg = parseInt(sliderAngle.value, 10);
+  valAngle.textContent = toKhmer(currentAngleDeg) + '°';
+  renderScene();
+}
+
+// Helpers for SVG Arc drawing
+function polarToCartesian(centerX, centerY, radius, angleDegrees) {
+  // 0 degrees is right (positive X axis), counterclockwise upwards:
+  const angleInRadians = (angleDegrees * Math.PI) / 180.0;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY - radius * Math.sin(angleInRadians)
+  };
+}
+
+function makeSectorPath(cx, cy, r, startAngle, endAngle) {
+  const p1 = polarToCartesian(cx, cy, r, startAngle);
+  const p2 = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = (endAngle - startAngle <= 180) ? '0' : '1';
+  return `M ${cx} ${cy} L ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${p2.x} ${p2.y} Z`;
+}
+
+function makeAnnulusSectorPath(cx, cy, rOut, rIn, startAngle, endAngle) {
+  const pO1 = polarToCartesian(cx, cy, rOut, startAngle);
+  const pO2 = polarToCartesian(cx, cy, rOut, endAngle);
+  const pI2 = polarToCartesian(cx, cy, rIn, endAngle);
+  const pI1 = polarToCartesian(cx, cy, rIn, startAngle);
+  const largeArcFlag = (endAngle - startAngle <= 180) ? '0' : '1';
+
+  return `M ${pO1.x} ${pO1.y} A ${rOut} ${rOut} 0 ${largeArcFlag} 0 ${pO2.x} ${pO2.y} L ${pI2.x} ${pI2.y} A ${rIn} ${rIn} 0 ${largeArcFlag} 1 ${pI1.x} ${pI1.y} Z`;
+}
+
+function makeSegmentPath(cx, cy, r, startAngle, endAngle) {
+  const p1 = polarToCartesian(cx, cy, r, startAngle);
+  const p2 = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = (endAngle - startAngle <= 180) ? '0' : '1';
+  return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${p2.x} ${p2.y} Z`;
+}
+
+function renderScene() {
+  layerBackCircles.innerHTML = '';
+  layerShapes.innerHTML = '';
+  layerChords.innerHTML = '';
+  layerDimensions.innerHTML = '';
+  layerAnnotations.innerHTML = '';
+  layerPoints.innerHTML = '';
+
+  const cfg = TABS[activeTab];
+  stepBadge.textContent = cfg.steps[currentStep].title;
+  stepText.textContent = cfg.steps[currentStep].text;
+
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === cfg.steps.length - 1;
+
+  stepsNav.innerHTML = '';
+  cfg.steps.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  if (activeTab === 'annulus_sector') {
+    renderAnnulusSector();
+  } else {
+    renderCircularSegment();
+  }
+}
+
+// 1. RENDER ANNULUS SECTOR
+function renderAnnulusSector() {
+  svgInfoTitle.textContent = 'ចម្រៀកកងរង្វង់ ៖ 𝒜 = (θ / ៣៦០) × π(R² − r²)';
+
+  const theta = currentAngleDeg;
+  const startAng = 0;
+  const endAng = theta;
+
+  const areaOut = ((theta / 360) * PI * R_outer_cm * R_outer_cm).toFixed(2);
+  const areaIn = ((theta / 360) * PI * r_inner_cm * r_inner_cm).toFixed(2);
+  const areaAnnulus = (areaOut - areaIn).toFixed(2);
+
+  resultFormula.textContent = `𝒜 = (${toKhmer(theta)}° / ៣៦០°) × ៣,១៤ × (៥² − ៣²) = ${toKhmer(areaAnnulus)} cm²`;
+  resultDetail.textContent = `ផ្ទៃចម្រៀកកងរង្វង់ = ${toKhmer(areaAnnulus)} cm²`;
+
+  // Background full circles dotted
+  layerBackCircles.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: R_outer_px, class: 'circle-base' }));
+  layerBackCircles.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: r_inner_px, class: 'circle-base' }));
+
+  // Centre O
+  layerPoints.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: 4.5, fill: 'var(--ink)' }));
+  layerPoints.appendChild(createSvgEl('text', { x: O.x - 16, y: O.y + 16, class: 'cx-label' })).textContent = 'O';
+
+  if (currentStep === 0) {
+    // Outer sector full
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSectorPath(O.x, O.y, R_outer_px, startAng, endAng),
+      class: 'sector-full'
+    }));
+
+    const midA = (startAng + endAng) / 2;
+    const ptM = polarToCartesian(O.x, O.y, R_outer_px * 0.65, midA);
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptM.x, y: ptM.y, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-weight': '700'
+    })).textContent = `𝒜₁ = ${toKhmer(areaOut)} cm²`;
+  } else if (currentStep === 1) {
+    // Outer sector + inner sector
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSectorPath(O.x, O.y, R_outer_px, startAng, endAng),
+      class: 'sector-full'
+    }));
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSectorPath(O.x, O.y, r_inner_px, startAng, endAng),
+      class: 'sector-inner'
+    }));
+
+    const midA = (startAng + endAng) / 2;
+    const ptM = polarToCartesian(O.x, O.y, r_inner_px * 0.55, midA);
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptM.x, y: ptM.y, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#dc2626', 'font-weight': '700'
+    })).textContent = `𝒜₂ = ${toKhmer(areaIn)} cm²`;
+  } else {
+    // Annulus Sector Remaining
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeAnnulusSectorPath(O.x, O.y, R_outer_px, r_inner_px, startAng, endAng),
+      class: 'sector-annulus'
+    }));
+
+    if (currentStep === 2) {
+      // Dashed inner cut
+      layerShapes.appendChild(createSvgEl('path', {
+        d: makeSectorPath(O.x, O.y, r_inner_px, startAng, endAng),
+        fill: 'none', stroke: '#dc2626', 'stroke-width': 2.2, 'stroke-dasharray': '5 4'
+      }));
+    }
+
+    const midA = (startAng + endAng) / 2;
+    const ptM = polarToCartesian(O.x, O.y, (R_outer_px + r_inner_px) / 2, midA);
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptM.x, y: ptM.y + 4, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)', 'font-size': '15px', 'font-weight': '800'
+    })).textContent = `${toKhmer(areaAnnulus)} cm²`;
+  }
+
+  // Central angle arc
+  const arcR = 36;
+  const pA1 = polarToCartesian(O.x, O.y, arcR, startAng);
+  const pA2 = polarToCartesian(O.x, O.y, arcR, endAng);
+  const largeArc = (endAng - startAng <= 180) ? '0' : '1';
+  layerDimensions.appendChild(createSvgEl('path', {
+    d: `M ${pA1.x} ${pA1.y} A ${arcR} ${arcR} 0 ${largeArc} 0 ${pA2.x} ${pA2.y}`,
+    class: 'angle-arc'
+  }));
+  const midAngRad = ((startAng + endAng) / 2 * Math.PI) / 180;
+  layerDimensions.appendChild(createSvgEl('text', {
+    x: O.x + 55 * Math.cos(midAngRad), y: O.y - 55 * Math.sin(midAngRad) + 5,
+    'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--purple)', 'font-weight': '700'
+  })).textContent = toKhmer(theta) + '°';
+
+  // Dimension R & r
+  const ptR = polarToCartesian(O.x, O.y, R_outer_px, startAng);
+  layerDimensions.appendChild(createSvgEl('text', {
+    x: O.x + R_outer_px / 2, y: O.y + 18, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--ink)'
+  })).textContent = 'R = ៥ cm';
+}
+
+// 2. RENDER CIRCULAR SEGMENT (CHORD TO ARC)
+function renderCircularSegment() {
+  svgInfoTitle.textContent = 'ចម្រៀកថាស ដក ត្រីកោណ ៖ 𝒜 = 𝒜_ចម្រៀក − 𝒜_△';
+
+  const theta = currentAngleDeg;
+  const startAng = 0;
+  const endAng = theta;
+
+  const pA = polarToCartesian(O.x, O.y, R_seg_px, startAng);
+  const pB = polarToCartesian(O.x, O.y, R_seg_px, endAng);
+
+  const radTheta = (theta * Math.PI) / 180;
+  const areaSector = ((theta / 360) * PI * R_seg_cm * R_seg_cm).toFixed(2);
+  const areaTri = (0.5 * R_seg_cm * R_seg_cm * Math.sin(radTheta)).toFixed(2);
+  const areaSegment = Math.max(0, (areaSector - areaTri)).toFixed(2);
+
+  resultFormula.textContent = `𝒜 = 𝒜_ចម្រៀក − 𝒜_△ = ${toKhmer(areaSector)} − ${toKhmer(areaTri)} = ${toKhmer(areaSegment)} cm²`;
+  resultDetail.textContent = `ផ្ទៃចម្រៀករង្វង់ (បៃតង) = ${toKhmer(areaSegment)} cm²`;
+
+  // Background full circle
+  layerBackCircles.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: R_seg_px, class: 'circle-base' }));
+
+  // Centre O
+  layerPoints.appendChild(createSvgEl('circle', { cx: O.x, cy: O.y, r: 4.5, fill: 'var(--ink)' }));
+  layerPoints.appendChild(createSvgEl('text', { x: O.x - 16, y: O.y + 16, class: 'cx-label' })).textContent = 'O';
+
+  // Points A and B on circumference
+  layerPoints.appendChild(createSvgEl('circle', { cx: pA.x, cy: pA.y, r: 4.5, fill: 'var(--ink)' }));
+  layerPoints.appendChild(createSvgEl('text', { x: pA.x + 14, y: pA.y + 6, class: 'cx-label' })).textContent = 'A';
+  layerPoints.appendChild(createSvgEl('circle', { cx: pB.x, cy: pB.y, r: 4.5, fill: 'var(--ink)' }));
+  layerPoints.appendChild(createSvgEl('text', { x: pB.x + 10, y: pB.y - 10, class: 'cx-label' })).textContent = 'B';
+
+  if (currentStep === 0) {
+    // Sector OAB full
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSectorPath(O.x, O.y, R_seg_px, startAng, endAng),
+      class: 'sector-full'
+    }));
+
+    const midA = (startAng + endAng) / 2;
+    const ptM = polarToCartesian(O.x, O.y, R_seg_px * 0.55, midA);
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptM.x, y: ptM.y, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-weight': '700'
+    })).textContent = `𝒜_ចម្រៀក = ${toKhmer(areaSector)} cm²`;
+  } else if (currentStep === 1) {
+    // Sector OAB + Triangle OAB
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSectorPath(O.x, O.y, R_seg_px, startAng, endAng),
+      class: 'sector-full'
+    }));
+    layerShapes.appendChild(createSvgEl('polygon', {
+      points: `${O.x},${O.y} ${pA.x},${pA.y} ${pB.x},${pB.y}`,
+      class: 'tri-chord'
+    }));
+
+    // Chord AB
+    layerChords.appendChild(createSvgEl('line', {
+      x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y, class: 'seg-chord'
+    }));
+
+    const ptTriCenter = { x: (O.x + pA.x + pB.x) / 3, y: (O.y + pA.y + pB.y) / 3 };
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptTriCenter.x, y: ptTriCenter.y + 4, 'text-anchor': 'middle', class: 'cx-math-text', fill: '#d97706', 'font-weight': '700'
+    })).textContent = `𝒜_△ = ${toKhmer(areaTri)} cm²`;
+  } else {
+    // Segment remaining (between chord AB and arc AB)
+    layerShapes.appendChild(createSvgEl('path', {
+      d: makeSegmentPath(O.x, O.y, R_seg_px, startAng, endAng),
+      class: 'segment-filled'
+    }));
+
+    // Chord AB
+    layerChords.appendChild(createSvgEl('line', {
+      x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y, class: 'seg-chord'
+    }));
+
+    // Dotted triangle legs
+    layerChords.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: pA.x, y2: pA.y, stroke: 'var(--ink-muted)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4'
+    }));
+    layerChords.appendChild(createSvgEl('line', {
+      x1: O.x, y1: O.y, x2: pB.x, y2: pB.y, stroke: 'var(--ink-muted)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4'
+    }));
+
+    const midA = (startAng + endAng) / 2;
+    const ptM = polarToCartesian(O.x, O.y, R_seg_px * 0.88, midA);
+    layerAnnotations.appendChild(createSvgEl('text', {
+      x: ptM.x + 10, y: ptM.y, class: 'cx-math-text', fill: 'var(--green)', 'font-size': '15px', 'font-weight': '800'
+    })).textContent = `𝒜 = ${toKhmer(areaSegment)} cm²`;
+  }
+
+  // Central angle arc
+  const arcR = 36;
+  const pA1 = polarToCartesian(O.x, O.y, arcR, startAng);
+  const pA2 = polarToCartesian(O.x, O.y, arcR, endAng);
+  const largeArc = (endAng - startAng <= 180) ? '0' : '1';
+  layerDimensions.appendChild(createSvgEl('path', {
+    d: `M ${pA1.x} ${pA1.y} A ${arcR} ${arcR} 0 ${largeArc} 0 ${pA2.x} ${pA2.y}`,
+    class: 'angle-arc'
+  }));
+  const midAngRad = ((startAng + endAng) / 2 * Math.PI) / 180;
+  layerDimensions.appendChild(createSvgEl('text', {
+    x: O.x + 55 * Math.cos(midAngRad), y: O.y - 55 * Math.sin(midAngRad) + 5,
+    'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--purple)', 'font-weight': '700'
+  })).textContent = toKhmer(theta) + '°';
+}
+
+function nextStep() {
+  const cfg = TABS[activeTab];
+  if (currentStep < cfg.steps.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetStep() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    const cfg = TABS[activeTab];
+    if (currentStep >= cfg.steps.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    const cfg = TABS[activeTab];
+    if (currentStep < cfg.steps.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 2800);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  onAngleSliderChange();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

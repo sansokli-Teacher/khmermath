@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>កន្លះបន្ទាត់ពុះមុំជាប់គ្នា ពីរ — ថ្នាក់ទី ៧ · មេរៀនទី ១៣</title>
+<style>
+/* CSS Reset & Design System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --orange: #ea580c;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --purple: #7e22ce;
+  --grey-blue: #627d98;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --blue: #3b82f6;
+    --orange: #fb923c;
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a855f7;
+    --grey-blue: #829ab1;
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --blue: #3b82f6;
+  --orange: #fb923c;
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a855f7;
+  --grey-blue: #829ab1;
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --orange: #ea580c;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  --purple: #7e22ce;
+  --grey-blue: #627d98;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Instruction Banner */
+.instruction-box {
+  margin: 16px 20px 0;
+  padding: 14px 18px;
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 68px;
+}
+
+.step-indicator-badge {
+  background: var(--teal);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.instruction-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.55;
+  flex-grow: 1;
+}
+
+/* Math calculation live strip */
+.calc-strip {
+  margin: 12px 20px 0;
+  padding: 10px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.calc-part {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Canvas Board */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 450;
+}
+
+/* SVG Elements */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 21px;
+  fill: var(--ink);
+}
+
+.cx-math-text {
+  font-family: var(--font-km);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.line-straight {
+  stroke: var(--ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.ray-y {
+  stroke: var(--ink-secondary);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.ray-bisector-1 {
+  stroke: var(--blue);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.ray-bisector-2 {
+  stroke: var(--orange);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.arc-construction {
+  fill: none;
+  stroke: var(--grey-blue);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.arc-active {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.right-angle-hOt {
+  fill: rgba(27, 138, 90, 0.15);
+  stroke: var(--green);
+  stroke-width: 2.4;
+}
+
+/* Compass tool */
+.tool-compass {
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+}
+
+.c-leg { stroke: #64748b; stroke-width: 5; stroke-linecap: round; }
+.c-needle { stroke: #0f172a; stroke-width: 2.8; stroke-linecap: round; }
+.c-pencil { stroke: #ea580c; stroke-width: 4.5; stroke-linecap: round; }
+.c-hinge { fill: #334155; stroke: #94a3b8; stroke-width: 1.5; }
+.c-handle { stroke: #475569; stroke-width: 6; stroke-linecap: round; }
+
+/* Controls Area */
+.controls-area {
+  padding: 6px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-2);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.slider-container label {
+  font-weight: 700;
+  font-size: 14.5px;
+  white-space: nowrap;
+}
+
+.slider-container input[type="range"] {
+  flex-grow: 1;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.slider-num {
+  min-width: 50px;
+  font-family: var(--font-math);
+  font-weight: 700;
+  font-size: 16px;
+  text-align: right;
+  color: var(--teal);
+}
+
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-km);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  min-height: 42px;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--surface-border);
+}
+
+.btn-autoplay.active {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: var(--orange);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.steps-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.step-chip {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.step-chip:hover {
+  background: var(--surface-border);
+  color: var(--ink);
+}
+
+.step-chip.active {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+  box-shadow: var(--shadow-sm);
+}
+
+.step-chip.completed {
+  color: var(--teal);
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+/* Result Banner */
+.result-banner {
+  margin: 0 20px 14px;
+  padding: 12px 18px;
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-size: 15.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-badge {
+  background: var(--green);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .app-header { padding: 12px 16px; }
+  h1 { font-size: 18px; }
+  .instruction-box { margin: 12px 12px 0; padding: 10px 14px; }
+  .calc-strip { margin: 8px 12px 0; font-size: 13px; }
+  .canvas-wrap { padding: 12px 12px; }
+  .controls-area { padding: 4px 12px 14px; }
+  .buttons-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .btn-autoplay { grid-column: span 2; }
+  .result-banner { margin: 0 12px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៣ · មុំ</div>
+      <h1>កន្លះបន្ទាត់ពុះមុំជាប់គ្នាពីរ ដែលមុំរួមជាមុំរាប (hOt = ៩០°)</h1>
+    </div>
+
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+      🌓
+    </button>
+  </header>
+
+  <!-- Step Instruction Banner -->
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <!-- Math live calculation strip -->
+  <div class="calc-strip">
+    <div class="calc-part">
+      <span>មុំ <var>xOy</var> = <b id="val-xoy" style="color: var(--blue);">៧០°</b></span>
+      <span>➔</span>
+      <span>ពាក់កណ្តាល <var>hOy</var> = <b id="val-hoy" style="color: var(--blue);">៣៥°</b></span>
+    </div>
+    <div class="calc-part">
+      <span>មុំ <var>yOz</var> = <b id="val-yoz" style="color: var(--orange);">១១០°</b></span>
+      <span>➔</span>
+      <span>ពាក់កណ្តាល <var>yOt</var> = <b id="val-yot" style="color: var(--orange);">៥៥°</b></span>
+    </div>
+    <div class="calc-part">
+      <span>ផលបូក <var>hOt</var> = <b id="val-hot" style="color: var(--green);">៩០° (កែងគ្នា)</b></span>
+    </div>
+  </div>
+
+  <!-- SVG Canvas Board -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 450" role="img" aria-label="គំនូរបង្ហាញកន្លះបន្ទាត់ពុះមុំជាប់គ្នាពីរ ដែលមុំរួមជាមុំរាប កែងគ្នា">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- STATIC STRAIGHT LINE xOz -->
+        <g id="layer-straight-line">
+          <line x1="80" y1="320" x2="760" y2="320" class="line-straight" />
+          <polygon points="70,320 84,315 84,325" fill="var(--ink)" />
+          <polygon points="770,320 756,315 756,325" fill="var(--ink)" />
+          <circle cx="420" cy="320" r="5" fill="var(--ink)" />
+          <text x="420" y="345" class="cx-label" text-anchor="middle">O</text>
+          <text x="765" y="344" class="cx-label">x</text>
+          <text x="65" y="344" class="cx-label">z</text>
+        </g>
+
+        <!-- DYNAMIC LAYERS -->
+        <g id="layer-history"></g>
+        <g id="layer-active"></g>
+        <g id="layer-bisectors"></g>
+        <g id="layer-ray-y"></g>
+        <g id="layer-protractor" style="display: none;"></g>
+        <g id="layer-compass" class="tool-compass"></g>
+      </svg>
+    </div>
+  </main>
+
+  <!-- Final Answer Banner -->
+  <div class="result-banner" id="result-banner" style="display: none;">
+    <span class="result-badge">សរុប / ច្បាប់</span>
+    <span>កន្លះបន្ទាត់ពុះមុំជាប់គ្នាពីរ ដែលមុំរួមជាមុំរាប កែងគ្នា (hOt = ៩០°)</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-area">
+    <!-- Slider for angle xOy -->
+    <div class="slider-container">
+      <label for="slider-angle">រង្វាស់មុំ xOy (២០° ដល់ ១៦០°) ៖</label>
+      <input type="range" id="slider-angle" min="20" max="160" step="1" value="70" oninput="changeAngle(parseInt(this.value))">
+      <span class="slider-num" id="slider-angle-val">៧០°</span>
+    </div>
+
+    <!-- Steps nav -->
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+
+    <!-- Buttons -->
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៣</span>
+    <span>KhmerMath · កន្លះបន្ទាត់ពុះមុំកែងគ្នា</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Grade 7 · Lesson 13 · 13-D: Two bisectors make 90 degrees
+ */
+
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]);
+}
+
+const O = { x: 420, y: 320 };
+const RAY_LEN = 250;
+const ARC_R = 120;
+
+let currentDegXOY = 70; // angle of xOy in degrees
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animFrameId = null;
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១',
+    text: 'សង់កន្លះបន្ទាត់ពុះ Oh នៃមុំ xOy ដោយដែកឈាន ៖ ធ្នូផ្ចិត O កាត់ Ox ត្រង់ P និង Oy ត្រង់ Q; ធ្នូកាំស្មើគ្នាពី P និង Q កាត់គ្នាត្រង់ M; គូស Oh កាត់តាម M (hOy = xOy / ២)។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២',
+    text: 'សង់កន្លះបន្ទាត់ពុះ Ot នៃមុំ yOz តាមរបៀបដូចគ្នា ៖ បានកន្លះបន្ទាត់ Ot (yOt = yOz / ២)។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣',
+    text: 'វាស់មុំរវាងកន្លះបន្ទាត់ពុះទាំងពីរ hOt ៖ ឃើញស្មើ ៩០° ជានិច្ច ព្រោះ hOt = hOy + yOt = (xOy + yOz) / ២ = ១៨០° / ២ = ៩០° (កែងគ្នា)។'
+  }
+];
+
+// DOM
+const layerHistory = document.getElementById('layer-history');
+const layerActive = document.getElementById('layer-active');
+const layerBisectors = document.getElementById('layer-bisectors');
+const layerRayY = document.getElementById('layer-ray-y');
+const layerProtractor = document.getElementById('layer-protractor');
+const layerCompass = document.getElementById('layer-compass');
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const resultBanner = document.getElementById('result-banner');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const stepsNav = document.getElementById('steps-nav');
+const sliderAngle = document.getElementById('slider-angle');
+const sliderAngleVal = document.getElementById('slider-angle-val');
+const valXOY = document.getElementById('val-xoy');
+const valHOY = document.getElementById('val-hoy');
+const valYOZ = document.getElementById('val-yoz');
+const valYOT = document.getElementById('val-yot');
+const valHOT = document.getElementById('val-hot');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function clearLayers() {
+  layerHistory.innerHTML = '';
+  layerActive.innerHTML = '';
+  layerBisectors.innerHTML = '';
+  layerRayY.innerHTML = '';
+  layerCompass.innerHTML = '';
+  layerProtractor.style.display = 'none';
+}
+
+function drawCompass(needlePt, pencilPt, opacity = 1) {
+  layerCompass.innerHTML = '';
+  if (opacity <= 0) return;
+  const nx = needlePt.x, ny = needlePt.y;
+  const px = pencilPt.x, py = pencilPt.y;
+  const span = Math.hypot(px - nx, py - ny);
+  const midX = (nx + px) / 2, midY = (ny + py) / 2;
+  const legLen = Math.max(span * 0.7 + 60, 75);
+  const perpDist = Math.sqrt(Math.max(legLen * legLen - (span * span) / 4, 100));
+  
+  let dx = px - nx, dy = py - ny;
+  const dLen = Math.hypot(dx, dy) || 1;
+  let normX = dy / dLen, normY = -dx / dLen;
+  if (normY > 0) { normX = -normX; normY = -normY; }
+  
+  const hx = midX + normX * perpDist;
+  const hy = midY + normY * perpDist;
+  const hTopX = hx + normX * 28, hTopY = hy + normY * 28;
+  
+  const g = createSvgEl('g', { opacity });
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: hTopX, y2: hTopY, class: 'c-handle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: nx, y2: ny, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: nx, cy: ny, r: 2.5, class: 'c-needle' }));
+  g.appendChild(createSvgEl('line', { x1: hx, y1: hy, x2: px, y2: py, class: 'c-leg' }));
+  g.appendChild(createSvgEl('circle', { cx: px, cy: py, r: 3, class: 'c-pencil' }));
+  g.appendChild(createSvgEl('circle', { cx: hx, cy: hy, r: 6.5, class: 'c-hinge' }));
+  layerCompass.appendChild(g);
+}
+
+function animateProgressive(duration, onUpdate, onComplete) {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  const startTime = performance.now();
+  function loop(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / duration);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    onUpdate(ease, t);
+    if (t < 1) animFrameId = requestAnimationFrame(loop);
+    else { animFrameId = null; if (onComplete) onComplete(); }
+  }
+  animFrameId = requestAnimationFrame(loop);
+}
+
+/**
+ * Build Protractor Overlay
+ */
+function buildProtractor(rotDeg) {
+  layerProtractor.innerHTML = '';
+  const R = 210;
+  const g = createSvgEl('g', {
+    transform: `translate(${O.x}, ${O.y}) rotate(${-rotDeg})`
+  });
+  
+  g.appendChild(createSvgEl('path', {
+    d: `M ${-R} 0 A ${R} ${R} 0 0 1 ${R} 0 Z`,
+    fill: 'rgba(219, 234, 254, 0.65)',
+    stroke: 'var(--green)', 'stroke-width': 1.6
+  }));
+  g.appendChild(createSvgEl('circle', { cx: 0, cy: 0, r: 12, fill: 'none', stroke: 'var(--green)', 'stroke-width': 1.2 }));
+  g.appendChild(createSvgEl('line', { x1: -R, y1: 0, x2: R, y2: 0, stroke: 'var(--green)', 'stroke-width': 1.2 }));
+  
+  for (let d = 0; d <= 180; d += 5) {
+    const rad = d * Math.PI / 180;
+    const cosR = Math.cos(rad);
+    const sinR = -Math.sin(rad);
+    const tickLen = (d % 10 === 0) ? 14 : 8;
+    g.appendChild(createSvgEl('line', {
+      x1: R * cosR, y1: R * sinR,
+      x2: (R - tickLen) * cosR, y2: (R - tickLen) * sinR,
+      stroke: 'var(--green)', 'stroke-width': (d % 10 === 0) ? 1.4 : 0.8
+    }));
+    if (d === 0 || d === 90 || d === 180) {
+      const tx = (R - 26) * cosR;
+      const ty = (R - 26) * sinR + 4;
+      const t = createSvgEl('text', {
+        x: tx, y: ty, 'text-anchor': 'middle', fill: d === 90 ? 'var(--green)' : 'var(--ink-secondary)',
+        'font-size': d === 90 ? '14px' : '10px', 'font-weight': d === 90 ? '700' : '500', 'font-family': 'var(--font-km)'
+      });
+      t.textContent = toKhmer(d) + '°';
+      g.appendChild(t);
+    }
+  }
+  layerProtractor.appendChild(g);
+}
+
+function updateNumbers() {
+  const xoy = currentDegXOY;
+  const hoy = xoy / 2;
+  const yoz = 180 - xoy;
+  const yot = yoz / 2;
+  
+  sliderAngleVal.textContent = `${toKhmer(xoy)}°`;
+  valXOY.textContent = `${toKhmer(xoy)}°`;
+  valHOY.textContent = `${toKhmer(hoy)}°`;
+  valYOZ.textContent = `${toKhmer(yoz)}°`;
+  valYOT.textContent = `${toKhmer(yot)}°`;
+}
+
+function renderNavChips() {
+  stepsNav.innerHTML = '';
+  STEPS.forEach((step, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = step.title;
+    chip.onclick = () => goToStep(idx);
+    stepsNav.appendChild(chip);
+  });
+}
+
+function updateUI() {
+  const stepData = STEPS[currentStep];
+  stepBadge.textContent = stepData.title;
+  stepText.textContent = stepData.text;
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+  resultBanner.style.display = (currentStep === STEPS.length - 1) ? 'flex' : 'none';
+  renderNavChips();
+  updateNumbers();
+}
+
+/**
+ * Render Main Scene
+ */
+function renderScene(isAnimated = false) {
+  clearLayers();
+  updateUI();
+  
+  const radY = currentDegXOY * Math.PI / 180;
+  const yX = O.x + RAY_LEN * Math.cos(radY);
+  const yY = O.y - RAY_LEN * Math.sin(radY);
+  
+  // Draw Ray Oy
+  layerRayY.appendChild(createSvgEl('line', {
+    x1: O.x, y1: O.y, x2: yX, y2: yY, class: 'ray-y'
+  }));
+  const uYx = Math.cos(radY), uYy = -Math.sin(radY);
+  layerRayY.appendChild(createSvgEl('polygon', {
+    points: `${yX+8*uYx},${yY+8*uYy} ${yX-12*uYx-7*uYy},${yY-12*uYy+7*uYx} ${yX-12*uYx+7*uYy},${yY-12*uYy-7*uYx}`,
+    fill: 'var(--ink-secondary)'
+  }));
+  const ly = createSvgEl('text', {
+    x: yX + 16 * uYx, y: yY + 16 * uYy + 6, class: 'cx-label', 'text-anchor': 'middle'
+  });
+  ly.textContent = 'y';
+  layerRayY.appendChild(ly);
+  
+  // Bisector 1: Oh at angle xOy / 2
+  const degH = currentDegXOY / 2;
+  const radH = degH * Math.PI / 180;
+  const hX = O.x + RAY_LEN * Math.cos(radH);
+  const hY = O.y - RAY_LEN * Math.sin(radH);
+  
+  // Bisector 2: Ot at angle currentDegXOY + (180 - currentDegXOY)/2 = 90 + degH
+  const degT = 90 + degH;
+  const radT = degT * Math.PI / 180;
+  const tX = O.x + RAY_LEN * Math.cos(radT);
+  const tY = O.y - RAY_LEN * Math.sin(radT);
+  
+  if (currentStep === 0) {
+    // STEP 1: Bisect xOy
+    const P = { x: O.x + ARC_R, y: O.y };
+    const Q = { x: O.x + ARC_R * Math.cos(radY), y: O.y - ARC_R * Math.sin(radY) };
+    
+    // Points P and Q
+    layerHistory.appendChild(createSvgEl('circle', { cx: P.x, cy: P.y, r: 3.5, fill: 'var(--blue)' }));
+    layerHistory.appendChild(createSvgEl('text', { x: P.x + 8, y: P.y + 18, class: 'cx-label' })).textContent = 'P';
+    layerHistory.appendChild(createSvgEl('circle', { cx: Q.x, cy: Q.y, r: 3.5, fill: 'var(--blue)' }));
+    layerHistory.appendChild(createSvgEl('text', { x: Q.x - 12, y: Q.y - 10, class: 'cx-label' })).textContent = 'Q';
+    
+    if (isAnimated) {
+      animateProgressive(1200, (ease) => {
+        const curX = O.x + (hX - O.x) * ease;
+        const curY = O.y - (hY - O.y) * ease;
+        layerActive.innerHTML = '';
+        layerActive.appendChild(createSvgEl('line', {
+          x1: O.x, y1: O.y, x2: curX, y2: curY, class: 'ray-bisector-1'
+        }));
+      }, () => {
+        const lh = createSvgEl('text', { x: hX + 16 * Math.cos(radH), y: hY - 16 * Math.sin(radH) + 6, class: 'cx-label', fill: 'var(--blue)' });
+        lh.textContent = 'h';
+        layerActive.appendChild(lh);
+        handleAutoplayNext();
+      });
+    } else {
+      layerActive.appendChild(createSvgEl('line', { x1: O.x, y1: O.y, x2: hX, y2: hY, class: 'ray-bisector-1' }));
+      const lh = createSvgEl('text', { x: hX + 16 * Math.cos(radH), y: hY - 16 * Math.sin(radH) + 6, class: 'cx-label', fill: 'var(--blue)' });
+      lh.textContent = 'h';
+      layerActive.appendChild(lh);
+    }
+  }
+  
+  else if (currentStep === 1) {
+    // STEP 2: Bisect yOz
+    // Keep Bisector 1 in history
+    layerBisectors.appendChild(createSvgEl('line', { x1: O.x, y1: O.y, x2: hX, y2: hY, class: 'ray-bisector-1' }));
+    const lh = createSvgEl('text', { x: hX + 16 * Math.cos(radH), y: hY - 16 * Math.sin(radH) + 6, class: 'cx-label', fill: 'var(--blue)' });
+    lh.textContent = 'h';
+    layerBisectors.appendChild(lh);
+    
+    if (isAnimated) {
+      animateProgressive(1200, (ease) => {
+        const curX = O.x + (tX - O.x) * ease;
+        const curY = O.y - (tY - O.y) * ease;
+        layerActive.innerHTML = '';
+        layerActive.appendChild(createSvgEl('line', {
+          x1: O.x, y1: O.y, x2: curX, y2: curY, class: 'ray-bisector-2'
+        }));
+      }, () => {
+        const lt = createSvgEl('text', { x: tX + 16 * Math.cos(radT), y: tY - 16 * Math.sin(radT) + 6, class: 'cx-label', fill: 'var(--orange)' });
+        lt.textContent = 't';
+        layerActive.appendChild(lt);
+        handleAutoplayNext();
+      });
+    } else {
+      layerActive.appendChild(createSvgEl('line', { x1: O.x, y1: O.y, x2: tX, y2: tY, class: 'ray-bisector-2' }));
+      const lt = createSvgEl('text', { x: tX + 16 * Math.cos(radT), y: tY - 16 * Math.sin(radT) + 6, class: 'cx-label', fill: 'var(--orange)' });
+      lt.textContent = 't';
+      layerActive.appendChild(lt);
+    }
+  }
+  
+  else if (currentStep === 2) {
+    // STEP 3: Both bisectors make 90 degrees!
+    layerBisectors.appendChild(createSvgEl('line', { x1: O.x, y1: O.y, x2: hX, y2: hY, class: 'ray-bisector-1' }));
+    const lh = createSvgEl('text', { x: hX + 16 * Math.cos(radH), y: hY - 16 * Math.sin(radH) + 6, class: 'cx-label', fill: 'var(--blue)' });
+    lh.textContent = 'h';
+    layerBisectors.appendChild(lh);
+    
+    layerBisectors.appendChild(createSvgEl('line', { x1: O.x, y1: O.y, x2: tX, y2: tY, class: 'ray-bisector-2' }));
+    const lt = createSvgEl('text', { x: tX + 16 * Math.cos(radT), y: tY - 16 * Math.sin(radT) + 6, class: 'cx-label', fill: 'var(--orange)' });
+    lt.textContent = 't';
+    layerBisectors.appendChild(lt);
+    
+    // Right angle square between Oh and Ot
+    const sqLen = 28;
+    const uhX = Math.cos(radH), uhY = -Math.sin(radH);
+    const utX = Math.cos(radT), utY = -Math.sin(radT);
+    const p1x = O.x + sqLen * uhX, p1y = O.y + sqLen * uhY;
+    const p2x = p1x + sqLen * utX, p2y = p1y + sqLen * utY;
+    const p3x = O.x + sqLen * utX, p3y = O.y + sqLen * utY;
+    
+    layerActive.appendChild(createSvgEl('polygon', {
+      points: `${O.x},${O.y} ${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`,
+      class: 'right-angle-hOt'
+    }));
+    
+    // Dot in square
+    layerActive.appendChild(createSvgEl('circle', {
+      cx: O.x + 14 * uhX + 14 * utX, cy: O.y + 14 * uhY + 14 * utY, r: 2.5, fill: 'var(--green)'
+    }));
+    
+    // Green label 90°
+    const lbl90 = createSvgEl('text', {
+      x: O.x + 38 * (uhX + utX), y: O.y + 38 * (uhY + utY), 'text-anchor': 'middle',
+      fill: 'var(--green)', 'font-weight': '700', 'font-size': '17px', 'font-family': 'var(--font-km)'
+    });
+    lbl90.textContent = '៩០°';
+    layerActive.appendChild(lbl90);
+    
+    // Show Protractor oriented along Oh
+    buildProtractor(degH);
+    layerProtractor.style.display = 'block';
+  }
+}
+
+function changeAngle(deg) {
+  currentDegXOY = deg;
+  renderScene(false);
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderScene(true);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene(false);
+  }
+}
+
+function replayStep() {
+  renderScene(true);
+}
+
+function resetConstruction() {
+  currentStep = 0;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene(true);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  renderScene(true);
+}
+
+function handleAutoplayNext() {
+  if (!isAutoplaying) return;
+  if (autoplayTimer) clearTimeout(autoplayTimer);
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) nextStep();
+    else toggleAutoplay(false);
+  }, 2600);
+}
+
+function toggleAutoplay(forceState) {
+  isAutoplaying = forceState !== undefined ? forceState : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderScene(true);
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let target = current === 'light' ? 'dark' : (current === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark'));
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene(true);
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

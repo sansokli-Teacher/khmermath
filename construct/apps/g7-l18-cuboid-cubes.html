@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>មាឌប្រលេពីប៉ែតកែងពីគូបឯកតា — ថ្នាក់ទី ៧ · មេរៀនទី ១៨</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Sliders Bar */
+.sliders-panel {
+  display: flex; flex-wrap: wrap; gap: 18px; padding: 14px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-border); align-items: center; justify-content: space-between;
+}
+.slider-group { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.slider-group input[type="range"] { width: 100px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 36px; text-align: center; padding: 2px 6px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km); font-size: 13.5px;
+}
+
+/* View Options Bar */
+.view-options {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border); align-items: center;
+}
+.view-btn {
+  padding: 6px 14px; border-radius: var(--radius-full); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--surface-border); background: var(--surface-2); color: var(--ink-secondary);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.view-btn:hover { color: var(--ink); border-color: var(--teal); }
+.view-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 15.5px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 18px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 13.5px; font-weight: 600; fill: var(--ink-secondary); }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 14.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 95px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-formula { font-size: 17.5px; color: var(--ink); font-weight: 800; }
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៨ · មាឌសូលីត</div>
+      <h1>មាឌប្រលេពីប៉ែតកែង (ផ្គុំពីគូបឯកតា)</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Dimension Sliders -->
+  <div class="sliders-panel">
+    <div class="slider-group">
+      <label for="slider-a">បណ្ដោយ a:</label>
+      <input type="range" id="slider-a" min="1" max="8" value="7" oninput="onDimsChanged()">
+      <span class="val-badge" id="val-a">៧</span>
+    </div>
+    <div class="slider-group">
+      <label for="slider-b">ទទឹង b:</label>
+      <input type="range" id="slider-b" min="1" max="5" value="4" oninput="onDimsChanged()">
+      <span class="val-badge" id="val-b">៤</span>
+    </div>
+    <div class="slider-group">
+      <label for="slider-h">កម្ពស់ h:</label>
+      <input type="range" id="slider-h" min="1" max="6" value="6" oninput="onDimsChanged()">
+      <span class="val-badge" id="val-h">៦</span>
+    </div>
+    <div class="slider-group">
+      <label for="slider-layer">ស្រទាប់ z:</label>
+      <input type="range" id="slider-layer" min="1" max="6" value="6" oninput="onLayerChanged()">
+      <span class="val-badge" id="val-layer">៦</span>
+    </div>
+  </div>
+
+  <!-- View Modes -->
+  <div class="view-options">
+    <span style="font-size: 13px; font-weight: 700; color: var(--ink-muted); margin-right: 6px;">ទម្រង់បង្ហាញ៖</span>
+    <button type="button" class="view-btn active" id="mode-cubes" onclick="setViewMode('cubes')">គូបឯកតានីមួយៗ</button>
+<button type="button" class="view-btn" id="mode-exploded" onclick="setViewMode('exploded')">បំបែកស្រទាប់</button>
+    <button type="button" class="view-btn" id="mode-solid" onclick="setViewMode('solid')">ប្រលេពីប៉ែតកែងពេញ</button>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរមាឌប្រលេពីប៉ែតកែងពីគូបឯកតា">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        <!-- Top Left Stats Card -->
+        <g id="svg-counter-badge" transform="translate(25, 20)">
+          <rect width="280" height="68" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="24" class="cx-math-text" fill="var(--ink-muted)">ចំនួនគូបឯកតា ១ cm³ សរុប</text>
+          <text x="14" y="52" font-family="var(--font-km)" font-size="24" font-weight="800" fill="var(--teal)" id="svg-cubes-count">
+            ១៦៨ គូប
+          </text>
+          <text x="140" y="50" class="cx-math-text" fill="var(--ink-secondary)" id="svg-cubes-vol">
+            (មាឌ = ១៦៨ cm³)
+          </text>
+        </g>
+
+        <!-- Scene Render Layer -->
+        <g id="layer-isometric"></g>
+        <g id="layer-dimensions"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span class="result-formula" id="result-formula">V = a × b × h = ៧ × ៤ × ៦ = ១៦៨ cm³</span>
+    </div>
+    <span id="result-detail" style="font-size: 14.5px; color: var(--green); font-weight: 600;">
+      មាឌប្រលេពីប៉ែតកែង = ផ្ទៃបាត × កម្ពស់ = ២៨ × ៦ = ១៦៨ cm³
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៨</span>
+    <span>មាឌសូលីត = ចំនួនគូបឯកតាដែលផ្ទុកក្នុងសូលីតនោះ (១ cm³ = ១ cm × ១ cm × ១ cm)</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/\./g, ',').replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Configurable state
+let dimA = 7; // length
+let dimB = 4; // width
+let dimH = 6; // height
+let visibleLayers = 6;
+let viewMode = 'cubes'; // 'cubes', 'exploded', 'solid'
+
+let currentStep = 0;
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'គូបឯកតា',
+    text: 'គូបឯកតា ១ គូប មានទ្រនុងប្រវែង ១ cm (មាឌ = ១ cm × ១ cm × ១ cm = ១ cm³) ។',
+    setup: () => {
+      dimA = 7; dimB = 4; dimH = 6;
+      visibleLayers = 1;
+      viewMode = 'cubes';
+      syncInputs();
+    },
+    overrideDisplay: 'single_cube'
+  },
+  {
+    num: 2,
+    title: 'ជួរដេក ១',
+    text: 'តម្រៀបគូបឯកតាជា ១ ជួរដេកតាមបណ្ដោយ a = ៧ cm ៖ មានគូបឯកតាចំនួន ៧ គូប (មាឌ = ៧ cm³) ។',
+    setup: () => {
+      dimA = 7; dimB = 4; dimH = 6;
+      visibleLayers = 1;
+      viewMode = 'cubes';
+      syncInputs();
+    },
+    overrideDisplay: 'single_row'
+  },
+  {
+    num: 3,
+    title: 'ស្រទាប់បាត',
+    text: 'តម្រៀប b = ៤ ជួរដេកបង្កើតបានស្រទាប់បាតទី ១ ៖ ចំនួនគូប = ៧ × ៤ = ២៨ គូប (ផ្ទៃបាត 𝒜_B = ២៨ cm²) ។',
+    setup: () => {
+      dimA = 7; dimB = 4; dimH = 6;
+      visibleLayers = 1;
+      viewMode = 'cubes';
+      syncInputs();
+    },
+    overrideDisplay: 'base_layer'
+  },
+  {
+    num: 4,
+    title: 'ត្រួតលើគ្នា h ស្រទាប់',
+    text: 'តម្រៀបត្រួតលើគ្នា h = ៦ ស្រទាប់ស្មើៗគ្នា ៖ ស្រទាប់នីមួយៗមាន ២៨ គូប ផ្គុំបានជាប្រលេពីប៉ែតកែងកម្ពស់ ៦ cm ។',
+    setup: () => {
+      dimA = 7; dimB = 4; dimH = 6;
+      visibleLayers = 6;
+      viewMode = 'exploded';
+      syncInputs();
+    },
+    overrideDisplay: 'full'
+  },
+  {
+    num: 5,
+    title: 'រូបមន្តមាឌសរុប',
+    text: 'មាឌប្រលេពីប៉ែតកែងស្មើ ចំនួនគូបសរុប = ៧ × ៤ × ៦ = ១៦៨ cm³ · រូបមន្តទូទៅ៖ V = a × b × h = 𝒜_B × h ។',
+    setup: () => {
+      dimA = 7; dimB = 4; dimH = 6;
+      visibleLayers = 6;
+      viewMode = 'cubes';
+      syncInputs();
+    },
+    overrideDisplay: 'full'
+  }
+];
+
+function syncInputs() {
+  document.getElementById('slider-a').value = dimA;
+  document.getElementById('val-a').textContent = toKhmer(dimA);
+  document.getElementById('slider-b').value = dimB;
+  document.getElementById('val-b').textContent = toKhmer(dimB);
+  document.getElementById('slider-h').value = dimH;
+  document.getElementById('val-h').textContent = toKhmer(dimH);
+  document.getElementById('slider-layer').max = dimH;
+  document.getElementById('slider-layer').value = visibleLayers;
+  document.getElementById('val-layer').textContent = toKhmer(visibleLayers);
+
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  if (viewMode === 'cubes') document.getElementById('mode-cubes').classList.add('active');
+  if (viewMode === 'exploded') document.getElementById('mode-exploded').classList.add('active');
+  if (viewMode === 'solid') document.getElementById('mode-solid').classList.add('active');
+}
+
+function onDimsChanged() {
+  dimA = Number(document.getElementById('slider-a').value);
+  dimB = Number(document.getElementById('slider-b').value);
+  dimH = Number(document.getElementById('slider-h').value);
+  document.getElementById('val-a').textContent = toKhmer(dimA);
+  document.getElementById('val-b').textContent = toKhmer(dimB);
+  document.getElementById('val-h').textContent = toKhmer(dimH);
+  document.getElementById('slider-layer').max = dimH;
+  if (visibleLayers > dimH) visibleLayers = dimH;
+  document.getElementById('slider-layer').value = visibleLayers;
+  document.getElementById('val-layer').textContent = toKhmer(visibleLayers);
+  renderAll();
+}
+
+function onLayerChanged() {
+  visibleLayers = Number(document.getElementById('slider-layer').value);
+  document.getElementById('val-layer').textContent = toKhmer(visibleLayers);
+  renderAll();
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  if (mode === 'cubes') document.getElementById('mode-cubes').classList.add('active');
+  if (mode === 'exploded') document.getElementById('mode-exploded').classList.add('active');
+  if (mode === 'solid') document.getElementById('mode-solid').classList.add('active');
+  renderAll();
+}
+
+function renderStepsNav() {
+  const nav = document.getElementById('steps-nav');
+  nav.innerHTML = '';
+  STEPS.forEach((st, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+    chip.textContent = toKhmer(idx + 1) + '. ' + st.title;
+    chip.onclick = () => goToStep(idx);
+    nav.appendChild(chip);
+  });
+}
+
+function updateStepView() {
+  const st = STEPS[currentStep];
+  document.getElementById('step-badge').textContent = 'ជំហានទី ' + toKhmer(st.num);
+  document.getElementById('step-text').textContent = st.text;
+  if (st.setup) st.setup();
+  renderAll();
+
+  document.querySelectorAll('.step-chip').forEach((chip, idx) => {
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+  });
+
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === STEPS.length - 1);
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  updateStepView();
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    updateStepView();
+  } else if (isAutoplaying) {
+    toggleAutoplay();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepView();
+  }
+}
+
+function replayStep() {
+  updateStepView();
+}
+
+function resetStep() {
+  currentStep = 0;
+  updateStepView();
+}
+
+function toggleAutoplay() {
+  isAutoplaying = !isAutoplaying;
+  const btn = document.getElementById('btn-autoplay');
+  if (isAutoplaying) {
+    btn.classList.add('active');
+    btn.textContent = '⏸ កំពុងចាក់...';
+    autoplayTimer = setInterval(() => {
+      if (currentStep < STEPS.length - 1) {
+        nextStep();
+      } else {
+        toggleAutoplay();
+      }
+    }, 2800);
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+}
+
+/* Isometric Mathematics & Drawing */
+function renderAll() {
+  const st = STEPS[currentStep];
+  const override = st.overrideDisplay;
+
+  let effA = dimA, effB = dimB, effH = visibleLayers;
+  if (override === 'single_cube') { effA = 1; effB = 1; effH = 1; }
+  else if (override === 'single_row') { effA = dimA; effB = 1; effH = 1; }
+  else if (override === 'base_layer') { effA = dimA; effB = dimB; effH = 1; }
+
+  const totalCubes = effA * effB * effH;
+  const baseArea = effA * effB;
+  const totalVol = totalCubes;
+
+  document.getElementById('svg-cubes-count').textContent = toKhmer(totalCubes) + ' គូប';
+  document.getElementById('svg-cubes-vol').textContent = '(មាឌ = ' + toKhmer(totalVol) + ' cm³)';
+
+  document.getElementById('result-formula').textContent =
+    `V = a × b × h = ${toKhmer(dimA)} × ${toKhmer(dimB)} × ${toKhmer(dimH)} = ${toKhmer(dimA * dimB * dimH)} cm³`;
+  document.getElementById('result-detail').textContent =
+    `ផ្ទៃបាត 𝒜_B = ${toKhmer(dimA)} × ${toKhmer(dimB)} = ${toKhmer(dimA * dimB)} cm² · មាឌ V = 𝒜_B × h = ${toKhmer(dimA * dimB * dimH)} cm³`;
+
+  const layerIso = document.getElementById('layer-isometric');
+  const layerDims = document.getElementById('layer-dimensions');
+  layerIso.innerHTML = '';
+  layerDims.innerHTML = '';
+
+  // Calculate dynamic scale factor to always fit in 840 x 480
+  const maxSpan = Math.max(dimA + dimB, dimH * 1.5, 10);
+  const s = Math.min(32, Math.max(18, 300 / maxSpan)); // cube unit size in px
+  const cos30 = Math.cos(Math.PI / 6);
+  const sin30 = Math.sin(Math.PI / 6);
+
+  // Center coordinate
+  const cx = 440;
+  // Offset vertical center based on height
+  const cy = 340 + (dimH - 6) * 10;
+
+  function isoPoint(x, y, z, layerGap = 0) {
+    const px = cx + (x - y) * cos30 * s;
+    const py = cy + (x + y) * sin30 * s - (z * s + z * layerGap);
+    return { x: px, y: py };
+  }
+
+  const layerGap = (viewMode === 'exploded' && effH > 1) ? 14 : 0;
+
+  if (viewMode === 'solid') {
+    // Render as a single smooth solid rectangular prism
+    renderSolidPrism(layerIso, effA, effB, effH, s, cx, cy, isoPoint, layerGap);
+  } else {
+    // Render individual unit cubes using Painter's algorithm (Back to Front)
+    // Order: z from 0 to effH-1; for each layer, x from 0 to effA-1, y from 0 to effB-1.
+    // In isometric projection with view angle (x-y)*cos30, (x+y)*sin30 - z:
+    // Objects at back have smaller (x + y). So iterate x+y ascending!
+    for (let z = 0; z < effH; z++) {
+      for (let sum = 0; sum <= (effA - 1) + (effB - 1); sum++) {
+        for (let x = 0; x < effA; x++) {
+          const y = sum - x;
+          if (y >= 0 && y < effB) {
+            drawUnitCube(layerIso, x, y, z, s, isoPoint, layerGap);
+          }
+        }
+      }
+    }
+  }
+
+  // Draw dimension arrows
+  drawCuboidDimensions(layerDims, effA, effB, effH, s, isoPoint, layerGap);
+}
+
+function drawUnitCube(layer, x, y, z, s, isoPoint, layerGap) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+  // Cube has 8 vertices: (x, y, z) to (x+1, y+1, z+1)
+  const p000 = isoPoint(x, y, z, layerGap);
+  const p100 = isoPoint(x + 1, y, z, layerGap);
+  const p110 = isoPoint(x + 1, y + 1, z, layerGap);
+  const p010 = isoPoint(x, y + 1, z, layerGap);
+
+  const p001 = isoPoint(x, y, z + 1, layerGap);
+  const p101 = isoPoint(x + 1, y, z + 1, layerGap);
+  const p111 = isoPoint(x + 1, y + 1, z + 1, layerGap);
+  const p011 = isoPoint(x, y + 1, z + 1, layerGap);
+
+  // Visible faces in isometric view: Top, Front-Right (+X), Front-Left (+Y)
+  // 1. Top face (z+1): p001 -> p101 -> p111 -> p011
+  const topPts = `${p001.x},${p001.y} ${p101.x},${p101.y} ${p111.x},${p111.y} ${p011.x},${p011.y}`;
+  const topPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  topPoly.setAttribute('points', topPts);
+  topPoly.setAttribute('fill', '#7dd3fc'); // Sky 300
+  topPoly.setAttribute('stroke', '#0369a1');
+  topPoly.setAttribute('stroke-width', '1.2');
+  g.appendChild(topPoly);
+
+  // 2. Front-Right face (+X face): p100 -> p110 -> p111 -> p101
+  const rightPts = `${p100.x},${p100.y} ${p110.x},${p110.y} ${p111.x},${p111.y} ${p101.x},${p101.y}`;
+  const rightPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  rightPoly.setAttribute('points', rightPts);
+  rightPoly.setAttribute('fill', '#0284c7'); // Sky 600
+  rightPoly.setAttribute('stroke', '#0369a1');
+  rightPoly.setAttribute('stroke-width', '1.2');
+  g.appendChild(rightPoly);
+
+  // 3. Front-Left face (+Y face): p010 -> p110 -> p111 -> p011
+  const leftPts = `${p010.x},${p010.y} ${p110.x},${p110.y} ${p111.x},${p111.y} ${p011.x},${p011.y}`;
+  const leftPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  leftPoly.setAttribute('points', leftPts);
+  leftPoly.setAttribute('fill', '#0369a1'); // Sky 700
+  leftPoly.setAttribute('stroke', '#075985');
+  leftPoly.setAttribute('stroke-width', '1.2');
+  g.appendChild(leftPoly);
+
+  layer.appendChild(g);
+}
+
+function renderSolidPrism(layer, a, b, h, s, cx, cy, isoPoint, layerGap) {
+  // Vertices for the entire block
+  const p000 = isoPoint(0, 0, 0, layerGap);
+  const pA00 = isoPoint(a, 0, 0, layerGap);
+  const pAB0 = isoPoint(a, b, 0, layerGap);
+  const p0B0 = isoPoint(0, b, 0, layerGap);
+
+  const p00H = isoPoint(0, 0, h, layerGap);
+  const pA0H = isoPoint(a, 0, h, layerGap);
+  const pABH = isoPoint(a, b, h, layerGap);
+  const p0BH = isoPoint(0, b, h, layerGap);
+
+  // Top Face
+  const topPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  topPoly.setAttribute('points', `${p00H.x},${p00H.y} ${pA0H.x},${pA0H.y} ${pABH.x},${pABH.y} ${p0BH.x},${p0BH.y}`);
+  topPoly.setAttribute('fill', '#38bdf8');
+  topPoly.setAttribute('stroke', '#0284c7');
+  topPoly.setAttribute('stroke-width', '2.5');
+  layer.appendChild(topPoly);
+
+  // Front-Right Face (+X)
+  const rightPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  rightPoly.setAttribute('points', `${pA00.x},${pA00.y} ${pAB0.x},${pAB0.y} ${pABH.x},${pABH.y} ${pA0H.x},${pA0H.y}`);
+  rightPoly.setAttribute('fill', '#0284c7');
+  rightPoly.setAttribute('stroke', '#0369a1');
+  rightPoly.setAttribute('stroke-width', '2.5');
+  layer.appendChild(rightPoly);
+
+  // Front-Left Face (+Y)
+  const leftPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  leftPoly.setAttribute('points', `${p0B0.x},${p0B0.y} ${pAB0.x},${pAB0.y} ${pABH.x},${pABH.y} ${p0BH.x},${p0BH.y}`);
+  leftPoly.setAttribute('fill', '#0369a1');
+  leftPoly.setAttribute('stroke', '#075985');
+  leftPoly.setAttribute('stroke-width', '2.5');
+  layer.appendChild(leftPoly);
+}
+
+function drawCuboidDimensions(layer, a, b, h, s, isoPoint, layerGap) {
+  // Length a along X axis (from p000 to pA00)
+  const p000 = isoPoint(0, 0, 0, layerGap);
+  const pA00 = isoPoint(a, 0, 0, layerGap);
+  drawOffsetDim(layer, p000, pA00, 22, -12, `បណ្ដោយ a = ${toKhmer(a)} cm`, '#0284c7');
+
+  // Width b along Y axis (from pA00 to pAB0)
+  const pAB0 = isoPoint(a, b, 0, layerGap);
+  drawOffsetDim(layer, pA00, pAB0, 18, 14, `ទទឹង b = ${toKhmer(b)} cm`, '#0284c7');
+
+  // Height h along Z axis (from pAB0 to pABH)
+  const pABH = isoPoint(a, b, h, layerGap);
+  drawOffsetDim(layer, pAB0, pABH, 22, 0, `កម្ពស់ h = ${toKhmer(h)} cm`, '#e8710a', true);
+}
+
+function drawOffsetDim(layer, p1, p2, offX, offY, text, color, isVertical = false) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const x1 = p1.x + offX, y1 = p1.y + offY;
+  const x2 = p2.x + offX, y2 = p2.y + offY;
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '1.8');
+  g.appendChild(line);
+
+  // Ticks
+  const tick1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  tick1.setAttribute('x1', x1 - 4); tick1.setAttribute('y1', y1 - 4);
+  tick1.setAttribute('x2', x1 + 4); tick1.setAttribute('y2', y1 + 4);
+  tick1.setAttribute('stroke', color); tick1.setAttribute('stroke-width', '1.8');
+  g.appendChild(tick1);
+
+  const tick2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  tick2.setAttribute('x1', x2 - 4); tick2.setAttribute('y1', y2 - 4);
+  tick2.setAttribute('x2', x2 + 4); tick2.setAttribute('y2', y2 + 4);
+  tick2.setAttribute('stroke', color); tick2.setAttribute('stroke-width', '1.8');
+  g.appendChild(tick2);
+
+  // Label text
+  const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  txt.setAttribute('x', (x1 + x2) / 2 + (isVertical ? 12 : 0));
+  txt.setAttribute('y', (y1 + y2) / 2 + (isVertical ? 4 : -8));
+  txt.setAttribute('class', 'cx-math-text');
+  txt.setAttribute('fill', color);
+  txt.setAttribute('text-anchor', isVertical ? 'start' : 'middle');
+  txt.setAttribute('font-weight', '700');
+  txt.textContent = text;
+  g.appendChild(txt);
+
+  layer.appendChild(g);
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  try { localStorage.setItem('pisa_theme', next); } catch(e){}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('pisa_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  } catch(e){}
+  renderStepsNav();
+  updateStepView();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

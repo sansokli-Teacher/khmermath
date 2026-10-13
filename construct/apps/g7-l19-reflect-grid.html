@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>សង់រូបឆ្លុះនៃត្រីកោណលើក្រឡាចត្រង្គ — ថ្នាក់ទី ៧ · មេរៀនទី ១៩</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #94a3b8;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe; --rose: #e11d48; --rose-soft: #ffe4e6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #1e293b; --grid-line-major: #475569;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #1e293b; --grid-line-major: #475569;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #94a3b8;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+
+/* Tabs */
+.tabs-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px 0; background: var(--surface);
+  border-bottom: 1px solid var(--surface-border);
+}
+.tab-btn {
+  padding: 10px 18px; font-family: var(--font-km); font-size: 14.5px; font-weight: 700;
+  background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--ink-muted);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* Control Panel */
+.sliders-panel {
+  display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 20px; background: var(--surface-2);
+  border-bottom: 1px solid var(--surface-border); align-items: center; justify-content: space-between;
+}
+.slider-group { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.slider-group input[type="range"] { width: 150px; accent-color: var(--teal); cursor: pointer; }
+.val-badge {
+  display: inline-block; min-width: 48px; text-align: center; padding: 2px 8px;
+  background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--teal); font-weight: 700; font-family: var(--font-km);
+}
+
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 15.5px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 19px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 13.5px; font-weight: 600; fill: var(--ink-secondary); }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 14.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 95px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 14px 20px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 15.5px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-formula { font-size: 17px; color: var(--ink); font-weight: 800; }
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 3px 10px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៩ · ភាពឆ្លុះ</div>
+      <h1>សង់រូបឆ្លុះនៃត្រីកោណលើក្រឡាចត្រង្គ</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <!-- Tabs for Modes -->
+  <nav class="tabs-wrap" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-horizontal" role="tab" onclick="switchMode('horizontal')">
+      ១. បន្ទាត់ឆ្លុះផ្ដេក d (លំហាត់ ៧)
+    </button>
+    <button type="button" class="tab-btn" id="tab-vertical" role="tab" onclick="switchMode('vertical')">
+      ២. បន្ទាត់ឆ្លុះឈរ d
+    </button>
+    <button type="button" class="tab-btn" id="tab-interactive" role="tab" onclick="switchMode('interactive')">
+      ៣. សាកល្បងអូសកំពូលដោយសេរី 
+    </button>
+  </nav>
+
+  <!-- Control Slider for Folding Effect -->
+  <div class="sliders-panel">
+    <div class="slider-group">
+<label for="fold-slider">បត់ក្រដាសតាមបន្ទាត់ d:</label>
+      <input type="range" id="fold-slider" min="0" max="100" value="0" oninput="onFoldSliderInput()">
+      <span class="val-badge" id="val-fold">០%</span>
+    </div>
+    <div id="grid-mode-info" style="font-size: 14px; font-weight: 600; color: var(--ink-secondary);">
+      <!-- Mode coordinates info -->
+    </div>
+  </div>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board" id="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរសង់រូបឆ្លុះនៃត្រីកោណលើក្រឡាចត្រង្គ">
+        <defs>
+          <pattern id="math-grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--grid-line)" stroke-width="1.2" />
+          </pattern>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--teal)" />
+          </marker>
+        </defs>
+
+        <!-- Grid Background -->
+        <rect width="100%" height="100%" fill="url(#math-grid-pattern)" />
+
+        <!-- Legend Card in Top-Left -->
+        <g id="svg-legend" transform="translate(25, 18)">
+          <rect width="390" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <polygon points="15,28 28,14 41,28" fill="rgba(29, 78, 216, 0.35)" stroke="#1d4ed8" stroke-width="2" />
+          <text x="48" y="26" class="cx-math-text" font-weight="700">ត្រីកោណដើម ABC</text>
+
+          <polygon points="180,28 193,14 206,28" fill="rgba(34, 197, 94, 0.4)" stroke="#16a34a" stroke-width="2" />
+          <text x="214" y="26" class="cx-math-text" font-weight="700">ត្រីកោណឆ្លុះ A′B′C′</text>
+
+          <line x1="330" y1="21" x2="365" y2="21" stroke="#dc2626" stroke-width="3" />
+          <text x="372" y="26" class="cx-math-text" font-weight="700" fill="#dc2626">d</text>
+        </g>
+
+        <!-- Dynamic Geometry Layers -->
+        <g id="layer-grid-lines"></g>
+        <g id="layer-axis"></g>
+        <g id="layer-projection-lines"></g>
+        <g id="layer-original-triangle"></g>
+        <g id="layer-reflected-triangle"></g>
+        <g id="layer-folded-triangle"></g>
+        <g id="layer-measure-ticks"></g>
+        <g id="layer-vertices"></g>
+        <g id="layer-labels"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span class="result-formula" id="result-formula">ត្រីកោណ A′B′C′ ប៉ុនត្រីកោណ ABC (ត្រួតស៊ីគ្នាបេះបិទ)</span>
+    </div>
+    <span id="result-detail" style="font-size: 14.5px; color: var(--green); font-weight: 600;">
+      បន្ទាត់ d ជាមេឌីយ៉ាទ័រនៃ [AA′], [BB′], [CC′] · A′B′ = AB, B′C′ = BC, C′A′ = CA
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetStep()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៩</span>
+    <span>ដើម្បីសង់រូបឆ្លុះធៀបនឹងបន្ទាត់ ៖ សង់ចំណុចឆ្លុះនៃកំពូលនីមួយៗកាត់កែងនិងមានចម្ងាយស្មើគ្នាទៅបន្ទាត់ d</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/\./g, ',').replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Coordinate Grid Specs
+// Grid cell = 40 px.
+// Canvas: 840 x 480.
+// Origin (0,0) in grid units at (X0, Y0) = (120, 420)
+// Grid spans: X from 0 to 16 (120 to 760 px), Y from 0 to 9 (420 to 60 px)
+const GRID_CELL = 40;
+const ORIGIN_X = 120;
+const ORIGIN_Y = 420;
+
+function gridToSvg(gx, gy) {
+  return {
+    x: ORIGIN_X + gx * GRID_CELL,
+    y: ORIGIN_Y - gy * GRID_CELL
+  };
+}
+
+function svgToGrid(px, py) {
+  return {
+    gx: Math.round((px - ORIGIN_X) / GRID_CELL),
+    gy: Math.round((ORIGIN_Y - py) / GRID_CELL)
+  };
+}
+
+let activeMode = 'horizontal'; // 'horizontal', 'vertical', 'interactive'
+let currentStep = 0;
+let foldPercent = 0; // 0 (flat) to 100 (fully folded)
+let isAutoplaying = false;
+let autoplayTimer = null;
+let animTimer = null;
+
+// Geometry configuration for modes
+const CONFIGS = {
+  horizontal: {
+    axisType: 'horizontal',
+    axisVal: 4, // y = 4 (at SVG Y = 260)
+    A: { gx: 2, gy: 1 },
+    B: { gx: 5, gy: 3 },
+    C: { gx: 7, gy: 1 },
+    title: 'បន្ទាត់ឆ្លុះផ្ដេក d (លំហាត់ទី ៧ ក្នុងមេរៀនទី ១៩)',
+    info: 'បន្ទាត់ d (y = ៤) · កំពូល A(២, ១), B(៥, ៣), C(៧, ១)',
+    steps: [
+      {
+        num: 1,
+        title: 'ត្រីកោណដើម ABC',
+        text: 'គេមានត្រីកោណ ABC និងបន្ទាត់ឆ្លុះផ្ដេក d (y = ៤) នៅលើក្រឡាចត្រង្គ។ យើងចង់សង់រូបឆ្លុះ A′B′C′ ធៀបនឹង d ។'
+      },
+      {
+        num: 2,
+        title: 'សង់ចំណុចឆ្លុះ A′',
+        text: 'រាប់ក្រឡាពី A ឡើងលើកែងនឹង d ៖ ចម្ងាយ ៣ ក្រឡា។ បន្តរាប់ឡើងលើពី d ចំនួន ៣ ក្រឡាទៀត កំណត់បាន A′(២, ៧) ។'
+      },
+      {
+        num: 3,
+        title: 'សង់ចំណុច B′ និង C′',
+        text: 'ពី B រាប់ឡើងលើ ១ ក្រឡាទៅ d រួចឡើងលើ ១ ក្រឡាទៀតបាន B′(៥, ៥) · ពី C រាប់ឡើងលើ ៣ ក្រឡាបាន C′(៧, ៧) ។'
+      },
+      {
+        num: 4,
+        title: 'ភ្ជាប់ត្រីកោណ A′B′C′',
+        text: 'ភ្ជាប់អង្កត់ A′B′, B′C′ និង C′A′ ៖ ត្រីកោណ A′B′C′ ជារូបឆ្លុះនៃត្រីកោណ ABC ធៀបនឹងបន្ទាត់ d ។'
+      },
+      {
+        num: 5,
+        title: 'សរុប និងបត់ផ្ទៀងផ្ទាត់',
+        text: 'ត្រីកោណ A′B′C′ ប៉ុនត្រីកោណ ABC (ត្រួតស៊ីគ្នាបេះបិទពេលបត់ក្រដាសតាមបន្ទាត់ d) · បន្ទាត់ d ជាមេឌីយ៉ាទ័រនៃ [AA′], [BB′], [CC′] ។'
+      }
+    ]
+  },
+  vertical: {
+    axisType: 'vertical',
+    axisVal: 8, // x = 8
+    A: { gx: 3, gy: 2 },
+    B: { gx: 5, gy: 7 },
+    C: { gx: 7, gy: 3 },
+    title: 'បន្ទាត់ឆ្លុះឈរ d',
+    info: 'បន្ទាត់ d (x = ៨) · កំពូល A(៣, ២), B(៥, ៧), C(៧, ៣)',
+    steps: [
+      {
+        num: 1,
+        title: 'ត្រីកោណដើម ABC',
+        text: 'គេមានត្រីកោណ ABC នៅខាងឆ្វេងបន្ទាត់ឈរ d (x = ៨) លើក្រឡាចត្រង្គ។'
+      },
+      {
+        num: 2,
+        title: 'សង់ចំណុចឆ្លុះ A′',
+        text: 'រាប់ក្រឡាផ្ដេកពី A ទៅកាន់បន្ទាត់ d ៖ ចម្ងាយ ៥ ក្រឡា។ បន្តរាប់ទៅខាងស្ដាំ ៥ ក្រឡាទៀតបាន A′(១៣, ២) ។'
+      },
+      {
+        num: 3,
+        title: 'សង់ចំណុច B′ និង C′',
+        text: 'ពី B ទៅ d មាន ៣ ក្រឡា $\\rightarrow$ រាប់ទៅស្ដាំ ៣ ក្រឡាបាន B′(១១, ៧) · ពី C ទៅ d មាន ១ ក្រឡា $\\rightarrow$ បាន C′(៩, ៣) ។'
+      },
+      {
+        num: 4,
+        title: 'ភ្ជាប់ត្រីកោណ A′B′C′',
+        text: 'ភ្ជាប់អង្កត់ A′B′, B′C′ និង C′A′ ៖ បង្កើតបានត្រីកោណឆ្លុះ A′B′C′ នៅខាងស្ដាំបន្ទាត់ d ។'
+      },
+      {
+        num: 5,
+        title: 'សរុប និងបត់ផ្ទៀងផ្ទាត់',
+        text: 'ត្រីកោណឆ្លុះរក្សាប្រវែងជ្រុង រង្វាស់មុំ និងផ្ទៃក្រឡា · ពេលបត់ក្រដាសតាមបន្ទាត់ឈរ d រូបទាំងពីរត្រួតស៊ីគ្នាបេះបិទ។'
+      }
+    ]
+  },
+  interactive: {
+    axisType: 'horizontal',
+    axisVal: 4,
+    A: { gx: 3, gy: 2 },
+    B: { gx: 6, gy: 3 },
+    C: { gx: 8, gy: 1 },
+    title: 'សាកល្បងអូសកំពូល A, B, C ដោយសេរី',
+    info: 'អូសកំពូល A, B, C ឬប្ដូរបន្ទាត់ d ដើម្បីសង្កេតរូបឆ្លុះ A′B′C′ ក្នុងពេលជាក់ស្ដែង',
+    steps: [
+      {
+        num: 1,
+        title: 'អូសកំពូល ABC',
+        text: 'អ្នកអាចចុច និងអូសកំពូល A, B ឬ C ទៅលើចំណុចប្រសព្វក្រឡាណាមួយក៏បាន ដើម្បីសង្កេតការឆ្លុះភ្លាមៗ។'
+      },
+      {
+        num: 2,
+        title: 'គូសបន្ទាត់កាត់កែង',
+        text: 'បន្ទាត់កាត់កែងពីចំណុចនីមួយៗទៅកាន់ d រក្សាមុំ ៩០° ជានិច្ចតាមបន្ទាត់ក្រឡាចត្រង្គ។'
+      },
+      {
+        num: 3,
+        title: 'ចម្ងាយស្មើគ្នា',
+        text: 'ចម្ងាយពីកំពូលដើមទៅបន្ទាត់ d ស្មើគ្នានឹងចម្ងាយពីបន្ទាត់ d ទៅកំពូលឆ្លុះជានិច្ច។'
+      },
+      {
+        num: 4,
+        title: 'ត្រីកោណប៉ុនគ្នា',
+        text: 'ទោះបីអ្នកប្ដូររូបរាងត្រីកោណ ABC យ៉ាងណាក៏ដោយ ក៏ត្រីកោណ A′B′C′ នៅតែប៉ុនត្រីកោណ ABC ជានិច្ច។'
+      },
+      {
+        num: 5,
+        title: 'បត់ផ្ទៀងផ្ទាត់',
+        text: 'ប្រើរបាររំកិល "បត់ក្រដាស" ដើម្បីបត់ត្រីកោណទាំងពីរមកត្រួតស៊ីគ្នាលើប្លង់! '
+      }
+    ]
+  }
+};
+
+let currentGeo = {
+  axisType: 'horizontal',
+  axisVal: 4,
+  A: { gx: 2, gy: 1 },
+  B: { gx: 5, gy: 3 },
+  C: { gx: 7, gy: 1 }
+};
+
+function switchMode(modeKey) {
+  activeMode = modeKey;
+  currentStep = 0;
+  foldPercent = 0;
+  document.getElementById('fold-slider').value = 0;
+  document.getElementById('val-fold').textContent = toKhmer(0) + '%';
+
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (modeKey === 'horizontal') document.getElementById('tab-horizontal').classList.add('active');
+  if (modeKey === 'vertical') document.getElementById('tab-vertical').classList.add('active');
+  if (modeKey === 'interactive') document.getElementById('tab-interactive').classList.add('active');
+
+  const cfg = CONFIGS[modeKey];
+  currentGeo = {
+    axisType: cfg.axisType,
+    axisVal: cfg.axisVal,
+    A: { ...cfg.A },
+    B: { ...cfg.B },
+    C: { ...cfg.C }
+  };
+
+  document.getElementById('grid-mode-info').textContent = cfg.info;
+  renderStepsNav();
+  updateStepView();
+}
+
+function onFoldSliderInput() {
+  foldPercent = Number(document.getElementById('fold-slider').value);
+  document.getElementById('val-fold').textContent = toKhmer(foldPercent) + '%';
+  renderScene();
+}
+
+function animateFoldTo(target, duration = 650) {
+  if (animTimer) clearInterval(animTimer);
+  const start = foldPercent;
+  const startTime = performance.now();
+  animTimer = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+    foldPercent = Math.round(start + (target - start) * ease);
+    document.getElementById('fold-slider').value = foldPercent;
+    document.getElementById('val-fold').textContent = toKhmer(foldPercent) + '%';
+    renderScene();
+    if (progress >= 1) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+  }, 16);
+}
+
+function renderStepsNav() {
+  const cfg = CONFIGS[activeMode];
+  const nav = document.getElementById('steps-nav');
+  nav.innerHTML = '';
+  cfg.steps.forEach((st, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+    chip.textContent = toKhmer(idx + 1) + '. ' + st.title.split(' ')[0];
+    chip.onclick = () => goToStep(idx);
+    nav.appendChild(chip);
+  });
+}
+
+function updateStepView() {
+  const cfg = CONFIGS[activeMode];
+  const st = cfg.steps[currentStep];
+  document.getElementById('step-badge').textContent = 'ជំហានទី ' + toKhmer(st.num);
+  document.getElementById('step-text').textContent = st.text;
+
+  // Auto set folding target on step 5
+  if (currentStep === 4) {
+    animateFoldTo(80, 800);
+  } else if (foldPercent > 0) {
+    animateFoldTo(0, 400);
+  }
+
+  document.querySelectorAll('.step-chip').forEach((chip, idx) => {
+    chip.className = 'step-chip' + (idx === currentStep ? ' active' : (idx < currentStep ? ' completed' : ''));
+  });
+
+  document.getElementById('btn-prev').disabled = (currentStep === 0);
+  document.getElementById('btn-next').disabled = (currentStep === cfg.steps.length - 1);
+
+  renderScene();
+}
+
+function goToStep(idx) {
+  currentStep = idx;
+  updateStepView();
+}
+
+function nextStep() {
+  const cfg = CONFIGS[activeMode];
+  if (currentStep < cfg.steps.length - 1) {
+    currentStep++;
+    updateStepView();
+  } else if (isAutoplaying) {
+    toggleAutoplay();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepView();
+  }
+}
+
+function replayStep() {
+  updateStepView();
+}
+
+function resetStep() {
+  currentStep = 0;
+  updateStepView();
+}
+
+function toggleAutoplay() {
+  isAutoplaying = !isAutoplaying;
+  const btn = document.getElementById('btn-autoplay');
+  if (isAutoplaying) {
+    btn.classList.add('active');
+    btn.textContent = '⏸ កំពុងចាក់...';
+    autoplayTimer = setInterval(() => {
+      const cfg = CONFIGS[activeMode];
+      if (currentStep < cfg.steps.length - 1) {
+        nextStep();
+      } else {
+        toggleAutoplay();
+      }
+    }, 2800);
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+}
+
+/* Compute reflection of a grid point across axis */
+function reflectPoint(pt, axisType, axisVal) {
+  if (axisType === 'horizontal') {
+    // line y = axisVal
+    const dist = axisVal - pt.gy;
+    return { gx: pt.gx, gy: axisVal + dist };
+  } else {
+    // line x = axisVal
+    const dist = axisVal - pt.gx;
+    return { gx: axisVal + dist, gy: pt.gy };
+  }
+}
+
+/* Rendering the entire SVG scene */
+function renderScene() {
+  const layerGrid = document.getElementById('layer-grid-lines');
+  const layerAxis = document.getElementById('layer-axis');
+  const layerProj = document.getElementById('layer-projection-lines');
+  const layerOrig = document.getElementById('layer-original-triangle');
+  const layerRefl = document.getElementById('layer-reflected-triangle');
+  const layerFold = document.getElementById('layer-folded-triangle');
+  const layerTicks = document.getElementById('layer-measure-ticks');
+  const layerVerts = document.getElementById('layer-vertices');
+  const layerLabels = document.getElementById('layer-labels');
+
+  layerGrid.innerHTML = '';
+  layerAxis.innerHTML = '';
+  layerProj.innerHTML = '';
+  layerOrig.innerHTML = '';
+  layerRefl.innerHTML = '';
+  layerFold.innerHTML = '';
+  layerTicks.innerHTML = '';
+  layerVerts.innerHTML = '';
+  layerLabels.innerHTML = '';
+
+  // 1. Draw Grid Coordinate Numbers
+  for (let gx = 0; gx <= 16; gx += 2) {
+    const pos = gridToSvg(gx, 0);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', pos.x);
+    txt.setAttribute('y', pos.y + 20);
+    txt.setAttribute('class', 'cx-math-text');
+    txt.setAttribute('fill', 'var(--ink-muted)');
+    txt.setAttribute('text-anchor', 'middle');
+    txt.textContent = toKhmer(gx);
+    layerGrid.appendChild(txt);
+  }
+  for (let gy = 0; gy <= 9; gy += 2) {
+    const pos = gridToSvg(0, gy);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', pos.x - 14);
+    txt.setAttribute('y', pos.y + 5);
+    txt.setAttribute('class', 'cx-math-text');
+    txt.setAttribute('fill', 'var(--ink-muted)');
+    txt.setAttribute('text-anchor', 'end');
+    txt.textContent = toKhmer(gy);
+    layerGrid.appendChild(txt);
+  }
+
+  // 2. Draw Reflection Axis d
+  const { axisType, axisVal, A, B, C } = currentGeo;
+  const pA = gridToSvg(A.gx, A.gy);
+  const pB = gridToSvg(B.gx, B.gy);
+  const pC = gridToSvg(C.gx, C.gy);
+
+  const Ap = reflectPoint(A, axisType, axisVal);
+  const Bp = reflectPoint(B, axisType, axisVal);
+  const Cp = reflectPoint(C, axisType, axisVal);
+  const pAp = gridToSvg(Ap.gx, Ap.gy);
+  const pBp = gridToSvg(Bp.gx, Bp.gy);
+  const pCp = gridToSvg(Cp.gx, Cp.gy);
+
+  if (axisType === 'horizontal') {
+    const ySvg = gridToSvg(0, axisVal).y;
+    const axisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    axisLine.setAttribute('x1', 60); axisLine.setAttribute('y1', ySvg);
+    axisLine.setAttribute('x2', 800); axisLine.setAttribute('y2', ySvg);
+    axisLine.setAttribute('stroke', '#dc2626');
+    axisLine.setAttribute('stroke-width', '3');
+    axisLine.setAttribute('stroke-dasharray', '8 4');
+    layerAxis.appendChild(axisLine);
+
+    const axisLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    axisLabel.setAttribute('x', 832); axisLabel.setAttribute('y', ySvg - 8); axisLabel.setAttribute('text-anchor', 'end');
+    axisLabel.setAttribute('class', 'cx-label');
+    axisLabel.setAttribute('fill', '#dc2626');
+    axisLabel.textContent = 'd (y = ' + toKhmer(axisVal) + ')';
+    layerAxis.appendChild(axisLabel);
+  } else {
+    const xSvg = gridToSvg(axisVal, 0).x;
+    const axisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    axisLine.setAttribute('x1', xSvg); axisLine.setAttribute('y1', 30);
+    axisLine.setAttribute('x2', xSvg); axisLine.setAttribute('y2', 450);
+    axisLine.setAttribute('stroke', '#dc2626');
+    axisLine.setAttribute('stroke-width', '3');
+    axisLine.setAttribute('stroke-dasharray', '8 4');
+    layerAxis.appendChild(axisLine);
+
+    const axisLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    axisLabel.setAttribute('x', xSvg); axisLabel.setAttribute('y', 24);
+    axisLabel.setAttribute('class', 'cx-label');
+    axisLabel.setAttribute('fill', '#dc2626');
+    axisLabel.setAttribute('text-anchor', 'middle');
+    axisLabel.textContent = 'd (x = ' + toKhmer(axisVal) + ')';
+    layerAxis.appendChild(axisLabel);
+  }
+
+  // 3. Draw Original Triangle ABC
+  const origPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  origPoly.setAttribute('points', `${pA.x},${pA.y} ${pB.x},${pB.y} ${pC.x},${pC.y}`);
+  origPoly.setAttribute('fill', 'rgba(29, 78, 216, 0.25)');
+  origPoly.setAttribute('stroke', '#1d4ed8');
+  origPoly.setAttribute('stroke-width', '2.5');
+  origPoly.setAttribute('stroke-linejoin', 'round');
+  layerOrig.appendChild(origPoly);
+
+  // 4. Draw Projection Lines and Reflecting Points based on step
+  const showA = (currentStep >= 1);
+  const showBC = (currentStep >= 2);
+  const showTriangleRefl = (currentStep >= 3);
+
+  function drawPerpendicular(p1, p2, isSingleTick = false) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', 'var(--orange)');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-dasharray', '5 4');
+    layerProj.appendChild(line);
+
+    // Right-angle marker at axis intersection
+    let midX = (p1.x + p2.x) / 2;
+    let midY = (p1.y + p2.y) / 2;
+    const sq = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    if (axisType === 'horizontal') {
+      sq.setAttribute('x', midX);
+      sq.setAttribute('y', midY - (p1.y < p2.y ? 0 : 12));
+      sq.setAttribute('width', 12);
+      sq.setAttribute('height', 12);
+    } else {
+      sq.setAttribute('x', midX - (p1.x < p2.x ? 0 : 12));
+      sq.setAttribute('y', midY);
+      sq.setAttribute('width', 12);
+      sq.setAttribute('height', 12);
+    }
+    sq.setAttribute('fill', 'none');
+    sq.setAttribute('stroke', '#e8710a');
+    sq.setAttribute('stroke-width', '1.4');
+    layerTicks.appendChild(sq);
+  }
+
+  if (showA) {
+    drawPerpendicular(pA, pAp);
+  }
+  if (showBC) {
+    drawPerpendicular(pB, pBp);
+    drawPerpendicular(pC, pCp);
+  }
+
+  // 5. Draw Reflected Triangle A'B'C'
+  if (showTriangleRefl) {
+    const reflPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    reflPoly.setAttribute('points', `${pAp.x},${pAp.y} ${pBp.x},${pBp.y} ${pCp.x},${pCp.y}`);
+    reflPoly.setAttribute('fill', 'rgba(34, 197, 94, 0.3)');
+    reflPoly.setAttribute('stroke', '#16a34a');
+    reflPoly.setAttribute('stroke-width', '2.5');
+    reflPoly.setAttribute('stroke-linejoin', 'round');
+    layerRefl.appendChild(reflPoly);
+  }
+
+  // 6. Paper Folding Simulation (Transforming reflected triangle onto original)
+  if (foldPercent > 0 && showTriangleRefl) {
+    const t = foldPercent / 100;
+    // Rotate reflected triangle around axis d by t * 180 degrees
+    let fAp, fBp, fCp;
+    if (axisType === 'horizontal') {
+      const yAxis = gridToSvg(0, axisVal).y;
+      fAp = { x: pAp.x, y: yAxis + (pAp.y - yAxis) * Math.cos(t * Math.PI) };
+      fBp = { x: pBp.x, y: yAxis + (pBp.y - yAxis) * Math.cos(t * Math.PI) };
+      fCp = { x: pCp.x, y: yAxis + (pCp.y - yAxis) * Math.cos(t * Math.PI) };
+    } else {
+      const xAxis = gridToSvg(axisVal, 0).x;
+      fAp = { x: xAxis + (pAp.x - xAxis) * Math.cos(t * Math.PI), y: pAp.y };
+      fBp = { x: xAxis + (pBp.x - xAxis) * Math.cos(t * Math.PI), y: pBp.y };
+      fCp = { x: xAxis + (pCp.x - xAxis) * Math.cos(t * Math.PI), y: pCp.y };
+    }
+
+    const foldPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    foldPoly.setAttribute('points', `${fAp.x},${fAp.y} ${fBp.x},${fBp.y} ${fCp.x},${fCp.y}`);
+    foldPoly.setAttribute('fill', 'rgba(234, 88, 12, 0.45)');
+    foldPoly.setAttribute('stroke', '#ea580c');
+    foldPoly.setAttribute('stroke-width', '2.8');
+    foldPoly.setAttribute('stroke-linejoin', 'round');
+    layerFold.appendChild(foldPoly);
+  }
+
+  // 7. Render Vertex Dots and Labels
+  function drawVertex(pt, label, color = '#1d4ed8', isDrag = false) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', pt.x);
+    c.setAttribute('cy', pt.y);
+    c.setAttribute('r', isDrag ? '7' : '5.5');
+    c.setAttribute('fill', color);
+    c.setAttribute('stroke', '#ffffff');
+    c.setAttribute('stroke-width', '2');
+    if (isDrag) {
+      c.style.cursor = 'grab';
+    }
+    g.appendChild(c);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', pt.x + (pt.x > 400 ? 12 : -16));
+    txt.setAttribute('y', pt.y + (pt.y > 250 ? 16 : -10));
+    txt.setAttribute('class', 'cx-label');
+    txt.setAttribute('fill', color);
+    txt.textContent = label;
+    g.appendChild(txt);
+
+    layerVerts.appendChild(g);
+  }
+
+  // Original Vertices A, B, C
+  const canDrag = (activeMode === 'interactive');
+  drawVertex(pA, 'A', '#1d4ed8', canDrag);
+  drawVertex(pB, 'B', '#1d4ed8', canDrag);
+  drawVertex(pC, 'C', '#1d4ed8', canDrag);
+
+  // Reflected Vertices A', B', C'
+  if (showA) drawVertex(pAp, 'A′', '#16a34a');
+  if (showBC) {
+    drawVertex(pBp, 'B′', '#16a34a');
+    drawVertex(pCp, 'C′', '#16a34a');
+  }
+
+  // Update Result Banner details
+  const distA = Math.abs(axisType === 'horizontal' ? axisVal - A.gy : axisVal - A.gx);
+  const distB = Math.abs(axisType === 'horizontal' ? axisVal - B.gy : axisVal - B.gx);
+  const distC = Math.abs(axisType === 'horizontal' ? axisVal - C.gy : axisVal - C.gx);
+
+  document.getElementById('result-formula').textContent =
+    `ត្រីកោណ A′B′C′ ប៉ុនត្រីកោណ ABC (ត្រួតស៊ីគ្នាបេះបិទ)`;
+  document.getElementById('result-detail').textContent =
+    `ចម្ងាយទៅ d ៖ d(A)=${toKhmer(distA)} ឯកតា · d(B)=${toKhmer(distB)} ឯកតា · d(C)=${toKhmer(distC)} ឯកតា`;
+}
+
+/* Mouse Dragging for Interactive Mode */
+let draggingVertex = null;
+
+function setupDragEvents() {
+  const board = document.getElementById('canvas-board');
+  const svg = document.getElementById('geometry-svg');
+
+  function getSvgCoords(e) {
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const scaleX = 840 / rect.width;
+    const scaleY = 480 / rect.height;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  }
+
+  function onPointerDown(e) {
+    if (activeMode !== 'interactive') return;
+    const coords = getSvgCoords(e);
+    const pA = gridToSvg(currentGeo.A.gx, currentGeo.A.gy);
+    const pB = gridToSvg(currentGeo.B.gx, currentGeo.B.gy);
+    const pC = gridToSvg(currentGeo.C.gx, currentGeo.C.gy);
+
+    const distA = Math.hypot(coords.x - pA.x, coords.y - pA.y);
+    const distB = Math.hypot(coords.x - pB.x, coords.y - pB.y);
+    const distC = Math.hypot(coords.x - pC.x, coords.y - pC.y);
+
+    if (distA < 25) draggingVertex = 'A';
+    else if (distB < 25) draggingVertex = 'B';
+    else if (distC < 25) draggingVertex = 'C';
+  }
+
+  function onPointerMove(e) {
+    if (!draggingVertex) return;
+    const coords = getSvgCoords(e);
+    const gridPt = svgToGrid(coords.x, coords.y);
+    // Constrain grid inside bounds
+    gridPt.gx = Math.max(1, Math.min(15, gridPt.gx));
+    gridPt.gy = Math.max(0, Math.min(8, gridPt.gy));
+
+    currentGeo[draggingVertex].gx = gridPt.gx;
+    currentGeo[draggingVertex].gy = gridPt.gy;
+    renderScene();
+  }
+
+  function onPointerUp() {
+    draggingVertex = null;
+  }
+
+  board.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  board.addEventListener('touchstart', onPointerDown, { passive: true });
+  window.addEventListener('touchmove', onPointerMove, { passive: true });
+  window.addEventListener('touchend', onPointerUp);
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  try { localStorage.setItem('pisa_theme', next); } catch(e){}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('pisa_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  } catch(e){}
+  setupDragEvents();
+  switchMode('horizontal');
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

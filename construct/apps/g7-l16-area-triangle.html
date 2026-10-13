@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ផ្ទៃក្រឡាត្រីកោណ — ថ្នាក់ទី ៧ · មេរៀនទី ១៦</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --orange-soft: #ffedd5; --green: #1b8a5a; --green-soft: #d1fae5;
+  --purple: #7c3aed; --purple-soft: #ede9fe;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px; --radius-full: 9999px;
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+    --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+    --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+    --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+    --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+    --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+  }
+}
+[data-theme="dark"] {
+  --bg: #090e17; --surface: #131c2e; --surface-2: #1e293b; --surface-border: #334155;
+  --paper-bg: #0d1524; --grid-line: #172338; --grid-line-major: #22324d;
+  --ink: #f8fafc; --ink-secondary: #cbd5e1; --ink-muted: #94a3b8;
+  --teal: #14b8a6; --teal-soft: rgba(20, 184, 166, 0.15);
+  --blue: #3b82f6; --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c; --green: #22c55e; --green-soft: rgba(34, 197, 94, 0.15);
+  --purple: #a78bfa; --purple-soft: rgba(167, 139, 250, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --surface-border: #cbd5e1;
+  --paper-bg: #fffefa; --grid-line: #e2e8f0; --grid-line-major: #cbd5e1;
+  --ink: #0f172a; --ink-secondary: #334155; --ink-muted: #64748b;
+  --teal: #0f766e; --teal-soft: #ccfbf1; --blue: #1d4ed8; --blue-soft: #dbeafe;
+  --orange: #e8710a; --green: #1b8a5a; --purple: #7c3aed;
+}
+body {
+  font-family: var(--font-km); background-color: var(--bg); color: var(--ink);
+  min-height: 100vh; padding: 16px; display: flex; justify-content: center; align-items: flex-start;
+  line-height: 1.6;
+}
+.app-container {
+  width: 100%; max-width: 920px; background: var(--surface); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;
+}
+.app-header {
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--surface-border);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.title-area { display: flex; flex-direction: column; gap: 4px; }
+.lesson-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  color: var(--teal); background: var(--teal-soft); padding: 2px 10px; border-radius: var(--radius-full);
+  width: fit-content;
+}
+h1 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.theme-btn {
+  background: var(--surface-2); border: 1px solid var(--surface-border); color: var(--ink);
+  font-size: 16px; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; cursor: pointer;
+}
+.instruction-box {
+  margin: 16px 20px 0; padding: 14px 18px; background: var(--teal-soft); border: 1px solid var(--teal);
+  border-radius: var(--radius); display: flex; align-items: flex-start; gap: 12px; min-height: 68px;
+}
+.step-indicator-badge {
+  background: var(--teal); color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;
+}
+.instruction-text { font-size: 16px; font-weight: 500; color: var(--ink); line-height: 1.55; }
+.canvas-wrap { padding: 16px 20px; }
+.canvas-board {
+  position: relative; width: 100%; background: var(--paper-bg); border: 1px solid var(--surface-border);
+  border-radius: var(--radius); box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+}
+svg.cx-svg { display: block; width: 100%; height: auto; aspect-ratio: 840 / 480; user-select: none; }
+.cx-label { font-family: var(--font-math); font-style: italic; font-weight: 700; font-size: 20px; fill: var(--ink); }
+.cx-math-text { font-family: var(--font-km); font-size: 14px; font-weight: 600; fill: var(--ink-secondary); }
+
+/* Geometry styling */
+.tri-main { fill: rgba(20, 184, 166, 0.22); stroke: var(--teal); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.tri-copy { fill: rgba(59, 130, 246, 0.22); stroke: var(--blue); stroke-width: 2.8; stroke-dasharray: 6 4; stroke-linecap: round; stroke-linejoin: round; }
+.rect-enclosing { fill: none; stroke: var(--ink-muted); stroke-width: 2; stroke-dasharray: 6 5; }
+.shear-line { stroke: var(--orange); stroke-width: 1.8; stroke-dasharray: 5 4; opacity: 0.8; }
+.seg-altitude { stroke: var(--orange); stroke-width: 2.6; stroke-dasharray: 6 4; stroke-linecap: round; }
+.right-mark { fill: none; stroke: var(--orange); stroke-width: 2; }
+
+/* Drag handle */
+.drag-handle {
+  cursor: ew-resize; fill: var(--orange); stroke: #ffffff; stroke-width: 2.5;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); transition: r 0.15s ease;
+}
+.drag-handle:hover, .drag-handle.active { r: 8; fill: #ea580c; }
+
+.controls-area { padding: 6px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.buttons-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--radius-sm); font-family: var(--font-km); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent; min-height: 42px; transition: all 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--surface-border); }
+.btn-rotate { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
+.btn-rotate.active { background: var(--blue); color: #fff; }
+.btn-autoplay.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+.steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.step-chip {
+  flex: 1 1 0; min-width: 110px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm); color: var(--ink-muted); font-family: var(--font-km); font-size: 13.5px;
+  font-weight: 600; text-align: center; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+}
+.step-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: var(--shadow-sm); }
+.step-chip.completed { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+.result-banner {
+  margin: 0 20px 14px; padding: 12px 18px; background: var(--green-soft); border: 1px solid var(--green);
+  border-radius: var(--radius); color: var(--green); font-size: 16px; font-weight: 700;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+}
+.result-badge { background: var(--green); color: #fff; font-size: 13px; padding: 2px 8px; border-radius: var(--radius-full); }
+.app-footer {
+  padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--surface-border);
+  display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៦ · បរិមាត្រនិងផ្ទៃក្រឡាពហុកោណ</div>
+      <h1>ផ្ទៃក្រឡាត្រីកោណ (𝒜 = ½ × b × h)</h1>
+    </div>
+    <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="instruction-box" role="region" aria-live="polite">
+    <span class="step-indicator-badge" id="step-badge">ជំហានទី ១</span>
+    <p class="instruction-text" id="step-text">កំពុងរៀបចំ...</p>
+  </div>
+
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 480" role="img" aria-label="គំនូរផ្ទៃក្រឡាត្រីកោណ">
+        <defs>
+          <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="200" height="200" patternUnits="userSpaceOnUse">
+            <rect width="200" height="200" fill="url(#grid-pattern)" />
+            <path d="M 200 0 L 0 0 0 200" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Dimension Box -->
+        <g id="scale-info" transform="translate(30, 24)">
+          <rect width="270" height="42" rx="8" fill="var(--surface)" stroke="var(--surface-border)" stroke-width="1" />
+          <text x="14" y="26" class="cx-math-text" font-weight="700" fill="var(--teal)">ក្រឡា ១ ការ៉ូ = ១ cm × ១ cm = ៤០ px</text>
+        </g>
+
+        <!-- SVG Geometry Layers -->
+        <g id="layer-enclosing"></g>
+        <g id="layer-triangle-copy"></g>
+        <g id="layer-triangle"></g>
+        <g id="layer-altitude"></g>
+        <g id="layer-annotations"></g>
+        <g id="layer-points"></g>
+      </svg>
+    </div>
+  </main>
+
+  <div class="result-banner" id="result-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="result-badge">សរុប / ចម្លើយ</span>
+      <span id="result-formula">𝒜 = ½ × BC × AH = ½ × ៦ × ៤ = ១២ cm²</span>
+    </div>
+    <span id="drag-hint" style="font-size: 14.5px; color: var(--orange); font-weight: 600;">
+      👉 ចុចអូសកំពូល A ទៅឆ្វេង/ស្តាំ (ផ្ទៃក្រឡានៅដដែល ១២ cm²)
+    </span>
+  </div>
+
+  <div class="controls-area">
+    <nav class="steps-nav" id="steps-nav" aria-label="បញ្ជីជំហាន"></nav>
+    <div class="buttons-row">
+      <button type="button" class="btn btn-secondary" id="btn-prev" onclick="prevStep()">◀ ថយក្រោយ</button>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="nextStep()">បន្ទាប់ ▶</button>
+      <button type="button" class="btn btn-secondary" id="btn-replay" onclick="replayStep()">🔄 ចាក់ឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset" onclick="resetConstruction()">↺ ចាប់ផ្ដើមឡើងវិញ</button>
+      <button type="button" class="btn btn-secondary btn-autoplay" id="btn-autoplay" onclick="toggleAutoplay()">▶ ស្វ័យប្រវត្តិ</button>
+      <button type="button" class="btn btn-rotate" id="btn-rotate" onclick="toggleRotateCopy()">🔄 បង្វិលផ្គុំជាប្រលេឡូក្រាម</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៦</span>
+    <span>ទ្រឹស្តីបទ Cavalieri ៖ បាត និងកម្ពស់ថេរ នាំឱ្យផ្ទៃក្រឡាត្រីកោណនៅថេរ</span>
+  </footer>
+</div>
+
+<script>
+const KHMER_DIGITS = ['០','១','២','៣','៤','៥','៦','៧','៨','៩'];
+function toKhmer(n) {
+  return String(n).replace(/[0-9]/g, d => KHMER_DIGITS[Number(d)]);
+}
+
+// Grid constants: 1 cm = 40 px
+// Base BC = 6 cm = 240 px along y = 340
+const B = { x: 280, y: 340 };
+const C = { x: 280 + 240, y: 340 }; // 520, 340
+const ALTITUDE_H = 160; // 4 cm
+const Y_APEX = 340 - ALTITUDE_H; // 180
+
+// Apex A (draggable along y = Y_APEX)
+let apexX = 360; // Default x of A
+let isDraggingA = false;
+let showRotatedCopy = false;
+
+const STEPS = [
+  {
+    num: 1,
+    title: 'ជំហានទី ១ (ត្រីកោណកែង)',
+    text: 'ករណីត្រីកោណកែង (A ស្ថិតត្រង់កែង B) ៖ បំពេញចតុកោណកែងព័ទ្ធជុំវិញត្រីកោណកែងនោះ (ខ្សែដាច់)។'
+  },
+  {
+    num: 2,
+    title: 'ជំហានទី ២ (ពាក់កណ្ដាល)',
+    text: 'អង្កត់ទ្រូង AC ចែកចតុកោណកែងជាពីរត្រីកោណកែងស្មើគ្នា នាំឱ្យ ផ្ទៃក្រឡាត្រីកោណ = ½ × ផ្ទៃចតុកោណកែង = ½ × b × h ។'
+  },
+  {
+    num: 3,
+    title: 'ជំហានទី ៣ (ត្រីកោណទូទៅ)',
+    text: 'ករណីត្រីកោណទូទៅ ABC ៖ គូសកម្ពស់ AH កែងនឹងបាត BC ។ កម្ពស់ចែកត្រីកោណជាពីរត្រីកោណកែងតូច នាំឱ្យផលបូកផ្ទៃគឺ 𝒜 = ½ × BC × AH ។'
+  },
+  {
+    num: 4,
+    title: 'ជំហានទី ៤ (ការគណនា)',
+    text: 'គណនាជាក់ស្តែង ៖ បាត BC = ៦ cm, កម្ពស់ AH = ៤ cm នាំឱ្យ 𝒜 = ½ × ៦ × ៤ = ១២ cm² ។ ចុចអូសកំពូល A ឬចុចប៊ូតុង «បង្វិលផ្គុំជាប្រលេឡូក្រាម» ដើម្បីមើលភស្តុតាង!'
+  }
+];
+
+let currentStep = 2; // Start at general triangle or step 0
+let isAutoplaying = false;
+let autoplayTimer = null;
+
+// Layers
+const layerEnclosing = document.getElementById('layer-enclosing');
+const layerTriangleCopy = document.getElementById('layer-triangle-copy');
+const layerTriangle = document.getElementById('layer-triangle');
+const layerAltitude = document.getElementById('layer-altitude');
+const layerAnnotations = document.getElementById('layer-annotations');
+const layerPoints = document.getElementById('layer-points');
+
+const stepBadge = document.getElementById('step-badge');
+const stepText = document.getElementById('step-text');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const btnRotate = document.getElementById('btn-rotate');
+const stepsNav = document.getElementById('steps-nav');
+const svgEl = document.getElementById('geometry-svg');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function drawRightAngleMark(pt, dirX, dirY, size = 14) {
+  return createSvgEl('polyline', {
+    points: `${pt.x + size * dirX},${pt.y} ${pt.x + size * dirX},${pt.y + size * dirY} ${pt.x},${pt.y + size * dirY}`,
+    class: 'right-mark'
+  });
+}
+
+function renderScene() {
+  layerEnclosing.innerHTML = '';
+  layerTriangleCopy.innerHTML = '';
+  layerTriangle.innerHTML = '';
+  layerAltitude.innerHTML = '';
+  layerAnnotations.innerHTML = '';
+  layerPoints.innerHTML = '';
+
+  stepBadge.textContent = STEPS[currentStep].title;
+  stepText.textContent = STEPS[currentStep].text;
+  btnPrev.disabled = currentStep === 0;
+  btnNext.disabled = currentStep === STEPS.length - 1;
+
+  stepsNav.innerHTML = '';
+  STEPS.forEach((s, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `step-chip ${idx === currentStep ? 'active' : ''} ${idx < currentStep ? 'completed' : ''}`;
+    chip.textContent = s.title;
+    chip.onclick = () => { currentStep = idx; renderScene(); };
+    stepsNav.appendChild(chip);
+  });
+
+  // Effective position of A
+  let curAx = apexX;
+  if (currentStep === 0 || currentStep === 1) {
+    curAx = B.x; // Force right triangle at B for step 1 & 2
+  }
+  const A = { x: curAx, y: Y_APEX };
+  const H = { x: curAx, y: B.y };
+
+  function addPoint(pt, name, offX = 0, offY = 24, col = 'var(--ink)') {
+    const g = createSvgEl('g');
+    g.appendChild(createSvgEl('circle', { cx: pt.x, cy: pt.y, r: 4.5, fill: col }));
+    const t = createSvgEl('text', { x: pt.x + offX, y: pt.y + offY, class: 'cx-label', fill: col });
+    t.textContent = name;
+    g.appendChild(t);
+    layerPoints.appendChild(g);
+  }
+
+  // Draw Horizontal Shear/Guide line along y = Y_APEX
+  if (currentStep >= 2) {
+    layerEnclosing.appendChild(createSvgEl('line', {
+      x1: 180, y1: Y_APEX, x2: 660, y2: Y_APEX, class: 'shear-line'
+    }));
+    const shearLbl = createSvgEl('text', {
+      x: 670, y: Y_APEX + 5, class: 'cx-math-text', fill: 'var(--orange)', 'font-size': '12px'
+    });
+    shearLbl.textContent = 'បន្ទាត់ស្របបាត (កម្ពស់ថេរ ៤ cm)';
+    layerEnclosing.appendChild(shearLbl);
+  }
+
+  // Enclosing rectangle for Step 1 & 2
+  if (currentStep <= 1) {
+    // Rectangle AB D C where D = (C.x, Y_APEX)
+    const D = { x: C.x, y: Y_APEX };
+    layerEnclosing.appendChild(createSvgEl('polygon', {
+      points: `${B.x},${B.y} ${A.x},${A.y} ${D.x},${D.y} ${C.x},${C.y}`,
+      class: 'rect-enclosing'
+    }));
+
+    if (currentStep === 1) {
+      // Top symmetric triangle ACD
+      layerTriangleCopy.appendChild(createSvgEl('polygon', {
+        points: `${A.x},${A.y} ${D.x},${D.y} ${C.x},${C.y}`,
+        fill: 'rgba(59, 130, 246, 0.15)', stroke: 'var(--blue)', 'stroke-width': 2, 'stroke-dasharray': '5 4'
+      }));
+      const noteHalf = createSvgEl('text', {
+        x: (A.x + D.x)/2, y: Y_APEX - 14, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)'
+      });
+      noteHalf.textContent = 'ផ្ទៃត្រីកោណទី ២ (ស្មើគ្នា)';
+      layerTriangleCopy.appendChild(noteHalf);
+    }
+  }
+
+  // Rotated Copy to form Parallelogram
+  if (showRotatedCopy && currentStep >= 2) {
+    btnRotate.classList.add('active');
+    // Rotate triangle ABC 180 deg around midpoint of AC:
+    // A reflects to C, C reflects to A, B reflects to B' = A + C - B
+    const B_prime = { x: A.x + C.x - B.x, y: A.y + C.y - B.y };
+    layerTriangleCopy.appendChild(createSvgEl('polygon', {
+      points: `${A.x},${A.y} ${B_prime.x},${B_prime.y} ${C.x},${C.y}`,
+      class: 'tri-copy'
+    }));
+    addPoint(B_prime, "B′", 12, -8, 'var(--blue)');
+
+    const notePara = createSvgEl('text', {
+      x: 420, y: 75, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--blue)', 'font-size': '15px'
+    });
+    notePara.textContent = 'ត្រីកោណ ២ ផ្គុំបានប្រលេឡូក្រាម AB′CB មានផ្ទៃ = ៦ × ៤ = ២៤ cm² នាំឱ្យ ត្រីកោណ = ½ × ២៤ = ១២ cm²';
+    layerTriangleCopy.appendChild(notePara);
+  } else {
+    btnRotate.classList.remove('active');
+  }
+
+  // Main Triangle ABC
+  layerTriangle.appendChild(createSvgEl('polygon', {
+    points: `${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`,
+    class: 'tri-main'
+  }));
+
+  // Altitude AH & Right Angle Mark
+  if (currentStep >= 2) {
+    layerAltitude.appendChild(createSvgEl('line', {
+      x1: A.x, y1: A.y, x2: H.x, y2: H.y, class: 'seg-altitude'
+    }));
+    addPoint(H, 'H', 0, 22, 'var(--orange)');
+
+    // Right-angle mark at H
+    const dir = (curAx >= (B.x + C.x)/2) ? -1 : 1;
+    layerAltitude.appendChild(drawRightAngleMark(H, dir, -1));
+
+    // Label AH = 4cm
+    const lblAlt = createSvgEl('text', {
+      x: A.x + 12, y: (A.y + H.y)/2, class: 'cx-math-text', fill: 'var(--orange)', 'font-weight': '700'
+    });
+    lblAlt.textContent = 'h = ៤ cm';
+    layerAltitude.appendChild(lblAlt);
+  }
+
+  // Base BC Label = 6cm
+  layerAnnotations.appendChild(createSvgEl('line', {
+    x1: B.x, y1: B.y + 16, x2: C.x, y2: C.y + 16, stroke: 'var(--teal)', 'stroke-width': 2
+  }));
+  const lblBase = createSvgEl('text', {
+    x: (B.x + C.x)/2, y: B.y + 36, 'text-anchor': 'middle', class: 'cx-math-text', fill: 'var(--teal)', 'font-weight': '700'
+  });
+  lblBase.textContent = 'បាត BC (b) = ៦ cm';
+  layerAnnotations.appendChild(lblBase);
+
+  // Points B and C
+  addPoint(B, 'B', -20, 6);
+  addPoint(C, 'C', 14, 6);
+
+  // Point A (Draggable handle if Step >= 2)
+  if (currentStep >= 2) {
+    const handleA = createSvgEl('circle', {
+      cx: A.x, cy: A.y, r: 7, class: `drag-handle ${isDraggingA ? 'active' : ''}`
+    });
+    layerPoints.appendChild(handleA);
+    const lblA = createSvgEl('text', { x: A.x, y: A.y - 14, 'text-anchor': 'middle', class: 'cx-label', fill: 'var(--orange)' });
+    lblA.textContent = 'A';
+    layerPoints.appendChild(lblA);
+  } else {
+    addPoint(A, 'A', -18, -6, 'var(--orange)');
+  }
+}
+
+// Mouse / Touch Dragging for Vertex A
+function getSvgX(evt) {
+  const rect = svgEl.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const scale = 840 / rect.width;
+  return (clientX - rect.left) * scale;
+}
+
+svgEl.addEventListener('mousedown', (e) => {
+  if (currentStep < 2) return;
+  const x = getSvgX(e);
+  if (Math.abs(x - apexX) < 30) {
+    isDraggingA = true;
+    renderScene();
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isDraggingA) return;
+  const x = getSvgX(e);
+  apexX = Math.max(200, Math.min(600, x));
+  renderScene();
+});
+
+window.addEventListener('mouseup', () => {
+  if (isDraggingA) {
+    isDraggingA = false;
+    renderScene();
+  }
+});
+
+svgEl.addEventListener('touchstart', (e) => {
+  if (currentStep < 2) return;
+  const x = getSvgX(e);
+  if (Math.abs(x - apexX) < 40) {
+    isDraggingA = true;
+    renderScene();
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (!isDraggingA) return;
+  const x = getSvgX(e);
+  apexX = Math.max(200, Math.min(600, x));
+  renderScene();
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+  if (isDraggingA) {
+    isDraggingA = false;
+    renderScene();
+  }
+});
+
+function toggleRotateCopy() {
+  if (currentStep < 2) currentStep = 3;
+  showRotatedCopy = !showRotatedCopy;
+  renderScene();
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderScene();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    renderScene();
+  }
+}
+
+function replayStep() { renderScene(); }
+
+function resetConstruction() {
+  currentStep = 0;
+  apexX = 360;
+  showRotatedCopy = false;
+  if (isAutoplaying) toggleAutoplay(false);
+  renderScene();
+}
+
+function toggleAutoplay(force) {
+  isAutoplaying = force !== undefined ? force : !isAutoplaying;
+  if (isAutoplaying) {
+    btnAutoplay.classList.add('active');
+    btnAutoplay.innerHTML = '⏸ ផ្អាក';
+    if (currentStep >= STEPS.length - 1) currentStep = 0;
+    renderScene();
+    runAutoLoop();
+  } else {
+    btnAutoplay.classList.remove('active');
+    btnAutoplay.innerHTML = '▶ ស្វ័យប្រវត្តិ';
+    if (autoplayTimer) clearTimeout(autoplayTimer);
+  }
+}
+
+function runAutoLoop() {
+  if (!isAutoplaying) return;
+  autoplayTimer = setTimeout(() => {
+    if (!isAutoplaying) return;
+    if (currentStep < STEPS.length - 1) {
+      nextStep();
+      runAutoLoop();
+    } else {
+      toggleAutoplay(false);
+    }
+  }, 3000);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : (cur === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark')));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderScene();
+});
+</script>
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>

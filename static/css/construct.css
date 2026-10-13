@@ -240,3 +240,9 @@ var { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic
 .cx-table-bg { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; rx: 6px; }
 .cx-th { font: 700 12px 'Kantumruy Pro', system-ui, sans-serif; fill: #1e293b; }
 .cx-td { font: 500 12px 'Kantumruy Pro', system-ui, sans-serif; fill: #334155; }
+
+/* a page of content/construct/apps/ — the app lives in a frame (static/js/appframe.js sets its height) */
+.app-frame { display: block; width: 100%; height: 640px; border: 0; background: transparent; color-scheme: normal; }
+
+/* a page of content/construct/apps/ — the app lives in a frame (static/js/appframe.js sets its height) */
+.app-frame { display: block; width: 100%; height: 640px; border: 0; background: transparent; color-scheme: normal; }

@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>មុំទល់កំពូល — ថ្នាក់ទី ៧ · មេរៀនទី ១៣</title>
+<style>
+/* CSS Reset & System */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --blue-soft: #dbeafe;
+  --orange: #ea580c;
+  --orange-soft: #ffedd5;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  
+  --font-km: system-ui, "Kantumruy Pro", "Noto Sans Khmer", -apple-system, sans-serif;
+  --font-math: "Times New Roman", "STIX Two Text", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090e17;
+    --surface: #131c2e;
+    --surface-2: #1e293b;
+    --surface-border: #334155;
+    --paper-bg: #0d1524;
+    --grid-line: #172338;
+    --grid-line-major: #22324d;
+    
+    --ink: #f8fafc;
+    --ink-secondary: #cbd5e1;
+    --ink-muted: #94a3b8;
+    
+    --blue: #3b82f6;
+    --blue-soft: rgba(59, 130, 246, 0.15);
+    --orange: #fb923c;
+    --orange-soft: rgba(251, 146, 60, 0.15);
+    --teal: #14b8a6;
+    --teal-soft: rgba(20, 184, 166, 0.15);
+    --green: #22c55e;
+    --green-soft: rgba(34, 197, 94, 0.15);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #090e17;
+  --surface: #131c2e;
+  --surface-2: #1e293b;
+  --surface-border: #334155;
+  --paper-bg: #0d1524;
+  --grid-line: #172338;
+  --grid-line-major: #22324d;
+  
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --ink-muted: #94a3b8;
+  
+  --blue: #3b82f6;
+  --blue-soft: rgba(59, 130, 246, 0.15);
+  --orange: #fb923c;
+  --orange-soft: rgba(251, 146, 60, 0.15);
+  --teal: #14b8a6;
+  --teal-soft: rgba(20, 184, 166, 0.15);
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-border: #cbd5e1;
+  --paper-bg: #fffefa;
+  --grid-line: #e2e8f0;
+  --grid-line-major: #cbd5e1;
+  
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  
+  --blue: #2563eb;
+  --blue-soft: #dbeafe;
+  --orange: #ea580c;
+  --orange-soft: #ffedd5;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --green: #1b8a5a;
+  --green-soft: #d1fae5;
+}
+
+body {
+  font-family: var(--font-km);
+  background-color: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 920px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-soft);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+h1 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-tabs {
+  display: flex;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.mode-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-km);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-tab-btn.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Banner */
+.info-strip {
+  margin: 16px 20px 0;
+  padding: 12px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.angle-readouts {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.badge-blue {
+  background: var(--blue-soft);
+  color: var(--blue);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--blue);
+}
+
+.badge-orange {
+  background: var(--orange-soft);
+  color: var(--orange);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--orange);
+}
+
+/* Proof Banner Box */
+.proof-box {
+  margin: 12px 20px 0;
+  padding: 14px 18px;
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15.5px;
+}
+
+.proof-box.show {
+  display: flex;
+}
+
+.proof-step-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proof-step-num {
+  background: var(--teal);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+/* Canvas Board */
+.canvas-wrap {
+  padding: 16px 20px;
+}
+
+.canvas-board {
+  position: relative;
+  width: 100%;
+  background: var(--paper-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+svg.cx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 840 / 450;
+  touch-action: none;
+}
+
+/* SVG Elements */
+.cx-label {
+  font-family: var(--font-math);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 21px;
+  fill: var(--ink);
+}
+
+.line-x {
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.line-y {
+  stroke: var(--ink-secondary);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.handle-drag {
+  fill: var(--orange);
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  cursor: grab;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+}
+
+.handle-drag:active {
+  cursor: grabbing;
+}
+
+.arc-pair-1 {
+  fill: rgba(37, 99, 235, 0.16);
+  stroke: var(--blue);
+  stroke-width: 2.6;
+}
+
+.arc-pair-2 {
+  fill: rgba(234, 88, 12, 0.16);
+  stroke: var(--orange);
+  stroke-width: 2.6;
+}
+
+.blink {
+  animation: pulseBlink 1.4s infinite;
+}
+
+@keyframes pulseBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Controls Area */
+.controls-area {
+  padding: 6px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-2);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+}
+
+.slider-row label {
+  font-weight: 700;
+  font-size: 14.5px;
+  min-width: 130px;
+}
+
+.slider-row input[type="range"] {
+  flex-grow: 1;
+  accent-color: var(--orange);
+  cursor: pointer;
+}
+
+.slider-val {
+  min-width: 50px;
+  font-family: var(--font-math);
+  font-weight: 700;
+  font-size: 16px;
+  text-align: right;
+  color: var(--orange);
+}
+
+/* Quick jump angle pills */
+.quick-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-pill {
+  padding: 6px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-full);
+  font-family: var(--font-km);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-pill:hover {
+  background: var(--surface-border);
+}
+
+/* Footer */
+.app-footer {
+  padding: 12px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--surface-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 600px) {
+  body { padding: 8px; }
+  .app-header { padding: 12px 16px; }
+  h1 { font-size: 18px; }
+  .info-strip { margin: 12px 12px 0; padding: 10px 14px; }
+  .canvas-wrap { padding: 12px 12px; }
+  .controls-area { padding: 4px 12px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="title-area">
+      <div class="lesson-badge">ថ្នាក់ទី ៧ · មេរៀនទី ១៣ · មុំ</div>
+      <h1>មុំទល់កំពូល (មុំទល់មុខ)</h1>
+    </div>
+
+    <div class="header-actions">
+      <!-- Mode Tabs: Explore vs Explain -->
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab-btn active" id="tab-explore" onclick="switchMode('explore')">
+          🖐️ អូសរុករក
+        </button>
+        <button type="button" class="mode-tab-btn" id="tab-proof" onclick="switchMode('proof')">
+          💡 ពន្យល់ការស្រាយបញ្ជាក់
+        </button>
+      </div>
+
+      <button class="theme-btn" id="theme-toggle" title="ប្ដូរផ្ទៃភ្លឺ/ងងឹត" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" onclick="toggleTheme()">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Value Readout Strip -->
+  <div class="info-strip">
+    <div class="angle-readouts">
+      <span class="badge-blue" id="badge-pair-1">មុំ ១ = មុំ ៣ = ៥៥°</span>
+      <span class="badge-orange" id="badge-pair-2">មុំ ២ = មុំ ៤ = ១២៥°</span>
+    </div>
+    <div style="font-size: 14.5px; color: var(--ink-secondary); font-weight: 600;">
+      ផលបូកមុំជាប់គ្នា ៖ <b style="color: var(--green);">១៨០°</b> ជានិច្ច
+    </div>
+  </div>
+
+  <!-- Step Proof Box (in Proof Mode) -->
+  <div class="proof-box" id="proof-box">
+    <div class="proof-step-row">
+      <span class="proof-step-num">ជំហាន ១</span>
+      <span>មុំ <b style="color: var(--blue);">១</b> + មុំ <b style="color: var(--orange);">២</b> = <b>១៨០°</b> (មុំជាប់បន្ថែមលើបន្ទាត់ត្រង់ xx′)</span>
+    </div>
+    <div class="proof-step-row">
+      <span class="proof-step-num">ជំហាន ២</span>
+      <span>មុំ <b style="color: var(--orange);">២</b> + មុំ <b style="color: var(--blue);">៣</b> = <b>១៨០°</b> (មុំជាប់បន្ថែមលើបន្ទាត់ត្រង់ yy′)</span>
+    </div>
+    <div class="proof-step-row">
+      <span class="proof-step-num">ជំហាន ៣</span>
+      <span>ដោយសារផលបូកទាំងពីរស្មើ ១៨០° ដូចគ្នា នាំឱ្យ ៖ <b style="color: var(--blue);">១</b> + ២ = ២ + <b style="color: var(--blue);">៣</b> ➔ <b style="color: var(--blue);">មុំ ១ = មុំ ៣</b></span>
+    </div>
+    <div class="proof-step-row" style="color: var(--green); font-weight: 700; margin-top: 4px;">
+      <span>✓ សន្និដ្ឋាន ៖ មុំទល់កំពូលតែងតែមានរង្វាស់ស្មើគ្នាជានិច្ច (១ = ៣ និង ២ = ៤)។</span>
+    </div>
+  </div>
+
+  <!-- SVG Canvas Board -->
+  <main class="canvas-wrap">
+    <div class="canvas-board">
+      <svg class="cx-svg" id="geometry-svg" viewBox="0 0 840 450" role="img" aria-label="គំនូរបង្ហាញមុំទល់កំពូលទាំងបួនជុំវិញចំណុចប្រសព្វ O">
+        <defs>
+          <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid-line)" stroke-width="1" />
+          </pattern>
+          <pattern id="grid-pattern-major" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#grid-pattern)" />
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--grid-line-major)" stroke-width="1.2" />
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid-pattern-major)" />
+
+        <!-- Arcs Layer -->
+        <g id="layer-arcs"></g>
+
+        <!-- Lines Layer -->
+        <g id="layer-lines"></g>
+
+        <!-- Center Point O -->
+        <circle cx="420" cy="225" r="5" fill="var(--ink)" />
+        <text x="432" y="246" class="cx-label">O</text>
+
+        <!-- Interaction Handle -->
+        <circle id="handle-y" cx="0" cy="0" r="9" class="handle-drag" />
+      </svg>
+    </div>
+  </main>
+
+  <!-- Controls Area -->
+  <div class="controls-area">
+    <div class="slider-row">
+      <label for="slider-rot">បង្វិលបន្ទាត់ yy′ ៖</label>
+      <input type="range" id="slider-rot" min="15" max="165" step="1" value="55" oninput="setAngleY(parseInt(this.value))">
+      <span class="slider-val" id="val-slider-rot">៥៥°</span>
+    </div>
+
+    <!-- Quick Angle Pills -->
+    <div class="quick-pills">
+      <button type="button" class="btn-pill" onclick="setAngleY(30)">៣០° / ១៥០°</button>
+      <button type="button" class="btn-pill" onclick="setAngleY(45)">៤៥° / ១៣៥°</button>
+      <button type="button" class="btn-pill" onclick="setAngleY(60)">៦០° / ១២០°</button>
+      <button type="button" class="btn-pill" onclick="setAngleY(90)">៩០° / ៩០° (កែងគ្នា)</button>
+      <button type="button" class="btn-pill" onclick="setAngleY(120)">១២០° / ៦០°</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>ប្រភព៖ សៀវភៅគណិតវិទ្យា ថ្នាក់ទី ៧ · មេរៀនទី ១៣</span>
+    <span>KhmerMath · មុំទល់កំពូល</span>
+  </footer>
+</div>
+
+<script>
+/**
+ * Grade 7 · Lesson 13 · 13-E: Vertical (opposite) angles
+ */
+
+const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+function toKhmer(num) {
+  return String(num).replace(/[0-9]/g, d => khmerDigits[d]);
+}
+
+const O = { x: 420, y: 225 };
+const LINE_LEN = 270;
+const TILT_X = 10; // fixed slight tilt of line xx' in degrees
+
+let currentAngleY = 55; // angle of yy' relative to xx' (15 to 165 deg)
+let currentMode = 'explore'; // 'explore' or 'proof'
+
+// DOM
+const layerArcs = document.getElementById('layer-arcs');
+const layerLines = document.getElementById('layer-lines');
+const handleY = document.getElementById('handle-y');
+const sliderRot = document.getElementById('slider-rot');
+const valSliderRot = document.getElementById('val-slider-rot');
+const badgePair1 = document.getElementById('badge-pair-1');
+const badgePair2 = document.getElementById('badge-pair-2');
+const proofBox = document.getElementById('proof-box');
+const tabExplore = document.getElementById('tab-explore');
+const tabProof = document.getElementById('tab-proof');
+
+function createSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function createWedge(center, r, degStart, degEnd, className) {
+  const rad1 = degStart * Math.PI / 180;
+  const rad2 = degEnd * Math.PI / 180;
+  const x1 = center.x + r * Math.cos(rad1);
+  const y1 = center.y - r * Math.sin(rad1);
+  const x2 = center.x + r * Math.cos(rad2);
+  const y2 = center.y - r * Math.sin(rad2);
+  const largeArc = Math.abs(degEnd - degStart) > 180 ? 1 : 0;
+  
+  return createSvgEl('path', {
+    d: `M ${center.x} ${center.y} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2} Z`,
+    class: className
+  });
+}
+
+function updateScene() {
+  layerArcs.innerHTML = '';
+  layerLines.innerHTML = '';
+  
+  // Angle of line xx'
+  const degX = TILT_X;
+  const radX = degX * Math.PI / 180;
+  
+  // Angle of line yy' (absolute)
+  const degY = TILT_X + currentAngleY;
+  const radY = degY * Math.PI / 180;
+  
+  // Line xx'
+  const x1 = O.x - LINE_LEN * Math.cos(radX), y1 = O.y + LINE_LEN * Math.sin(radX);
+  const x2 = O.x + LINE_LEN * Math.cos(radX), y2 = O.y - LINE_LEN * Math.sin(radX);
+  layerLines.appendChild(createSvgEl('line', {
+    x1, y1, x2, y2, class: 'line-x'
+  }));
+  // Labels x and x'
+  const lx = createSvgEl('text', { x: x2 + 12, y: y2 + 6, class: 'cx-label' });
+  lx.textContent = 'x';
+  const lxPrime = createSvgEl('text', { x: x1 - 24, y: y1 + 6, class: 'cx-label' });
+  lxPrime.textContent = 'x′';
+  layerLines.append(lx, lxPrime);
+  
+  // Line yy'
+  const y1_x = O.x - LINE_LEN * Math.cos(radY), y1_y = O.y + LINE_LEN * Math.sin(radY);
+  const y2_x = O.x + LINE_LEN * Math.cos(radY), y2_y = O.y - LINE_LEN * Math.sin(radY);
+  layerLines.appendChild(createSvgEl('line', {
+    x1: y1_x, y1: y1_y, x2: y2_x, y2: y2_y, class: 'line-y'
+  }));
+  // Labels y and y'
+  const ly = createSvgEl('text', { x: y2_x + 12, y: y2_y + 6, class: 'cx-label' });
+  ly.textContent = 'y';
+  const lyPrime = createSvgEl('text', { x: y1_x - 22, y: y1_y + 8, class: 'cx-label' });
+  lyPrime.textContent = 'y′';
+  layerLines.append(ly, lyPrime);
+  
+  // Handle position at end of ray y
+  handleY.setAttribute('cx', y2_x - 16 * Math.cos(radY));
+  handleY.setAttribute('cy', y2_y + 16 * Math.sin(radY));
+  
+  // Four Angles
+  const a1 = currentAngleY;
+  const a2 = 180 - currentAngleY;
+  
+  const arcR1 = 65;
+  const arcR2 = 78;
+  
+  // Wedge 1 (between Ox and Oy): angle degX to degY
+  layerArcs.appendChild(createWedge(O, arcR1, degX, degY, 'arc-pair-1 blink'));
+  // Wedge 2 (between Oy and Ox'): angle degY to degX + 180
+  layerArcs.appendChild(createWedge(O, arcR2, degY, degX + 180, 'arc-pair-2'));
+  // Wedge 3 (between Ox' and Oy'): angle degX + 180 to degY + 180
+  layerArcs.appendChild(createWedge(O, arcR1, degX + 180, degY + 180, 'arc-pair-1 blink'));
+  // Wedge 4 (between Oy' and Ox): angle degY + 180 to degX + 360
+  layerArcs.appendChild(createWedge(O, arcR2, degY + 180, degX + 360, 'arc-pair-2'));
+  
+  // Numbers 1, 2, 3, 4 labels inside wedges
+  const m1 = (degX + degY) / 2 * Math.PI / 180;
+  const m2 = (degY + degX + 180) / 2 * Math.PI / 180;
+  const m3 = (degX + 180 + degY + 180) / 2 * Math.PI / 180;
+  const m4 = (degY + 180 + degX + 360) / 2 * Math.PI / 180;
+  
+  function addAngleTag(angRad, dist, numKhmer, degVal, color) {
+    const tx = O.x + dist * Math.cos(angRad);
+    const ty = O.y - dist * Math.sin(angRad);
+    const g = createSvgEl('g');
+    const tNum = createSvgEl('text', {
+      x: tx, y: ty - 4, 'text-anchor': 'middle', fill: color, 'font-size': '16px', 'font-weight': '700', 'font-family': 'var(--font-km)'
+    });
+    tNum.textContent = numKhmer;
+    const tVal = createSvgEl('text', {
+      x: tx, y: ty + 14, 'text-anchor': 'middle', fill: color, 'font-size': '13.5px', 'font-weight': '600', 'font-family': 'var(--font-km)'
+    });
+    tVal.textContent = `${toKhmer(degVal)}°`;
+    g.append(tNum, tVal);
+    layerArcs.appendChild(g);
+  }
+  
+  addAngleTag(m1, 95, '១', a1, 'var(--blue)');
+  addAngleTag(m2, 110, '២', a2, 'var(--orange)');
+  addAngleTag(m3, 95, '៣', a1, 'var(--blue)');
+  addAngleTag(m4, 110, '៤', a2, 'var(--orange)');
+  
+  // Readout updates
+  badgePair1.textContent = `មុំ ១ = មុំ ៣ = ${toKhmer(a1)}°`;
+  badgePair2.textContent = `មុំ ២ = មុំ ៤ = ${toKhmer(a2)}°`;
+  valSliderRot.textContent = `${toKhmer(a1)}°`;
+  sliderRot.value = a1;
+}
+
+function setAngleY(deg) {
+  currentAngleY = deg;
+  updateScene();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  tabExplore.classList.toggle('active', mode === 'explore');
+  tabProof.classList.toggle('active', mode === 'proof');
+  proofBox.classList.toggle('show', mode === 'proof');
+  updateScene();
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let target = current === 'light' ? 'dark' : (current === 'dark' ? 'light' : (prefersDark ? 'light' : 'dark'));
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+// Drag Interaction
+function initInteraction() {
+  const svg = document.getElementById('geometry-svg');
+  let isDragging = false;
+  
+  function getAngleFromPointer(e) {
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX || (e.touches && e.touches[0].clientX);
+    pt.y = e.clientY || (e.touches && e.touches[0].clientY);
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const dx = svgP.x - O.x;
+    const dy = O.y - svgP.y;
+    let absDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+    let relDeg = absDeg - TILT_X;
+    while (relDeg < 0) relDeg += 360;
+    if (relDeg > 180) relDeg -= 180; // keep in 0-180
+    return Math.max(15, Math.min(165, Math.round(relDeg)));
+  }
+  
+  handleY.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    handleY.setPointerCapture(e.pointerId);
+  });
+  
+  svg.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    setAngleY(getAngleFromPointer(e));
+  });
+  
+  const endDrag = (e) => {
+    if (isDragging) {
+      isDragging = false;
+      if (e && e.pointerId) {
+        try { handleY.releasePointerCapture(e.pointerId); } catch(err){}
+      }
+    }
+  };
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initInteraction();
+  updateScene();
+});
+</script>
+
+<script src="../../static/js/mathfix.js?v=2ffacf78fb"></script>
+<script>
+/* in the khmermath.org page: the site's theme, no theme button, the page told the height */
+(function(){
+  if (window.parent === window) return;
+  document.documentElement.classList.add('embed');
+  var st = document.createElement('style');
+  st.textContent = '.embed body{min-height:0!important;padding:0!important;background:transparent!important}' +
+    '.embed .theme-btn{display:none!important}.embed .lesson-badge{display:none!important}' +
+    '.embed .app-container{box-shadow:none!important}.embed .title-area{display:none!important}';
+  document.head.appendChild(st);
+  addEventListener('DOMContentLoaded', function(){        // a header with nothing left in it goes too
+    var h = document.querySelector('.app-header'); if (!h) return;
+    var keep = h.querySelectorAll('button:not(.theme-btn), input, select, label');
+    if (!keep.length) h.style.display = 'none';
+    else h.querySelector('.header-actions') && (h.style.justifyContent = 'flex-start');
+  });
+  function theme(){ try { var t = localStorage.getItem('km-theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme'); } catch (e) {} }
+  theme(); addEventListener('storage', theme);
+  function post(){ var h = Math.ceil(document.querySelector('.app-container').getBoundingClientRect().height) + 2;
+    parent.postMessage({kmFrameH: h}, '*'); }
+  addEventListener('load', post); addEventListener('resize', post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(document.querySelector('.app-container'));
+  setInterval(post, 700);
+})();
+</script>
+</body>
+</html>
