@@ -600,3 +600,6 @@ details.ans[open] > summary { margin-bottom: 8px; background: #faece8; border-co
 .bx-rule .list > li > p { margin: 0; }
 .bx-rule .fig, .bx-rule img.fig { background: #fff; border-radius: 10px; padding: 6px; }
 @media (max-width: 640px) { .bx-rule > .bx-b { padding: 6px 16px 12px; font-size: 16.5px; } .bx-rule > .bx-h { padding: 10px 16px 0; } }
+
+.bx-rule > .bx-h .bx-sub { flex-basis: auto; color: #ffe3a6; font-size: 15px; font-weight: 600; }
+.bx-rule > .bx-h .bx-sub::before { content: "· "; }
