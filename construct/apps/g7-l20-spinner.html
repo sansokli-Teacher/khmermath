@@ -280,7 +280,7 @@ const COLORS = ['#e5484d', '#f59e0b', '#2e9e5b', '#3b82f6', '#8b5cf6', '#0ea5a4'
 /* ---------- sound (made with the Web Audio API; no files) ---------- */
 const SND = (function () {
   let ctx = null, on = true, master = null;
-  try { on = localStorage.getItem('km-sound') !== '0'; } catch (e) { /* no storage */ }
+  try { on = localStorage.getItem('km-sound') === '1'; } catch (e) { /* no storage */ }
   function ac() {
     if (!on) return null;
     try {
@@ -315,8 +315,8 @@ const SND = (function () {
 })();
 function soundButton(host) {
   const b = document.createElement('button'); b.type = 'button'; b.id = 'snd';
-  b.style.cssText = 'position:absolute;top:8px;right:8px;z-index:3;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25);background:rgba(255,255,255,.88);font-size:19px;cursor:pointer;line-height:1';
-  const paint = () => { b.textContent = SND.on ? '🔊' : '🔇'; b.setAttribute('aria-label', SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'); b.title = SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'; };
+  b.style.cssText = 'position:absolute;top:8px;right:8px;z-index:3;min-width:40px;height:38px;padding:0 12px;border-radius:19px;border:1.5px solid rgba(0,0,0,.25);background:rgba(255,255,255,.92);color:#132238;font:700 14px system-ui,sans-serif;cursor:pointer;line-height:1';
+  const paint = () => { b.textContent = SND.on ? '🔊' : '🔇 បើកសំឡេង'; b.setAttribute('aria-label', SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'); b.title = SND.on ? 'បិទសំឡេង' : 'បើកសំឡេង'; };
   paint();
   b.addEventListener('click', e => { e.stopPropagation(); SND.toggle(); paint(); });
   host.style.position = 'relative'; host.appendChild(b);
