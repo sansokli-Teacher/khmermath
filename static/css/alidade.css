@@ -1,0 +1,42 @@
+/* khmermath.org — «អាលីដាត» simulator (construct/alidade.html, static/js/alidade.js).
+   Loaded after construct.css. The three scenes are drawn on light "daylight" panels in both themes. */
+.al { display: flex; flex-direction: column; gap: 16px; }
+.al-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.al-card { margin: 0; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line-2); background: var(--surface); box-shadow: var(--shadow-sm); }
+.al-card figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 10px 14px; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--line); }
+.al-tag { font-weight: 500; font-size: 14px; color: var(--ink-3); }
+.al-switch { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; font-weight: 500; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.al-switch input { width: 18px; height: 18px; accent-color: var(--teal); }
+.al-svg { display: block; width: 100%; height: auto; background: #f7f3e6; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; outline: none; }
+.al-svg:focus-visible { box-shadow: inset 0 0 0 3px var(--teal); }
+.al.dragging .al-svg { cursor: grabbing; }
+.al-eye .al-svg { background: #cfe6f5; }
+.al-svg text { font-family: system-ui, 'Kantumruy Pro', 'Noto Sans Khmer', sans-serif; pointer-events: none; }
+.al-svg .al-it { font-family: 'Times New Roman', 'STIX Two Text', serif; font-style: italic; font-weight: 700; }
+
+.al-panel { padding: 14px 16px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.al-turn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.al-turn .btn { min-height: 44px; }
+.al-turn input[type=range] { flex: 1 1 200px; min-width: 140px; height: 44px; accent-color: var(--teal); }
+.al-read { margin: 0; font-size: 18px; color: var(--ink-2); }
+.al-read b { font-size: 24px; color: var(--ink); }
+.al-lock { display: inline-block; margin-left: 10px; padding: 2px 12px; border-radius: 999px; background: #dff5e8; color: #14653f; font-weight: 700; font-size: 15px; }
+.al-lock[hidden] { display: none; }
+.al-work { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-start; }
+.al-rec { display: flex; flex-wrap: wrap; gap: 8px; }
+.al-rec .btn { min-height: 44px; }
+.al-table { border-collapse: collapse; font-size: 17px; }
+.al-table th, .al-table td { padding: 5px 16px 5px 0; text-align: left; font-weight: 600; }
+.al-table td { color: var(--ink); min-width: 5em; }
+.al-msg { margin: 0; min-height: 3.2em; color: var(--ink); font-weight: 600; line-height: 1.7; }
+.al-msg.ok { color: #14653f; }
+.al-msg.bad { color: #a4400b; }
+.al-demo { display: flex; flex-direction: column; gap: 10px; }
+.al-steps li { transition: background .2s, opacity .2s; }
+.al-steps li.on { background: var(--teal-soft); border-radius: 10px; }
+.al.demoing .al-turn, .al.demoing .al-work .btn { opacity: .5; pointer-events: none; }
+
+@media (max-width: 760px) {
+  .al-grid { grid-template-columns: 1fr; }
+  .al-turn input[type=range] { flex-basis: 100%; order: 5; }
+}
