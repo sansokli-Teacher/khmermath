@@ -13,6 +13,11 @@ const wheelSettings = (() => {
   try { s = Object.assign(s, JSON.parse(localStorage.getItem('exam_wheel_set'))); } catch {}
   return s;
 })();
+// default teacher name: the owner gets «លោកគ្រូ សាន សុខលី», other teachers their own display name (everyone can edit it)
+const wheelTeacher = () => {
+  if (wheelSettings.teacher !== undefined) return String(wheelSettings.teacher).replace(/\s+/g, ' ').trim();
+  try { return ME && ME.role === 'owner' ? 'លោកគ្រូ សាន សុខលី' : (ME && ME.display_name) || ''; } catch { return ''; }
+};
 const wheelSaveSettings = () => { try { localStorage.setItem('exam_wheel_set', JSON.stringify(wheelSettings)); } catch {} };
 let wheelClassId = null;
 
@@ -261,7 +266,8 @@ render.wheel = async function () {
     for (let k = 0; k < 46; k++) { const a = (k * 9301 + 49297) % 233280 / 233280, b = (k * 7919 + 1237) % 10007 / 10007;
       g.fillStyle = ['#ffd43b', '#ff8787', '#74c0fc', '#b2f2bb', '#ffffff'][k % 5]; g.globalAlpha = 0.55; g.save(); g.translate(a * W, b * bannerH); g.rotate(k); g.fillRect(-7, -3, 14, 6); g.restore(); }
     g.globalAlpha = 1; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
-    g.font = `700 70px ${FONT}`; g.fillText(o.heading, W / 2, 98); g.font = `500 33px ${FONT}`; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, 178); g.globalAlpha = 1;
+    g.font = `700 70px ${FONT}`; g.fillText(o.heading, W / 2, o.teacher ? 84 : 98); g.font = `500 33px ${FONT}`; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, o.teacher ? 154 : 178); g.globalAlpha = 1;
+    if (o.teacher) { g.font = `600 34px ${FONT}`; g.fillText(`គ្រូបង្រៀន៖ ${o.teacher}`, W / 2, 204); }
     let y = bannerH + 40;
     rows.forEach((r, ri) => {
       r.forEach((grp, ci) => {
@@ -297,7 +303,7 @@ render.wheel = async function () {
     const single = isOrder(lastBlocks), total = lastBlocks.reduce((a, b) => a + b.people.length, 0);
     gPng.textContent = 'កំពុងបង្កើត…';
     try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]); } catch {}
-    const cv = posterCanvas({ heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!', sub: `${className()}  ·  ${whKh(total)} នាក់  ·  ${khDate()}`,
+    const cv = posterCanvas({ heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!', sub: `${className()}  ·  ${whKh(total)} នាក់  ·  ${khDate()}`, teacher: wheelTeacher(),
       colors: (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1],
       groups: lastBlocks.map((b) => ({ title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.people.map((p) => ({ n: p.n, g: p.g })) })) });
     cv.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); const d = new Date();
@@ -323,7 +329,7 @@ render.wheel = async function () {
     const finale = () => {
       const total = blocks.reduce((a, b) => a + b.people.length, 0);
       gSmall.textContent = `${isOrder(blocks) ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!'} 🎉`; gPop.firstChild.classList.add('final');
-      gSub.textContent = `${className()} · ${whKh(total)} នាក់ · ${khDate()}`; gSub.hidden = false; gBrand.hidden = false; gPng.hidden = false; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
+      gSub.textContent = `${className()} · ${whKh(total)} នាក់ · ${khDate()}${wheelTeacher() ? `\nគ្រូបង្រៀន៖ ${wheelTeacher()}` : ''}`; gSub.hidden = false; gBrand.hidden = false; gPng.hidden = false; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
       if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(true); }
       gAgain.focus({ preventScroll: true });
     };
@@ -363,6 +369,8 @@ render.wheel = async function () {
   const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
   gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
 
+  const teacherIn = h('input', { type: 'text', maxlength: '60', autocomplete: 'off', placeholder: 'ឈ្មោះគ្រូ', style: 'margin-bottom:10px' });
+  teacherIn.value = wheelTeacher(); teacherIn.oninput = () => { wheelSettings.teacher = teacherIn.value; wheelSaveSettings(); };
   const durV = h('b', {}, whKh(wheelSettings.dur));
   const durIn = h('input', { type: 'range', min: '2', max: '15', step: '1', value: String(wheelSettings.dur), style: 'padding:0;border:0;accent-color:var(--brand)' });
   durIn.oninput = () => { wheelSettings.dur = +durIn.value; durV.textContent = whKh(durIn.value); wheelSaveSettings(); };
@@ -372,6 +380,8 @@ render.wheel = async function () {
   speakRow.append(); chk('speak', ' អានឈ្មោះឱ្យលឺ', speakRow);
   const settingsCard = h('div', { class: 'card' }, [
     h('h3', {}, 'ការកំណត់កង់'),
+    h('label', { style: 'font-weight:400;display:block' }, 'ឈ្មោះគ្រូ (បង្ហាញក្នុងលទ្ធផល និងរូបភាព PNG)'),
+    teacherIn,
     h('label', { style: 'font-weight:400' }, ['រយៈពេលបង្វិល៖ ', durV, ' វិនាទី']), durIn,
     h('label', { style: 'font-weight:400;margin-top:8px;display:block' }, 'ពណ៌កង់'), themeSel,
     chk('fw', ' កាំជ្រួច និងសំឡេងអបអរ'), chk('mystery', ' លាក់ឈ្មោះសិស្សរហូតដល់ចុច «បង្ហាញឈ្មោះ»'), speakRow,
