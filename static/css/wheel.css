@@ -1,0 +1,59 @@
+/* khmermath.org — «កង់ចាប់ឈ្មោះ» (play/wheel.html, static/js/wheel.js). */
+.wh { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; max-width: 1080px; margin: 0 auto; }
+.wh-stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.wh-wheel-box { position: relative; width: min(100%, 560px); aspect-ratio: 1; }
+.wh-wheel-box canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shadow: var(--shadow); touch-action: manipulation; }
+.wh-pointer {
+  position: absolute; top: -10px; left: 50%; z-index: 2; width: 0; height: 0; transform: translateX(-50%);
+  border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--ink);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.3));
+}
+.wh-hub {
+  position: absolute; top: 50%; left: 50%; z-index: 2; width: 21%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; border: 4px solid #fff; background: var(--teal); color: #fff; font: inherit; font-weight: 700; font-size: clamp(14px, 3.4vw, 20px);
+  cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+.wh-hub:hover { background: var(--teal-strong); }
+.wh-hub:disabled { cursor: default; opacity: .75; }
+.wh-empty { margin: 0; padding: 14px 18px; border-radius: var(--radius); background: var(--amber-soft); color: var(--ink); text-align: center; line-height: 1.7; }
+.wh-result {
+  width: min(100%, 560px); padding: 14px 18px; text-align: center; border-radius: var(--radius);
+  background: var(--teal-soft); border: 2px solid var(--teal);
+}
+.wh-result small { display: block; color: var(--ink-3); font-size: 14px; }
+.wh-result b { display: block; margin: 2px 0 8px; font-size: clamp(30px, 7vw, 52px); line-height: 1.4; color: var(--teal-strong); overflow-wrap: anywhere; }
+.wh-result-acts, .wh-tools, .wh-row { display: flex; gap: 8px; }
+.wh-result-acts, .wh-tools { flex-wrap: wrap; justify-content: center; }
+.wh .btn { min-height: 44px; }
+.wh .btn[aria-pressed="false"] { opacity: .75; }
+
+.wh-panel { display: flex; flex-direction: column; gap: 14px; }
+.wh-box { padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.wh-lbl { font-weight: 700; color: var(--ink); }
+.wh-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.wh-hint { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-3); }
+.wh-row-wrap { flex-wrap: wrap; }
+.wh select, .wh input[type="text"], .wh textarea {
+  width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1.5px solid var(--line-2);
+  background: var(--bg); color: var(--ink); font: inherit; font-size: 16px;
+}
+.wh textarea { resize: vertical; line-height: 1.7; }
+.wh-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 300px; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.wh-chips li button {
+  min-height: 36px; padding: 4px 12px; border-radius: 999px; border: 1.5px solid var(--line-2); background: var(--surface-2);
+  color: var(--ink); font: inherit; font-size: 15px; cursor: pointer;
+}
+.wh-chips li button.off { text-decoration: line-through; opacity: .5; }
+.wh-chips li button.done { border-color: var(--teal); background: var(--teal-soft); color: var(--teal-strong); }
+.wh-add { display: flex; gap: 8px; }
+.wh-add input { flex: 1; min-width: 0; }
+
+/* fullscreen / projector: the wheel gets the whole screen */
+.wh-stage:fullscreen { justify-content: center; background: var(--bg); padding: 12px; }
+.wh-stage:fullscreen .wh-wheel-box { width: min(78vh, 92vw); }
+.wh-stage:fullscreen .wh-result { width: min(92vw, 720px); }
+
+@media (max-width: 860px) {
+  .wh { grid-template-columns: 1fr; gap: 20px; }
+}
+.wh [hidden] { display: none !important; }
