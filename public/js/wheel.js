@@ -13,11 +13,8 @@ const wheelSettings = (() => {
   try { s = Object.assign(s, JSON.parse(localStorage.getItem('exam_wheel_set'))); } catch {}
   return s;
 })();
-// default teacher name: the owner gets «លោកគ្រូ សាន សុខលី», other teachers their own display name (everyone can edit it)
-const wheelTeacher = () => {
-  if (wheelSettings.teacher !== undefined) return String(wheelSettings.teacher).replace(/\s+/g, ' ').trim();
-  try { return ME && ME.role === 'owner' ? 'លោកគ្រូ សាន សុខលី' : (ME && ME.display_name) || ''; } catch { return ''; }
-};
+// the teacher line is shown only when a name was typed (the box just hints at the format)
+const wheelTeacher = () => String(wheelSettings.teacher || '').replace(/\s+/g, ' ').trim();
 const wheelSaveSettings = () => { try { localStorage.setItem('exam_wheel_set', JSON.stringify(wheelSettings)); } catch {} };
 let wheelClassId = null;
 
@@ -74,6 +71,8 @@ render.wheel = async function () {
   const fw = h('canvas', { class: 'wheel-fw', 'aria-hidden': 'true' });
   const spinBtn = h('button', { class: 'wheel-hub', 'aria-label': 'បង្វិលកង់' }, 'បង្វិល');
   const msg = h('div', { class: 'notice', hidden: '' });
+  const lastLine = h('div', { class: 'wheel-last', hidden: '' });
+  const showLast = (on) => { lastLine.hidden = !on || !current; if (lastLine.hidden) return; lastLine.innerHTML = ''; lastLine.append('សិស្សដែលត្រូវបានជ្រើសចុងក្រោយ៖', h('b', {}, current.n)); };
   const winner = h('b', {});
   const againBtn = h('button', { class: 'btn-sm' }, 'បង្វិលម្ដងទៀត');
   const absentBtn = h('button', { class: 'secondary btn-sm' }, 'អវត្តមាន — ដកចេញ');
@@ -166,11 +165,16 @@ render.wheel = async function () {
     revealBtn.hidden = !pendingReveal; againBtn.hidden = pendingReveal; absentBtn.hidden = pendingReveal; sayBtn.hidden = pendingReveal || !voiceKm;
     pop.hidden = false; (pendingReveal ? revealBtn : againBtn).focus({ preventScroll: true });
   };
-  const reveal = () => { pendingReveal = false; winner.textContent = current.n; revealBtn.hidden = true; againBtn.hidden = false; absentBtn.hidden = false; sayBtn.hidden = !voiceKm; celebrate(); };
+  const reveal = () => { pendingReveal = false; showLast(true); winner.textContent = current.n; revealBtn.hidden = true; againBtn.hidden = false; absentBtn.hidden = false; sayBtn.hidden = !voiceKm; celebrate(); };
   const finish = (student) => {
-    current = student; if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id);
-    mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
-    renderHist(); refresh(); pendingReveal = !!wheelSettings.mystery; openPop(); if (!pendingReveal) celebrate();
+    current = student;
+    try {
+      if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id);
+      mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
+      renderHist(); refresh();
+    } catch {}
+    pendingReveal = !!wheelSettings.mystery; showLast(!pendingReveal); openPop();      // the name is shown first, effects after
+    try { if (!pendingReveal) celebrate(); } catch {}
   };
   const histCounts = () => { const c = {}; for (const x of mem.hist) c[x.n] = (c[x.n] || 0) + 1; return c; };
   const histList = h('ol', { class: 'wheel-hist' });
@@ -203,7 +207,7 @@ render.wheel = async function () {
   function spin() {
     if (spinning) return;
     const list = eligible(), n = list.length; if (!n) return;
-    frozen = list; closePop(); current = null;
+    frozen = list; closePop(); current = null; lastLine.hidden = true;
     const pick = Math.floor(Math.random() * n), a = Math.PI * 2 / n, target = -(pick * a + (Math.random() - 0.5) * a * 0.7);
     const from = angle, norm = ((target - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     const to = from + (5 + Math.floor(Math.random() * 3)) * Math.PI * 2 + norm, dur = wheelSettings.dur * 1000 * (0.9 + Math.random() * 0.2), t0 = performance.now();
@@ -298,6 +302,21 @@ render.wheel = async function () {
   const className = () => (classes.find((c) => c.id === wheelClassId) || {}).name || '';
   let lastBlocks = null;
   const isOrder = (bl) => bl.length === 1 && /^លំដាប់/.test(bl[0].title);
+  const isPhone = () => (window.matchMedia && matchMedia('(pointer: coarse)').matches) || /Android|iPhone|iPad|iPod|Mobile|FBAN|FBAV|Telegram|Line\//i.test(navigator.userAgent);
+  const saveBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+  // phones: a preview with long-press save + a share button (in-app browsers often block downloads)
+  const savePicture = (blob, name) => {
+    if (!isPhone()) return saveBlob(blob, name);
+    document.getElementById('wheel-pv')?.remove();
+    const url = URL.createObjectURL(blob); let file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch {}
+    const box = h('div', { id: 'wheel-pv', class: 'wheel-pv' }, [h('p', {}, 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងក្រោម។'), h('img', { src: url, alt: 'លទ្ធផលបែងចែកក្រុម' }),
+      h('div', { class: 'row wheel-tools' }, [
+        file && navigator.canShare && navigator.canShare({ files: [file] }) ? h('button', { class: 'btn-sm', onclick: () => navigator.share({ files: [file], title: 'khmermath.org' }).catch(() => {}) }, 'ចែករំលែក / រក្សាទុក') : null,
+        h('button', { class: 'secondary btn-sm', onclick: () => saveBlob(blob, name) }, 'ទាញយក'),
+        h('button', { class: 'secondary btn-sm', onclick: () => { box.remove(); URL.revokeObjectURL(url); } }, 'បិទ'),
+      ])]);
+    document.body.appendChild(box);
+  };
   gPng.onclick = async () => {
     if (!lastBlocks) return;
     const single = isOrder(lastBlocks), total = lastBlocks.reduce((a, b) => a + b.people.length, 0);
@@ -306,9 +325,12 @@ render.wheel = async function () {
     const cv = posterCanvas({ heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!', sub: `${className()}  ·  ${whKh(total)} នាក់  ·  ${khDate()}`, teacher: wheelTeacher(),
       colors: (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1],
       groups: lastBlocks.map((b) => ({ title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.people.map((p) => ({ n: p.n, g: p.g })) })) });
-    cv.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); const d = new Date();
-      a.download = `khmermath-${single ? 'order' : 'groups'}-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.png`;
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); gPng.textContent = '⬇ ទាញយក PNG'; }, 'image/png');
+    cv.toBlob((b) => {
+      const d = new Date(), z = (x) => String(x).padStart(2, '0');
+      gPng.textContent = '⬇ ទាញយក PNG';
+      if (!b) return Exam.notify('មិនអាចបង្កើតរូបភាពបានទេ។');
+      savePicture(b, `khmermath-${single ? 'order' : 'groups'}-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}.png`);
+    }, 'image/png');
   };
   // one drum roll per group: only that card shuffles, then it locks with a crash and a firework
   const closeGroupPop = () => { gRun++; gSkipFlag = true; gPop.hidden = true; stopFireworks(); };
@@ -369,8 +391,8 @@ render.wheel = async function () {
   const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
   gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
 
-  const teacherIn = h('input', { type: 'text', maxlength: '60', autocomplete: 'off', placeholder: 'ឈ្មោះគ្រូ', style: 'margin-bottom:10px' });
-  teacherIn.value = wheelTeacher(); teacherIn.oninput = () => { wheelSettings.teacher = teacherIn.value; wheelSaveSettings(); };
+  const teacherIn = h('input', { type: 'text', maxlength: '60', autocomplete: 'off', placeholder: 'ឧ. លោកគ្រូ សាន សុខលី', style: 'margin-bottom:10px' });
+  teacherIn.value = wheelSettings.teacher || ''; teacherIn.oninput = () => { wheelSettings.teacher = teacherIn.value; wheelSaveSettings(); };
   const durV = h('b', {}, whKh(wheelSettings.dur));
   const durIn = h('input', { type: 'range', min: '2', max: '15', step: '1', value: String(wheelSettings.dur), style: 'padding:0;border:0;accent-color:var(--brand)' });
   durIn.oninput = () => { wheelSettings.dur = +durIn.value; durV.textContent = whKh(durIn.value); wheelSaveSettings(); };
@@ -380,7 +402,7 @@ render.wheel = async function () {
   speakRow.append(); chk('speak', ' អានឈ្មោះឱ្យលឺ', speakRow);
   const settingsCard = h('div', { class: 'card' }, [
     h('h3', {}, 'ការកំណត់កង់'),
-    h('label', { style: 'font-weight:400;display:block' }, 'ឈ្មោះគ្រូ (បង្ហាញក្នុងលទ្ធផល និងរូបភាព PNG)'),
+    h('label', { style: 'font-weight:400;display:block' }, 'ឈ្មោះគ្រូ (បង្ហាញក្នុងលទ្ធផល និងរូបភាព PNG តែពេលបានវាយ)'),
     teacherIn,
     h('label', { style: 'font-weight:400' }, ['រយៈពេលបង្វិល៖ ', durV, ' វិនាទី']), durIn,
     h('label', { style: 'font-weight:400;margin-top:8px;display:block' }, 'ពណ៌កង់'), themeSel,
@@ -389,7 +411,7 @@ render.wheel = async function () {
   ]);
   const stage = h('div', { class: 'wheel-stage' }, [
     h('div', { class: 'wheel-box' }, [h('div', { class: 'wheel-pointer' }), canvas, spinBtn]),
-    msg,
+    msg, lastLine,
     h('div', { class: 'row wheel-tools' }, [
       h('button', { class: 'secondary btn-sm', onclick: () => { if (document.fullscreenElement) document.exitFullscreen(); else if (stage.requestFullscreen) stage.requestFullscreen(); } }, 'ពេញអេក្រង់'),
       h('button', { class: 'secondary btn-sm', onclick: (e) => { sound = !sound; e.target.textContent = `សំឡេង៖ ${sound ? 'បើក' : 'បិទ'}`; } }, 'សំឡេង៖ បើក'),

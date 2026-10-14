@@ -75,3 +75,11 @@
 /* cards keep their full height and the grid scrolls (without this, short screens squash every card to one name) */
 .wheel-ggrid { grid-auto-rows: max-content; align-content: start; }
 .wheel-ggrid .wheel-g { min-height: min-content; }
+
+/* last picked name, always visible under the wheel (also if the popup cannot be shown) */
+.wheel-last { margin: 0; width: min(100%, 560px); padding: 10px 16px; border-radius: 14px; background: var(--brand-soft); border: 2px solid var(--brand); text-align: center; font-size: 18px; color: var(--muted); }
+.wheel-last b { display: block; font-size: clamp(26px, 7vw, 40px); line-height: 1.5; color: var(--brand-dark); overflow-wrap: anywhere; }
+/* PNG preview for phones */
+.wheel-pv { position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 12px; background: rgba(10, 18, 30, .97); overflow-y: auto; }
+.wheel-pv p { margin: 0; color: #fff; text-align: center; line-height: 1.7; font-size: 15px; }
+.wheel-pv img { width: min(100%, 900px); height: auto; border-radius: 12px; background: #fff; }
