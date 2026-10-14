@@ -100,7 +100,7 @@
       });
     } catch (e) {}
   }
-  var fwParts = [], fwEnd = 0, fwOn = false, fwNext = 0, fwRandom = false, fwDim = null, fwHues = [8, 40, 52, 130, 190, 280, 330];
+  var fwSides = false, fwParts = [], fwEnd = 0, fwOn = false, fwNext = 0, fwRandom = false, fwDim = null, fwHues = [8, 40, 52, 130, 190, 280, 330];
   function reduceMotion() { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
   function fwBurst(x, y, n) {
     var hue = fwHues[Math.floor(Math.random() * fwHues.length)];
@@ -114,7 +114,7 @@
     var g = fwDim.g, W = fwDim.W, H = fwDim.H;
     g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = 'lighter';
-    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.45), 46); fwNext = now + 260 + Math.random() * 260; }
+    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(fwSides ? W * (Math.random() < 0.5 ? 0.02 + Math.random() * 0.14 : 0.84 + Math.random() * 0.14) : W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.5), 46); fwNext = now + 260 + Math.random() * 260; }
     fwParts = fwParts.filter(function (p) { return p.life > 0.02; });
     fwParts.forEach(function (p) {
       p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985; p.life -= 0.013;
@@ -130,8 +130,8 @@
     var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
     fwDim = { g: g, W: W, H: H }; fwOn = true; fwParts = []; requestAnimationFrame(fwFrame);
   }
-  function fireworks() { if (reduceMotion()) return; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + 3600; }
-  function miniBurst(x, y) { if (reduceMotion()) return; fwStart(); fwBurst(x, y, 34); fwEnd = Math.max(fwEnd, performance.now() + 900); }
+  function fireworks(sides) { if (reduceMotion()) return; $('wh-fw').classList.toggle('behind', !!sides); fwSides = !!sides; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + (sides ? 2600 : 3600); }   // sides: keep bursts in the margins so they never cover the group names
+  function miniBurst(x, y) { if (reduceMotion()) return; $('wh-fw').classList.remove('behind'); fwStart(); fwBurst(x, y, 22); fwEnd = Math.max(fwEnd, performance.now() + 700); }
   function stopFireworks() { fwOn = false; fwRandom = false; fwParts = []; var cv = $('wh-fw'); cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); }
 
   /* drum roll (noise bursts that speed up) and cymbal crash */
@@ -330,7 +330,7 @@
     g.quadraticCurveTo(x + w, y + h, x + w - br, y + h); g.lineTo(x + bl, y + h); g.quadraticCurveTo(x, y + h, x, y + h - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
   }
   function posterCanvas(o) {                                  // o: {heading, sub, groups:[{title, items:[{n,g}]}], colors}
-    var W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    var W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
     var cw = (W - pad * 2 - gap * (cols - 1)) / cols, headH = 80, lineH = 46, cpad = 18, bannerH = 250, footH = 110;
     var rows = []; for (var i = 0; i < n; i += cols) rows.push(o.groups.slice(i, i + cols));
     var rowH = rows.map(function (r) { return headH + Math.max.apply(null, r.map(function (g) { return g.items.length; })) * lineH + cpad * 2; });
@@ -362,7 +362,7 @@
           g.textAlign = 'left'; g.fillStyle = col; g.font = '700 26px ' + FONT; g.fillText(khNum(i + 1) + '.', x + 24, ty);
           var dx = x + 76;
           if (it.g) { g.fillStyle = it.g === 'f' ? '#d6336c' : '#1c7ed6'; g.beginPath(); g.arc(dx + 8, ty, 8, 0, 7); g.fill(); dx += 28; }
-          var size = 33; g.font = '500 ' + size + 'px ' + FONT; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 18) { size -= 2; g.font = '500 ' + size + 'px ' + FONT; }
+          var size = 33; g.font = '500 ' + size + 'px ' + FONT; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 12) { size -= 2; g.font = '500 ' + size + 'px ' + FONT; }
           g.fillStyle = '#1b2733'; g.fillText(it.n, dx, ty);
         });
       });
@@ -413,13 +413,13 @@
     var remaining = [].concat.apply([], blocks.map(function (b) { return b.list; }));
     var per = reduce ? 0 : Math.max(900, Math.min(1800, 12000 / n)), pause = reduce ? 0 : 450;
     lastBlocks = blocks; $('wh-gcardbox').classList.remove('final'); $('wh-gsub').hidden = true; $('wh-gbrand').hidden = true; $('wh-gpng').hidden = true;
-    closePop(); stopFireworks(); box.innerHTML = ''; box.className = 'wh-ggrid'; cards.forEach(function (c, i) { setNames(c, blocks[i].list, true); box.appendChild(c); });
+    closePop(); stopFireworks(); box.innerHTML = ''; box.className = 'wh-ggrid cols-' + (n <= 1 ? 1 : n <= 4 ? 2 : 3); cards.forEach(function (c, i) { setNames(c, blocks[i].list, true); box.appendChild(c); });
     $('wh-gpop').hidden = false; ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = true; }); $('wh-gskip').hidden = n < 2;
     var cur = -1, phase = 'start', t0 = 0, last = 0;
     function lock(i, burst) {
       var card = cards[i]; card.className = 'wh-g done'; setNames(card, blocks[i].list, false);
       var ids = {}; blocks[i].list.forEach(function (p) { ids[p.n] = 1; }); remaining = remaining.filter(function (p) { return !ids[p.n]; });
-      if (burst) { cymbal(); var r = card.getBoundingClientRect(); if (S().fw) miniBurst(r.left + r.width / 2, r.top + r.height / 2); }
+      if (burst) { cymbal(); var r = card.getBoundingClientRect(); if (S().fw) miniBurst(r.right - 28, r.top + 22); }
     }
     function finale() {
       var total = blocks.reduce(function (a, b) { return a + b.list.length; }, 0), single = n === 1 && /^លំដាប់/.test(blocks[0].title);
@@ -427,7 +427,7 @@
       $('wh-gsub').textContent = cls().name + ' · ' + khNum(total) + ' នាក់ · ' + khDate(); $('wh-gsub').hidden = false; $('wh-gbrand').hidden = false; $('wh-gpng').hidden = false;
       $('wh-gskip').hidden = true;
       ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = false; });
-      if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+      if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(true); }
       $('wh-gagain').focus({ preventScroll: true });
     }
     $('wh-gskip').onclick = function () { gSkip = true; };
