@@ -83,3 +83,13 @@
 .wheel-pv { position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 12px; background: rgba(10, 18, 30, .97); overflow-y: auto; }
 .wheel-pv p { margin: 0; color: #fff; text-align: center; line-height: 1.7; font-size: 15px; }
 .wheel-pv img { width: min(100%, 900px); height: auto; border-radius: 12px; background: #fff; }
+
+/* phones: sizes are relative to the visible area (not 100vh, which runs under Safari's bottom toolbar); a close ✕ is always at the top */
+.wheel-pop { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.wheel-pop-card { position: relative; max-height: 100%; overflow-y: auto; }
+.wheel-gcard { max-height: 100%; overflow: hidden; }
+.wheel-ggrid { max-height: none; }
+.wheel-x { position: absolute; top: 8px; right: 8px; z-index: 3; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.wheel-x:hover { background: var(--brand-soft); }
+.wheel-pop-card.wheel-gcard small, .wheel-pop-card small { padding-right: 56px; }
+.wheel-pv .row { order: -1; }

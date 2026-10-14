@@ -80,8 +80,9 @@ render.wheel = async function () {
   const revealBtn = h('button', { class: 'btn-sm', hidden: '' }, 'បង្ហាញឈ្មោះ');
   const sayBtn = h('button', { class: 'secondary btn-sm', hidden: '' }, '🔊 អាន');
   const popSmall = h('small', {}, 'សិស្សដែលត្រូវបានជ្រើស');
+  const xBtn1 = h('button', { class: 'wheel-x', 'aria-label': 'បិទ', type: 'button' }, '✕');
   const pop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' },
-    h('div', { class: 'wheel-pop-card' }, [popSmall, winner, h('div', { class: 'row wheel-tools' }, [revealBtn, sayBtn, againBtn, absentBtn, closeBtn])]));
+    h('div', { class: 'wheel-pop-card' }, [xBtn1, popSmall, winner, h('div', { class: 'row wheel-tools' }, [revealBtn, sayBtn, againBtn, absentBtn, closeBtn])]));
   const chips = h('div', { class: 'wheel-chips' });
   const count = h('span', { class: 'muted' });
   const gsum = h('p', { class: 'muted', style: 'font-size:14px;margin:0' });
@@ -102,10 +103,10 @@ render.wheel = async function () {
         ctx.save(); ctx.rotate(i * a - Math.PI / 2);
         ctx.font = `600 ${Math.max(13, Math.min(36, Math.floor(r * a * 0.6)))}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`;
         ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 3;
-        let name = list[i].n; const maxW = r * 0.7;
-        while (ctx.measureText(name).width > maxW && name.length > 2) name = name.slice(0, -1);
-        if (name !== list[i].n) name += '…';
-        ctx.fillText(name, r - 16, 0); ctx.restore();
+        const name = list[i].n, maxW = r * 0.7, w = ctx.measureText(name).width;
+        if (w > maxW && w > 0) { const sz = Math.max(11, Math.floor(Math.max(13, Math.min(36, Math.floor(r * a * 0.6))) * maxW / w)); ctx.font = `600 ${sz}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`; }
+        ctx.fillText(name, r - 16, 0, maxW);          // maxWidth keeps the whole name visible even if Safari mis-measures
+        ctx.restore();
       }
     }
     ctx.restore();
@@ -220,7 +221,7 @@ render.wheel = async function () {
     };
     requestAnimationFrame(frame);
   }
-  spinBtn.onclick = spin; againBtn.onclick = spin; closeBtn.onclick = closePop; revealBtn.onclick = reveal; sayBtn.onclick = say;
+  spinBtn.onclick = spin; againBtn.onclick = spin; closeBtn.onclick = closePop; xBtn1.onclick = closePop; revealBtn.onclick = reveal; sayBtn.onclick = say;
   pop.addEventListener('click', (e) => { if (e.target === pop) closePop(); });
   pop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
   absentBtn.onclick = () => { if (!current) return; mem.off.push(current.id); mem.done = mem.done.filter((x) => x !== current.id); const l = mem.hist[mem.hist.length - 1]; if (l && l.n === current.n) mem.hist.pop(); save(); current = null; closePop(); renderHist(); refresh(); redraw(); };
@@ -243,10 +244,11 @@ render.wheel = async function () {
   const gAgain = h('button', { class: 'btn-sm' }, 'បែងចែកម្ដងទៀត');
   const gCopy = h('button', { class: 'secondary btn-sm' }, 'ចម្លង');
   const gClose = h('button', { class: 'secondary btn-sm' }, 'បិទ');
+  const xBtn2 = h('button', { class: 'wheel-x', 'aria-label': 'បិទ', type: 'button' }, '✕');
   const gPng = h('button', { class: 'btn-sm', hidden: '' }, '⬇ ទាញយក PNG');
   const gSub = h('div', { class: 'wheel-gsub', hidden: '' });
   const gBrand = h('div', { class: 'wheel-gbrand', hidden: '' }, 'khmermath.org · កង់ចាប់ឈ្មោះ');
-  const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [gSmall, gSub, gGrid, gBrand, h('div', { class: 'row wheel-tools' }, [gPng, gAgain, gCopy, gClose])]));
+  const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [xBtn2, gSmall, gSub, gGrid, gBrand, h('div', { class: 'row wheel-tools' }, [gPng, gAgain, gCopy, gClose])]));
   let gRun = 0, gRedo = null, gSkipFlag = false;
   const gSkip = h('button', { class: 'secondary btn-sm', hidden: '' }, 'រំលង ⏭');
   gPop.querySelector('.wheel-tools').prepend(gSkip);
@@ -309,7 +311,7 @@ render.wheel = async function () {
     if (!isPhone()) return saveBlob(blob, name);
     document.getElementById('wheel-pv')?.remove();
     const url = URL.createObjectURL(blob); let file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch {}
-    const box = h('div', { id: 'wheel-pv', class: 'wheel-pv' }, [h('p', {}, 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងក្រោម។'), h('img', { src: url, alt: 'លទ្ធផលបែងចែកក្រុម' }),
+    const box = h('div', { id: 'wheel-pv', class: 'wheel-pv' }, [h('p', {}, 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងលើ។'), h('img', { src: url, alt: 'លទ្ធផលបែងចែកក្រុម' }),
       h('div', { class: 'row wheel-tools' }, [
         file && navigator.canShare && navigator.canShare({ files: [file] }) ? h('button', { class: 'btn-sm', onclick: () => navigator.share({ files: [file], title: 'khmermath.org' }).catch(() => {}) }, 'ចែករំលែក / រក្សាទុក') : null,
         h('button', { class: 'secondary btn-sm', onclick: () => saveBlob(blob, name) }, 'ទាញយក'),
@@ -321,7 +323,7 @@ render.wheel = async function () {
     if (!lastBlocks) return;
     const single = isOrder(lastBlocks), total = lastBlocks.reduce((a, b) => a + b.people.length, 0);
     gPng.textContent = 'កំពុងបង្កើត…';
-    try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]); } catch {}
+    try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('700 30px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]); } catch {}
     const cv = posterCanvas({ heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!', sub: `${className()}  ·  ${whKh(total)} នាក់  ·  ${khDate()}`, teacher: wheelTeacher(),
       colors: (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1],
       groups: lastBlocks.map((b) => ({ title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.people.map((p) => ({ n: p.n, g: p.g })) })) });
@@ -372,7 +374,7 @@ render.wheel = async function () {
     };
     requestAnimationFrame(frame);
   };
-  gAgain.onclick = () => gRedo && gRedo(); gClose.onclick = closeGroupPop; gCopy.onclick = () => { copyBtn.click(); gCopy.textContent = 'បានចម្លង ✓'; setTimeout(() => { gCopy.textContent = 'ចម្លង'; }, 1600); };
+  gAgain.onclick = () => gRedo && gRedo(); gClose.onclick = closeGroupPop; xBtn2.onclick = closeGroupPop; gCopy.onclick = () => { copyBtn.click(); gCopy.textContent = 'បានចម្លង ✓'; setTimeout(() => { gCopy.textContent = 'ចម្លង'; }, 1600); };
   gPop.addEventListener('click', (e) => { if (e.target === gPop) closeGroupPop(); });
   gPop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroupPop(); });
   const makeGroups = () => {
@@ -477,5 +479,5 @@ render.wheel = async function () {
   };
   document.addEventListener('keydown', window.wheelKeyHandler);
   renderHist(); refresh(); draw();
-  if (document.fonts && document.fonts.load) document.fonts.load('600 20px "Kantumruy Pro"').then(() => { if (!spinning) redraw(); });
+  if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('600 20px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('700 30px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]).then(() => { if (!spinning) redraw(); }, () => {});
 };
