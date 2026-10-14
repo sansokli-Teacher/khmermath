@@ -141,3 +141,6 @@
 
 /* final group fireworks sit behind the result card so they never cover a name */
 .wh-fw.behind { z-index: 79; }
+/* cards keep their full height and the grid scrolls (without this, short screens squash every card to one name) */
+.wh-ggrid { grid-auto-rows: max-content; align-content: start; }
+.wh-ggrid .wh-g { min-height: min-content; }
