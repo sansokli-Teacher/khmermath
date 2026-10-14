@@ -1919,6 +1919,133 @@
     },
   });
 
+  // ---- Grade 9, lesson 13 «រង្វង់ និងបន្ទាត់» ----
+  var G9C = { O: [320, 236], R: 150 };
+  var onRim = function (p) { return add(G9C.O, mul(unit(sub(p, G9C.O)), G9C.R)); };       // a handle kept on the circle
+  var angleOf = function (p) { return Math.atan2(p[1] - G9C.O[1], p[0] - G9C.O[0]) * 180 / Math.PI; };
+  var gap = function (a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+
+  // A chord AB of a circle, the perpendicular from the centre O to AB (set square) meets it at M: AM = MB.
+  // Then the converse: the mediator of AB passes through O. A and B slide round the circle.
+  CX['g9-l13-chord-perp'] = scripted({
+    steps: 6,
+    start: { A: [196, 130], B: [470, 150] },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var o = key === 'A' ? s.B : s.A, g = gap(angleOf(p), angleOf(o));
+      return g >= 44 && g <= 150;                        // a chord, not a diameter: then OM is a real segment
+    },
+    figure: function (s) {
+      var f = { O: G9C.O, R: G9C.R, A: onRim(s.A), B: onRim(s.B) };
+      f.M = footOn(f.O, f.A, f.B);
+      f.med = mediatorOf(f.A, f.B, f.O);
+      return f;
+    },
+    base: function (f, ink) {},
+    top: function (f, ink, i) {
+      point(ink, f.O, 'O', [-0.8, 0.7], null, null, 22);
+      if (i >= 1) {
+        el('circle', { cx: f.A[0], cy: f.A[1], r: 7, class: 'cx-handle' }, ink); el('circle', { cx: f.A[0], cy: f.A[1], r: 24, class: 'cx-grab', 'data-drag': 'A' }, ink);
+        el('circle', { cx: f.B[0], cy: f.B[1], r: 7, class: 'cx-handle' }, ink); el('circle', { cx: f.B[0], cy: f.B[1], r: 24, class: 'cx-grab', 'data-drag': 'B' }, ink);
+      }
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [['circ', f.O, f.A], ['pt', f.O, 'O', [-0.8, 0.7], null, 22]],
+        [['seg', f.A, f.B, 'cx-line'], ['pt', f.A, 'A', away(f.A), null, 22], ['pt', f.B, 'B', away(f.B), null, 22]],
+        [['perp', f.O, f.A, f.B], ['pt', f.M, 'M', sub(f.M, f.O), null, 20],
+         ['mark', function (g) { rightAt(g, f.M, f.O, f.A, f.B); }]],
+        [['mark', function (g) { tick(g, f.A, f.M); tick(g, f.M, f.B); }]],
+        f.med.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.med.e1, f.med.e2, 'cx-line cx-line-2']],
+      ];
+    },
+  });
+
+  // Find the centre of a circle that has none: three points A, B, C on it, the mediators of AB and BC meet at O.
+  CX['g9-l13-find-centre'] = scripted({
+    steps: 7,
+    start: { A: [190, 150], B: [320, 86], C: [470, 160] },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var t = { A: s.A, B: s.B, C: s.C }; t[key] = p;
+      var a = [angleOf(t.A), angleOf(t.B), angleOf(t.C)];
+      return gap(a[0], a[1]) >= 50 && gap(a[1], a[2]) >= 50 && gap(a[0], a[2]) >= 50;
+    },
+    figure: function (s) {
+      var f = { O: G9C.O, R: G9C.R, A: onRim(s.A), B: onRim(s.B), C: onRim(s.C) };
+      f.m1 = mediatorOf(f.A, f.B, f.O); f.m2 = mediatorOf(f.B, f.C, f.O);
+      return f;
+    },
+    base: function (f, ink) { el('circle', { cx: f.O[0], cy: f.O[1], r: f.R, class: 'cx-circle' }, ink); },
+    top: function (f, ink, i) {
+      ['A', 'B', 'C'].forEach(function (k) {
+        el('circle', { cx: f[k][0], cy: f[k][1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f[k][0], cy: f[k][1], r: 24, class: 'cx-grab', 'data-drag': k }, ink);
+      });
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [['pt', f.A, 'A', away(f.A), null, 22], ['pt', f.B, 'B', away(f.B), null, 22], ['pt', f.C, 'C', away(f.C), null, 22]],
+        [['seg', f.A, f.B, 'cx-line'], ['seg', f.B, f.C, 'cx-line']],
+        f.m1.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.m1.e1, f.m1.e2, 'cx-line cx-line-2']],
+        f.m2.arcs.map(function (a) { return ['arc', a]; }),
+        [['seg', f.m2.e1, f.m2.e2, 'cx-line cx-line-3'], ['pt', f.O, 'O', [-0.8, 0.7], 'cx-pt-m', 22]],
+        [['seg', f.O, f.A, 'cx-seg'], ['seg', f.O, f.B, 'cx-seg'], ['seg', f.O, f.C, 'cx-seg'],
+         ['mark', function (g) { tick(g, f.O, f.A); tick(g, f.O, f.B); tick(g, f.O, f.C); }]],
+      ];
+    },
+  });
+
+  // Two circles: the centre O′ slides along a line through O. d = OO′ against r + r′ and r − r′ tells the position.
+  var G9T = { O: [140, 236], R: 90, r: 60, x0: 150, x1: 440 };
+  CX['g9-l13-two-circles'] = scripted({
+    steps: 5,
+    start: { P: [330, 236] },
+    place: function (s, key, p) {
+      var d = Math.max(G9T.x0 - G9T.O[0], Math.min(G9T.x1 - G9T.O[0], p[0] - G9T.O[0]));
+      [G9T.R + G9T.r, G9T.R - G9T.r].forEach(function (c) { if (Math.abs(d - c) < 9) d = c; });      // snaps onto the two «touching» positions
+      return [G9T.O[0] + d, G9T.O[1]];
+    },
+    limit: function () { return true; },
+    figure: function (s) {
+      var d = s.P[0] - G9T.O[0], R = G9T.R, r = G9T.r, f = { O: G9T.O, P: [G9T.O[0] + d, G9T.O[1]], d: d, R: R, r: r };
+      f.kind = d > R + r + 0.5 ? 0 : Math.abs(d - (R + r)) <= 0.5 ? 1 : d > R - r + 0.5 ? 2 : Math.abs(d - (R - r)) <= 0.5 ? 3 : 4;
+      return f;
+    },
+    base: function (f, ink) {},
+    top: function (f, ink, i) {
+      if (i >= 1) {
+        el('circle', { cx: f.P[0], cy: f.P[1], r: 7, class: 'cx-handle' }, ink);
+        el('circle', { cx: f.P[0], cy: f.P[1], r: 26, class: 'cx-grab', 'data-drag': 'P' }, ink);
+      }
+    },
+    script: function (f) {
+      var words = ['d > r + r′ : គ្មានចំណុចរួម (នៅឆ្ងាយពីគ្នា)', 'd = r + r′ : ប៉ះគ្នាក្រៅ', 'r − r′ < d < r + r′ : កាត់គ្នាពីរចំណុច',
+        'd = r − r′ : ប៉ះគ្នាក្នុង', 'd < r − r′ : គ្មានចំណុចរួម (រង្វង់តូចនៅក្នុងរង្វង់ធំ)'];
+      var below = [0, 34];
+      return [
+        [['circ', f.O, [f.O[0] + f.R, f.O[1]]], ['pt', f.O, 'O', [-0.8, 0.7], null, 24]],
+        [['circ', f.P, [f.P[0] + f.r, f.P[1]]], ['pt', f.P, 'O′', [0, 1], null, 28]],
+        [['seg', f.O, f.P, 'cx-seg'],
+         ['mark', function (g) { label(g, [(f.O[0] + f.P[0]) / 2, f.O[1] - 16], 'd', 'cx-label'); }]],
+        [['mark', function (g) {
+          var y = f.O[1] + 140, x = function (v) { return f.O[0] + v; };
+          el('line', { x1: x(0), y1: y, x2: x(f.R + f.r + 40), y2: y, class: 'cx-seg' }, g);
+          [[f.R - f.r, 'r − r′'], [f.R + f.r, 'r + r′'], [f.d, 'd']].forEach(function (t) {
+            el('line', { x1: x(t[0]), y1: y - 8, x2: x(t[0]), y2: y + 8, class: 'cx-tick' }, g);
+            label(g, [x(t[0]), y + 26], t[1], 'cx-label');
+          });
+         
+        }]],
+        [['mark', function (g) { says(g, 0, words[f.kind]); }]],
+      ];
+    },
+  });
+
   // Grade 8, lesson 12, a worked example: OZ bisects the angle XOY; A on OX and B on OY with
   // OA = OB; M on OZ, joined to A and to B. (The triangles OMA and OMB are congruent, so MA = MB.)
   CX['g8-l12-bisector-triangles'] = scripted({
