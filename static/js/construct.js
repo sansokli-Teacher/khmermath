@@ -2046,6 +2046,258 @@
     },
   });
 
+  // ---- Grade 9, lesson 13, part 2: equal chords, the quadrilateral round a circle, two circles and their common tangents ----
+  var d2r = function (a) { return a * Math.PI / 180; };
+  var rimAt = function (c, r, deg) { return onCircle(c, r, d2r(deg)); };
+  var degOf = function (c, p) { return Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI; };
+  var angN = function (a) { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
+  var clampN = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+  var tickN = function (g, p, q, n) {
+    var m = mul(add(p, q), 0.5), u = unit(sub(q, p)), nv = [u[1], -u[0]], k;
+    for (k = 0; k < n; k++) {
+      var c = add(m, mul(u, (k - (n - 1) / 2) * 6));
+      el('line', { x1: c[0] - nv[0] * 8, y1: c[1] - nv[1] * 8, x2: c[0] + nv[0] * 8, y2: c[1] + nv[1] * 8, class: 'cx-tick' }, g);
+    }
+  };
+  var handleAt = function (ink, p, key, big) {
+    el('circle', { cx: p[0], cy: p[1], r: 7, class: 'cx-handle' }, ink);
+    el('circle', { cx: p[0], cy: p[1], r: big || 24, class: 'cx-grab', 'data-drag': key }, ink);
+  };
+  var tangentPts = function (c, r, P) {                      // the two points where the tangents from P touch the circle (c, r)
+    var u = unit(sub(P, c)), nv = [-u[1], u[0]], k = r / len(sub(P, c)), s = Math.sqrt(1 - k * k);
+    return [add(c, mul(add(mul(u, k), mul(nv, s)), r)), add(c, mul(sub(mul(u, k), mul(nv, s)), r))];
+  };
+
+  // Equal chords are at equal distances from the centre: the chord PR is copied with the compass onto the circle as QS.
+  CX['g9-l13-equal-chords'] = scripted({
+    steps: 6,
+    start: { Q: rimAt(G9C.O, G9C.R, 20) },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) { var a = angN(degOf(G9C.O, p)); return a >= -10 && a <= 80; },
+    figure: function (s) {
+      var O = G9C.O, f = { O: O, R: G9C.R, P: rimAt(O, G9C.R, 215), Rr: rimAt(O, G9C.R, 325), Q: onRim(s.Q) };
+      f.S = rimAt(O, G9C.R, degOf(O, f.Q) + 110);
+      f.C = footOn(O, f.P, f.Rr); f.D = footOn(O, f.Q, f.S);
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 3) handleAt(ink, f.Q, 'Q'); },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [['circ', f.O, f.P], ['pt', f.O, 'O', [-0.8, 0.7], null, 22]],
+        [['seg', f.P, f.Rr, 'cx-line'], ['pt', f.P, 'P', away(f.P), null, 22], ['pt', f.Rr, 'R', away(f.Rr), null, 22]],
+        [['perp', f.O, f.P, f.Rr], ['mark', function (g) { rightAt(g, f.C, f.O, f.P, f.Rr); }], ['pt', f.C, 'C', [0, -1], null, 18]],
+        [['arc', { c: f.Q, r: len(sub(f.P, f.Rr)), t1: aimAt(f.Q, f.S) - 0.3, t2: aimAt(f.Q, f.S) + 0.3 }],
+          ['pt', f.Q, 'Q', away(f.Q), null, 22], ['pt', f.S, 'S', away(f.S), null, 22]],
+        [['seg', f.Q, f.S, 'cx-line cx-line-2']],
+        [['perp', f.O, f.Q, f.S, 'cx-perp'], ['mark', function (g) {
+          rightAt(g, f.D, f.O, f.Q, f.S); tickN(g, f.P, f.Rr, 1); tickN(g, f.Q, f.S, 1); tickN(g, f.O, f.C, 2); tickN(g, f.O, f.D, 2);
+        }], ['pt', f.D, 'D', [0, 1], null, 18]],
+      ];
+    },
+  });
+
+  // The quadrilateral ABCD round a circle: four tangents, AP = AS, BP = BQ, CQ = CR, DR = DS, so AB + CD = AD + BC.
+  var G9Q = { O: [320, 236], R: 110, keys: ['P', 'Q', 'R', 'S'] };
+  var quadAngles = function (s) { return G9Q.keys.map(function (k) { return degOf(G9Q.O, s[k]); }); };
+  CX['g9-l13-quad-circle'] = scripted({
+    steps: 7,
+    start: { P: rimAt(G9Q.O, G9Q.R, 45), Q: rimAt(G9Q.O, G9Q.R, 140), R: rimAt(G9Q.O, G9Q.R, 225), S: rimAt(G9Q.O, G9Q.R, 320) },
+    place: function (s, key, p) { return add(G9Q.O, mul(unit(sub(p, G9Q.O)), G9Q.R)); },
+    limit: function (s, key, p) {
+      var t = {}; G9Q.keys.forEach(function (k) { t[k] = s[k]; }); t[key] = p;
+      var a = quadAngles(t);
+      return a.every(function (x, i) { var g = (((a[(i + 1) % 4] - x) % 360) + 360) % 360; return g >= 65 && g <= 115; });
+    },
+    figure: function (s) {
+      var O = G9Q.O, R = G9Q.R, f = { O: O, rad: R }, a = quadAngles(s);
+      f.P = add(O, mul(unit(sub(s.P, O)), R)); f.Q = add(O, mul(unit(sub(s.Q, O)), R));
+      f.T = add(O, mul(unit(sub(s.R, O)), R)); f.S = add(O, mul(unit(sub(s.S, O)), R));         // f.T is the point called R in the book
+      var vert = function (a1, a2) { var g = (((a2 - a1) % 360) + 360) % 360; return rimAt(O, R / Math.cos(d2r(g / 2)), a1 + g / 2); };
+      f.A = vert(a[3], a[0]); f.B = vert(a[0], a[1]); f.C = vert(a[1], a[2]); f.D = vert(a[2], a[3]);
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 1) [['P', f.P], ['Q', f.Q], ['R', f.T], ['S', f.S]].forEach(function (k) { handleAt(ink, k[1], k[0], 22); }); },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); }, tan = function (T, V1, V2) { return ['perp', V1, f.O, T, 'cx-perp', len(sub(V2, T))]; };
+      var rt = function (g, T, V1, V2) { rightAt(g, T, f.O, V1, V2); };
+      var named = [['P', f.P], ['Q', f.Q], ['R', f.T], ['S', f.S]];
+      return [
+        [['circ', f.O, f.P], ['pt', f.O, 'O', [-0.8, 0.7], null, 22]].concat(named.map(function (k) { return ['pt', k[1], k[0], away(k[1]), null, 20]; })),
+        named.map(function (k) { return ['seg', f.O, k[1], 'cx-seg']; }),
+        [tan(f.P, f.A, f.B), tan(f.Q, f.B, f.C), ['mark', function (g) { rt(g, f.P, f.A, f.B); rt(g, f.Q, f.B, f.C); }]],
+        [tan(f.T, f.C, f.D), tan(f.S, f.D, f.A), ['mark', function (g) { rt(g, f.T, f.C, f.D); rt(g, f.S, f.D, f.A); }]],
+        ['A', 'B', 'C', 'D'].map(function (k) { return ['pt', f[k], k, away(f[k]), null, 22]; }),
+        [['mark', function (g) {
+          tickN(g, f.A, f.P, 1); tickN(g, f.A, f.S, 1); tickN(g, f.B, f.P, 2); tickN(g, f.B, f.Q, 2);
+          tickN(g, f.C, f.Q, 3); tickN(g, f.C, f.T, 3); tickN(g, f.D, f.T, 4); tickN(g, f.D, f.S, 4);
+        }]],
+        [['mark', function (g) {
+          var hi = function (p, q, cls) { el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: cls, style: 'stroke-width:5' }, g); };
+          hi(f.A, f.B, 'cx-line cx-line-2'); hi(f.C, f.D, 'cx-line cx-line-2'); hi(f.B, f.C, 'cx-perp'); hi(f.D, f.A, 'cx-perp');
+        }]],
+      ];
+    },
+  });
+
+  // How many common tangents two circles have (4, 3, 2, 1, 0): O′ slides along the line of centres.
+  var G9K = { O: [150, 236], R: 80, r: 50, dmin: 10, dmax: 340 };
+  CX['g9-l13-common-tangents'] = scripted({
+    steps: 5,
+    start: { P: [G9K.O[0] + 270, G9K.O[1]] },
+    place: function (s, key, p) {
+      var d = clampN(p[0] - G9K.O[0], G9K.dmin, G9K.dmax);
+      [G9K.R + G9K.r, G9K.R - G9K.r].forEach(function (c) { if (Math.abs(d - c) < 9) d = c; });
+      return [G9K.O[0] + d, G9K.O[1]];
+    },
+    limit: function () { return true; },
+    figure: function (s) {
+      var O = G9K.O, R = G9K.R, r = G9K.r, d = s.P[0] - O[0], f = { O: O, P: [O[0] + d, O[1]], R: R, r: r, d: d };
+      var up = [0, 1], line = function (c1, c2, sgn, outer) {                 // the common tangents, as two end points each
+        var co = (outer ? R - r : R + r) / d, si = Math.sqrt(Math.max(0, 1 - co * co)), out = [];
+        [1, -1].forEach(function (k, n) {
+          if (n === 1 && si < 0.001) return;
+          var nv = [co, k * si], T1 = add(O, mul(nv, R)), T2 = outer ? add(f.P, mul(nv, r)) : sub(f.P, mul(nv, r));
+          var dir = len(sub(T2, T1)) > 1 ? unit(sub(T2, T1)) : [-nv[1], nv[0]];
+          out.push([sub(T1, mul(dir, 70)), add(T2, mul(dir, 70))]);
+        });
+        return out;
+      };
+      f.kind = d > R + r + 0.5 ? 4 : Math.abs(d - (R + r)) <= 0.5 ? 3 : d > R - r + 0.5 ? 2 : Math.abs(d - (R - r)) <= 0.5 ? 1 : 0;
+      f.outer = f.kind >= 1 ? line(0, 0, 1, true) : [];
+      f.inner = f.kind >= 3 ? line(0, 0, 1, false) : [];
+      if (f.kind === 3) f.inner = f.inner.slice(0, 1);
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 1) handleAt(ink, f.P, 'P', 26); },
+    script: function (f) {
+      var words = ['គ្មានបន្ទាត់ប៉ះរួមទេ (រង្វង់មួយនៅក្នុងរង្វង់មួយទៀត)', 'មានបន្ទាត់ប៉ះរួម ១ (រង្វង់ប៉ះគ្នាក្នុង)', 'មានបន្ទាត់ប៉ះរួម ២ (ខាងក្រៅទាំងពីរ)',
+        'មានបន្ទាត់ប៉ះរួម ៣ (ខាងក្រៅ ២ និងខាងក្នុង ១ ត្រង់ចំណុចប៉ះ)', 'មានបន្ទាត់ប៉ះរួម ៤ (ខាងក្រៅ ២ និងខាងក្នុង ២)'];
+      return [
+        [['circ', f.O, [f.O[0] + f.R, f.O[1]]], ['pt', f.O, 'O', [-0.8, 0.7], null, 24]],
+        [['circ', f.P, [f.P[0] + f.r, f.P[1]]], ['pt', f.P, 'O′', [0, 1], null, 28]],
+        f.outer.map(function (l) { return ['seg', l[0], l[1], 'cx-line']; }),
+        f.inner.map(function (l) { return ['seg', l[0], l[1], 'cx-line cx-line-2']; }),
+        [['mark', function (g) { says(g, 0, words[f.kind]); }]],
+      ];
+    },
+  });
+
+  // The common tangent of two circles by construction: the tangent from O′ to a circle of radius R − r (outer) or R + r (inner)
+  // about O, then moved back by r with the radius O′B parallel to OA.
+  var commonTangentFig = function (inner) {
+    var R = inner ? 70 : 90, r = 50, aux = inner ? R + r : R - r, O = [140, 246], d = 270, O2 = [O[0] + d, O[1]];
+    return scripted({
+      steps: 7,
+      start: {},
+      figure: function () {
+        var co = aux / d, si = Math.sqrt(1 - co * co), dir = [co, -si], f = { O: O, O2: O2, R: R, r: r, aux: aux, dir: dir };
+        f.T = add(O, mul(dir, aux)); f.A = add(O, mul(dir, R)); f.B = inner ? sub(O2, mul(dir, r)) : add(O2, mul(dir, r));
+        f.med = mediatorOf(O, O2, f.T); f.M = f.med.M;
+        var ab = unit(sub(f.B, f.A)); f.a1 = sub(f.A, mul(ab, 46)); f.b1 = add(f.B, mul(ab, 46));
+        return f;
+      },
+      script: function (f) {
+        var up = [0, -1];
+        return [
+          [['circ', f.O, [f.O[0] + f.R, f.O[1]]], ['circ', f.O2, [f.O2[0] + f.r, f.O2[1]]], ['pt', f.O, 'O', [-0.8, 0.7], null, 24], ['pt', f.O2, 'O′', [0.8, 0.7], null, 24],
+            ['seg', f.O, f.O2, 'cx-seg']],
+          [['arc', { c: f.O, r: f.aux, t1: 0, t2: Math.PI }], ['arc', { c: f.O, r: f.aux, t1: Math.PI, t2: 2 * Math.PI }]],
+          f.med.arcs.map(function (a) { return ['arc', a]; }).concat([['seg', f.med.e1, f.med.e2, 'cx-line cx-line-2'], ['pt', f.M, 'M', [0, 1], null, 22]]),
+          [['circ', f.M, f.O], ['pt', f.T, 'T', [0, -1], null, 20], ['mark', function (g) { rightAt(g, f.T, f.O, f.T, f.O2); }]],
+          [['seg', f.O2, f.T, 'cx-line cx-line-2'], ['seg', f.O, f.A, 'cx-seg'], ['pt', f.A, 'A', [-0.3, -1], null, 22]],
+          [['seg', f.O2, f.B, 'cx-seg'], ['pt', f.B, 'B', f.B[1] > f.O2[1] ? [0.4, 1] : [0.4, -1], null, 22],
+            ['mark', function (g) { tickN(g, f.O, f.A, 1); tickN(g, f.O2, f.B, 1); }]],
+          [['seg', f.a1, f.b1, 'cx-perp'], ['mark', function (g) { rightAt(g, f.A, f.O, f.A, f.B); rightAt(g, f.B, f.O2, f.A, f.B); }]],
+        ];
+      },
+    });
+  };
+  CX['g9-l13-outer-tangent'] = commonTangentFig(false);
+  CX['g9-l13-inner-tangent'] = commonTangentFig(true);
+
+  // Two concentric circles, a chord AB of the big one that touches the small one at T: OT ⟂ AB, so AT = TB.
+  var G9N = { O: [320, 236], R: 150, r: 120 };
+  CX['g9-l13-concentric'] = scripted({
+    steps: 5,
+    start: { T: rimAt(G9N.O, G9N.r, -90) },
+    place: function (s, key, p) { return add(G9N.O, mul(unit(sub(p, G9N.O)), G9N.r)); },
+    limit: function (s, key, p) { var a = degOf(G9N.O, p); return a >= -150 && a <= -30; },
+    figure: function (s) {
+      var O = G9N.O, f = { O: O, R: G9N.R, r: G9N.r }, u = unit(sub(s.T, O)), nv = [-u[1], u[0]], h = Math.sqrt(f.R * f.R - f.r * f.r);
+      f.T = add(O, mul(u, f.r)); f.A = add(f.T, mul(nv, h)); f.B = sub(f.T, mul(nv, h));
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 1) handleAt(ink, f.T, 'T', 24); },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [['circ', f.O, [f.O[0] + f.R, f.O[1]]], ['circ', f.O, [f.O[0] + f.r, f.O[1]]], ['pt', f.O, 'O', [0.8, 0.8], null, 22]],
+        [['seg', f.O, f.T, 'cx-seg'], ['pt', f.T, 'T', away(f.T), null, 20]],
+        [['perp', f.A, f.O, f.T, 'cx-perp', len(sub(f.B, f.T))], ['mark', function (g) { rightAt(g, f.T, f.O, f.A, f.B); }],
+          ['pt', f.A, 'A', away(f.A), null, 22], ['pt', f.B, 'B', away(f.B), null, 22]],
+        [['seg', f.O, f.A, 'cx-seg'], ['seg', f.O, f.B, 'cx-seg'], ['mark', function (g) { tickN(g, f.A, f.T, 1); tickN(g, f.T, f.B, 1); }]],
+        [['mark', function (g) { triFill(g, f.O, f.T, f.A); says(g, 0, 'AT² = OA² − OT² = 10² − 8² = 36 ដូច្នេះ AT = 6 ហើយ AB = 12'); }]],
+      ];
+    },
+  });
+
+  // Two circles touching outside at B: the common tangent at B, and from M on it the tangents MA and MC, so MA = MB = MC.
+  var G9X = { O: [165, 300], R: 90, r: 55 };
+  CX['g9-l13-touching-tangents'] = scripted({
+    steps: 6,
+    start: { M: [G9X.O[0] + G9X.R, 120] },
+    place: function (s, key, p) { return [G9X.O[0] + G9X.R, clampN(p[1], 50, 170)]; },
+    limit: function () { return true; },
+    figure: function (s) {
+      var O = G9X.O, B = [O[0] + G9X.R, O[1]], O2 = [B[0] + G9X.r, B[1]], M = s.M, f = { O: O, O2: O2, B: B, M: M, R: G9X.R, r: G9X.r };
+      var far = function (pts) { return len(sub(pts[0], B)) > len(sub(pts[1], B)) ? pts[0] : pts[1]; };
+      f.A = far(tangentPts(O, f.R, M)); f.C = far(tangentPts(O2, f.r, M)); f.down = [B[0], B[1] + 90];
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 1) handleAt(ink, f.M, 'M', 24); },
+    script: function (f) {
+      return [
+        [['circ', f.O, f.B], ['circ', f.O2, f.B], ['pt', f.O, 'O', [-0.8, 0.7], null, 22], ['pt', f.O2, 'O′', [0, 1], null, 26], ['pt', f.B, 'B', [-1, 0.9], null, 20]],
+        [['seg', f.M, f.down, 'cx-line cx-line-2'], ['pt', f.M, 'M', [0, -1], null, 20], ['mark', function (g) { rightAt(g, f.B, f.O, f.M, f.down); }]],
+        [['seg', f.M, f.A, 'cx-perp'], ['pt', f.A, 'A', sub(f.A, f.O), null, 20], ['mark', function (g) { rightAt(g, f.A, f.O, f.M, f.A); }]],
+        [['seg', f.M, f.C, 'cx-perp'], ['pt', f.C, 'C', sub(f.C, f.O2), null, 20], ['mark', function (g) { rightAt(g, f.C, f.O2, f.M, f.C); }]],
+        [['mark', function (g) { tickN(g, f.M, f.A, 1); tickN(g, f.M, f.B, 1); }]],
+        [['mark', function (g) { tickN(g, f.M, f.B, 2); tickN(g, f.M, f.C, 2); says(g, 0, 'MA = MB = MC ដូច្នេះ MA = MC'); }]],
+      ];
+    },
+  });
+
+  // The quadrilateral OAPB: the tangents PA and PB from P, ∠AOB + ∠APB = 180°. A slides round the circle.
+  var G9P = { O: [170, 236], R: 100 };
+  CX['g9-l13-tangent-quad'] = scripted({
+    steps: 4,
+    start: { A: rimAt(G9P.O, G9P.R, -70) },
+    place: function (s, key, p) { return rimAt(G9P.O, G9P.R, -clampN(-degOf(G9P.O, p), 30, 70)); },
+    limit: function () { return true; },
+    figure: function (s) {
+      var O = G9P.O, h = clampN(-degOf(O, s.A), 30, 70), f = { O: O, R: G9P.R, h: h };
+      f.A = rimAt(O, f.R, -h); f.B = rimAt(O, f.R, h); f.P = [O[0] + f.R / Math.cos(d2r(h)), O[1]];
+      return f;
+    },
+    top: function (f, ink, i) { if (i >= 1) handleAt(ink, f.A, 'A', 26); },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [['circ', f.O, f.A], ['pt', f.O, 'O', [-0.9, 0.2], null, 22]],
+        [['seg', f.O, f.A, 'cx-seg'], ['seg', f.O, f.B, 'cx-seg'], ['pt', f.A, 'A', away(f.A), null, 20], ['pt', f.B, 'B', away(f.B), null, 20],
+          ['mark', function (g) { el('path', { d: arcPath(f.O, 30, d2r(-f.h), d2r(f.h)), class: 'cx-arc' }, g); }]],
+        [['perp', f.P, f.O, f.A, 'cx-perp'], ['perp', f.P, f.O, f.B, 'cx-perp'], ['pt', f.P, 'P', [1, 0], null, 22],
+          ['mark', function (g) { rightAt(g, f.A, f.O, f.P, f.A); rightAt(g, f.B, f.O, f.P, f.B); }]],
+        [['mark', function (g) {
+          says(g, 0, '∠AOB = ' + Math.round(2 * f.h) + '°');
+          says(g, 1, '∠APB = 360° − 90° − 90° − ' + Math.round(2 * f.h) + '° = ' + Math.round(180 - 2 * f.h) + '°');
+          tickN(g, f.P, f.A, 1); tickN(g, f.P, f.B, 1);
+        }]],
+      ];
+    },
+  });
+
   // Grade 8, lesson 12, a worked example: OZ bisects the angle XOY; A on OX and B on OY with
   // OA = OB; M on OZ, joined to A and to B. (The triangles OMA and OMB are congruent, so MA = MB.)
   CX['g8-l12-bisector-triangles'] = scripted({
