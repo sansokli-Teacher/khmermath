@@ -322,6 +322,7 @@
     return groups;
   }
   function showGroups(groups, title) {
+    try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ t: Date.now(), cls: cls().name, groups: groups.map(function (g) { return g.map(function (p) { return p.n; }); }) })); } catch (e) {}   // for ហ្គេមក្រុម
     var box = $('wh-groups'); box.innerHTML = ''; box.hidden = false; lastGroups = '';
     groups.forEach(function (g, i) {
       var d = document.createElement('div'), h = document.createElement('b'), ul = document.createElement('ol');
