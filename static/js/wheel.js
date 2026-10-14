@@ -322,11 +322,86 @@
     });
     $('wh-copy').hidden = false;
   }
+  /* ---------- result picture (PNG) with khmermath.org branding ---------- */
+  var FONT = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
+  function rr(g, x, y, w, h, r, tl, tr, br, bl) {            // rounded rectangle path (each corner radius optional)
+    tl = tl === undefined ? r : tl; tr = tr === undefined ? r : tr; br = br === undefined ? r : br; bl = bl === undefined ? r : bl;
+    g.beginPath(); g.moveTo(x + tl, y); g.lineTo(x + w - tr, y); g.quadraticCurveTo(x + w, y, x + w, y + tr); g.lineTo(x + w, y + h - br);
+    g.quadraticCurveTo(x + w, y + h, x + w - br, y + h); g.lineTo(x + bl, y + h); g.quadraticCurveTo(x, y + h, x, y + h - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
+  }
+  function posterCanvas(o) {                                  // o: {heading, sub, groups:[{title, items:[{n,g}]}], colors}
+    var W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    var cw = (W - pad * 2 - gap * (cols - 1)) / cols, headH = 80, lineH = 46, cpad = 18, bannerH = 250, footH = 110;
+    var rows = []; for (var i = 0; i < n; i += cols) rows.push(o.groups.slice(i, i + cols));
+    var rowH = rows.map(function (r) { return headH + Math.max.apply(null, r.map(function (g) { return g.items.length; })) * lineH + cpad * 2; });
+    var H = bannerH + 40 + rowH.reduce(function (a, b) { return a + b; }, 0) + gap * (rows.length - 1) + 40 + footH, dpr = 2;
+    var cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; var g = cv.getContext('2d'); g.scale(dpr, dpr);
+    var bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#eaf5f2'); bg.addColorStop(1, '#fdf6e8'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    // banner
+    var bn = g.createLinearGradient(0, 0, W, bannerH); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f');
+    g.fillStyle = bn; g.fillRect(0, 0, W, bannerH);
+    for (var k = 0; k < 46; k++) {                           // confetti
+      var seed = (k * 9301 + 49297) % 233280 / 233280, seed2 = (k * 7919 + 1237) % 10007 / 10007;
+      g.fillStyle = ['#ffd43b', '#ff8787', '#74c0fc', '#b2f2bb', '#ffffff'][k % 5]; g.globalAlpha = 0.55;
+      g.save(); g.translate(seed * W, seed2 * bannerH); g.rotate(k); g.fillRect(-7, -3, 14, 6); g.restore();
+    }
+    g.globalAlpha = 1; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText(o.heading, W / 2, 98);
+    g.font = '500 33px ' + FONT; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, 178); g.globalAlpha = 1;
+    // cards
+    var y = bannerH + 40;
+    rows.forEach(function (r, ri) {
+      r.forEach(function (grp, ci) {
+        var x = pad + ci * (cw + gap), h = rowH[ri], col = o.colors[(ri * cols + ci) % o.colors.length];
+        g.save(); g.shadowColor = 'rgba(0,0,0,.18)'; g.shadowBlur = 22; g.shadowOffsetY = 8; g.fillStyle = '#fff'; rr(g, x, y, cw, h, 22); g.fill(); g.restore();
+        g.fillStyle = col; rr(g, x, y, cw, headH, 22, 22, 22, 0, 0); g.fill();
+        g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = '700 36px ' + FONT; g.fillText(grp.title, x + 26, y + headH / 2 + 2);
+        g.textAlign = 'right'; g.font = '500 28px ' + FONT; g.globalAlpha = 0.9; g.fillText(khNum(grp.items.length) + ' នាក់', x + cw - 24, y + headH / 2 + 2); g.globalAlpha = 1;
+        grp.items.forEach(function (it, i) {
+          var ty = y + headH + cpad + i * lineH + lineH / 2;
+          g.textAlign = 'left'; g.fillStyle = col; g.font = '700 26px ' + FONT; g.fillText(khNum(i + 1) + '.', x + 24, ty);
+          var dx = x + 76;
+          if (it.g) { g.fillStyle = it.g === 'f' ? '#d6336c' : '#1c7ed6'; g.beginPath(); g.arc(dx + 8, ty, 8, 0, 7); g.fill(); dx += 28; }
+          var size = 33; g.font = '500 ' + size + 'px ' + FONT; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 18) { size -= 2; g.font = '500 ' + size + 'px ' + FONT; }
+          g.fillStyle = '#1b2733'; g.fillText(it.n, dx, ty);
+        });
+      });
+      y += rowH[ri] + gap;
+    });
+    // footer brand
+    var fy = H - footH / 2 - 6;
+    g.strokeStyle = 'rgba(31,111,102,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(pad, H - footH); g.lineTo(W - pad, H - footH); g.stroke();
+    g.fillStyle = '#12263a'; rr(g, W / 2 - 215, fy - 30, 60, 60, 14); g.fill();
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '700 38px ' + FONT; g.fillText('√', W / 2 - 185, fy + 2);
+    g.fillStyle = '#e0a13a'; rr(g, W / 2 - 172, fy - 4, 14, 14, 3); g.fill();
+    g.textAlign = 'left'; g.fillStyle = '#1f6f66'; g.font = '700 42px ' + FONT; g.fillText('khmermath.org', W / 2 - 140, fy - 2);
+    g.fillStyle = '#5b6b7b'; g.font = '500 24px ' + FONT; g.fillText('កង់ចាប់ឈ្មោះ · គណិតវិទ្យាខ្មែរ', W / 2 - 140, fy + 34);
+    return cv;
+  }
+  function khDate() { var d = new Date(); return khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()); }
+  var lastBlocks = null;
+  function downloadPoster() {
+    if (!lastBlocks) return;
+    var single = lastBlocks.length === 1 && /^លំដាប់/.test(lastBlocks[0].title), total = lastBlocks.reduce(function (a, b) { return a + b.list.length; }, 0), btn = $('wh-gpng');
+    var make = function () {
+      var cv = posterCanvas({
+        heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!',
+        sub: cls().name + '  ·  ' + khNum(total) + ' នាក់  ·  ' + khDate(), colors: colors(),
+        groups: lastBlocks.map(function (b) { return { title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.list.map(function (p) { return { n: p.n, g: p.g }; }) }; })
+      });
+      cv.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); var z = function (x) { return ('0' + x).slice(-2); }, d = new Date();
+        a.download = 'khmermath-' + (single ? 'order' : 'groups') + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+        btn.textContent = '⬇ ទាញយក PNG'; }, 'image/png');
+    };
+    btn.textContent = 'កំពុងបង្កើត…';
+    (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]) : Promise.resolve()).then(make, make);
+  }
+
   /* popup: one drum roll per group - only that card shuffles, then it locks with a crash and a firework */
   var gRun = 0, gAgain = null, gSkip = false;
   function makeCard(b, i) {
     var d = document.createElement('div'), h = document.createElement('b'), ol = document.createElement('ol');
-    d.className = 'wh-g wait'; d.style.setProperty('--i', i); h.textContent = b.title; d.appendChild(h); d.appendChild(ol); d._ol = ol; return d;
+    d.className = 'wh-g wait'; d.style.setProperty('--i', i); d.style.setProperty('--gc', colors()[i % colors().length]); h.textContent = b.title; d.appendChild(h); d.appendChild(ol); d._ol = ol; return d;
   }
   function setNames(card, list, ph) {
     card._ol.innerHTML = '';
@@ -337,6 +412,7 @@
     var cards = blocks.map(makeCard), sizes = blocks.map(function (b) { return b.list.length; });
     var remaining = [].concat.apply([], blocks.map(function (b) { return b.list; }));
     var per = reduce ? 0 : Math.max(900, Math.min(1800, 12000 / n)), pause = reduce ? 0 : 450;
+    lastBlocks = blocks; $('wh-gcardbox').classList.remove('final'); $('wh-gsub').hidden = true; $('wh-gbrand').hidden = true; $('wh-gpng').hidden = true;
     closePop(); stopFireworks(); box.innerHTML = ''; box.className = 'wh-ggrid'; cards.forEach(function (c, i) { setNames(c, blocks[i].list, true); box.appendChild(c); });
     $('wh-gpop').hidden = false; ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = true; }); $('wh-gskip').hidden = n < 2;
     var cur = -1, phase = 'start', t0 = 0, last = 0;
@@ -346,7 +422,10 @@
       if (burst) { cymbal(); var r = card.getBoundingClientRect(); if (S().fw) miniBurst(r.left + r.width / 2, r.top + r.height / 2); }
     }
     function finale() {
-      $('wh-gsmall').textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; $('wh-gskip').hidden = true;
+      var total = blocks.reduce(function (a, b) { return a + b.list.length; }, 0), single = n === 1 && /^លំដាប់/.test(blocks[0].title);
+      $('wh-gsmall').textContent = (single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!') + ' 🎉'; $('wh-gcardbox').classList.add('final');
+      $('wh-gsub').textContent = cls().name + ' · ' + khNum(total) + ' នាក់ · ' + khDate(); $('wh-gsub').hidden = false; $('wh-gbrand').hidden = false; $('wh-gpng').hidden = false;
+      $('wh-gskip').hidden = true;
       ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = false; });
       if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
       $('wh-gagain').focus({ preventScroll: true });
@@ -370,6 +449,28 @@
   }
   function closeGroupPop() { gRun++; gSkip = true; $('wh-gpop').hidden = true; stopFireworks(); }
   function khNum(n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); }
+
+  /* ---------- gender panel: a row per student with ប្រុស / ស្រី buttons ---------- */
+  function renderGenderPanel() {
+    var c = cls(), ul = $('wh-glist'), todo = c.students.filter(function (s) { return !s.g; }).length;
+    $('wh-gphint').textContent = todo ? 'នៅសល់ ' + khNum(todo) + ' នាក់ មិនទាន់កំណត់ភេទ។ ចុច «ប្រុស» ឬ «ស្រី» នៅមុខឈ្មោះនីមួយៗ (ចុចម្ដងទៀតដើម្បីលុប)។' : 'បានកំណត់ភេទគ្រប់គ្នាហើយ ✓';
+    ul.innerHTML = '';
+    c.students.forEach(function (s, i) {
+      var li = document.createElement('li'), nm = document.createElement('span'), gb = document.createElement('span');
+      li.className = s.g ? '' : 'todo'; nm.className = 'nm'; gb.className = 'gb';
+      var no = document.createElement('small'); no.textContent = khNum(i + 1) + '.'; nm.appendChild(no); nm.appendChild(document.createTextNode(s.n));
+      [['m', 'ប្រុស'], ['f', 'ស្រី']].forEach(function (x) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = x[0]; b.textContent = x[1]; b.setAttribute('aria-pressed', s.g === x[0] ? 'true' : 'false');
+        b.addEventListener('click', function () { s.g = s.g === x[0] ? undefined : x[0]; save(); renderGenderPanel(); renderChips(); refreshEmpty(); redraw(); });
+        gb.appendChild(b);
+      });
+      li.appendChild(nm); li.appendChild(gb); ul.appendChild(li);
+    });
+  }
+  function openGenderPanel(scroll) {
+    if (!cls().students.length) return;
+    renderGenderPanel(); $('wh-gpanel').hidden = false; if (scroll) $('wh-gpanel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
 
   /* ---------- UI ---------- */
   function refreshEmpty() {
@@ -404,7 +505,7 @@
     });
     sel.value = state.active;
   }
-  function renderAll() { renderClasses(); renderChips(); refreshEmpty(); renderHist(); redraw(); $('wh-groups').hidden = true; $('wh-copy').hidden = true; }
+  function renderAll() { renderClasses(); renderChips(); refreshEmpty(); renderHist(); redraw(); $('wh-groups').hidden = true; $('wh-copy').hidden = true; $('wh-gpanel').hidden = true; }
   function setFlag(btn, on, label) { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.textContent = label + (on ? ': បើក' : ': បិទ'); }
   function setMode(m) {
     clickMode = m; $('wh-mode-off').setAttribute('aria-pressed', m === 'off'); $('wh-mode-g').setAttribute('aria-pressed', m === 'g'); renderChips();
@@ -445,6 +546,8 @@
     $('wh-text').value = cls().students.map(function (s) { return s.n + (s.g ? ' ' + G_WORD[s.g] : ''); }).join('\n');
     $('wh-editor').hidden = false; $('wh-text').focus();
   });
+  $('wh-setg').addEventListener('click', function () { openGenderPanel(true); });
+  $('wh-gdone').addEventListener('click', function () { $('wh-gpanel').hidden = true; });
   $('wh-cancel').addEventListener('click', function () { $('wh-editor').hidden = true; });
   $('wh-save').addEventListener('click', function () {
     var c = cls(), old = {}; c.students.forEach(function (s) { old[s.n] = s; });
@@ -454,6 +557,7 @@
       var prev = old[p.n]; if (prev) { if (p.g) prev.g = p.g; out.push(prev); } else out.push(p);   // keep absent/done marks of names that were already there
     });
     c.students = out; $('wh-editor').hidden = true; current = null; closePop(); save(); renderAll();
+    if (out.some(function (x) { return !x.g; })) openGenderPanel(true); else $('wh-gpanel').hidden = true;   // right after pasting: ask for each name's gender
   });
   $('wh-reset').addEventListener('click', function () {
     cls().students.forEach(function (s) { s.done = false; }); current = null; closePop(); save(); renderChips(); refreshEmpty(); redraw();
@@ -477,6 +581,7 @@
   }
   $('wh-gagain').addEventListener('click', function () { if (gAgain) gAgain(); });
   $('wh-gclose').addEventListener('click', closeGroupPop);
+  $('wh-gpng').addEventListener('click', downloadPoster);
   $('wh-gpop').addEventListener('click', function (e) { if (e.target === this) closeGroupPop(); });
   $('wh-gcopy2').addEventListener('click', function () { $('wh-copy').click(); var b = this; b.textContent = 'បានចម្លង ✓'; setTimeout(function () { b.textContent = 'ចម្លង'; }, 1600); });
   $('wh-order').addEventListener('click', function () {
