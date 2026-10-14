@@ -1,6 +1,19 @@
 // Name wheel for the teacher: picks a student from one of the teacher's own classes (no second list to keep).
 // Gender comes from the class roster. Absent / already-picked marks are remembered per class in this browser only.
-const WHEEL_COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
+const WHEEL_PALETTES = {
+  a: ['ពណ៌ស្រស់', ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4']],
+  b: ['ទឹកសមុទ្រ', ['#0b7285', '#1971c2', '#1098ad', '#3b5bdb', '#0c8599', '#364fc7', '#1864ab', '#0b7285']],
+  c: ['ភ្លើងក្ដៅ', ['#e8590c', '#f08c00', '#e03131', '#c2255c', '#d9480f', '#c92a2a', '#e67700', '#a61e4d']],
+  d: ['ព្រៃបៃតង', ['#2b8a3e', '#2f9e44', '#087f5b', '#5c940d', '#0b7285', '#66a80f', '#099268', '#37b24d']],
+  e: ['ជាតិខ្មែរ', ['#032ea1', '#e00025', '#032ea1', '#e00025', '#032ea1', '#e00025']],
+};
+// settings are shared by all classes and kept in this browser
+const wheelSettings = (() => {
+  let s = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false };
+  try { s = Object.assign(s, JSON.parse(localStorage.getItem('exam_wheel_set'))); } catch {}
+  return s;
+})();
+const wheelSaveSettings = () => { try { localStorage.setItem('exam_wheel_set', JSON.stringify(wheelSettings)); } catch {} };
 let wheelClassId = null;
 
 const whGender = (g) => (/^(ស្រី|f|female|girl)$/i.test(String(g || '').trim()) ? 'f' : /^(ប្រុស|m|male|boy)$/i.test(String(g || '').trim()) ? 'm' : '');
@@ -22,12 +35,15 @@ render.wheel = async function () {
   const people = students.map((s) => ({ id: s.id, n: `${s.surname || ''} ${s.first_name || ''}`.trim(), g: whGender(s.gender) }));
 
   const KEY = `exam_wheel_${wheelClassId}`;
-  let mem = { off: [], done: [] };
+  let mem = { off: [], done: [], hist: [] };
   try { mem = Object.assign(mem, JSON.parse(localStorage.getItem(KEY))); } catch {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch {} };
-  let noRepeat = true, sound = true, spinning = false, angle = 0, frozen = null, current = null, audio = null, lastText = '', gFilter = '';
+  let noRepeat = true, sound = true, spinning = false, angle = 0, frozen = null, current = null, audio = null, lastText = '', gFilter = '', ord = null, pendingReveal = false, tally = false, voiceKm = null;
   const isOff = (p) => mem.off.includes(p.id);
-  const eligible = () => people.filter((p) => !isOff(p) && !(noRepeat && mem.done.includes(p.id)) && (!gFilter || p.g === gFilter));
+  const eligible = () => {
+    const l = people.filter((p) => !isOff(p) && !(noRepeat && mem.done.includes(p.id)) && (!gFilter || p.g === gFilter));
+    return ord ? l.sort((a, b) => (ord[a.id] || 0) - (ord[b.id] || 0)) : l;
+  };
   const present = () => people.filter((p) => !isOff(p));
   const mark = (p) => (p.g === 'f' ? '♀ ' : p.g === 'm' ? '♂ ' : '');
 
@@ -40,13 +56,17 @@ render.wheel = async function () {
   const againBtn = h('button', { class: 'btn-sm' }, 'បង្វិលម្ដងទៀត');
   const absentBtn = h('button', { class: 'secondary btn-sm' }, 'អវត្តមាន — ដកចេញ');
   const closeBtn = h('button', { class: 'secondary btn-sm' }, 'បិទ');
+  const revealBtn = h('button', { class: 'btn-sm', hidden: '' }, 'បង្ហាញឈ្មោះ');
+  const sayBtn = h('button', { class: 'secondary btn-sm', hidden: '' }, '🔊 អាន');
+  const popSmall = h('small', {}, 'សិស្សដែលត្រូវបានជ្រើស');
   const pop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' },
-    h('div', { class: 'wheel-pop-card' }, [h('small', {}, 'សិស្សដែលត្រូវបានជ្រើស'), winner, h('div', { class: 'row wheel-tools' }, [againBtn, absentBtn, closeBtn])]));
+    h('div', { class: 'wheel-pop-card' }, [popSmall, winner, h('div', { class: 'row wheel-tools' }, [revealBtn, sayBtn, againBtn, absentBtn, closeBtn])]));
   const chips = h('div', { class: 'wheel-chips' });
   const count = h('span', { class: 'muted' });
   const gsum = h('p', { class: 'muted', style: 'font-size:14px;margin:0' });
   const groupsBox = h('div', { class: 'wheel-groups', hidden: '' });
   const copyBtn = h('button', { class: 'secondary btn-sm', hidden: '' }, 'ចម្លងលទ្ធផល');
+  const speakRow = h('label', { class: 'wheel-chk', hidden: '' });
 
   function draw() {
     const list = frozen || eligible(), n = list.length, W = canvas.width, c = W / 2, r = c - 6;
@@ -56,7 +76,7 @@ render.wheel = async function () {
       const a = Math.PI * 2 / n;
       for (let i = 0; i < n; i++) {
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, i * a - Math.PI / 2 - a / 2, i * a - Math.PI / 2 + a / 2); ctx.closePath();
-        ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length]; ctx.fill();
+        const pal = (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1]; ctx.fillStyle = pal[i % pal.length]; ctx.fill();
         if (n > 1) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.save(); ctx.rotate(i * a - Math.PI / 2);
         ctx.font = `600 ${Math.max(13, Math.min(36, Math.floor(r * a * 0.6)))}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`;
@@ -97,7 +117,31 @@ render.wheel = async function () {
     };
     requestAnimationFrame(frame);
   }
-  const closePop = () => { pop.hidden = true; fwRun++; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); };
+  const closePop = () => { pop.hidden = true; pendingReveal = false; fwRun++; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); if (window.speechSynthesis) speechSynthesis.cancel(); };
+  const findVoice = () => { if (window.speechSynthesis) voiceKm = speechSynthesis.getVoices().find((v) => /^km/i.test(v.lang)) || null; speakRow.hidden = !voiceKm; };
+  const say = () => { if (!voiceKm || !current) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(current.n); u.voice = voiceKm; u.lang = voiceKm.lang; speechSynthesis.speak(u); } catch {} };
+  const celebrate = () => { if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); } if (wheelSettings.speak) say(); };
+  const openPop = () => {
+    winner.textContent = pendingReveal ? '?' : current.n; popSmall.textContent = `សិស្សដែលត្រូវបានជ្រើស · លើកទី ${whKh(mem.hist.length)}`;
+    revealBtn.hidden = !pendingReveal; againBtn.hidden = pendingReveal; absentBtn.hidden = pendingReveal; sayBtn.hidden = pendingReveal || !voiceKm;
+    pop.hidden = false; (pendingReveal ? revealBtn : againBtn).focus({ preventScroll: true });
+  };
+  const reveal = () => { pendingReveal = false; winner.textContent = current.n; revealBtn.hidden = true; againBtn.hidden = false; absentBtn.hidden = false; sayBtn.hidden = !voiceKm; celebrate(); };
+  const finish = (student) => {
+    current = student; if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id);
+    mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
+    renderHist(); refresh(); pendingReveal = !!wheelSettings.mystery; openPop(); if (!pendingReveal) celebrate();
+  };
+  const histCounts = () => { const c = {}; for (const x of mem.hist) c[x.n] = (c[x.n] || 0) + 1; return c; };
+  const histList = h('ol', { class: 'wheel-hist' });
+  const histCount = h('span', { class: 'muted' });
+  function renderHist() {
+    histList.innerHTML = ''; histList.classList.toggle('tally', tally);
+    histCount.textContent = mem.hist.length ? `(${mem.hist.length})` : '';
+    if (!mem.hist.length) return histList.appendChild(h('li', { class: 'muted', style: 'list-style:none' }, 'មិនទាន់មានលទ្ធផលទេ។'));
+    if (tally) { const c = histCounts(); Object.keys(c).sort((a, b) => c[b] - c[a]).forEach((n) => histList.appendChild(h('li', {}, [n, h('span', { class: 'cnt' }, `${c[n]} ដង`)]))); }
+    else [...mem.hist].reverse().forEach((x, i) => { const t = new Date(x.t); histList.appendChild(h('li', { value: String(mem.hist.length - i) }, [x.n, h('small', { class: 'muted' }, ` ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`)])); });
+  }
 
   function refresh() {
     const list = eligible();
@@ -122,23 +166,20 @@ render.wheel = async function () {
     frozen = list; closePop(); current = null;
     const pick = Math.floor(Math.random() * n), a = Math.PI * 2 / n, target = -(pick * a + (Math.random() - 0.5) * a * 0.7);
     const from = angle, norm = ((target - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-    const to = from + (5 + Math.floor(Math.random() * 3)) * Math.PI * 2 + norm, dur = 4600 + Math.random() * 1200, t0 = performance.now();
+    const to = from + (5 + Math.floor(Math.random() * 3)) * Math.PI * 2 + norm, dur = wheelSettings.dur * 1000 * (0.9 + Math.random() * 0.2), t0 = performance.now();
     let last = -1; spinning = true; spinBtn.disabled = true; msg.hidden = true;
     const frame = (now) => {
       const t = Math.min(1, (now - t0) / dur); angle = from + (to - from) * (1 - Math.pow(1 - t, 4)); draw();
       const sl = Math.floor(((-angle % (Math.PI * 2)) + Math.PI * 2 + a / 2) / a); if (sl !== last) { last = sl; beep([900], 0.04, 0.025); }
       if (t < 1) return requestAnimationFrame(frame);
-      spinning = false; angle = to % (Math.PI * 2); draw(); current = list[pick];
-      if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id); save();
-      winner.textContent = current.n; pop.hidden = false; againBtn.focus({ preventScroll: true });
-      beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); refresh();
+      spinning = false; angle = to % (Math.PI * 2); draw(); finish(list[pick]);
     };
     requestAnimationFrame(frame);
   }
-  spinBtn.onclick = spin; againBtn.onclick = spin; closeBtn.onclick = closePop;
+  spinBtn.onclick = spin; againBtn.onclick = spin; closeBtn.onclick = closePop; revealBtn.onclick = reveal; sayBtn.onclick = say;
   pop.addEventListener('click', (e) => { if (e.target === pop) closePop(); });
   pop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
-  absentBtn.onclick = () => { if (!current) return; mem.off.push(current.id); mem.done = mem.done.filter((x) => x !== current.id); save(); current = null; closePop(); refresh(); redraw(); };
+  absentBtn.onclick = () => { if (!current) return; mem.off.push(current.id); mem.done = mem.done.filter((x) => x !== current.id); const l = mem.hist[mem.hist.length - 1]; if (l && l.n === current.n) mem.hist.pop(); save(); current = null; closePop(); renderHist(); refresh(); redraw(); };
 
   // ---- groups / random order ----
   const gMode = h('select', { 'aria-label': 'របៀបបែងចែក' }, [h('option', { value: 'n' }, 'ចំនួនក្រុម'), h('option', { value: 'k' }, 'សិស្សក្នុងមួយក្រុម')]);
@@ -167,6 +208,20 @@ render.wheel = async function () {
   const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
   gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
 
+  const durV = h('b', {}, whKh(wheelSettings.dur));
+  const durIn = h('input', { type: 'range', min: '2', max: '15', step: '1', value: String(wheelSettings.dur), style: 'padding:0;border:0;accent-color:var(--brand)' });
+  durIn.oninput = () => { wheelSettings.dur = +durIn.value; durV.textContent = whKh(durIn.value); wheelSaveSettings(); };
+  const themeSel = h('select', {}, Object.keys(WHEEL_PALETTES).map((k) => h('option', { value: k }, WHEEL_PALETTES[k][0])));
+  themeSel.value = wheelSettings.theme; themeSel.onchange = () => { wheelSettings.theme = themeSel.value; wheelSaveSettings(); draw(); };
+  const chk = (key, label, wrap) => { const i = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none' }); i.checked = !!wheelSettings[key]; i.onchange = () => { wheelSettings[key] = i.checked; wheelSaveSettings(); }; (wrap || h('label', { class: 'wheel-chk' })).append(i, label); return wrap || i.parentElement; };
+  speakRow.append(); chk('speak', ' អានឈ្មោះឱ្យលឺ', speakRow);
+  const settingsCard = h('div', { class: 'card' }, [
+    h('h3', {}, 'ការកំណត់កង់'),
+    h('label', { style: 'font-weight:400' }, ['រយៈពេលបង្វិល៖ ', durV, ' វិនាទី']), durIn,
+    h('label', { style: 'font-weight:400;margin-top:8px;display:block' }, 'ពណ៌កង់'), themeSel,
+    chk('fw', ' កាំជ្រួច និងសំឡេងអបអរ'), chk('mystery', ' លាក់ឈ្មោះសិស្សរហូតដល់ចុច «បង្ហាញឈ្មោះ»'), speakRow,
+    h('p', { class: 'muted', style: 'font-size:14px;margin:8px 0 0' }, 'ផ្លូវកាត់៖ Space ឬ Ctrl+Enter ដើម្បីបង្វិល · Esc ដើម្បីបិទ'),
+  ]);
   const stage = h('div', { class: 'wheel-stage' }, [
     h('div', { class: 'wheel-box' }, [h('div', { class: 'wheel-pointer' }), canvas, spinBtn]),
     msg,
@@ -175,6 +230,7 @@ render.wheel = async function () {
       h('button', { class: 'secondary btn-sm', onclick: (e) => { sound = !sound; e.target.textContent = `សំឡេង៖ ${sound ? 'បើក' : 'បិទ'}`; } }, 'សំឡេង៖ បើក'),
       h('button', { class: 'secondary btn-sm', onclick: (e) => { noRepeat = !noRepeat; e.target.textContent = `មិនជ្រើសម្ដងទៀត៖ ${noRepeat ? 'បើក' : 'បិទ'}`; refresh(); redraw(); } }, 'មិនជ្រើសម្ដងទៀត៖ បើក'),
       h('button', { class: 'secondary btn-sm', onclick: () => { mem.done = []; save(); current = null; closePop(); refresh(); redraw(); } }, 'ចាប់ផ្ដើមជុំថ្មី'),
+      h('button', { class: 'secondary btn-sm', onclick: () => { ord = {}; people.forEach((p) => { ord[p.id] = Math.random(); }); redraw(); } }, 'លាយលំដាប់កង់'),
     ]),
     h('div', { class: 'row wheel-tools', style: 'align-items:center' }, [h('span', {}, 'កង់ជ្រើសពី៖'), gSel]),
     fw, pop,
@@ -187,6 +243,16 @@ render.wheel = async function () {
       h('p', { class: 'muted', style: 'font-size:14px' }, 'ចុចលើឈ្មោះដើម្បីសម្គាល់ថាអវត្តមាន (មិនចូលកង់)។ ឈ្មោះ និងភេទមកពី «ថ្នាក់ និងសិស្ស»។'),
       chips,
     ]),
+    settingsCard,
+    h('div', { class: 'card' }, [
+      h('div', { class: 'row', style: 'justify-content:space-between' }, [h('h3', { style: 'margin:0' }, ['លទ្ធផលដែលបានជ្រើស ', histCount]),
+        h('button', { class: 'secondary btn-sm', onclick: (e) => { tally = !tally; e.target.textContent = tally ? 'មើលតាមលំដាប់ពេល' : 'សរុបតាមចំនួនដង'; renderHist(); } }, 'សរុបតាមចំនួនដង')]),
+      histList,
+      h('div', { class: 'row' }, [
+        h('button', { class: 'secondary btn-sm', onclick: async (e) => { const c = histCounts(); const txt = tally ? Object.keys(c).sort((a, b) => c[b] - c[a]).map((n) => `${n}\t${c[n]}`).join('\n') : mem.hist.map((x, i) => `${i + 1}. ${x.n}`).join('\n'); let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch {} e.target.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន'; setTimeout(() => { e.target.textContent = 'ចម្លង'; }, 1600); } }, 'ចម្លង'),
+        h('button', { class: 'secondary btn-sm', onclick: async () => { if (!mem.hist.length || !(await Exam.confirm('សម្អាតលទ្ធផលទាំងអស់ក្នុងថ្នាក់នេះ?'))) return; mem.hist = []; save(); renderHist(); } }, 'សម្អាតលទ្ធផល'),
+      ]),
+    ]),
     h('div', { class: 'card' }, [
       h('h3', {}, 'បែងចែកក្រុម'),
       h('div', { class: 'row' }, [gMode, gNum]),
@@ -196,6 +262,14 @@ render.wheel = async function () {
     ]),
   ]);
   root.appendChild(h('div', { class: 'wheel-layout' }, [stage, side]));
-  refresh(); draw();
+  if (window.speechSynthesis) { findVoice(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', findVoice); }
+  if (window.wheelKeyHandler) document.removeEventListener('keydown', window.wheelKeyHandler);
+  window.wheelKeyHandler = (e) => {
+    if (document.getElementById('tab-wheel').hidden || !document.getElementById('tab-wheel').contains(canvas)) return;
+    const tag = e.target.tagName || '';
+    if ((e.code === 'Enter' && (e.ctrlKey || e.metaKey)) || (e.code === 'Space' && e.target === document.body && !/INPUT|TEXTAREA|SELECT/.test(tag))) { e.preventDefault(); if (!pop.hidden && pendingReveal) reveal(); else spin(); }
+  };
+  document.addEventListener('keydown', window.wheelKeyHandler);
+  renderHist(); refresh(); draw();
   if (document.fonts && document.fonts.load) document.fonts.load('600 20px "Kantumruy Pro"').then(() => { if (!spinning) redraw(); });
 };
