@@ -116,25 +116,42 @@ render.wheel = async function () {
         o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + len + 0.02); });
     } catch {}
   }
-  let fwRun = 0;
-  function fireworks() {
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let fwParts = [], fwEnd = 0, fwOn = false, fwNext = 0, fwRandom = false, fwDim = null;
+  const fwHues = [8, 40, 52, 130, 190, 280, 330];
+  const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fwBurst = (x, y, n) => { const hue = fwHues[Math.floor(Math.random() * fwHues.length)]; for (let i = 0; i < n; i++) { const a = Math.PI * 2 * i / n + Math.random() * 0.2, v = 2.2 + Math.random() * 3.6; fwParts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 25 - 12 }); } };
+  const fwFrame = (now) => {
+    if (!fwOn) return;
+    const { g, W, H } = fwDim;
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.45), 46); fwNext = now + 260 + Math.random() * 260; }
+    fwParts = fwParts.filter((p) => p.life > 0.02);
+    for (const p of fwParts) { p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985; p.life -= 0.013; g.fillStyle = `hsla(${p.hue},100%,60%,${Math.max(0, p.life)})`; g.beginPath(); g.arc(p.x, p.y, 2.6, 0, 7); g.fill(); }
+    if (now < fwEnd || fwParts.length) requestAnimationFrame(fwFrame); else { fwOn = false; fwRandom = false; g.clearRect(0, 0, W, H); }
+  };
+  const fwStart = () => {
+    if (fwOn) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1), W = fw.clientWidth, H = fw.clientHeight;
-    fw.width = W * dpr; fw.height = H * dpr;
-    const g = fw.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    let parts = [], nextBurst = 0; const end = performance.now() + 3600, id = ++fwRun, hues = [8, 40, 52, 130, 190, 280, 330];
-    const burst = (x, y) => { const hue = hues[Math.floor(Math.random() * hues.length)]; for (let i = 0; i < 46; i++) { const a = Math.PI * 2 * i / 46 + Math.random() * 0.2, v = 2.2 + Math.random() * 3.6; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 25 - 12 }); } };
-    const frame = (now) => {
-      if (id !== fwRun) return;
-      g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
-      if (now < end && now > nextBurst) { burst(W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.45)); nextBurst = now + 260 + Math.random() * 260; }
-      parts = parts.filter((p) => p.life > 0.02);
-      for (const p of parts) { p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985; p.life -= 0.013; g.fillStyle = `hsla(${p.hue},100%,60%,${Math.max(0, p.life)})`; g.beginPath(); g.arc(p.x, p.y, 2.6, 0, 7); g.fill(); }
-      if (now < end || parts.length) requestAnimationFrame(frame); else g.clearRect(0, 0, W, H);
-    };
-    requestAnimationFrame(frame);
-  }
-  const closePop = () => { pop.hidden = true; pendingReveal = false; fwRun++; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); if (window.speechSynthesis) speechSynthesis.cancel(); };
+    fw.width = W * dpr; fw.height = H * dpr; const g = fw.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fwDim = { g, W, H }; fwOn = true; fwParts = []; requestAnimationFrame(fwFrame);
+  };
+  const fireworks = () => { if (reduceMotion()) return; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + 3600; };
+  const miniBurst = (x, y) => { if (reduceMotion()) return; fwStart(); fwBurst(x, y, 34); fwEnd = Math.max(fwEnd, performance.now() + 900); };
+  const stopFireworks = () => { fwOn = false; fwRandom = false; fwParts = []; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); };
+  // drum roll (noise bursts that speed up) and cymbal crash
+  const noise = (t, len, type, freq, vol) => {
+    const buf = audio.createBuffer(1, Math.max(1, Math.floor(audio.sampleRate * len)), audio.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+    src.buffer = buf; f.type = type; f.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    src.connect(f); f.connect(g); g.connect(audio.destination); src.start(t);
+  };
+  const drumRoll = (ms) => {
+    if (!sound) return;
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); let t = audio.currentTime, gap = 0.12; const end = t + ms / 1000; while (t < end - 0.05) { noise(t, 0.05, 'lowpass', 500 + Math.random() * 200, 0.22); t += gap; gap = Math.max(0.03, gap * 0.93); } } catch {}
+  };
+  const cymbal = () => { if (!sound) return; try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); noise(audio.currentTime, 0.7, 'highpass', 5000, 0.18); beep([784, 988], 0.07, 0.35); } catch {} };
+  const closePop = () => { pop.hidden = true; pendingReveal = false; stopFireworks(); if (window.speechSynthesis) speechSynthesis.cancel(); };
   const findVoice = () => { if (window.speechSynthesis) voiceKm = speechSynthesis.getVoices().find((v) => /^km/i.test(v.lang)) || null; speakRow.hidden = !voiceKm; };
   const say = () => { if (!voiceKm || !current) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(current.n); u.voice = voiceKm; u.lang = voiceKm.lang; speechSynthesis.speak(u); } catch {} };
   const celebrate = () => { if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); } if (wheelSettings.speak) say(); };
@@ -217,25 +234,44 @@ render.wheel = async function () {
   const gCopy = h('button', { class: 'secondary btn-sm' }, 'ចម្លង');
   const gClose = h('button', { class: 'secondary btn-sm' }, 'បិទ');
   const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [gSmall, gGrid, h('div', { class: 'row wheel-tools' }, [gAgain, gCopy, gClose])]));
-  let gRun = 0, gRedo = null;
-  const fillCards = (blocks, cls) => {
-    gGrid.innerHTML = ''; gGrid.className = `wheel-ggrid${cls ? ` ${cls}` : ''}`;
-    blocks.forEach((b, i) => { const d = h('div', { class: 'wheel-g' }, [h('b', {}, b.title), h('ol', {}, b.people.map((p) => h('li', {}, mark(p) + p.n)))]); d.style.setProperty('--i', i); gGrid.appendChild(d); });
-  };
-  const closeGroupPop = () => { gRun++; gPop.hidden = true; fwRun++; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); };
+  let gRun = 0, gRedo = null, gSkipFlag = false;
+  const gSkip = h('button', { class: 'secondary btn-sm', hidden: '' }, 'រំលង ⏭');
+  gPop.querySelector('.wheel-tools').prepend(gSkip);
+  const makeCard = (b, i) => { const ol = h('ol', {}); const d = h('div', { class: 'wheel-g wait' }, [h('b', {}, b.title), ol]); d.style.setProperty('--i', i); d._ol = ol; return d; };
+  const setNames = (card, list, ph) => { card._ol.innerHTML = ''; list.forEach((p) => card._ol.appendChild(h('li', { class: ph ? 'ph' : '' }, ph ? '• • •' : mark(p) + p.n))); };
+  // one drum roll per group: only that card shuffles, then it locks with a crash and a firework
+  const closeGroupPop = () => { gRun++; gSkipFlag = true; gPop.hidden = true; stopFireworks(); };
   const groupPop = (blocks, redo) => {
-    gRedo = redo; const id = ++gRun, sizes = blocks.map((b) => b.people.length), pool = blocks.flatMap((b) => b.people);
-    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    closePop(); gPop.hidden = false; gSmall.textContent = 'កំពុងបែងចែកក្រុម…'; gAgain.disabled = true; gCopy.disabled = true;
-    const t0 = performance.now(), DUR = reduce ? 0 : 2600; let last = 0;
+    gRedo = redo; gSkipFlag = false; const id = ++gRun, n = blocks.length, reduce = reduceMotion();
+    const cards = blocks.map(makeCard), sizes = blocks.map((b) => b.people.length);
+    let remaining = blocks.flatMap((b) => b.people);
+    const per = reduce ? 0 : Math.max(900, Math.min(1800, 12000 / n)), pause = reduce ? 0 : 450;
+    closePop(); stopFireworks(); gGrid.innerHTML = ''; gGrid.className = 'wheel-ggrid'; cards.forEach((c, i) => { setNames(c, blocks[i].people, true); gGrid.appendChild(c); });
+    gPop.hidden = false; gAgain.disabled = true; gCopy.disabled = true; gSkip.hidden = n < 2;
+    let cur = -1, phase = 'start', t0 = 0, last = 0;
+    const lock = (i, burst) => {
+      const card = cards[i]; card.className = 'wheel-g done'; setNames(card, blocks[i].people, false);
+      const ids = new Set(blocks[i].people.map((p) => p.id)); remaining = remaining.filter((p) => !ids.has(p.id));
+      if (burst) { cymbal(); const r = card.getBoundingClientRect(); if (wheelSettings.fw) miniBurst(r.left + r.width / 2, r.top + r.height / 2); }
+    };
+    const finale = () => {
+      gSmall.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
+      if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+      gAgain.focus({ preventScroll: true });
+    };
+    gSkip.onclick = () => { gSkipFlag = true; };
     const frame = (now) => {
       if (id !== gRun) return;
-      if (now - t0 >= DUR) {
-        fillCards(blocks, 'reveal'); gSmall.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; gAgain.disabled = false; gCopy.disabled = false;
-        if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
-        return gAgain.focus({ preventScroll: true });
+      if (gSkipFlag) { for (let k = Math.max(cur, 0); k < n; k++) if (cards[k].className !== 'wheel-g done') lock(k, false); return finale(); }
+      if (phase === 'start' || (phase === 'pause' && now - t0 >= pause)) {
+        cur++; if (cur >= n) return finale();
+        phase = 'roll'; t0 = now; cards[cur].className = 'wheel-g active'; gSmall.textContent = `កំពុងបែងចែក ក្រុមទី ${whKh(cur + 1)}…`;
+        cards[cur].scrollIntoView({ block: 'nearest' }); drumRoll(per);
       }
-      if (now - last > 95) { last = now; const sh = whShuffle(pool); let at = 0; fillCards(blocks.map((b, i) => { const l = sh.slice(at, at + sizes[i]); at += sizes[i]; return { title: b.title, people: l }; }), 'rolling'); beep([480 + Math.random() * 500], 0.025, 0.04); }
+      if (phase === 'roll') {
+        if (now - t0 >= per) { lock(cur, true); phase = 'pause'; t0 = now; }
+        else if (now - last > 80) { last = now; setNames(cards[cur], whShuffle(remaining).slice(0, sizes[cur]), false); }
+      }
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
