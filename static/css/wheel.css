@@ -144,3 +144,12 @@
 /* cards keep their full height and the grid scrolls (without this, short screens squash every card to one name) */
 .wh-ggrid { grid-auto-rows: max-content; align-content: start; }
 .wh-ggrid .wh-g { min-height: min-content; }
+
+/* last picked name, always visible under the wheel (also if the popup cannot be shown) */
+.wh-last { margin: 0; width: min(100%, 560px); padding: 10px 16px; border-radius: 14px; background: var(--teal-soft); border: 2px solid var(--teal); text-align: center; font-size: 18px; color: var(--ink-2); }
+.wh-last b { display: block; font-size: clamp(26px, 7vw, 40px); line-height: 1.5; color: var(--teal-strong); overflow-wrap: anywhere; }
+/* PNG preview (phones: long-press the picture to save, or use the share button) */
+.wh-pv { position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 12px; background: rgba(10, 18, 30, .97); overflow-y: auto; }
+.wh-pv p { margin: 0; color: #fff; text-align: center; line-height: 1.7; font-size: 15px; }
+.wh-pv img { width: min(100%, 900px); height: auto; border-radius: 12px; background: #fff; }
+.wh-pv .wh-row { flex-wrap: wrap; justify-content: center; }

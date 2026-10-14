@@ -22,7 +22,7 @@
   var sound = true, noRepeat = true, audio = null, clickMode = 'off', lastGroups = '', ord = null, histTally = false, pendingReveal = false;
   var TEACHER = 'លោកគ្រូ សាន សុខលី';
   function S() { return state.set || (state.set = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false }); }
-  function teacher() { var t = S().teacher; return t === undefined ? TEACHER : clean(t); }   // empty = no teacher line
+  function teacher() { return clean(S().teacher || ''); }   // only what the teacher typed; the default name is just a hint in the box
 
   function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function load() {
@@ -161,7 +161,7 @@
   function spin() {
     if (spinning) return;
     var list = eligible(), n = list.length; if (!n) return;
-    wl = list; closePop();
+    wl = list; closePop(); $('wh-last').hidden = true;
     var pick = Math.floor(Math.random() * n), a = Math.PI * 2 / n;
     var target = -(pick * a + (Math.random() - 0.5) * a * 0.7);   // slice `pick` is centred at pick*a from the top; land inside it
     var turns = 5 + Math.floor(Math.random() * 3);
@@ -177,12 +177,18 @@
       finish(list[pick]);
     })(t0);
   }
+  function showLast(on) {
+    var el = $('wh-last'); el.hidden = !on || !current; if (el.hidden) return;
+    el.innerHTML = ''; el.appendChild(document.createTextNode('សិស្សដែលត្រូវបានជ្រើសចុងក្រោយ៖')); var b = document.createElement('b'); b.textContent = current.n; el.appendChild(b);
+  }
   function finish(student) {
     current = student; if (noRepeat) current.done = true;
-    var c = cls(); (c.hist = c.hist || []).push({ n: current.n, t: Date.now() }); if (c.hist.length > 300) c.hist.shift();
-    save(); renderChips(); refreshEmpty(); renderHist();
-    pendingReveal = !!S().mystery; openPop();
-    if (!pendingReveal) celebrate();
+    try {
+      var c = cls(); (c.hist = c.hist || []).push({ n: current.n, t: Date.now() }); if (c.hist.length > 300) c.hist.shift();
+      save(); renderChips(); refreshEmpty(); renderHist();
+    } catch (e) {}
+    pendingReveal = !!S().mystery; showLast(!pendingReveal); openPop();       // the name is shown first, effects after
+    try { if (!pendingReveal) celebrate(); } catch (e) {}
   }
   function celebrate() {
     if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
@@ -197,7 +203,7 @@
     $('wh-pop').hidden = false; (pendingReveal ? $('wh-reveal') : $('wh-again')).focus({ preventScroll: true });
   }
   function reveal() {
-    pendingReveal = false; $('wh-winner').textContent = current.n; $('wh-reveal').hidden = true; $('wh-again').hidden = false; $('wh-absent').hidden = false;
+    pendingReveal = false; showLast(true); $('wh-winner').textContent = current.n; $('wh-reveal').hidden = true; $('wh-again').hidden = false; $('wh-absent').hidden = false;
     $('wh-say').hidden = !voiceKm; celebrate();
   }
   function closePop() { $('wh-pop').hidden = true; pendingReveal = false; stopFireworks(); if (window.speechSynthesis) speechSynthesis.cancel(); }
@@ -384,6 +390,22 @@
   }
   function khDate() { var d = new Date(); return khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()); }
   var lastBlocks = null;
+  function isPhone() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || /Android|iPhone|iPad|iPod|Mobile|FBAN|FBAV|Telegram|Line\//i.test(navigator.userAgent); }
+  function saveBlob(blob, name) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function savePicture(blob, name) {
+    if (!isPhone()) return saveBlob(blob, name);
+    var old = document.getElementById('wh-pv'); if (old) old.remove();      // phones: preview with long-press save + share button (in-app browsers often block downloads)
+    var url = URL.createObjectURL(blob), box = document.createElement('div'), p = document.createElement('p'), img = document.createElement('img'), row = document.createElement('div');
+    box.id = 'wh-pv'; box.className = 'wh-pv'; p.textContent = 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងក្រោម។'; img.src = url; img.alt = 'លទ្ធផលបែងចែកក្រុម'; row.className = 'wh-row';
+    function btn(t, cls, f) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-sm ' + cls; b.textContent = t; b.addEventListener('click', f); row.appendChild(b); }
+    var file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) btn('ចែករំលែក / រក្សាទុក', 'btn-primary', function () { navigator.share({ files: [file], title: 'khmermath.org' }).catch(function () {}); });
+    btn('ទាញយក', 'btn-ghost', function () { saveBlob(blob, name); });
+    btn('បិទ', 'btn-ghost', function () { box.remove(); URL.revokeObjectURL(url); });
+    box.appendChild(p); box.appendChild(img); box.appendChild(row); document.body.appendChild(box);
+  }
   function downloadPoster() {
     if (!lastBlocks) return;
     var single = lastBlocks.length === 1 && /^លំដាប់/.test(lastBlocks[0].title), total = lastBlocks.reduce(function (a, b) { return a + b.list.length; }, 0), btn = $('wh-gpng');
@@ -393,9 +415,12 @@
         sub: cls().name + '  ·  ' + khNum(total) + ' នាក់  ·  ' + khDate(), teacher: teacher(), colors: colors(),
         groups: lastBlocks.map(function (b) { return { title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.list.map(function (p) { return { n: p.n, g: p.g }; }) }; })
       });
-      cv.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); var z = function (x) { return ('0' + x).slice(-2); }, d = new Date();
-        a.download = 'khmermath-' + (single ? 'order' : 'groups') + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
-        btn.textContent = '⬇ ទាញយក PNG'; }, 'image/png');
+      cv.toBlob(function (b) {
+        var z = function (x) { return ('0' + x).slice(-2); }, d = new Date(), name = 'khmermath-' + (single ? 'order' : 'groups') + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.png';
+        btn.textContent = '⬇ ទាញយក PNG';
+        if (!b) { alert('មិនអាចបង្កើតរូបភាពបានទេ។'); return; }
+        savePicture(b, name);
+      }, 'image/png');
     };
     btn.textContent = 'កំពុងបង្កើត…';
     (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]) : Promise.resolve()).then(make, make);
@@ -668,7 +693,7 @@
     var set = S(), sel = $('wh-theme');
     Object.keys(PALETTES).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = PALETTES[k][0]; sel.appendChild(o); });
     sel.value = set.theme; $('wh-dur').value = set.dur; $('wh-durv').textContent = khNum(set.dur);
-    $('wh-teacher').value = set.teacher === undefined ? TEACHER : set.teacher;
+    $('wh-teacher').value = set.teacher || ''; $('wh-teacher').placeholder = TEACHER;
     $('wh-fwon').checked = set.fw !== false; $('wh-mystery').checked = !!set.mystery; $('wh-speak').checked = !!set.speak;
     if (window.speechSynthesis) { findVoice(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', findVoice); }
   })();
