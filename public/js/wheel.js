@@ -233,12 +233,76 @@ render.wheel = async function () {
   const gAgain = h('button', { class: 'btn-sm' }, 'បែងចែកម្ដងទៀត');
   const gCopy = h('button', { class: 'secondary btn-sm' }, 'ចម្លង');
   const gClose = h('button', { class: 'secondary btn-sm' }, 'បិទ');
-  const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [gSmall, gGrid, h('div', { class: 'row wheel-tools' }, [gAgain, gCopy, gClose])]));
+  const gPng = h('button', { class: 'btn-sm', hidden: '' }, '⬇ ទាញយក PNG');
+  const gSub = h('div', { class: 'wheel-gsub', hidden: '' });
+  const gBrand = h('div', { class: 'wheel-gbrand', hidden: '' }, 'khmermath.org · កង់ចាប់ឈ្មោះ');
+  const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [gSmall, gSub, gGrid, gBrand, h('div', { class: 'row wheel-tools' }, [gPng, gAgain, gCopy, gClose])]));
   let gRun = 0, gRedo = null, gSkipFlag = false;
   const gSkip = h('button', { class: 'secondary btn-sm', hidden: '' }, 'រំលង ⏭');
   gPop.querySelector('.wheel-tools').prepend(gSkip);
-  const makeCard = (b, i) => { const ol = h('ol', {}); const d = h('div', { class: 'wheel-g wait' }, [h('b', {}, b.title), ol]); d.style.setProperty('--i', i); d._ol = ol; return d; };
+  const makeCard = (b, i) => { const ol = h('ol', {}); const d = h('div', { class: 'wheel-g wait' }, [h('b', {}, b.title), ol]); d.style.setProperty('--i', i); const pal = (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1]; d.style.setProperty('--gc', pal[i % pal.length]); d._ol = ol; return d; };
   const setNames = (card, list, ph) => { card._ol.innerHTML = ''; list.forEach((p) => card._ol.appendChild(h('li', { class: ph ? 'ph' : '' }, ph ? '• • •' : mark(p) + p.n))); };
+  // ---- result picture (PNG) with khmermath.org branding ----
+  const FONT = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
+  const rr = (g, x, y, w, h2, r, tl = r, tr = r, br = r, bl = r) => {
+    g.beginPath(); g.moveTo(x + tl, y); g.lineTo(x + w - tr, y); g.quadraticCurveTo(x + w, y, x + w, y + tr); g.lineTo(x + w, y + h2 - br);
+    g.quadraticCurveTo(x + w, y + h2, x + w - br, y + h2); g.lineTo(x + bl, y + h2); g.quadraticCurveTo(x, y + h2, x, y + h2 - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
+  };
+  const posterCanvas = (o) => {
+    const W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    const cw = (W - pad * 2 - gap * (cols - 1)) / cols, headH = 80, lineH = 46, cpad = 18, bannerH = 250, footH = 110, dpr = 2;
+    const rows = []; for (let i = 0; i < n; i += cols) rows.push(o.groups.slice(i, i + cols));
+    const rowH = rows.map((r) => headH + Math.max(...r.map((x) => x.items.length)) * lineH + cpad * 2);
+    const H = bannerH + 40 + rowH.reduce((a, b) => a + b, 0) + gap * (rows.length - 1) + 40 + footH;
+    const cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#eaf5f2'); bg.addColorStop(1, '#fdf6e8'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const bn = g.createLinearGradient(0, 0, W, bannerH); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f'); g.fillStyle = bn; g.fillRect(0, 0, W, bannerH);
+    for (let k = 0; k < 46; k++) { const a = (k * 9301 + 49297) % 233280 / 233280, b = (k * 7919 + 1237) % 10007 / 10007;
+      g.fillStyle = ['#ffd43b', '#ff8787', '#74c0fc', '#b2f2bb', '#ffffff'][k % 5]; g.globalAlpha = 0.55; g.save(); g.translate(a * W, b * bannerH); g.rotate(k); g.fillRect(-7, -3, 14, 6); g.restore(); }
+    g.globalAlpha = 1; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+    g.font = `700 70px ${FONT}`; g.fillText(o.heading, W / 2, 98); g.font = `500 33px ${FONT}`; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, 178); g.globalAlpha = 1;
+    let y = bannerH + 40;
+    rows.forEach((r, ri) => {
+      r.forEach((grp, ci) => {
+        const x = pad + ci * (cw + gap), h2 = rowH[ri], col = o.colors[(ri * cols + ci) % o.colors.length];
+        g.save(); g.shadowColor = 'rgba(0,0,0,.18)'; g.shadowBlur = 22; g.shadowOffsetY = 8; g.fillStyle = '#fff'; rr(g, x, y, cw, h2, 22); g.fill(); g.restore();
+        g.fillStyle = col; rr(g, x, y, cw, headH, 22, 22, 22, 0, 0); g.fill();
+        g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = `700 36px ${FONT}`; g.fillText(grp.title, x + 26, y + headH / 2 + 2);
+        g.textAlign = 'right'; g.font = `500 28px ${FONT}`; g.globalAlpha = 0.9; g.fillText(`${whKh(grp.items.length)} នាក់`, x + cw - 24, y + headH / 2 + 2); g.globalAlpha = 1;
+        grp.items.forEach((it, i) => {
+          const ty = y + headH + cpad + i * lineH + lineH / 2; g.textAlign = 'left'; g.fillStyle = col; g.font = `700 26px ${FONT}`; g.fillText(`${whKh(i + 1)}.`, x + 24, ty);
+          let dx = x + 76; if (it.g) { g.fillStyle = it.g === 'f' ? '#d6336c' : '#1c7ed6'; g.beginPath(); g.arc(dx + 8, ty, 8, 0, 7); g.fill(); dx += 28; }
+          let size = 33; g.font = `500 ${size}px ${FONT}`; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 18) { size -= 2; g.font = `500 ${size}px ${FONT}`; }
+          g.fillStyle = '#1b2733'; g.fillText(it.n, dx, ty);
+        });
+      });
+      y += rowH[ri] + gap;
+    });
+    const fy = H - footH / 2 - 6;
+    g.strokeStyle = 'rgba(31,111,102,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(pad, H - footH); g.lineTo(W - pad, H - footH); g.stroke();
+    g.fillStyle = '#12263a'; rr(g, W / 2 - 215, fy - 30, 60, 60, 14); g.fill();
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = `700 38px ${FONT}`; g.fillText('√', W / 2 - 185, fy + 2);
+    g.fillStyle = '#e0a13a'; rr(g, W / 2 - 172, fy - 4, 14, 14, 3); g.fill();
+    g.textAlign = 'left'; g.fillStyle = '#1f6f66'; g.font = `700 42px ${FONT}`; g.fillText('khmermath.org', W / 2 - 140, fy - 2);
+    g.fillStyle = '#5b6b7b'; g.font = `500 24px ${FONT}`; g.fillText('កង់ចាប់ឈ្មោះ · គណិតវិទ្យាខ្មែរ', W / 2 - 140, fy + 34);
+    return cv;
+  };
+  const khDate = () => { const d = new Date(); return whKh(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`); };
+  const className = () => (classes.find((c) => c.id === wheelClassId) || {}).name || '';
+  let lastBlocks = null;
+  const isOrder = (bl) => bl.length === 1 && /^លំដាប់/.test(bl[0].title);
+  gPng.onclick = async () => {
+    if (!lastBlocks) return;
+    const single = isOrder(lastBlocks), total = lastBlocks.reduce((a, b) => a + b.people.length, 0);
+    gPng.textContent = 'កំពុងបង្កើត…';
+    try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]); } catch {}
+    const cv = posterCanvas({ heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!', sub: `${className()}  ·  ${whKh(total)} នាក់  ·  ${khDate()}`,
+      colors: (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1],
+      groups: lastBlocks.map((b) => ({ title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.people.map((p) => ({ n: p.n, g: p.g })) })) });
+    cv.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); const d = new Date();
+      a.download = `khmermath-${single ? 'order' : 'groups'}-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.png`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); gPng.textContent = '⬇ ទាញយក PNG'; }, 'image/png');
+  };
   // one drum roll per group: only that card shuffles, then it locks with a crash and a firework
   const closeGroupPop = () => { gRun++; gSkipFlag = true; gPop.hidden = true; stopFireworks(); };
   const groupPop = (blocks, redo) => {
@@ -246,6 +310,7 @@ render.wheel = async function () {
     const cards = blocks.map(makeCard), sizes = blocks.map((b) => b.people.length);
     let remaining = blocks.flatMap((b) => b.people);
     const per = reduce ? 0 : Math.max(900, Math.min(1800, 12000 / n)), pause = reduce ? 0 : 450;
+    lastBlocks = blocks; gPop.firstChild.classList.remove('final'); gSub.hidden = true; gBrand.hidden = true; gPng.hidden = true;
     closePop(); stopFireworks(); gGrid.innerHTML = ''; gGrid.className = 'wheel-ggrid'; cards.forEach((c, i) => { setNames(c, blocks[i].people, true); gGrid.appendChild(c); });
     gPop.hidden = false; gAgain.disabled = true; gCopy.disabled = true; gSkip.hidden = n < 2;
     let cur = -1, phase = 'start', t0 = 0, last = 0;
@@ -255,7 +320,9 @@ render.wheel = async function () {
       if (burst) { cymbal(); const r = card.getBoundingClientRect(); if (wheelSettings.fw) miniBurst(r.left + r.width / 2, r.top + r.height / 2); }
     };
     const finale = () => {
-      gSmall.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
+      const total = blocks.reduce((a, b) => a + b.people.length, 0);
+      gSmall.textContent = `${isOrder(blocks) ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!'} 🎉`; gPop.firstChild.classList.add('final');
+      gSub.textContent = `${className()} · ${whKh(total)} នាក់ · ${khDate()}`; gSub.hidden = false; gBrand.hidden = false; gPng.hidden = false; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
       if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
       gAgain.focus({ preventScroll: true });
     };
