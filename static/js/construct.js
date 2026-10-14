@@ -1920,7 +1920,7 @@
   });
 
   // ---- Grade 9, lesson 13 «រង្វង់ និងបន្ទាត់» ----
-  var G9C = { O: [320, 236], R: 150 };
+  var G9C = { O: [320, 264], R: 150 };
   var onRim = function (p) { return add(G9C.O, mul(unit(sub(p, G9C.O)), G9C.R)); };       // a handle kept on the circle
   var angleOf = function (p) { return Math.atan2(p[1] - G9C.O[1], p[0] - G9C.O[0]) * 180 / Math.PI; };
   var gap = function (a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
@@ -2294,6 +2294,780 @@
           says(g, 1, '∠APB = 360° − 90° − 90° − ' + Math.round(2 * f.h) + '° = ' + Math.round(180 - 2 * f.h) + '°');
           tickN(g, f.P, f.A, 1); tickN(g, f.P, f.B, 1);
         }]],
+      ];
+    },
+  });
+
+  // ---- Grade 9, lesson 14 «លក្ខណៈមុំនៃរង្វង់» ----
+  var g14DegDiff = function (a, b) { return (((b - a) % 360) + 360) % 360; };
+  var g14Arc = function (c, r, a1, a2) {
+    var diff = g14DegDiff(a1, a2);
+    return arcPath(c, r, d2r(a1), d2r(a1 + diff));
+  };
+  var g14AngleArc = function (c, r, a, b) {
+    var d = g14DegDiff(a, b);
+    if (d <= 180) return arcPath(c, r, d2r(a), d2r(a + d));
+    return arcPath(c, r, d2r(b), d2r(b + 360 - d));
+  };
+  var g14LineIntersect = function (p1, p2, q1, q2) {
+    var x1 = p1[0], y1 = p1[1], x2 = p2[0], y2 = p2[1];
+    var x3 = q1[0], y3 = q1[1], x4 = q2[0], y4 = q2[1];
+    var denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-6) return [(x1 + x2) / 2, (y1 + y2) / 2];
+    var t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
+  };
+  var g14SecantPts = function (E, dir, O, R) {
+    var u = unit(dir);
+    var v = sub(E, O);
+    var b = dotp(v, u);
+    var c = dotp(v, v) - R * R;
+    var disc = b * b - c;
+    if (disc <= 0) return null;
+    var sq = Math.sqrt(disc);
+    var t1 = -b - sq;
+    var t2 = -b + sq;
+    return [add(E, mul(u, t1)), add(E, mul(u, t2))];
+  };
+
+  // Picture 3 & Section 2.2: Inscribed angle ∠ABC and central angle ∠AOC on arc AC.
+  // B is draggable round the major arc AC (covering all 3 proof cases: O on side, O inside, O outside).
+  CX['g9-l14-inscribed-angle'] = scripted({
+    steps: 5,
+    start: { B: rimAt(G9C.O, G9C.R, -90) },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = (degOf(G9C.O, p) + 360) % 360;
+      return a > 155 || a < 25;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var f = { O: O, R: R, A: rimAt(O, R, 140), C: rimAt(O, R, 40), B: onRim(s.B) };
+      f.D = sub(mul(O, 2), f.B);
+      f.degB = (degOf(O, f.B) + 360) % 360;
+      f.angO = 100;
+      f.angB = 50;
+      var dC = Math.abs(f.degB - 220), dA = Math.abs(f.degB - 320);
+      if (dC <= 4 || dA <= 4) {
+        f.caseText = 'ករណីទី ១ ៖ ផ្ចិត O ស្ថិតនៅលើជ្រុងមួយនៃមុំ ∠ABC';
+      } else if (f.degB > 220 && f.degB < 320) {
+        f.caseText = 'ករណីទី ២ ៖ ផ្ចិត O ស្ថិតនៅក្នុងមុំ ∠ABC';
+      } else {
+        f.caseText = 'ករណីទី ៣ ៖ ផ្ចិត O ស្ថិតនៅក្រៅមុំ ∠ABC';
+      }
+      return f;
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) handleAt(ink, f.B, 'B');
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      var aB = degOf(f.B, f.A), cB = degOf(f.B, f.C);
+      return [
+        [
+          ['circ', f.O, f.A],
+          ['pt', f.O, 'O', [-0.8, 0.7], null, 22],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.C, 'C', away(f.C), null, 22],
+        ],
+        [
+          ['seg', f.B, f.A, 'cx-line'],
+          ['seg', f.B, f.C, 'cx-line'],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.B, 28, aB, cB), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.O, f.A, 'cx-seg'],
+          ['seg', f.O, f.C, 'cx-seg'],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, 40, 140), fill: 'none', class: 'cx-perp', style: 'stroke-width:4' }, g);
+            el('path', { d: g14Arc(f.O, 26, 40, 140), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.B, f.D, 'cx-line cx-line-2'],
+          ['pt', f.D, 'D', away(f.D), null, 20],
+        ],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'មុំចារឹក ∠ABC = ' + Math.round(f.angB) + '° , មុំផ្ចិត ∠AOC = ' + Math.round(f.angO) + '°');
+            says(g, 1, '∠ABC = ½ ∠AOC = ½ ធ្នូ AC (' + Math.round(f.angB) + '° = ½ × ' + Math.round(f.angO) + '°)');
+            says(g, 2, f.caseText);
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 4: Inscribed angles intercepting the same arc (∠APB = ∠AQB = ∠ARB = ½ ∠AOB).
+  // A and B fixed; P, Q, R are 3 draggable handles on the major arc AB.
+  var g14MajorAngle = function (p) {
+    var a = (degOf(G9C.O, p) + 360) % 360;
+    if (a <= 40) a += 360;
+    return a;
+  };
+  CX['g9-l14-same-arc'] = scripted({
+    steps: 5,
+    start: {
+      P: rimAt(G9C.O, G9C.R, 210),
+      Q: rimAt(G9C.O, G9C.R, 270),
+      R: rimAt(G9C.O, G9C.R, 330),
+    },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = g14MajorAngle(p);
+      var pP = g14MajorAngle(s.P), pQ = g14MajorAngle(s.Q), pR = g14MajorAngle(s.R);
+      if (key === 'P') return a >= 165 && a <= pQ - 14;
+      if (key === 'Q') return a >= pP + 14 && a <= pR - 14;
+      if (key === 'R') return a >= pQ + 14 && a <= 375;
+      return true;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var f = {
+        O: O, R: R,
+        A: rimAt(O, R, 150),
+        B: rimAt(O, R, 30),
+        P: onRim(s.P),
+        Q: onRim(s.Q),
+        Rr: onRim(s.R),
+        angO: 120,
+        angP: 60,
+        angQ: 60,
+        angR: 60,
+      };
+      return f;
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) handleAt(ink, f.P, 'P');
+      if (i >= 2) handleAt(ink, f.Q, 'Q');
+      if (i >= 3) handleAt(ink, f.Rr, 'R');
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.A],
+          ['pt', f.O, 'O', [0, 0.8], null, 22],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, 30, 150), fill: 'none', class: 'cx-perp', style: 'stroke-width:4' }, g);
+          }],
+        ],
+        [
+          ['seg', f.P, f.A, 'cx-line'],
+          ['seg', f.P, f.B, 'cx-line'],
+          ['pt', f.P, 'P', away(f.P), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.P, 26, degOf(f.P, f.A), degOf(f.P, f.B)), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.Q, f.A, 'cx-line cx-line-2'],
+          ['seg', f.Q, f.B, 'cx-line cx-line-2'],
+          ['pt', f.Q, 'Q', away(f.Q), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.Q, 26, degOf(f.Q, f.A), degOf(f.Q, f.B)), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.Rr, f.A, 'cx-perp'],
+          ['seg', f.Rr, f.B, 'cx-perp'],
+          ['pt', f.Rr, 'R', away(f.Rr), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.Rr, 26, degOf(f.Rr, f.A), degOf(f.Rr, f.B)), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.O, f.A, 'cx-seg'],
+          ['seg', f.O, f.B, 'cx-seg'],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, 26, 30, 150), fill: 'none', class: 'cx-arc' }, g);
+            says(g, 0, '∠APB = ' + Math.round(f.angP) + '° , ∠AQB = ' + Math.round(f.angQ) + '° , ∠ARB = ' + Math.round(f.angR) + '°');
+            says(g, 1, '∠APB = ∠AQB = ∠ARB = ½ ∠AOB = ½ ធ្នូ AB (60° = ½ × 120°)');
+            says(g, 2, 'គ្រប់មុំចារឹកក្នុងរង្វង់ដែលស្កាត់ធ្នូតែមួយ មានរង្វាស់ស្មើគ្នា');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 6: Inscribed angle in a semicircle is a right angle (∠ACB = 90°).
+  // Diameter AB through O; C is a draggable handle on the semicircle.
+  CX['g9-l14-semicircle'] = scripted({
+    steps: 5,
+    start: { C: rimAt(G9C.O, G9C.R, -70) },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = degOf(G9C.O, p);
+      return a >= -165 && a <= -15;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var f = {
+        O: O, R: R,
+        A: [O[0] - R, O[1]],
+        B: [O[0] + R, O[1]],
+        C: onRim(s.C),
+      };
+      return f;
+    },
+    top: function (f, ink, i) {
+      if (i >= 2) handleAt(ink, f.C, 'C');
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.B],
+          ['pt', f.O, 'O', [0, 0.8], null, 22],
+        ],
+        [
+          ['seg', f.A, f.B, 'cx-line'],
+          ['pt', f.A, 'A', [-1, 0], null, 22],
+          ['pt', f.B, 'B', [1, 0], null, 22],
+        ],
+        [
+          ['seg', f.C, f.A, 'cx-line cx-line-2'],
+          ['seg', f.C, f.B, 'cx-line cx-line-2'],
+          ['pt', f.C, 'C', away(f.C), null, 22],
+        ],
+        [
+          ['seg', f.O, f.C, 'cx-seg'],
+          ['mark', function (g) {
+            rightAt(g, f.C, f.A, f.C, f.B);
+            tickN(g, f.O, f.A, 1);
+            tickN(g, f.O, f.B, 1);
+            tickN(g, f.O, f.C, 1);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'មុំចារឹក ∠ACB = 90° (មុំចារឹកក្នុងកន្លះរង្វង់)');
+            says(g, 1, 'មុំផ្ចិត ∠AOB = 180° , ∠ACB = ½ ∠AOB = ½ × 180° = 90°');
+            says(g, 2, 'ច្រាសមកវិញ ៖ បើ ∠ACB = 90° នោះ AB ជាអង្កត់ផ្ចិត');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Pictures 1 & 2: Central angle ∠POR = arc PR, reflex angle, and equal arcs QS = PR.
+  // P and R are draggable handles on the circle (at least 20° apart and not a diameter).
+  CX['g9-l14-central-angle'] = scripted({
+    steps: 5,
+    start: {
+      P: rimAt(G9C.O, G9C.R, 220),
+      R: rimAt(G9C.O, G9C.R, 320),
+    },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = (degOf(G9C.O, p) + 360) % 360;
+      if (key === 'P') return a >= 180 && a <= 250;
+      if (key === 'R') return a >= 290 && a <= 360;
+      return true;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var pDeg = (degOf(O, s.P) + 360) % 360;
+      var rDeg = (degOf(O, s.R) + 360) % 360;
+      var span = g14DegDiff(pDeg, rDeg);
+      var f = {
+        O: O, R: R,
+        P: onRim(s.P),
+        Rr: onRim(s.R),
+        pDeg: pDeg,
+        rDeg: rDeg,
+        span: span,
+        Q: rimAt(O, R, 40),
+        S: rimAt(O, R, 40 + span),
+        qDeg: 40,
+        sDeg: 40 + span,
+      };
+      return f;
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) {
+        handleAt(ink, f.P, 'P');
+        handleAt(ink, f.Rr, 'R');
+      }
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      var chordLen = len(sub(f.Rr, f.P));
+      return [
+        [
+          ['circ', f.O, f.P],
+          ['pt', f.O, 'O', [0, 0.8], null, 22],
+          ['pt', f.P, 'P', away(f.P), null, 22],
+          ['pt', f.Rr, 'R', away(f.Rr), null, 22],
+        ],
+        [
+          ['seg', f.O, f.P, 'cx-line'],
+          ['seg', f.O, f.Rr, 'cx-line'],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, 26, f.pDeg, f.rDeg), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, f.pDeg, f.rDeg), fill: 'none', class: 'cx-perp', style: 'stroke-width:4' }, g);
+          }],
+        ],
+        [
+          ['pt', f.Q, 'Q', away(f.Q), null, 22],
+          ['pt', f.S, 'S', away(f.S), null, 22],
+          ['arc', { c: f.Q, r: chordLen, t1: aimAt(f.Q, f.S) - 0.28, t2: aimAt(f.Q, f.S) + 0.28 }],
+          ['seg', f.P, f.Rr, 'cx-seg'],
+          ['seg', f.Q, f.S, 'cx-seg'],
+          ['mark', function (g) {
+            tickN(g, f.P, f.Rr, 1);
+            tickN(g, f.Q, f.S, 1);
+          }],
+        ],
+        [
+          ['seg', f.O, f.Q, 'cx-line cx-line-2'],
+          ['seg', f.O, f.S, 'cx-line cx-line-2'],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, f.qDeg, f.sDeg), fill: 'none', class: 'cx-perp', style: 'stroke-width:4' }, g);
+            el('path', { d: g14Arc(f.O, 26, f.qDeg, f.sDeg), fill: 'none', class: 'cx-arc' }, g);
+            says(g, 0, 'ធ្នូ PR = ' + Math.round(f.span) + '° ⟹ មុំផ្ចិត ∠POR = ' + Math.round(f.span) + '° (មុំផត = ' + Math.round(360 - f.span) + '°)');
+            says(g, 1, 'ធ្នូ QS = ធ្នូ PR = ' + Math.round(f.span) + '° ⟹ ∠QOS = ∠POR = ' + Math.round(f.span) + '°');
+            says(g, 2, 'ធ្នូពីរប៉ុនគ្នា ស្កាត់ដោយមុំផ្ចិតពីរប៉ុនគ្នា (និងច្រាសមកវិញ)');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 5 & Section 2.4: Central angle is twice inscribed angle (∠AOC = 2 × ∠ABC = 60°).
+  // A and C fixed (central angle 60°); B is draggable handle on major arc AC; D and E on same arc.
+  CX['g9-l14-central-vs-inscribed'] = scripted({
+    steps: 5,
+    start: { B: rimAt(G9C.O, G9C.R, 270) },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = (degOf(G9C.O, p) + 360) % 360;
+      return a >= 135 || a <= 45;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var f = {
+        O: O, R: R,
+        A: rimAt(O, R, 120),
+        C: rimAt(O, R, 60),
+        B: onRim(s.B),
+        D: rimAt(O, R, 190),
+        E: rimAt(O, R, 350),
+        angO: 60,
+        angB: 30,
+      };
+      return f;
+    },
+    top: function (f, ink, i) {
+      if (i >= 2) handleAt(ink, f.B, 'B');
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.A],
+          ['pt', f.O, 'O', [0, 0.8], null, 22],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.C, 'C', away(f.C), null, 22],
+        ],
+        [
+          ['seg', f.O, f.A, 'cx-seg'],
+          ['seg', f.O, f.C, 'cx-seg'],
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, 60, 120), fill: 'none', class: 'cx-perp', style: 'stroke-width:4' }, g);
+            el('path', { d: g14Arc(f.O, 28, 60, 120), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.B, f.A, 'cx-line'],
+          ['seg', f.B, f.C, 'cx-line'],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.B, 26, degOf(f.B, f.A), degOf(f.B, f.C)), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['seg', f.D, f.A, 'cx-line cx-line-2'],
+          ['seg', f.D, f.C, 'cx-line cx-line-2'],
+          ['seg', f.E, f.A, 'cx-perp'],
+          ['seg', f.E, f.C, 'cx-perp'],
+          ['pt', f.D, 'D', away(f.D), null, 20],
+          ['pt', f.E, 'E', away(f.E), null, 20],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.D, 24, degOf(f.D, f.A), degOf(f.D, f.C)), fill: 'none', class: 'cx-arc' }, g);
+            el('path', { d: g14AngleArc(f.E, 24, degOf(f.E, f.A), degOf(f.E, f.C)), fill: 'none', class: 'cx-arc' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'មុំផ្ចិត ∠AOC = 60° (ស្កាត់ធ្នូ AC)');
+            says(g, 1, '∠ABC = ∠ADC = ∠AEC = 30° = ½ ∠AOC');
+            says(g, 2, 'មុំផ្ចិតស្មើពីរដងនៃមុំចារឹកដែលស្កាត់ធ្នូតែមួយ (∠AOC = 2 × ∠ABC)');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 7 & Section 3: Cyclic quadrilateral (ABCD in a circle: ∠A + ∠C = 180°, ∠B + ∠D = 180°, ∠DCE = ∠A).
+  CX['g9-l14-cyclic-quad'] = scripted({
+    steps: 5,
+    start: {
+      A: rimAt(G9C.O, G9C.R, 200),
+      B: rimAt(G9C.O, G9C.R, 290),
+      C: rimAt(G9C.O, G9C.R, 25),
+      D: rimAt(G9C.O, G9C.R, 120),
+    },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var t = { A: s.A, B: s.B, C: s.C, D: s.D };
+      t[key] = p;
+      var a = ['A', 'B', 'C', 'D'].map(function (k) { return (degOf(G9C.O, t[k]) + 360) % 360; });
+      return a.every(function (x, i) {
+        var g = (((a[(i + 1) % 4] - x) % 360) + 360) % 360;
+        return g >= 45 && g <= 140;
+      });
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var A = onRim(s.A), B = onRim(s.B), C = onRim(s.C), D = onRim(s.D);
+      var uBC = unit(sub(C, B));
+      var E = add(C, mul(uBC, 65));
+      var aA = (degOf(O, A) + 360) % 360;
+      var aB = (degOf(O, B) + 360) % 360;
+      var aC = (degOf(O, C) + 360) % 360;
+      var aD = (degOf(O, D) + 360) % 360;
+      var gap = function (deg1, deg2) { return (((deg2 - deg1) % 360) + 360) % 360; };
+      var arcBCD = gap(aB, aC) + gap(aC, aD);
+      var arcCDA = gap(aC, aD) + gap(aD, aA);
+      var degA = Math.round(arcBCD / 2);
+      var degC = 180 - degA;
+      var degB = Math.round(arcCDA / 2);
+      var degD = 180 - degB;
+      return {
+        O: O, R: R,
+        A: A, B: B, C: C, D: D, E: E,
+        degA: degA, degB: degB, degC: degC, degD: degD,
+      };
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) {
+        handleAt(ink, f.A, 'A');
+        handleAt(ink, f.B, 'B');
+        handleAt(ink, f.C, 'C');
+        handleAt(ink, f.D, 'D');
+      }
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.A],
+          ['pt', f.O, 'O', [0, 0.8], null, 20],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['pt', f.C, 'C', away(f.C), null, 22],
+          ['pt', f.D, 'D', away(f.D), null, 22],
+        ],
+        [
+          ['seg', f.A, f.B, 'cx-line'],
+          ['seg', f.B, f.C, 'cx-line'],
+          ['seg', f.C, f.D, 'cx-line'],
+          ['seg', f.D, f.A, 'cx-line'],
+        ],
+        [
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.A, 24, degOf(f.A, f.D), degOf(f.A, f.B)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+            el('path', { d: g14AngleArc(f.C, 24, degOf(f.C, f.B), degOf(f.C, f.D)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.B, 24, degOf(f.B, f.A), degOf(f.B, f.C)), fill: 'none', class: 'cx-arc', style: 'stroke: #d97706; stroke-width: 2.5' }, g);
+            el('path', { d: g14AngleArc(f.D, 24, degOf(f.D, f.C), degOf(f.D, f.A)), fill: 'none', class: 'cx-arc', style: 'stroke: #d97706; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['seg', f.C, f.E, 'cx-perp'],
+          ['pt', f.E, 'E', [0.8, 0.6], null, 18],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.C, 32, degOf(f.C, f.D), degOf(f.C, f.E)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+            says(g, 0, 'ចតុកោណចារឹកក្នុងរង្វង់ ABCD · ផលបូកមុំឈមស្មើ 180°');
+            says(g, 1, '∠A + ∠C = ' + f.degA + '° + ' + f.degC + '° = 180° (ពណ៌ខៀវ)');
+            says(g, 2, '∠B + ∠D = ' + f.degB + '° + ' + f.degD + '° = 180° (ពណ៌ទឹកក្រូច)');
+            says(g, 3, 'មុំក្រៅ ∠DCE = ∠A = ' + f.degA + '° (ស្មើនឹងមុំឈមក្នុង)');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 8 & Section 4.1: Angle with vertex inside circle (∠AED = ½(arc AD + arc BC)).
+  // Four draggable handles A, B, C, D in cyclic order; chords AC and BD meet at E inside.
+  CX['g9-l14-angle-inside'] = scripted({
+    steps: 5,
+    start: {
+      A: rimAt(G9C.O, G9C.R, 215),
+      B: rimAt(G9C.O, G9C.R, 295),
+      C: rimAt(G9C.O, G9C.R, 35),
+      D: rimAt(G9C.O, G9C.R, 125),
+    },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var t = { A: s.A, B: s.B, C: s.C, D: s.D };
+      t[key] = p;
+      var a = ['A', 'B', 'C', 'D'].map(function (k) { return (degOf(G9C.O, t[k]) + 360) % 360; });
+      return a.every(function (x, i) {
+        var g = (((a[(i + 1) % 4] - x) % 360) + 360) % 360;
+        return g >= 45 && g <= 135;
+      });
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var A = onRim(s.A), B = onRim(s.B), C = onRim(s.C), D = onRim(s.D);
+      var E = g14LineIntersect(A, C, B, D);
+      var aA = (degOf(O, A) + 360) % 360;
+      var aB = (degOf(O, B) + 360) % 360;
+      var aC = (degOf(O, C) + 360) % 360;
+      var aD = (degOf(O, D) + 360) % 360;
+      var arcAD = g14DegDiff(aD, aA);
+      var arcBC = g14DegDiff(aB, aC);
+      var degAD = Math.round(arcAD);
+      var degBC = Math.round(arcBC);
+      var sum = degAD + degBC;
+      if (sum % 2 !== 0) { degAD = degAD + 1; sum = degAD + degBC; }
+      var degAED = sum / 2;
+      return {
+        O: O, R: R,
+        A: A, B: B, C: C, D: D, E: E,
+        aA: aA, aB: aB, aC: aC, aD: aD,
+        degAD: degAD, degBC: degBC, degAED: degAED,
+      };
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) {
+        handleAt(ink, f.A, 'A');
+        handleAt(ink, f.B, 'B');
+        handleAt(ink, f.C, 'C');
+        handleAt(ink, f.D, 'D');
+      }
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.A],
+          ['pt', f.O, 'O', [0, 0.8], null, 20],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['pt', f.C, 'C', away(f.C), null, 22],
+          ['pt', f.D, 'D', away(f.D), null, 22],
+        ],
+        [
+          ['seg', f.A, f.C, 'cx-line'],
+          ['seg', f.B, f.D, 'cx-line'],
+          ['pt', f.E, 'E', [0.8, -0.8], null, 20],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.E, 22, degOf(f.E, f.A), degOf(f.E, f.D)), fill: 'none', class: 'cx-arc', style: 'stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, f.aD, f.aA), fill: 'none', style: 'stroke: #2563eb; stroke-width: 4.5' }, g);
+            el('path', { d: g14Arc(f.O, f.R, f.aB, f.aC), fill: 'none', style: 'stroke: #d97706; stroke-width: 4.5' }, g);
+          }],
+        ],
+        [
+          ['seg', f.A, f.B, 'cx-perp'],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.B, 24, degOf(f.B, f.A), degOf(f.B, f.D)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+            el('path', { d: g14AngleArc(f.A, 24, degOf(f.A, f.B), degOf(f.A, f.C)), fill: 'none', class: 'cx-arc', style: 'stroke: #d97706; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'មុំក្នុងរង្វង់ ∠AED = ½(ធ្នូ AD + ធ្នូ BC)');
+            says(g, 1, 'ធ្នូ AD = ' + f.degAD + '° (ខៀវ) · ធ្នូ BC = ' + f.degBC + '° (ទឹកក្រូច)');
+            says(g, 2, 'មុំក្រៅ △ABE៖ ∠AED = ∠ABD + ∠BAC');
+            says(g, 3, '∠AED = ½(' + f.degAD + '° + ' + f.degBC + '°) = ' + f.degAED + '°');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 10 & Section 5: Tangent-chord angle (∠XPA = ∠PBA = ½ arc PA).
+  // Circle O, tangent XY at P, chord PA, B on major arc. A and B are draggable handles.
+  CX['g9-l14-tangent-chord'] = scripted({
+    steps: 5,
+    start: {
+      A: rimAt(G9C.O, G9C.R, 200),
+      B: rimAt(G9C.O, G9C.R, 310),
+    },
+    place: function (s, key, p) { return onRim(p); },
+    limit: function (s, key, p) {
+      var a = (degOf(G9C.O, p) + 360) % 360;
+      if (key === 'A') return a >= 160 && a <= 220;
+      if (key === 'B') return a >= 250 || a <= 60;
+      return true;
+    },
+    figure: function (s) {
+      var O = G9C.O, R = G9C.R;
+      var P = rimAt(O, R, 90);
+      var X = [130, P[1]];
+      var Y = [510, P[1]];
+      var A = onRim(s.A);
+      var B = onRim(s.B);
+      var aA = (degOf(O, A) + 360) % 360;
+      var arcPA = g14DegDiff(90, aA);
+      var degArc = Math.round(arcPA);
+      if (degArc % 2 !== 0) degArc += 1;
+      var degHalf = degArc / 2;
+      return {
+        O: O, R: R, P: P, X: X, Y: Y, A: A, B: B,
+        aA: aA,
+        degArc: degArc,
+        degHalf: degHalf,
+      };
+    },
+    top: function (f, ink, i) {
+      if (i >= 2) handleAt(ink, f.A, 'A');
+      if (i >= 3) handleAt(ink, f.B, 'B');
+    },
+    script: function (f) {
+      var away = function (Pt) { return sub(Pt, f.O); };
+      return [
+        [
+          ['circ', f.O, f.P],
+          ['seg', f.O, f.P, 'cx-seg'],
+          ['pt', f.O, 'O', [-0.8, -0.6], null, 20],
+          ['pt', f.P, 'P', [0, 0.9], null, 22],
+        ],
+        [
+          ['seg', f.X, f.Y, 'cx-perp'],
+          ['pt', f.X, 'X', [0, 0.9], null, 20],
+          ['pt', f.Y, 'Y', [0, 0.9], null, 20],
+        ],
+        [
+          ['seg', f.P, f.A, 'cx-line'],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.P, 28, 180, degOf(f.P, f.A)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['seg', f.B, f.P, 'cx-line cx-line-2'],
+          ['seg', f.B, f.A, 'cx-line cx-line-2'],
+          ['pt', f.B, 'B', away(f.B), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.B, 26, degOf(f.B, f.P), degOf(f.B, f.A)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            rightMark(g, f.P, [-1, 0], [0, -1]);
+            el('path', { d: g14Arc(f.O, f.R, 90, f.aA), fill: 'none', style: 'stroke: #2563eb; stroke-width: 4.5' }, g);
+            says(g, 0, 'មុំផ្គុំដោយបន្ទាត់ប៉ះនិងអង្កត់ធ្នូ៖ ∠XPA = ∠PBA');
+            says(g, 1, 'បន្ទាត់ប៉ះ PX ⊥ កាំ OP ត្រង់ចំណុចប៉ះ P (មុំកែង 90°)');
+            says(g, 2, 'ធ្នូ PA = ' + f.degArc + '° → ∠XPA = ½ ធ្នូ PA = ' + f.degHalf + '°');
+            says(g, 3, 'មុំចារឹក ∠PBA = ' + f.degHalf + '° (ស្មើនឹង ∠XPA ជានិច្ច)');
+          }],
+        ],
+      ];
+    },
+  });
+
+  // Picture 9 & Section 4.2: Angle with vertex outside circle (∠AED = ½(arc AD − arc BC)).
+  // Secants E-B-A and E-C-D from E outside the circle. E is a draggable handle.
+  CX['g9-l14-angle-outside'] = scripted({
+    steps: 5,
+    start: { E: [90, 230] },
+    place: function (s, key, p) {
+      return [clampN(p[0], 50, 155), clampN(p[1], 150, 310)];
+    },
+    limit: function (s, key, p) { return true; },
+    figure: function (s) {
+      var O = [350, 230], R = 135;
+      var E = s.E;
+      var vEO = sub(O, E);
+      var beta = Math.atan2(vEO[1], vEO[0]);
+      var d = len(vEO);
+      var alpha = Math.asin(R / d);
+      var u1 = [Math.cos(beta - 0.58 * alpha), Math.sin(beta - 0.58 * alpha)];
+      var u2 = [Math.cos(beta + 0.58 * alpha), Math.sin(beta + 0.58 * alpha)];
+      var pts1 = g14SecantPts(E, u1, O, R);
+      var pts2 = g14SecantPts(E, u2, O, R);
+      var B = pts1[0], A = pts1[1];
+      var C = pts2[0], D = pts2[1];
+      var aA = (degOf(O, A) + 360) % 360;
+      var aB = (degOf(O, B) + 360) % 360;
+      var aC = (degOf(O, C) + 360) % 360;
+      var aD = (degOf(O, D) + 360) % 360;
+      var arcAD = g14DegDiff(aA, aD);
+      var arcBC = g14DegDiff(aC, aB);
+      var degAD = Math.round(arcAD);
+      var degBC = Math.round(arcBC);
+      var diff = degAD - degBC;
+      if (diff % 2 !== 0) { degAD += 1; diff = degAD - degBC; }
+      var degE = diff / 2;
+      return {
+        O: O, R: R, E: E, A: A, B: B, C: C, D: D,
+        aA: aA, aB: aB, aC: aC, aD: aD,
+        degAD: degAD, degBC: degBC, degE: degE,
+      };
+    },
+    top: function (f, ink, i) {
+      if (i >= 1) handleAt(ink, f.E, 'E', 22);
+    },
+    script: function (f) {
+      var away = function (P) { return sub(P, f.O); };
+      return [
+        [
+          ['circ', f.O, f.B],
+          ['pt', f.O, 'O', [0, 0.8], null, 20],
+          ['pt', f.E, 'E', [-0.9, 0], null, 22],
+        ],
+        [
+          ['seg', f.E, f.A, 'cx-line'],
+          ['seg', f.E, f.D, 'cx-line'],
+          ['pt', f.B, 'B', away(f.B), null, 20],
+          ['pt', f.A, 'A', away(f.A), null, 22],
+          ['pt', f.C, 'C', away(f.C), null, 20],
+          ['pt', f.D, 'D', away(f.D), null, 22],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.E, 28, degOf(f.E, f.A), degOf(f.E, f.D)), fill: 'none', class: 'cx-arc', style: 'stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            el('path', { d: g14Arc(f.O, f.R, f.aA, f.aD), fill: 'none', style: 'stroke: #2563eb; stroke-width: 4.5' }, g);
+            el('path', { d: g14Arc(f.O, f.R, f.aC, f.aB), fill: 'none', style: 'stroke: #d97706; stroke-width: 4.5' }, g);
+          }],
+        ],
+        [
+          ['seg', f.A, f.C, 'cx-perp'],
+          ['mark', function (g) {
+            el('path', { d: g14AngleArc(f.C, 24, degOf(f.C, f.A), degOf(f.C, f.D)), fill: 'none', class: 'cx-arc', style: 'stroke: #2563eb; stroke-width: 2.5' }, g);
+            el('path', { d: g14AngleArc(f.A, 24, degOf(f.A, f.C), degOf(f.A, f.E)), fill: 'none', class: 'cx-arc', style: 'stroke: #d97706; stroke-width: 2.5' }, g);
+          }],
+        ],
+        [
+          ['mark', function (g) {
+            says(g, 0, 'មុំក្រៅរង្វង់ ∠AED = ½(ធ្នូ AD − ធ្នូ BC)');
+            says(g, 1, 'ធ្នូ AD = ' + f.degAD + '° (ខៀវ) · ធ្នូ BC = ' + f.degBC + '° (ទឹកក្រូច)');
+            says(g, 2, 'មុំក្រៅនៃ △ACE៖ ∠AED = ∠ACD − ∠CAE');
+            says(g, 3, '∠AED = ½(' + f.degAD + '° − ' + f.degBC + '°) = ' + f.degE + '°');
+          }],
+        ],
       ];
     },
   });
