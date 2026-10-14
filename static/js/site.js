@@ -51,6 +51,10 @@
 
   function setMobile(open) {
     body.classList.toggle('nav-open', open);
+    document.documentElement.classList.toggle('nav-open', open);
+    // the panel starts under the header, wherever the notice banner has scrolled to
+    var hdr = document.querySelector('.site-header');
+    if (nav) nav.style.top = open && hdr && !desktop.matches ? Math.max(0, Math.round(hdr.getBoundingClientRect().bottom)) + 'px' : '';
     if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (!open) closeAll();
   }
