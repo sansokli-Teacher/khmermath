@@ -4,7 +4,14 @@
 (function () {
   'use strict';
   var KEY = 'km_wheel_v1';
-  var COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
+  var PALETTES = {
+    a: ['ពណ៌ស្រស់', ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4']],
+    b: ['ទឹកសមុទ្រ', ['#0b7285', '#1971c2', '#1098ad', '#3b5bdb', '#0c8599', '#364fc7', '#1864ab', '#0b7285']],
+    c: ['ភ្លើងក្ដៅ', ['#e8590c', '#f08c00', '#e03131', '#c2255c', '#d9480f', '#c92a2a', '#e67700', '#a61e4d']],
+    d: ['ព្រៃបៃតង', ['#2b8a3e', '#2f9e44', '#087f5b', '#5c940d', '#0b7285', '#66a80f', '#099268', '#37b24d']],
+    e: ['ជាតិខ្មែរ', ['#032ea1', '#e00025', '#032ea1', '#e00025', '#032ea1', '#e00025']]
+  };
+  function colors() { return (PALETTES[S().theme] || PALETTES.a)[1]; }
   var $ = function (id) { return document.getElementById(id); };
   var canvas = $('wh-canvas'); if (!canvas) return;
   var ctx = canvas.getContext('2d');
@@ -12,7 +19,8 @@
   var state = load();
   var wl = null;                                          // slices frozen at spin time, so the picked slice stays under the pointer
   var angle = 0, spinning = false, current = null;       // current: the student last picked
-  var sound = true, noRepeat = true, audio = null, clickMode = 'off', lastGroups = '';
+  var sound = true, noRepeat = true, audio = null, clickMode = 'off', lastGroups = '', ord = null, histTally = false, pendingReveal = false;
+  function S() { return state.set || (state.set = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false }); }
 
   function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function load() {
@@ -30,7 +38,9 @@
   }
   function eligible() {
     var f = $('wh-gfilter').value;
-    return cls().students.filter(function (s) { return !s.off && !(noRepeat && s.done) && (!f || s.g === f); });
+    var list = cls().students.filter(function (s) { return !s.off && !(noRepeat && s.done) && (!f || s.g === f); });
+    if (ord) list.sort(function (a, b) { return (ord[a.n] || 0) - (ord[b.n] || 0); });
+    return list;
   }
   function present() { return cls().students.filter(function (s) { return !s.off; }); }
   function clean(n) { return String(n || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -61,7 +71,7 @@
       var a = Math.PI * 2 / n;
       for (var i = 0; i < n; i++) {
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, i * a - Math.PI / 2 - a / 2, i * a - Math.PI / 2 + a / 2); ctx.closePath();
-        ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+        ctx.fillStyle = colors()[i % colors().length]; ctx.fill();
         if (n > 1) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.save(); ctx.rotate(i * a - Math.PI / 2);
         var size = Math.max(13, Math.min(36, Math.floor(r * a * 0.6)));
@@ -130,7 +140,7 @@
     var target = -(pick * a + (Math.random() - 0.5) * a * 0.7);   // slice `pick` is centred at pick*a from the top; land inside it
     var turns = 5 + Math.floor(Math.random() * 3);
     var from = angle, norm = ((target - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-    var to = from + turns * Math.PI * 2 + norm, dur = 4600 + Math.random() * 1200, t0 = performance.now(), lastSlice = -1;
+    var to = from + turns * Math.PI * 2 + norm, dur = S().dur * 1000 * (0.9 + Math.random() * 0.2), t0 = performance.now(), lastSlice = -1;
     spinning = true; $('wh-spin').disabled = true;
     (function frame(now) {
       var t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 4);
@@ -138,14 +148,61 @@
       var sl = Math.floor(((-angle % (Math.PI * 2)) + Math.PI * 2 + a / 2) / a); if (sl !== lastSlice) { lastSlice = sl; tone([900], 0.04, 0.025); }
       if (t < 1) return requestAnimationFrame(frame);
       spinning = false; $('wh-spin').disabled = false; angle = to % (Math.PI * 2); draw();
-      current = list[pick]; if (noRepeat) current.done = true; save();
-      openPop(); tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); renderChips(); refreshEmpty();
+      finish(list[pick]);
     })(t0);
   }
-  function openPop() {
-    $('wh-winner').textContent = current.n; $('wh-pop').hidden = false; $('wh-again').focus({ preventScroll: true });
+  function finish(student) {
+    current = student; if (noRepeat) current.done = true;
+    var c = cls(); (c.hist = c.hist || []).push({ n: current.n, t: Date.now() }); if (c.hist.length > 300) c.hist.shift();
+    save(); renderChips(); refreshEmpty(); renderHist();
+    pendingReveal = !!S().mystery; openPop();
+    if (!pendingReveal) celebrate();
   }
-  function closePop() { $('wh-pop').hidden = true; stopFireworks(); }
+  function celebrate() {
+    if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+    if (S().speak) say();
+  }
+  function openPop() {
+    var n = cls().hist ? cls().hist.length : 1;
+    $('wh-winner').textContent = pendingReveal ? '?' : current.n;
+    $('wh-popsmall').textContent = 'សិស្សដែលត្រូវបានជ្រើស · លើកទី ' + khNum(n);
+    $('wh-reveal').hidden = !pendingReveal; $('wh-again').hidden = pendingReveal; $('wh-absent').hidden = pendingReveal;
+    $('wh-say').hidden = pendingReveal || !voiceKm;
+    $('wh-pop').hidden = false; (pendingReveal ? $('wh-reveal') : $('wh-again')).focus({ preventScroll: true });
+  }
+  function reveal() {
+    pendingReveal = false; $('wh-winner').textContent = current.n; $('wh-reveal').hidden = true; $('wh-again').hidden = false; $('wh-absent').hidden = false;
+    $('wh-say').hidden = !voiceKm; celebrate();
+  }
+  function closePop() { $('wh-pop').hidden = true; pendingReveal = false; stopFireworks(); if (window.speechSynthesis) speechSynthesis.cancel(); }
+  var voiceKm = null;
+  function findVoice() {
+    if (!window.speechSynthesis) return;
+    voiceKm = speechSynthesis.getVoices().filter(function (v) { return /^km/i.test(v.lang); })[0] || null;
+    $('wh-speakrow').hidden = !voiceKm;
+  }
+  function say() {
+    if (!voiceKm || !current) return;
+    try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(current.n); u.voice = voiceKm; u.lang = voiceKm.lang; speechSynthesis.speak(u); } catch (e) {}
+  }
+
+  /* ---------- history (who has been picked) ---------- */
+  function histCounts(h) { var cnt = {}; h.forEach(function (x) { cnt[x.n] = (cnt[x.n] || 0) + 1; }); return cnt; }
+  function renderHist() {
+    var ol = $('wh-hist'), h = cls().hist || []; ol.innerHTML = ''; ol.className = 'wh-hist' + (histTally ? ' tally' : '');
+    $('wh-hcount').textContent = h.length ? '(' + h.length + ')' : '';
+    if (histTally) {
+      var cnt = histCounts(h);
+      Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).forEach(function (n) {
+        var li = document.createElement('li'), b = document.createElement('span'); li.textContent = n; b.className = 'cnt'; b.textContent = cnt[n] + ' ដង'; li.appendChild(b); ol.appendChild(li);
+      });
+    } else {
+      h.slice().reverse().forEach(function (x, i) {
+        var li = document.createElement('li'), t = new Date(x.t), sm = document.createElement('small');
+        li.value = h.length - i; li.textContent = x.n; sm.textContent = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2); li.appendChild(sm); ol.appendChild(li);
+      });
+    }
+  }
 
   /* ---------- groups ---------- */
   function makeGroups() {
@@ -206,7 +263,7 @@
     });
     sel.value = state.active;
   }
-  function renderAll() { renderClasses(); renderChips(); refreshEmpty(); redraw(); $('wh-groups').hidden = true; $('wh-copy').hidden = true; }
+  function renderAll() { renderClasses(); renderChips(); refreshEmpty(); renderHist(); redraw(); $('wh-groups').hidden = true; $('wh-copy').hidden = true; }
   function setFlag(btn, on, label) { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.textContent = label + (on ? ': បើក' : ': បិទ'); }
   function setMode(m) {
     clickMode = m; $('wh-mode-off').setAttribute('aria-pressed', m === 'off'); $('wh-mode-g').setAttribute('aria-pressed', m === 'g'); renderChips();
@@ -218,7 +275,7 @@
   $('wh-pop').addEventListener('click', function (e) { if (e.target === this) closePop(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('wh-pop').hidden) closePop(); });
   $('wh-absent').addEventListener('click', function () {
-    if (!current) return; current.off = true; current.done = false; save(); current = null; closePop(); renderChips(); refreshEmpty(); redraw();
+    if (!current) return; current.off = true; current.done = false; var hh = cls().hist; if (hh && hh.length && hh[hh.length - 1].n === current.n) hh.pop(); save(); current = null; closePop(); renderChips(); refreshEmpty(); renderHist(); redraw();
   });
   $('wh-gfilter').addEventListener('change', function () { refreshEmpty(); redraw(); });
   $('wh-mode-off').addEventListener('click', function () { setMode('off'); });
@@ -288,6 +345,37 @@
     if (navigator.clipboard) navigator.clipboard.writeText(lastGroups).then(function () { done(true); }, function () { done(false); }); else done(false);
   });
 
+  $('wh-reveal').addEventListener('click', reveal);
+  $('wh-say').addEventListener('click', say);
+  $('wh-shuffle').addEventListener('click', function () {
+    ord = {}; cls().students.forEach(function (x) { ord[x.n] = Math.random(); }); redraw();
+  });
+  $('wh-hview').addEventListener('click', function () {
+    histTally = !histTally; this.setAttribute('aria-pressed', histTally); this.textContent = histTally ? 'មើលតាមលំដាប់ពេល' : 'សរុបតាមចំនួនដង'; renderHist();
+  });
+  $('wh-hcopy').addEventListener('click', function () {
+    var btn = this, h = cls().hist || [], txt;
+    if (histTally) { var cnt = histCounts(h); txt = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).map(function (n) { return n + '\t' + cnt[n]; }).join('\n'); }
+    else txt = h.map(function (x, i) { return (i + 1) + '. ' + x.n; }).join('\n');
+    var done = function (ok) { btn.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន'; setTimeout(function () { btn.textContent = 'ចម្លង'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+  $('wh-hclear').addEventListener('click', function () {
+    var c = cls(); if (!(c.hist || []).length || !confirm('សម្អាតលទ្ធផលទាំងអស់ក្នុងថ្នាក់នេះ?')) return;
+    c.hist = []; save(); renderHist();
+  });
+  $('wh-dur').addEventListener('input', function () { S().dur = +this.value; $('wh-durv').textContent = khNum(this.value); save(); });
+  $('wh-theme').addEventListener('change', function () { S().theme = this.value; save(); draw(); });
+  $('wh-fwon').addEventListener('change', function () { S().fw = this.checked; save(); });
+  $('wh-mystery').addEventListener('change', function () { S().mystery = this.checked; save(); });
+  $('wh-speak').addEventListener('change', function () { S().speak = this.checked; save(); });
+  document.addEventListener('keydown', function (e) {
+    var inField = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') || (e.target.tagName === 'BUTTON' && e.code === 'Space');
+    if ((e.code === 'Enter' && (e.ctrlKey || e.metaKey)) || (e.code === 'Space' && !inField && e.target === document.body)) {
+      e.preventDefault(); if (!$('wh-pop').hidden && pendingReveal) reveal(); else spin();
+    }
+  });
+
   $('wh-export').addEventListener('click', function () {
     var blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = 'khmermath-kong-classes.json'; document.body.appendChild(a); a.click(); a.remove();
@@ -305,7 +393,7 @@
         if (!ok.length) throw 0;
         if (!confirm('នាំចូលថ្នាក់ ' + ok.length + ' ហើយជំនួសបញ្ជីបច្ចុប្បន្ន?')) return;
         ok.forEach(function (c) { c.id = c.id || uid(); c.students = c.students.filter(function (x) { return x && x.n; }); });
-        state = { v: 1, active: ok[0].id, noRepeat: s.noRepeat !== false, sound: s.sound !== false, classes: ok };
+        state = { v: 1, active: ok[0].id, noRepeat: s.noRepeat !== false, sound: s.sound !== false, set: s.set || state.set, classes: ok };
         noRepeat = state.noRepeat; sound = state.sound; setFlag($('wh-sound'), sound, 'សំឡេង'); setFlag($('wh-norepeat'), noRepeat, 'មិនជ្រើសម្ដងទៀត');
         save(); renderAll();
       } catch (e) { alert('ឯកសារនេះមិនមែនជាឯកសារបម្រុងរបស់កង់ឈ្មោះទេ។'); }
@@ -314,6 +402,13 @@
   });
 
   noRepeat = state.noRepeat !== false; sound = state.sound !== false;
+  (function initSettings() {
+    var set = S(), sel = $('wh-theme');
+    Object.keys(PALETTES).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = PALETTES[k][0]; sel.appendChild(o); });
+    sel.value = set.theme; $('wh-dur').value = set.dur; $('wh-durv').textContent = khNum(set.dur);
+    $('wh-fwon').checked = set.fw !== false; $('wh-mystery').checked = !!set.mystery; $('wh-speak').checked = !!set.speak;
+    if (window.speechSynthesis) { findVoice(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', findVoice); }
+  })();
   setFlag($('wh-sound'), sound, 'សំឡេង'); setFlag($('wh-norepeat'), noRepeat, 'មិនជ្រើសម្ដងទៀត');
   renderAll();
   if (document.fonts && document.fonts.load) document.fonts.load('600 20px "Kantumruy Pro"').then(redraw);

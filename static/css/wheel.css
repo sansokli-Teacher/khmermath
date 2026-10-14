@@ -82,3 +82,12 @@
   .wh { grid-template-columns: 1fr; gap: 20px; }
 }
 .wh [hidden] { display: none !important; }
+
+.wh-lbl2 { font-size: 15px; color: var(--ink-2); }
+.wh input[type="range"] { width: 100%; min-height: 32px; accent-color: var(--teal); padding: 0; border: 0; background: none; }
+.wh kbd { padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--surface-2); font: inherit; font-size: 13px; }
+.wh-hist { margin: 0; padding-left: 26px; max-height: 260px; overflow-y: auto; font-size: 15px; line-height: 1.8; }
+.wh-hist li small { color: var(--ink-3); margin-left: 6px; }
+.wh-hist li .cnt { float: right; font-weight: 700; color: var(--teal-strong); }
+.wh-hist:empty::after { content: "មិនទាន់មានលទ្ធផលទេ។"; color: var(--ink-3); }
+.wh-hist.tally { list-style: none; padding-left: 0; }
