@@ -186,6 +186,76 @@
     try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(current.n); u.voice = voiceKm; u.lang = voiceKm.lang; speechSynthesis.speak(u); } catch (e) {}
   }
 
+  /* ---------- Excel (.xlsx) export: a small writer, no library ---------- */
+  var CRC = null;
+  function crc32(b) {
+    if (!CRC) { CRC = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC[n] = c >>> 0; } }
+    var x = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) x = CRC[(x ^ b[i]) & 255] ^ (x >>> 8); return (x ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipStore(files) {                       // files: [{name, data: Uint8Array}] -> Uint8Array (no compression)
+    var enc = new TextEncoder(), parts = [], central = [], off = 0;
+    files.forEach(function (f) {
+      var nm = enc.encode(f.name), crc = crc32(f.data), h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(10, 0, true); h.setUint16(12, 33, true);
+      h.setUint32(14, crc, true); h.setUint32(18, f.data.length, true); h.setUint32(22, f.data.length, true); h.setUint16(26, nm.length, true);
+      parts.push(new Uint8Array(h.buffer), nm, f.data);
+      var d = new DataView(new ArrayBuffer(46));
+      d.setUint32(0, 0x02014b50, true); d.setUint16(4, 20, true); d.setUint16(6, 20, true); d.setUint16(8, 0x0800, true); d.setUint16(12, 0, true); d.setUint16(14, 33, true);
+      d.setUint32(16, crc, true); d.setUint32(20, f.data.length, true); d.setUint32(24, f.data.length, true); d.setUint16(28, nm.length, true); d.setUint32(42, off, true);
+      central.push(new Uint8Array(d.buffer), nm);
+      off += 30 + nm.length + f.data.length;
+    });
+    var csize = central.reduce(function (a, b) { return a + b.length; }, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+    var all = parts.concat(central, [new Uint8Array(e.buffer)]), tot = all.reduce(function (a, b) { return a + b.length; }, 0), out = new Uint8Array(tot), p = 0;
+    all.forEach(function (b) { out.set(b, p); p += b.length; }); return out;
+  }
+  function xesc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function colName(i) { var s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; }
+  function sheetXml(sh) {
+    var rows = sh.rows.map(function (row, r) {
+      return '<row r="' + (r + 1) + '">' + row.map(function (v, c) {
+        var ref = colName(c) + (r + 1), st = r === 0 ? ' s="1"' : '';
+        return typeof v === 'number' ? '<c r="' + ref + '"' + st + '><v>' + v + '</v></c>' : '<c r="' + ref + '"' + st + ' t="inlineStr"><is><t xml:space="preserve">' + xesc(v) + '</t></is></c>';
+      }).join('') + '</row>';
+    }).join('');
+    var cols = '<cols>' + (sh.widths || []).map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' + cols + '<sheetData>' + rows + '</sheetData></worksheet>';
+  }
+  function buildXlsx(sheets) {
+    var enc = new TextEncoder(), X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', f = [];
+    var ns = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    f.push(['[Content_Types].xml', X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>']);
+    f.push(['_rels/.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + rel + '/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
+    f.push(['xl/workbook.xml', X + '<workbook ' + ns + ' xmlns:r="' + rel + '"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xesc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets></workbook>']);
+    f.push(['xl/_rels/workbook.xml.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="' + rel + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + rel + '/styles" Target="styles.xml"/></Relationships>']);
+    f.push(['xl/styles.xml', X + '<styleSheet ' + ns + '><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']);
+    sheets.forEach(function (s, i) { f.push(['xl/worksheets/sheet' + (i + 1) + '.xml', sheetXml(s)]); });
+    return zipStore(f.map(function (x) { return { name: x[0], data: enc.encode(x[1]) }; }));
+  }
+  function download(bytes, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  }
+  function stamp(t) { var d = new Date(t), z = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+  function classSheets(c, tag) {
+    var hist = c.hist || [], by = {}; c.students.forEach(function (s) { by[s.n] = s; });
+    var cnt = histCounts(hist);
+    var a = [['ល.រ', 'ឈ្មោះសិស្ស', 'ភេទ', 'កាលបរិច្ឆេទ និងម៉ោង']].concat(hist.map(function (x, i) { return [i + 1, x.n, by[x.n] && by[x.n].g ? G_WORD[by[x.n].g] : '', stamp(x.t)]; }));
+    var b = [['ល.រ', 'ឈ្មោះសិស្ស', 'ភេទ', 'ចំនួនដងដែលត្រូវបានជ្រើស', 'វត្តមាន']].concat(c.students.map(function (s, i) { return [i + 1, s.n, s.g ? G_WORD[s.g] : '', cnt[s.n] || 0, s.off ? 'អវត្តមាន' : 'មាន']; }));
+    return [{ name: tag + 'សរុប', rows: b, widths: [6, 30, 8, 22, 12] }, { name: tag + 'តាមលំដាប់', rows: a, widths: [6, 30, 8, 22] }];
+  }
+  function sheetName(n, used) { var b = clean(n).replace(/[\\\/?*\[\]:]/g, '').slice(0, 31) || 'Sheet', k = 1, out = b; while (used[out]) out = b.slice(0, 28) + '_' + (++k); used[out] = 1; return out; }
+  function exportXlsx(all) {
+    var list = all ? state.classes : [cls()], sheets = [], used = {};
+    list.forEach(function (c) {
+      classSheets(c, all ? '' : '').forEach(function (sh, i) { sheets.push({ name: sheetName(all ? c.name + (i ? ' ·លំដាប់' : ' ·សរុប') : sh.name, used), rows: sh.rows, widths: sh.widths }); });
+    });
+    var d = new Date(), z = function (n) { return ('0' + n).slice(-2); };
+    download(buildXlsx(sheets), 'កង់ឈ្មោះ-' + (all ? 'គ្រប់ថ្នាក់' : clean(cls().name).replace(/[\\/:*?"<>|]/g, '')) + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '.xlsx');
+  }
+
   /* ---------- history (who has been picked) ---------- */
   function histCounts(h) { var cnt = {}; h.forEach(function (x) { cnt[x.n] = (cnt[x.n] || 0) + 1; }); return cnt; }
   function renderHist() {
@@ -364,6 +434,8 @@
     var c = cls(); if (!(c.hist || []).length || !confirm('សម្អាតលទ្ធផលទាំងអស់ក្នុងថ្នាក់នេះ?')) return;
     c.hist = []; save(); renderHist();
   });
+  $('wh-hxlsx').addEventListener('click', function () { exportXlsx(false); });
+  $('wh-hxall').addEventListener('click', function () { exportXlsx(true); });
   $('wh-dur').addEventListener('input', function () { S().dur = +this.value; $('wh-durv').textContent = khNum(this.value); save(); });
   $('wh-theme').addEventListener('change', function () { S().theme = this.value; save(); draw(); });
   $('wh-fwon').addEventListener('change', function () { S().fw = this.checked; save(); });
