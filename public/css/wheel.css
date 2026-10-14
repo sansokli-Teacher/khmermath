@@ -72,3 +72,6 @@
 @media (max-width: 720px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 440px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: 1fr; } }
 .wheel-fw.behind { z-index: 79; }
+/* cards keep their full height and the grid scrolls (without this, short screens squash every card to one name) */
+.wheel-ggrid { grid-auto-rows: max-content; align-content: start; }
+.wheel-ggrid .wheel-g { min-height: min-content; }
