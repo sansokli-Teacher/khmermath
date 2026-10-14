@@ -210,6 +210,39 @@ render.wheel = async function () {
     }
     copyBtn.hidden = false;
   };
+  // popup: names shuffle between the group cards, then the real groups appear one by one with fireworks
+  const gSmall = h('small', {}, 'កំពុងបែងចែកក្រុម…');
+  const gGrid = h('div', { class: 'wheel-ggrid' });
+  const gAgain = h('button', { class: 'btn-sm' }, 'បែងចែកម្ដងទៀត');
+  const gCopy = h('button', { class: 'secondary btn-sm' }, 'ចម្លង');
+  const gClose = h('button', { class: 'secondary btn-sm' }, 'បិទ');
+  const gPop = h('div', { class: 'wheel-pop', role: 'dialog', 'aria-modal': 'true', hidden: '' }, h('div', { class: 'wheel-pop-card wheel-gcard' }, [gSmall, gGrid, h('div', { class: 'row wheel-tools' }, [gAgain, gCopy, gClose])]));
+  let gRun = 0, gRedo = null;
+  const fillCards = (blocks, cls) => {
+    gGrid.innerHTML = ''; gGrid.className = `wheel-ggrid${cls ? ` ${cls}` : ''}`;
+    blocks.forEach((b, i) => { const d = h('div', { class: 'wheel-g' }, [h('b', {}, b.title), h('ol', {}, b.people.map((p) => h('li', {}, mark(p) + p.n)))]); d.style.setProperty('--i', i); gGrid.appendChild(d); });
+  };
+  const closeGroupPop = () => { gRun++; gPop.hidden = true; fwRun++; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); };
+  const groupPop = (blocks, redo) => {
+    gRedo = redo; const id = ++gRun, sizes = blocks.map((b) => b.people.length), pool = blocks.flatMap((b) => b.people);
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    closePop(); gPop.hidden = false; gSmall.textContent = 'កំពុងបែងចែកក្រុម…'; gAgain.disabled = true; gCopy.disabled = true;
+    const t0 = performance.now(), DUR = reduce ? 0 : 2600; let last = 0;
+    const frame = (now) => {
+      if (id !== gRun) return;
+      if (now - t0 >= DUR) {
+        fillCards(blocks, 'reveal'); gSmall.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; gAgain.disabled = false; gCopy.disabled = false;
+        if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+        return gAgain.focus({ preventScroll: true });
+      }
+      if (now - last > 95) { last = now; const sh = whShuffle(pool); let at = 0; fillCards(blocks.map((b, i) => { const l = sh.slice(at, at + sizes[i]); at += sizes[i]; return { title: b.title, people: l }; }), 'rolling'); beep([480 + Math.random() * 500], 0.025, 0.04); }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  };
+  gAgain.onclick = () => gRedo && gRedo(); gClose.onclick = closeGroupPop; gCopy.onclick = () => { copyBtn.click(); gCopy.textContent = 'បានចម្លង ✓'; setTimeout(() => { gCopy.textContent = 'ចម្លង'; }, 1600); };
+  gPop.addEventListener('click', (e) => { if (e.target === gPop) closeGroupPop(); });
+  gPop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroupPop(); });
   const makeGroups = () => {
     const pr = present(); if (!pr.length) { groupsBox.hidden = false; groupsBox.textContent = 'មិនទាន់មានសិស្សទេ។'; return; }
     const num = Math.max(1, Math.floor(+gNum.value) || 1), cnt = gMode.value === 'k' ? Math.ceil(pr.length / num) : Math.min(num, pr.length);
@@ -217,9 +250,10 @@ render.wheel = async function () {
     const order = gBal.checked && pr.some((p) => p.g)
       ? [...whShuffle(pr.filter((p) => p.g === 'f')), ...whShuffle(pr.filter((p) => p.g === 'm')), ...whShuffle(pr.filter((p) => !p.g))] : whShuffle(pr);
     order.forEach((p, i) => groups[i % cnt].push(p));   // round-robin: sizes differ by at most 1 and each gender is spread out
-    showBlocks(groups.map((g, i) => ({ title: `ក្រុមទី ${whKh(i + 1)} · ${whKh(g.length)} នាក់`, people: g })));
+    const blocks = groups.map((g, i) => ({ title: `ក្រុមទី ${whKh(i + 1)} · ${whKh(g.length)} នាក់`, people: g }));
+    showBlocks(blocks); groupPop(blocks, makeGroups);
   };
-  const makeOrder = () => { const pr = whShuffle(present()); if (pr.length) showBlocks([{ title: `លំដាប់ចៃដន្យ · ${whKh(pr.length)} នាក់`, people: pr }]); };
+  const makeOrder = () => { const pr = whShuffle(present()); if (!pr.length) return; const blocks = [{ title: `លំដាប់ចៃដន្យ · ${whKh(pr.length)} នាក់`, people: pr }]; showBlocks(blocks); groupPop(blocks, makeOrder); };
   copyBtn.onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(lastText); ok = true; } catch {} copyBtn.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន'; setTimeout(() => { copyBtn.textContent = 'ចម្លងលទ្ធផល'; }, 1600); };
 
   const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
@@ -250,7 +284,7 @@ render.wheel = async function () {
       h('button', { class: 'secondary btn-sm', onclick: () => { ord = {}; people.forEach((p) => { ord[p.id] = Math.random(); }); redraw(); } }, 'លាយលំដាប់កង់'),
     ]),
     h('div', { class: 'row wheel-tools', style: 'align-items:center' }, [h('span', {}, 'កង់ជ្រើសពី៖'), gSel]),
-    fw, pop,
+    fw, pop, gPop,
   ]);
   const side = h('div', {}, [
     h('div', { class: 'card' }, [
