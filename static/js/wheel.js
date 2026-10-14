@@ -20,7 +20,9 @@
   var wl = null;                                          // slices frozen at spin time, so the picked slice stays under the pointer
   var angle = 0, spinning = false, current = null;       // current: the student last picked
   var sound = true, noRepeat = true, audio = null, clickMode = 'off', lastGroups = '', ord = null, histTally = false, pendingReveal = false;
+  var TEACHER = 'លោកគ្រូ សាន សុខលី';
   function S() { return state.set || (state.set = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false }); }
+  function teacher() { var t = S().teacher; return t === undefined ? TEACHER : clean(t); }   // empty = no teacher line
 
   function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function load() {
@@ -346,8 +348,10 @@
       g.save(); g.translate(seed * W, seed2 * bannerH); g.rotate(k); g.fillRect(-7, -3, 14, 6); g.restore();
     }
     g.globalAlpha = 1; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText(o.heading, W / 2, 98);
-    g.font = '500 33px ' + FONT; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, 178); g.globalAlpha = 1;
+    g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText(o.heading, W / 2, o.teacher ? 84 : 98);
+    g.font = '500 33px ' + FONT; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, o.teacher ? 154 : 178);
+    if (o.teacher) { g.font = '600 34px ' + FONT; g.globalAlpha = 1; g.fillText('គ្រូបង្រៀន៖ ' + o.teacher, W / 2, 204); }
+    g.globalAlpha = 1;
     // cards
     var y = bannerH + 40;
     rows.forEach(function (r, ri) {
@@ -386,7 +390,7 @@
     var make = function () {
       var cv = posterCanvas({
         heading: single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!',
-        sub: cls().name + '  ·  ' + khNum(total) + ' នាក់  ·  ' + khDate(), colors: colors(),
+        sub: cls().name + '  ·  ' + khNum(total) + ' នាក់  ·  ' + khDate(), teacher: teacher(), colors: colors(),
         groups: lastBlocks.map(function (b) { return { title: single ? 'លំដាប់' : b.title.split(' · ')[0], items: b.list.map(function (p) { return { n: p.n, g: p.g }; }) }; })
       });
       cv.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); var z = function (x) { return ('0' + x).slice(-2); }, d = new Date();
@@ -424,7 +428,7 @@
     function finale() {
       var total = blocks.reduce(function (a, b) { return a + b.list.length; }, 0), single = n === 1 && /^លំដាប់/.test(blocks[0].title);
       $('wh-gsmall').textContent = (single ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!') + ' 🎉'; $('wh-gcardbox').classList.add('final');
-      $('wh-gsub').textContent = cls().name + ' · ' + khNum(total) + ' នាក់ · ' + khDate(); $('wh-gsub').hidden = false; $('wh-gbrand').hidden = false; $('wh-gpng').hidden = false;
+      $('wh-gsub').textContent = cls().name + ' · ' + khNum(total) + ' នាក់ · ' + khDate() + (teacher() ? '\nគ្រូបង្រៀន៖ ' + teacher() : ''); $('wh-gsub').hidden = false; $('wh-gbrand').hidden = false; $('wh-gpng').hidden = false;
       $('wh-gskip').hidden = true;
       ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = false; });
       if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(true); }
@@ -621,6 +625,7 @@
   });
   $('wh-hxlsx').addEventListener('click', function () { exportXlsx(false); });
   $('wh-hxall').addEventListener('click', function () { exportXlsx(true); });
+  $('wh-teacher').addEventListener('input', function () { S().teacher = this.value; save(); });
   $('wh-dur').addEventListener('input', function () { S().dur = +this.value; $('wh-durv').textContent = khNum(this.value); save(); });
   $('wh-theme').addEventListener('change', function () { S().theme = this.value; save(); draw(); });
   $('wh-fwon').addEventListener('change', function () { S().fw = this.checked; save(); });
@@ -663,6 +668,7 @@
     var set = S(), sel = $('wh-theme');
     Object.keys(PALETTES).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = PALETTES[k][0]; sel.appendChild(o); });
     sel.value = set.theme; $('wh-dur').value = set.dur; $('wh-durv').textContent = khNum(set.dur);
+    $('wh-teacher').value = set.teacher === undefined ? TEACHER : set.teacher;
     $('wh-fwon').checked = set.fw !== false; $('wh-mystery').checked = !!set.mystery; $('wh-speak').checked = !!set.speak;
     if (window.speechSynthesis) { findVoice(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', findVoice); }
   })();
