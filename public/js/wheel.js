@@ -101,11 +101,15 @@ render.wheel = async function () {
         const pal = (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1]; ctx.fillStyle = pal[i % pal.length]; ctx.fill();
         if (n > 1) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke(); }
         ctx.save(); ctx.rotate(i * a - Math.PI / 2);
-        ctx.font = `600 ${Math.max(13, Math.min(36, Math.floor(r * a * 0.6)))}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`;
-        ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 3;
-        const name = list[i].n, maxW = r * 0.7, w = ctx.measureText(name).width;
-        if (w > maxW && w > 0) { const sz = Math.max(11, Math.floor(Math.max(13, Math.min(36, Math.floor(r * a * 0.6))) * maxW / w)); ctx.font = `600 ${sz}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`; }
-        ctx.fillText(name, r - 16, 0, maxW);          // maxWidth keeps the whole name visible even if Safari mis-measures
+        // the label starts inside the wheel (left-aligned) and runs outward, centred in the band between the hub and the rim:
+        // Safari ignores textAlign='right' for some text, which pushed names off the rim (white on white)
+        const rim = r - 14, inner = r * 0.27, band = rim - inner;
+        let size = Math.max(13, Math.min(40, Math.floor((inner + band / 2) * a * 0.72)));
+        ctx.font = `600 ${size}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`;
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 3;
+        const name = list[i].n; let w = ctx.measureText(name).width;
+        if (w > band && w > 0) { size = Math.max(11, Math.floor(size * band / w)); ctx.font = `600 ${size}px "Kantumruy Pro", "Noto Sans Khmer", sans-serif`; w = ctx.measureText(name).width; }
+        ctx.fillText(name, inner + (w > 0 && w < band ? (band - w) / 2 : 0), 0, band);
         ctx.restore();
       }
     }
