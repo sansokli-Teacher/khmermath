@@ -93,3 +93,8 @@
 .wheel-x:hover { background: var(--brand-soft); }
 .wheel-pop-card.wheel-gcard small, .wheel-pop-card small { padding-right: 56px; }
 .wheel-pv .row { order: -1; }
+
+/* ✕ on the picture preview: always visible in the top-right corner */
+.wheel-pv .wheel-x-pv { position: fixed; top: max(10px, env(safe-area-inset-top)); right: 10px; z-index: 130; width: 48px; height: 48px; background: #fff; }
+.wheel-pv p { padding-right: 52px; }
+.wheel-pv { padding-top: max(66px, calc(env(safe-area-inset-top) + 58px)); }

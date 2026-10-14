@@ -321,7 +321,9 @@ render.wheel = async function () {
         h('button', { class: 'secondary btn-sm', onclick: () => saveBlob(blob, name) }, 'ទាញយក'),
         h('button', { class: 'secondary btn-sm', onclick: () => { box.remove(); URL.revokeObjectURL(url); } }, 'បិទ'),
       ])]);
-    document.body.appendChild(box);
+    const x = h('button', { class: 'wheel-x wheel-x-pv', type: 'button', 'aria-label': 'បិទ', onclick: () => { box.remove(); URL.revokeObjectURL(url); } }, '✕');
+    box.addEventListener('click', (e) => { if (e.target === box) { box.remove(); URL.revokeObjectURL(url); } });
+    box.prepend(x); document.body.appendChild(box);
   };
   gPng.onclick = async () => {
     if (!lastBlocks) return;
