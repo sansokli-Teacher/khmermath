@@ -1,31 +1,74 @@
-/* khmermath.org — «ហ្គេមក្រុម» (play/teamgame.html): a Baamboozle-style classroom quiz.
-   Teams take turns picking numbered tiles; a tile hides a question or a special power-up. Everything stays in this browser. */
+/* khmermath.org — «ហ្គេមក្រុម» (play/teamgame.html): a Baamboozle-style classroom game.
+   The board is a grid of picture cards (names hidden). A team picks a card, it pops up with fireworks and shows its name,
+   an optional question and answer. Some cards hide a special power-up. Everything stays in this browser. */
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   if (!$('tg')) return;
-  var GAME = 'km_tg_game_v1', SETS = 'km_tg_sets_v1', CFG = 'km_tg_cfg_v1';
+  var GAME = 'km_tg_game_v2', SETS = 'km_tg_sets_v2', CFG = 'km_tg_cfg_v2';
   var COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
+  var FACES = [['#ff6b81', '#e8456b'], ['#2fd4a0', '#2fa66b'], ['#ffb347', '#ff8a3d'], ['#4dabf7', '#1c7ed6'], ['#b57cf5', '#8a4fe0'], ['#ff7eb3', '#e0518c']];
   var SPECIALS = {
     bomb:  { icon: '💣', name: 'គ្រាប់បែក!', desc: 'ក្រុមដែលជ្រើសបាត់ពិន្ទុទាំងអស់ (ត្រឡប់ទៅ ០)។' },
     double:{ icon: '✖២', name: 'ពិន្ទុទ្វេដង!', desc: 'ពិន្ទុរបស់ក្រុមនេះកើនឡើងទ្វេដង។' },
     swap:  { icon: '🔄', name: 'ប្តូរពិន្ទុ!', desc: 'ជ្រើសក្រុមមួយ ដើម្បីប្តូរពិន្ទុជាមួយ។' },
-    gift:  { icon: '🎁', name: 'អំណោយ!', desc: 'ទទួលបានពិន្ទុបន្ថែមទ្វេដងនៃពិន្ទុសំណួរ។' },
+    gift:  { icon: '🎁', name: 'អំណោយ!', desc: 'ទទួលបានពិន្ទុបន្ថែមទ្វេដងនៃពិន្ទុកាត។' },
     steal: { icon: '🕵', name: 'លួចពិន្ទុ!', desc: 'ជ្រើសក្រុមមួយ ដើម្បីលួចយកពិន្ទុរបស់គេ។' },
     skip:  { icon: '⏭', name: 'បាត់វេន!', desc: 'ក្រុមនេះបាត់វេន គ្មានពិន្ទុ។' }
   };
-  var G = null, hist = [], teamNames = [], teamMembers = [], audio = null, timerId = 0, openTileIdx = -1;
+
+  /* ---------- ready-made card sets ---------- */
+  function svg(inner) { return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="4" y="4" width="92" height="92" rx="18" fill="#fff"/>' + inner + '</svg>'); }
+  var S1 = 'stroke="#1b2733" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  var PICS = {
+    bisector: svg('<path d="M18 76H86M18 76L78 26" ' + S1 + '/><path d="M18 76L86 49" stroke="#e8590c" stroke-width="3.5" stroke-dasharray="6 5" fill="none"/><path d="M40 76A22 22 0 0 1 38.5 69M36.5 67A22 22 0 0 1 35 60" stroke="#1c7ed6" stroke-width="3" fill="none"/>'),
+    triangle: svg('<path d="M50 20L84 78H16Z" ' + S1 + '/><circle cx="50" cy="20" r="3.5" fill="#e8590c"/><circle cx="84" cy="78" r="3.5" fill="#e8590c"/><circle cx="16" cy="78" r="3.5" fill="#e8590c"/>'),
+    circle: svg('<circle cx="50" cy="50" r="31" ' + S1 + '/><path d="M50 50L76 34" stroke="#e8590c" stroke-width="3.5" fill="none"/><circle cx="50" cy="50" r="3.5" fill="#1b2733"/>'),
+    parallel: svg('<path d="M14 34H86M14 66H86" ' + S1 + '/><path d="M30 84L70 16" stroke="#e8590c" stroke-width="3.5" fill="none"/>'),
+    pyth: svg('<path d="M24 74V30H72Z" ' + S1 + '/><path d="M24 74H34V64H24" stroke="#1c7ed6" stroke-width="2.5" fill="none"/><text x="14" y="56" font-size="14" font-family="sans-serif" fill="#e8590c">a</text><text x="44" y="86" font-size="14" font-family="sans-serif" fill="#e8590c">b</text><text x="52" y="46" font-size="14" font-family="sans-serif" fill="#e8590c">c</text>'),
+    bars: svg('<path d="M18 80H84" ' + S1 + '/><rect x="24" y="52" width="12" height="28" fill="#4dabf7"/><rect x="44" y="30" width="12" height="50" fill="#ff6b81"/><rect x="64" y="42" width="12" height="38" fill="#2fd4a0"/>'),
+    line: svg('<path d="M12 56H88M82 50L88 56L82 62" ' + S1 + '/><path d="M26 50V62M44 50V62M62 50V62" ' + S1 + '/><circle cx="44" cy="56" r="4.5" fill="#e8590c"/><text x="20" y="42" font-size="13" font-family="sans-serif" fill="#1b2733">-1</text><text x="41" y="42" font-size="13" font-family="sans-serif" fill="#1b2733">0</text><text x="60" y="42" font-size="13" font-family="sans-serif" fill="#1b2733">1</text>')
+  };
+  var PACKS = {
+    math: ['គណិតវិទ្យា', [
+      { n: 'ចំនួនគត់', img: PICS.line, q: 'ចំនួនគត់មានអ្វីខ្លះ?', a: '… −២, −១, ០, ១, ២ …' },
+      { n: '√២', img: '√២', q: 'តម្លៃប្រហែលនៃ √២?', a: '១,៤១៤…' },
+      { n: 'កន្លះបន្ទាត់ពុះមុំ', img: PICS.bisector, q: 'កន្លះបន្ទាត់ពុះមុំជាអ្វី?', a: 'កន្លះបន្ទាត់ចែកមុំជាពីរស្មើគ្នា' },
+      { n: 'ត្រីកោណ', img: PICS.triangle, q: 'ផលបូកមុំក្នុងត្រីកោណ?', a: '១៨០°' },
+      { n: 'រង្វង់', img: PICS.circle, q: 'រូបមន្តបរិមាត្ររង្វង់?', a: 'C = ២πr' },
+      { n: 'បន្ទាត់ស្របគ្នា', img: PICS.parallel, q: 'បន្ទាត់ពីរស្របគ្នាមានលក្ខណៈអ្វី?', a: 'មិនកាត់គ្នាទេ' },
+      { n: 'ទ្រឹស្តីបទពីតាហ្គោរ', img: PICS.pyth, q: 'ចូរសរសេរទ្រឹស្តីបទ', a: 'a² + b² = c²' },
+      { n: 'ស្ថិតិ', img: PICS.bars, q: 'មធ្យមភាគនៃ ២, ៤, ៦?', a: '៤' },
+      { n: 'ប្រភាគ', img: '½', q: '១/២ + ១/៤ = ?', a: '៣/៤' },
+      { n: 'ភាគរយ', img: '%', q: '១០% នៃ ២០០ = ?', a: '២០' },
+      { n: 'ស្វ័យគុណ', img: '២³', q: '២³ = ?', a: '៨' },
+      { n: 'សមីការ', img: 'x+២=៥', q: 'ដោះស្រាយ x + ២ = ៥', a: 'x = ៣' }
+    ]],
+    fruit: ['ផ្លែឈើខ្មែរ', [['ស្វាយ', '🥭'], ['ចេក', '🍌'], ['ដូង', '🥥'], ['ក្រូច', '🍊'], ['ម្នាស់', '🍍'], ['ឪឡឹក', '🍉'], ['ទំពាំងបាយជូរ', '🍇'], ['ស្ត្របឺរី', '🍓'], ['ប៉ោម', '🍎'], ['ក្រូចឆ្មារ', '🍋'], ['ត្រឡាច', '🍈'], ['ផ្លែប៉េស', '🍑']].map(function (x) { return { n: x[0], img: x[1] }; })],
+    animal: ['សត្វ', [['ឆ្កែ', '🐶'], ['ឆ្មា', '🐱'], ['ដំរី', '🐘'], ['ត្រី', '🐟'], ['ក្របី', '🐃'], ['គោ', '🐄'], ['មាន់', '🐔'], ['ទា', '🦆'], ['ជ្រូក', '🐖'], ['ខ្លា', '🐯'], ['ស្វា', '🐒'], ['សេះ', '🐴'], ['កង្កែប', '🐸'], ['ក្រពើ', '🐊']].map(function (x) { return { n: x[0], img: x[1] }; })],
+    number: ['លេខ', Array.apply(null, Array(12)).map(function (_, i) { var k = String(i + 1).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); return { n: k, img: k }; })]
+  };
+
+  var G = null, hist = [], cards = [], audio = null, timerId = 0, openTileIdx = -1, pendingFile = -1;
 
   /* ---------- helpers ---------- */
   function khNum(n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); }
   function enNum(s) { return String(s).replace(/[០-៩]/g, function (d) { return '០១២៣៤៥៦៧៨៩'.indexOf(d); }); }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v === null ? d : v; } catch (e) { return d; } }
-  function put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function clean(s) { return String(s || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim(); }
   function reduceMotion() { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
   function sndOn() { return $('tg-sound').checked && !(G && G.mute); }
+  function isPic(s) { return /^(data:image|https?:)/.test(s || ''); }
+  function picNode(img, cls) {                       // a picture: uploaded/drawn image, or text/emoji shown big
+    var box = el('span', 'tg-pic ' + (cls || ''));
+    if (isPic(img)) { var i = el('img'); i.src = img; i.alt = ''; i.draggable = false; box.appendChild(i); }
+    else box.textContent = img || '';
+    if (!isPic(img) && String(img || '').length > 3) box.classList.add('long');
+    return box;
+  }
 
   /* ---------- sound ---------- */
   function tone(freqs, vol, len, type) {
@@ -40,7 +83,7 @@
     } catch (e) {}
   }
   var sfx = {
-    flip: function () { tone([440, 660], 0.06, 0.12); },
+    flip: function () { tone([523, 784, 1047], 0.07, 0.16); },
     right: function () { tone([660, 880, 1100], 0.08, 0.2); },
     wrong: function () { tone([200, 150], 0.09, 0.28, 'square'); },
     bomb: function () { tone([120, 90, 60], 0.14, 0.35, 'sawtooth'); },
@@ -60,7 +103,7 @@
     if (!fwOn) return;
     var g = fwDim.g, W = fwDim.W, H = fwDim.H;
     g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
-    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(W * (0.1 + Math.random() * 0.8), H * (0.1 + Math.random() * 0.5), 46); fwNext = now + 240 + Math.random() * 240; }
+    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(W * (Math.random() < 0.5 ? 0.04 + Math.random() * 0.2 : 0.76 + Math.random() * 0.2), H * (0.1 + Math.random() * 0.55), 46); fwNext = now + 220 + Math.random() * 220; }
     fwParts = fwParts.filter(function (p) { return p.life > 0.02; });
     fwParts.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985; p.life -= 0.013; g.fillStyle = 'hsla(' + p.hue + ',100%,60%,' + Math.max(0, p.life) + ')'; g.beginPath(); g.arc(p.x, p.y, 2.6, 0, 7); g.fill(); });
     if (now < fwEnd || fwParts.length) requestAnimationFrame(fwFrame); else { fwOn = false; fwRandom = false; g.clearRect(0, 0, W, H); }
@@ -73,16 +116,10 @@
   }
   function fireworks(ms) { if (reduceMotion()) return; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + (ms || 3200); }
   function miniBurst(x, y) { if (reduceMotion()) return; fwStart(); fwBurst(x, y, 30); fwEnd = Math.max(fwEnd, performance.now() + 800); }
+  function stopFw() { fwOn = false; fwRandom = false; fwParts = []; var cv = $('tg-fw'); cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); }
 
-  /* ---------- setup ---------- */
-  function parseQuestions(text) {
-    return text.split(/\r?\n/).map(function (line) {
-      var parts = (line.indexOf('|') >= 0 ? line.split('|') : line.split('\t')).map(clean);
-      if (!parts[0]) return null;
-      var p = parts[2] ? parseInt(enNum(parts[2]), 10) : 0;
-      return { q: parts[0].replace(/^[\d០-៩]+\s*[.)\-:]\s+/, ''), a: parts[1] || '', p: p > 0 ? p : 0 };
-    }).filter(Boolean);
-  }
+  /* ---------- setup: teams ---------- */
+  var teamNames = [], teamMembers = [];
   function renderTeamSetup() {
     var n = Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), box = $('tg-teamlist'); box.innerHTML = '';
     for (var i = 0; i < n; i++) {
@@ -95,43 +132,97 @@
       })(i);
     }
   }
-  function updateQCount() {
-    var qs = parseQuestions($('tg-questions').value); $('tg-qcount').textContent = qs.length ? khNum(qs.length) + ' សំណួរ' : 'មិនទាន់មានសំណួរ';
-  }
-  function saveCfg() {
-    put(CFG, { n: $('tg-nteams').value, names: teamNames, members: teamMembers, q: $('tg-questions').value, pts: $('tg-pts').value, timer: $('tg-timer').value, sp: $('tg-special').checked, nsp: $('tg-nspecial').value, snd: $('tg-sound').checked });
-  }
-  function loadCfg() {
-    var c = load(CFG, null); if (!c) return;
-    $('tg-nteams').value = c.n || 4; teamNames = c.names || []; teamMembers = c.members || []; $('tg-questions').value = c.q || '';
-    $('tg-pts').value = c.pts || 10; $('tg-timer').value = c.timer || '0'; $('tg-special').checked = c.sp !== false; $('tg-nspecial').value = c.nsp === undefined ? 3 : c.nsp; $('tg-sound').checked = c.snd !== false;
-  }
-  function renderSets() {
-    var sel = $('tg-sets'), sets = load(SETS, []); sel.innerHTML = '<option value="">— សំណួរដែលបានរក្សាទុក —</option>';
-    sets.forEach(function (s, i) { var o = el('option', '', s.name + ' (' + parseQuestions(s.text).length + ')'); o.value = i; sel.appendChild(o); });
-  }
   function checkImport() {
     var g = load('km_wheel_last_groups', null);
     if (g && g.groups && g.groups.length) { $('tg-import').hidden = false; $('tg-importhint').hidden = false; $('tg-importhint').textContent = 'មានលទ្ធផលបែងចែកក្រុមចុងក្រោយពីកង់ចាប់ឈ្មោះ៖ ' + (g.cls || '') + ' (' + khNum(g.groups.length) + ' ក្រុម)។'; }
   }
 
+  /* ---------- setup: cards ---------- */
+  function resize(file, cb) {                         // shrink an uploaded picture so it fits in localStorage
+    var fr = new FileReader();
+    fr.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var m = 260, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL(/png|gif|svg/.test(file.type) ? 'image/png' : 'image/jpeg', 0.82));
+      };
+      im.onerror = function () { cb(null); }; im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+  function renderCards() {
+    var box = $('tg-cards'); box.innerHTML = '';
+    cards.forEach(function (c, i) {
+      var row = el('div', 'tg-crow'), thumb = el('div', 'tg-cthumb'), f1 = el('div', 'tg-cf'), f2 = el('div', 'tg-cf'), f3 = el('div', 'tg-cf tg-cf-wide');
+      function refreshThumb() { thumb.innerHTML = ''; thumb.style.background = 'linear-gradient(160deg,' + FACES[i % FACES.length][0] + ',' + FACES[i % FACES.length][1] + ')'; thumb.appendChild(picNode(c.img, 'sm')); }
+      refreshThumb();
+      function field(parent, label, key, ph, cls) {
+        var l = el('label', '', label), inp = el('input'); inp.type = 'text'; inp.value = c[key] || ''; inp.placeholder = ph || ''; if (cls) inp.className = cls;
+        inp.addEventListener('input', function () { c[key] = inp.value; if (key === 'img') refreshThumb(); saveCfg(); }); l.appendChild(inp); parent.appendChild(l); return inp;
+      }
+      field(f1, 'ឈ្មោះកាត', 'n', 'ឧ. ចំនួនគត់');
+      var imgIn = field(f2, 'រូបភាព (emoji ឬអក្សរ)', 'img', 'ឧ. 🥭 ឬ √២');
+      var has = isPic(c.img);
+      if (has) { imgIn.readOnly = true; imgIn.value = '🖼 បានផ្ទុករូបភាពរួចហើយ'; }
+      var up = el('button', 'btn btn-ghost btn-sm', has ? '⬆ ប្តូររូបភាព' : '⬆ ផ្ទុកឡើងរូបថត'); up.type = 'button'; up.addEventListener('click', function () { pendingFile = i; $('tg-file').click(); }); f2.appendChild(up);
+      if (has) { var clr = el('button', 'btn btn-ghost btn-sm', '✕ លុបរូបភាព'); clr.type = 'button'; clr.addEventListener('click', function () { c.img = ''; renderCards(); saveCfg(); }); f2.appendChild(clr); }
+      field(f3, 'សំណួរ (ជម្រើស)', 'q', 'សំណួរដែលនឹងបង្ហាញ'); field(f3, 'ចម្លើយ (ជម្រើស)', 'a', 'ចម្លើយ'); field(f3, 'ពិន្ទុ (ជម្រើស)', 'p', 'លំនាំដើម').type = 'number';
+      var del = el('button', 'tg-cdel', '✕'); del.type = 'button'; del.setAttribute('aria-label', 'លុបកាត'); del.addEventListener('click', function () { cards.splice(i, 1); renderCards(); saveCfg(); });
+      row.appendChild(thumb); row.appendChild(f1); row.appendChild(f2); row.appendChild(f3); row.appendChild(del); box.appendChild(row);
+      imgIn.addEventListener('input', function () { /* thumb refreshed in field() */ });
+    });
+    var n = cards.filter(function (c) { return clean(c.n); }).length;
+    $('tg-qcount').textContent = n ? khNum(n) + ' កាត' : 'មិនទាន់មានកាត';
+  }
+  function parsePaste(text) {
+    return text.split(/\r?\n/).map(function (line) {
+      var parts = (line.indexOf('|') >= 0 ? line.split('|') : line.split('\t')).map(clean); if (!parts[0]) return null;
+      var p = parts[4] ? parseInt(enNum(parts[4]), 10) : 0;
+      return { n: parts[0], img: parts[1] || '', q: parts[2] || '', a: parts[3] || '', p: p > 0 ? p : '' };
+    }).filter(Boolean);
+  }
+  function useCards(list) { cards = list.map(function (c) { return { n: c.n || '', img: c.img || '', q: c.q || '', a: c.a || '', p: c.p || '' }; }); renderCards(); saveCfg(); }
+  function renderPacks() {
+    var box = $('tg-packs'); box.innerHTML = ''; box.appendChild(el('small', 'tg-hint', 'ចាប់ផ្ដើមពីកាតគំរូ៖'));
+    Object.keys(PACKS).forEach(function (k) {
+      var b = el('button', 'btn btn-ghost btn-sm', PACKS[k][0]); b.type = 'button';
+      b.addEventListener('click', function () { if (cards.some(function (c) { return clean(c.n); }) && !confirm('ជំនួសកាតបច្ចុប្បន្នដោយកាតគំរូ «' + PACKS[k][0] + '»?')) return; useCards(PACKS[k][1]); });
+      box.appendChild(b);
+    });
+  }
+  function renderSets() {
+    var sel = $('tg-sets'), sets = load(SETS, []); sel.innerHTML = '<option value="">— សំណុំកាតដែលបានរក្សាទុក —</option>';
+    sets.forEach(function (s, i) { var o = el('option', '', s.name + ' (' + s.cards.length + ')'); o.value = i; sel.appendChild(o); });
+  }
+  function saveCfg() {
+    var ok = put(CFG, { n: $('tg-nteams').value, names: teamNames, members: teamMembers, cards: cards, pts: $('tg-pts').value, timer: $('tg-timer').value, face: $('tg-face').value, sp: $('tg-special').checked, nsp: $('tg-nspecial').value, snd: $('tg-sound').checked });
+    if (!ok) $('tg-qcount').textContent += ' (ទំហំផ្ទុកពេញ — សូមកាត់បន្ថយរូបថត)';
+  }
+  function loadCfg() {
+    var c = load(CFG, null); if (!c) { useCards(PACKS.math[1]); return; }
+    $('tg-nteams').value = c.n || 4; teamNames = c.names || []; teamMembers = c.members || []; cards = (c.cards || []).slice();
+    $('tg-pts').value = c.pts || 10; $('tg-timer').value = c.timer || '0'; $('tg-face').value = c.face || 'img'; $('tg-special').checked = c.sp !== false; $('tg-nspecial').value = c.nsp === undefined ? 3 : c.nsp; $('tg-sound').checked = c.snd !== false;
+    if (!cards.length) cards = PACKS.math[1].slice();
+  }
+
   /* ---------- game ---------- */
   function startGame() {
-    var qs = parseQuestions($('tg-questions').value), n = Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2));
-    if (!qs.length) { $('tg-qcount').textContent = 'សូមវាយសំណួរយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; $('tg-questions').focus(); return; }
-    var pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles = qs.map(function (q) { return { k: 'q', q: q.q, a: q.a, p: q.p || pts }; });
+    var list = cards.filter(function (c) { return clean(c.n); }), n = Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2));
+    if (!list.length) { $('tg-qcount').textContent = 'សូមបន្ថែមកាតយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
+    var pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10);
+    var tiles = list.map(function (c) { return { k: 'q', n: clean(c.n), img: c.img || '', q: clean(c.q), a: clean(c.a), p: parseInt(c.p, 10) > 0 ? parseInt(c.p, 10) : pts }; });
     if ($('tg-special').checked) {
       var keys = Object.keys(SPECIALS), cnt = Math.max(0, Math.min(12, parseInt($('tg-nspecial').value, 10) || 0)), deck = [];
       while (deck.length < cnt) deck = deck.concat(shuffle(keys));
-      deck.slice(0, cnt).forEach(function (sp) { tiles.push({ k: 's', sp: sp }); });
+      deck.slice(0, cnt).forEach(function (sp) { var src = tiles[Math.floor(Math.random() * tiles.length)]; tiles.push({ k: 's', sp: sp, img: src.img }); });   // a special card wears an ordinary picture
     }
-    G = { teams: [], tiles: shuffle(tiles), turn: 0, pts: pts, timer: parseInt($('tg-timer').value, 10) || 0, mute: false, finished: false, startedAt: Date.now() };
+    G = { teams: [], tiles: shuffle(tiles), turn: 0, pts: pts, timer: parseInt($('tg-timer').value, 10) || 0, face: $('tg-face').value, mute: false, finished: false };
     for (var i = 0; i < n; i++) G.teams.push({ name: clean(teamNames[i]) || ('ក្រុមទី ' + khNum(i + 1)), color: COLORS[i % COLORS.length], score: 0, members: teamMembers[i] || [] });
     hist = []; saveCfg(); saveGame(); showPlay();
   }
   function saveGame() { if (G) put(GAME, G); }
   function snapshot() { hist.push(JSON.stringify(G)); if (hist.length > 40) hist.shift(); }
-  function showPlay() { $('tg-setup').hidden = true; $('tg-play').hidden = false; renderAll(); window.scrollTo({ top: $('tg').offsetTop - 70, behavior: 'smooth' }); }
+  function showPlay() { $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; renderAll(); window.scrollTo({ top: $('tg').offsetTop - 70, behavior: 'smooth' }); }
   function showSetup() { stopTimer(); closePop(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
   function refreshResume() { var g = load(GAME, null); $('tg-resume').hidden = !(g && g.tiles && !g.finished && g.tiles.some(function (t) { return !t.done; })); }
   function remaining() { return G.tiles.filter(function (t) { return !t.done; }).length; }
@@ -140,9 +231,7 @@
   function renderTurn() {
     var box = $('tg-turn'); box.innerHTML = '';
     if (G.finished) { box.appendChild(el('b', '', 'ហ្គេមបានបញ្ចប់')); return; }
-    var t = G.teams[G.turn], dot = el('span', 'dot'); dot.style.background = t.color;
-    box.appendChild(dot); box.appendChild(document.createTextNode('វេនរបស់ ')); box.appendChild(el('b', '', t.name));
-    box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' ប្រអប់'));
+    box.appendChild(document.createTextNode('វេនរបស់ ')); box.appendChild(el('b', '', G.teams[G.turn].name)); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត'));
   }
   function renderScore() {
     var box = $('tg-score'); box.innerHTML = ''; box.className = 'tg-score n' + G.teams.length;
@@ -152,58 +241,64 @@
       var minus = el('button', '', '−'), plus = el('button', '', '+'); minus.type = plus.type = 'button'; minus.setAttribute('aria-label', 'ដកពិន្ទុ'); plus.setAttribute('aria-label', 'បន្ថែមពិន្ទុ');
       minus.addEventListener('click', function () { snapshot(); t.score -= G.pts; saveGame(); renderAll(); });
       plus.addEventListener('click', function () { snapshot(); t.score += G.pts; saveGame(); renderAll(); });
-      ctl.appendChild(minus); ctl.appendChild(plus); c.appendChild(h);
-      if (t.members && t.members.length) c.appendChild(el('div', 'tg-tm', t.members.join(' · ')));
-      c.appendChild(s); c.appendChild(ctl); box.appendChild(c);
+      ctl.appendChild(minus); ctl.appendChild(plus); c.appendChild(h); c.appendChild(s); c.appendChild(ctl); box.appendChild(c);
     });
   }
   function renderBoard() {
-    var box = $('tg-board'); box.innerHTML = '';
+    var box = $('tg-board'), n = G.tiles.length; box.innerHTML = ''; box.className = 'tg-board c' + (n <= 9 ? 3 : n <= 16 ? 4 : 5);
     G.tiles.forEach(function (t, i) {
-      var b = el('button', 'tg-tile' + (t.done ? ' done' : '')); b.type = 'button'; b.style.setProperty('--tc', COLORS[i % COLORS.length]);
-      if (t.done) { b.disabled = true; b.textContent = t.k === 's' ? SPECIALS[t.sp].icon : (t.res === 'ok' ? '✓' : '✗'); if (t.by !== undefined && t.by !== null && G.teams[t.by]) b.style.setProperty('--tc', G.teams[t.by].color); }
-      else { b.textContent = khNum(i + 1); b.addEventListener('click', function () { openTile(i); }); }
-      b.setAttribute('aria-label', 'ប្រអប់ទី ' + (i + 1)); box.appendChild(b);
+      var b = el('button', 'tg-tile' + (t.done ? ' done' : '')); b.type = 'button'; var f = FACES[i % FACES.length]; b.style.setProperty('--f1', f[0]); b.style.setProperty('--f2', f[1]);
+      if (t.done) {
+        b.disabled = true; var mark = t.k === 's' ? SPECIALS[t.sp].icon : (t.res === 'ok' ? '✓' : '✗'); b.appendChild(el('span', 'tg-mark', mark));
+        if (t.k === 'q') b.appendChild(el('span', 'tg-doneName', t.n)); if (t.by !== undefined && t.by !== null && G.teams[t.by]) b.style.setProperty('--f2', G.teams[t.by].color);
+      } else {
+        if (G.face === 'num' || !t.img) b.appendChild(el('span', 'tg-pic num', khNum(i + 1))); else b.appendChild(picNode(t.img));
+        b.addEventListener('click', function () { openTile(i, b); });
+      }
+      b.setAttribute('aria-label', 'កាតទី ' + (i + 1)); box.appendChild(b);
     });
   }
 
-  /* ---------- tile popup ---------- */
+  /* ---------- card popup ---------- */
   function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; } }
-  function closePop() { stopTimer(); $('tg-pop').hidden = true; openTileIdx = -1; }
+  function closePop() { stopTimer(); $('tg-pop').hidden = true; openTileIdx = -1; stopFw(); }
   function teamBtns(card, label, exclude, cb) {
     var wrap = el('div', 'tg-pick'); wrap.appendChild(el('small', '', label));
     G.teams.forEach(function (t, i) { if (i === exclude) return; var b = el('button', 'tg-pickbtn', t.name); b.type = 'button'; b.style.setProperty('--c', t.color); b.addEventListener('click', function () { cb(i); }); wrap.appendChild(b); });
     card.appendChild(wrap); return wrap;
   }
   function finishTurn(tileIdx, res, by, afterFn) {
-    var t = G.tiles[tileIdx]; t.done = true; t.res = res; t.by = by;
-    if (afterFn) afterFn();
+    var t = G.tiles[tileIdx]; t.done = true; t.res = res; t.by = by; if (afterFn) afterFn();
     if (remaining() === 0) { closePop(); saveGame(); renderAll(); return setTimeout(finishGame, 350); }
     G.turn = (G.turn + 1) % G.teams.length; saveGame(); closePop(); renderAll();
   }
-  function openTile(i) {
+  function openTile(i, tileBtn) {
     if (G.finished || openTileIdx >= 0) return;
     var t = G.tiles[i], team = G.teams[G.turn], card = $('tg-card'); openTileIdx = i; card.innerHTML = ''; card.className = 'tg-card'; card.style.setProperty('--c', team.color);
-    sfx.flip();
-    var x = el('button', 'tg-x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'បិទ (ទុកប្រអប់វិញ)'); x.addEventListener('click', closePop); card.appendChild(x);
-    var head = el('div', 'tg-chead'); head.appendChild(el('span', 'tg-cn', 'ប្រអប់ទី ' + khNum(i + 1))); head.appendChild(el('span', 'tg-cteam', team.name)); card.appendChild(head);
+    var f = FACES[i % FACES.length]; card.style.setProperty('--f1', f[0]); card.style.setProperty('--f2', f[1]);
+    var x = el('button', 'tg-x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'បិទ (ទុកកាតវិញ)'); x.addEventListener('click', closePop); card.appendChild(x);
+    var head = el('div', 'tg-chead'); head.appendChild(el('span', 'tg-cn', 'កាតទី ' + khNum(i + 1))); head.appendChild(el('span', 'tg-cteam', team.name)); card.appendChild(head);
+    sfx.flip(); fireworks(1800);                                        // the card pops up with fireworks
     if (t.k === 'q') {
-      card.appendChild(el('div', 'tg-q', t.q));
-      var ans = el('div', 'tg-a', t.a || '(គ្មានចម្លើយដែលបានកត់ត្រា)'); ans.hidden = true; card.appendChild(ans);
+      var face = el('div', 'tg-cface'); face.appendChild(picNode(t.img, 'big')); card.appendChild(face);
+      card.appendChild(el('div', 'tg-name', t.n));
+      if (t.q) card.appendChild(el('div', 'tg-q', t.q));
+      var ans = el('div', 'tg-a', t.a || ''); ans.hidden = true; if (t.a) card.appendChild(ans);
       if (G.timer) {
         var tm = el('div', 'tg-timer', khNum(G.timer)), left = G.timer; card.appendChild(tm);
         stopTimer(); timerId = setInterval(function () { left--; tm.textContent = khNum(Math.max(0, left)); if (left <= 5 && left > 0) { tm.classList.add('hot'); sfx.tick(); } if (left <= 0) { stopTimer(); tm.classList.add('over'); sfx.end(); } }, 1000);
       }
-      var acts = el('div', 'tg-acts'), show = el('button', 'btn btn-ghost btn-sm', 'បង្ហាញចម្លើយ'); show.type = 'button'; show.addEventListener('click', function () { ans.hidden = !ans.hidden; show.textContent = ans.hidden ? 'បង្ហាញចម្លើយ' : 'លាក់ចម្លើយ'; });
+      var acts = el('div', 'tg-acts');
+      if (t.a) { var show = el('button', 'btn btn-ghost btn-sm', 'បង្ហាញចម្លើយ'); show.type = 'button'; show.addEventListener('click', function () { ans.hidden = !ans.hidden; show.textContent = ans.hidden ? 'បង្ហាញចម្លើយ' : 'លាក់ចម្លើយ'; }); acts.appendChild(show); }
       var ok = el('button', 'btn btn-primary btn-sm', '✔ ត្រឹមត្រូវ +' + khNum(t.p)); ok.type = 'button';
-      ok.addEventListener('click', function () { snapshot(); sfx.right(); var r = card.getBoundingClientRect(); miniBurst(r.left + r.width / 2, r.top + 60); finishTurn(i, 'ok', G.turn, function () { team.score += t.p; }); });
+      ok.addEventListener('click', function () { snapshot(); sfx.right(); var r = card.getBoundingClientRect(); miniBurst(r.left + r.width / 2, r.top + 80); finishTurn(i, 'ok', G.turn, function () { team.score += t.p; }); });
       var bad = el('button', 'btn btn-ghost btn-sm', '✖ មិនត្រូវ'); bad.type = 'button'; bad.addEventListener('click', function () { snapshot(); sfx.wrong(); finishTurn(i, 'bad', G.turn); });
-      var other = el('button', 'btn btn-ghost btn-sm', 'ក្រុមផ្សេងឆ្លើយត្រូវ…'); other.type = 'button';
-      var pickBox = null; other.addEventListener('click', function () {
+      var other = el('button', 'btn btn-ghost btn-sm', 'ក្រុមផ្សេងឆ្លើយត្រូវ…'); other.type = 'button'; var pickBox = null;
+      other.addEventListener('click', function () {
         if (pickBox) { pickBox.remove(); pickBox = null; return; }
         pickBox = teamBtns(card, 'ឱ្យពិន្ទុទៅក្រុម៖', G.turn, function (k) { snapshot(); sfx.right(); finishTurn(i, 'ok', k, function () { G.teams[k].score += t.p; }); });
       });
-      acts.appendChild(show); acts.appendChild(ok); acts.appendChild(bad); acts.appendChild(other); card.appendChild(acts);
+      acts.appendChild(ok); acts.appendChild(bad); acts.appendChild(other); card.appendChild(acts);
     } else {
       var sp = SPECIALS[t.sp]; sfx[t.sp === 'bomb' ? 'bomb' : 'special']();
       card.classList.add('special'); card.appendChild(el('div', 'tg-sicon', sp.icon)); card.appendChild(el('div', 'tg-sname', sp.name)); card.appendChild(el('div', 'tg-sdesc', sp.desc));
@@ -261,7 +356,7 @@
     var bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#eaf5f2'); bg.addColorStop(1, '#fdf6e8'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     var bn = g.createLinearGradient(0, 0, W, 240); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f'); g.fillStyle = bn; g.fillRect(0, 0, W, 240);
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText('លទ្ធផលហ្គេមក្រុម 🏆', W / 2, 96);
-    var d = new Date(); g.font = '500 32px ' + FONT; g.globalAlpha = 0.92; g.fillText(khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()) + '  ·  ' + khNum(G.tiles.length) + ' ប្រអប់', W / 2, 176); g.globalAlpha = 1;
+    var d = new Date(); g.font = '500 32px ' + FONT; g.globalAlpha = 0.92; g.fillText(khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()) + '  ·  ' + khNum(G.tiles.length) + ' កាត', W / 2, 176); g.globalAlpha = 1;
     var y = 280, medals = ['🥇', '🥈', '🥉'], place = 0, prev = null;
     rk.forEach(function (r, k) {
       if (r.t.score !== prev) { place = k; prev = r.t.score; }
@@ -301,20 +396,25 @@
 
   /* ---------- wiring ---------- */
   $('tg-nteams').addEventListener('change', function () { renderTeamSetup(); saveCfg(); });
-  $('tg-questions').addEventListener('input', function () { updateQCount(); saveCfg(); });
-  ['tg-pts', 'tg-timer', 'tg-special', 'tg-nspecial', 'tg-sound'].forEach(function (id) { $(id).addEventListener('change', saveCfg); });
-  $('tg-sample').addEventListener('click', function () {
-    $('tg-questions').value = 'តើ ៧ × ៨ ស្មើប៉ុន្មាន? | ៥៦\nផលបូកមុំក្នុងត្រីកោណស្មើប៉ុន្មានដឺក្រេ? | ១៨០°\nចំនួនបឋមតូចបំផុតគឺអ្វី? | ២\nតម្លៃនៃ √៨១ ស្មើប៉ុន្មាន? | ៩\nរង្វាស់ជ្រុងម្ខាងនៃការ៉េមានក្រឡាផ្ទៃ ៦៤ cm² ស្មើប៉ុន្មាន? | ៨ cm\nបូក៖ ១/២ + ១/៤ = ? | ៣/៤\nតើ ១៥% នៃ ២០០ ស្មើប៉ុន្មាន? | ៣០\nដោះស្រាយ៖ ២x + ៣ = ១១ | x = ៤\nចំនួនជ្រុងនៃឆកោនមានប៉ុន្មាន? | ៦\nតើ ២³ ស្មើប៉ុន្មាន? | ៨ | ១៥';
-    updateQCount(); saveCfg();
+  ['tg-pts', 'tg-timer', 'tg-face', 'tg-special', 'tg-nspecial', 'tg-sound'].forEach(function (id) { $(id).addEventListener('change', saveCfg); });
+  $('tg-addcard').addEventListener('click', function () { cards.push({ n: '', img: '', q: '', a: '', p: '' }); renderCards(); saveCfg(); var rows = document.querySelectorAll('.tg-crow'); if (rows.length) { var last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center' }); var inp = last.querySelector('input'); if (inp) inp.focus(); } });
+  $('tg-clearcards').addEventListener('click', function () { if (cards.length && !confirm('លុបកាតទាំងអស់?')) return; cards = []; renderCards(); saveCfg(); });
+  $('tg-pastebtn').addEventListener('click', function () { $('tg-pastebox').hidden = !$('tg-pastebox').hidden; if (!$('tg-pastebox').hidden) $('tg-questions').focus(); });
+  $('tg-pastecancel').addEventListener('click', function () { $('tg-pastebox').hidden = true; });
+  $('tg-pasteadd').addEventListener('click', function () {
+    var add = parsePaste($('tg-questions').value); if (!add.length) return;
+    cards = cards.filter(function (c) { return clean(c.n) || clean(c.img) || clean(c.q); }).concat(add); $('tg-questions').value = ''; $('tg-pastebox').hidden = true; renderCards(); saveCfg();
+  });
+  $('tg-file').addEventListener('change', function () {
+    var f = this.files[0]; this.value = ''; if (!f || pendingFile < 0) return; var i = pendingFile; pendingFile = -1;
+    resize(f, function (data) { if (!data) return alert('មិនអាចអានរូបភាពនេះបានទេ។'); cards[i].img = data; renderCards(); saveCfg(); });
   });
   $('tg-save').addEventListener('click', function () {
-    var text = $('tg-questions').value; if (!parseQuestions(text).length) return;
-    var name = clean(prompt('ឈ្មោះសំណួរដែលត្រូវរក្សាទុក (ឧ. មេរៀនទី ១៤)')); if (!name) return;
-    var sets = load(SETS, []).filter(function (s) { return s.name !== name; }); sets.push({ name: name, text: text }); put(SETS, sets); renderSets();
+    var list = cards.filter(function (c) { return clean(c.n); }); if (!list.length) return;
+    var name = clean(prompt('ឈ្មោះសំណុំកាត (ឧ. មេរៀនទី ១៤)')); if (!name) return;
+    var sets = load(SETS, []).filter(function (s) { return s.name !== name; }); sets.push({ name: name, cards: list }); if (!put(SETS, sets)) alert('ទំហំផ្ទុកពេញ — សូមលុបសំណុំចាស់ ឬកាត់បន្ថយរូបថត។'); renderSets();
   });
-  $('tg-load').addEventListener('click', function () {
-    var i = $('tg-sets').value; if (i === '') return; var s = load(SETS, [])[+i]; if (!s) return; $('tg-questions').value = s.text; updateQCount(); saveCfg();
-  });
+  $('tg-load').addEventListener('click', function () { var i = $('tg-sets').value; if (i === '') return; var s = load(SETS, [])[+i]; if (s) useCards(s.cards); });
   $('tg-delset').addEventListener('click', function () {
     var i = $('tg-sets').value; if (i === '') return; var sets = load(SETS, []); if (!sets[+i] || !confirm('លុប «' + sets[+i].name + '»?')) return; sets.splice(+i, 1); put(SETS, sets); renderSets();
   });
@@ -335,5 +435,5 @@
   $('tg-pop').addEventListener('click', function (e) { if (e.target === this && !$('tg-card').classList.contains('final')) closePop(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('tg-pop').hidden) { closePop(); $('tg-card').className = 'tg-card'; } });
 
-  loadCfg(); renderTeamSetup(); updateQCount(); renderSets(); checkImport(); refreshResume();
+  loadCfg(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
 })();
