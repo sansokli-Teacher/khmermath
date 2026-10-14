@@ -406,7 +406,10 @@
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) btn('ចែករំលែក / រក្សាទុក', 'btn-primary', function () { navigator.share({ files: [file], title: 'khmermath.org' }).catch(function () {}); });
     btn('ទាញយក', 'btn-ghost', function () { saveBlob(blob, name); });
     btn('បិទ', 'btn-ghost', function () { box.remove(); URL.revokeObjectURL(url); });
-    box.appendChild(p); box.appendChild(img); box.appendChild(row); document.body.appendChild(box);
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'wh-x wh-x-pv'; x.setAttribute('aria-label', 'បិទ'); x.textContent = '✕';
+    x.addEventListener('click', function () { box.remove(); URL.revokeObjectURL(url); });
+    box.addEventListener('click', function (e) { if (e.target === box) { box.remove(); URL.revokeObjectURL(url); } });
+    box.appendChild(x); box.appendChild(p); box.appendChild(img); box.appendChild(row); document.body.appendChild(box);
   }
   function downloadPoster() {
     if (!lastBlocks) return;

@@ -162,3 +162,8 @@
 .wh-x { position: absolute; top: 8px; right: 8px; z-index: 3; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
 .wh-pop-card.wh-gcard.final small, .wh-pop-card.wh-gcard small { padding-right: 56px; }
 .wh-pv .wh-row { order: -1; }
+
+/* ✕ on the picture preview: always visible in the top-right corner */
+.wh-pv .wh-x-pv { position: fixed; top: max(10px, env(safe-area-inset-top)); right: 10px; z-index: 130; width: 48px; height: 48px; background: #fff; }
+.wh-pv p { padding-right: 52px; }
+.wh-pv { padding-top: max(66px, calc(env(safe-area-inset-top) + 58px)); }
