@@ -298,6 +298,42 @@
     });
     $('wh-copy').hidden = false;
   }
+  /* popup: names shuffle between the group cards, then the real groups appear one by one with fireworks */
+  var gRun = 0, gAgain = null;
+  function fillCards(box, blocks, cls) {
+    box.innerHTML = ''; box.className = 'wh-ggrid' + (cls ? ' ' + cls : '');
+    blocks.forEach(function (b, i) {
+      var d = document.createElement('div'), h = document.createElement('b'), ol = document.createElement('ol');
+      d.className = 'wh-g'; d.style.setProperty('--i', i); h.textContent = b.title; d.appendChild(h);
+      b.list.forEach(function (p) { var li = document.createElement('li'); li.textContent = (p.g ? (p.g === 'f' ? '♀ ' : '♂ ') : '') + p.n; ol.appendChild(li); });
+      d.appendChild(ol); box.appendChild(d);
+    });
+  }
+  function groupPop(finalBlocks, again) {
+    gAgain = again; var id = ++gRun, box = $('wh-ggrid'), sizes = finalBlocks.map(function (b) { return b.list.length; });
+    var pool = [].concat.apply([], finalBlocks.map(function (b) { return b.list; }));
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    closePop(); stopFireworks(); $('wh-gpop').hidden = false; $('wh-gsmall').textContent = 'កំពុងបែងចែកក្រុម…';
+    ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = true; });
+    var t0 = performance.now(), last = 0, DUR = reduce ? 0 : 2600;
+    function finish2() {
+      fillCards(box, finalBlocks, 'reveal'); $('wh-gsmall').textContent = 'បែងចែកក្រុមរួចរាល់! 🎉';
+      ['wh-gagain', 'wh-gcopy2'].forEach(function (b) { $(b).disabled = false; });
+      if (S().fw) { tone([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+      $('wh-gagain').focus({ preventScroll: true });
+    }
+    (function frame(now) {
+      if (id !== gRun) return;
+      if (now - t0 >= DUR) return finish2();
+      if (now - last > 95) {
+        last = now; var sh = shuffle(pool), at = 0;
+        fillCards(box, finalBlocks.map(function (b, i) { var l = sh.slice(at, at + sizes[i]); at += sizes[i]; return { title: b.title, list: l }; }), 'rolling');
+        tone([480 + Math.random() * 500], 0.025, 0.04);
+      }
+      requestAnimationFrame(frame);
+    })(t0);
+  }
+  function closeGroupPop() { gRun++; $('wh-gpop').hidden = true; stopFireworks(); }
   function khNum(n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); }
 
   /* ---------- UI ---------- */
@@ -343,7 +379,7 @@
   $('wh-again').addEventListener('click', spin);
   $('wh-close').addEventListener('click', closePop);
   $('wh-pop').addEventListener('click', function (e) { if (e.target === this) closePop(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('wh-pop').hidden) closePop(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('wh-gpop').hidden) closeGroupPop(); else if (!$('wh-pop').hidden) closePop(); } });
   $('wh-absent').addEventListener('click', function () {
     if (!current) return; current.off = true; current.done = false; var hh = cls().hist; if (hh && hh.length && hh[hh.length - 1].n === current.n) hh.pop(); save(); current = null; closePop(); renderChips(); refreshEmpty(); renderHist(); redraw();
   });
@@ -397,9 +433,17 @@
   if (!document.fullscreenEnabled) $('wh-full').hidden = true;
 
   $('wh-group').addEventListener('click', function () {
+    runGroups();
+  });
+  function runGroups() {
     var g = makeGroups(); if (!g) { $('wh-groups').hidden = false; $('wh-groups').textContent = 'មិនទាន់មានសិស្សទេ។'; return; }
     showGroups(g);
-  });
+    groupPop(g.map(function (x, i) { return { title: 'ក្រុមទី ' + khNum(i + 1) + ' · ' + khNum(x.length) + ' នាក់', list: x }; }), runGroups);
+  }
+  $('wh-gagain').addEventListener('click', function () { if (gAgain) gAgain(); });
+  $('wh-gclose').addEventListener('click', closeGroupPop);
+  $('wh-gpop').addEventListener('click', function (e) { if (e.target === this) closeGroupPop(); });
+  $('wh-gcopy2').addEventListener('click', function () { $('wh-copy').click(); var b = this; b.textContent = 'បានចម្លង ✓'; setTimeout(function () { b.textContent = 'ចម្លង'; }, 1600); });
   $('wh-order').addEventListener('click', function () {
     var p = shuffle(present()); if (!p.length) return;
     var box = $('wh-groups'); box.innerHTML = ''; box.hidden = false;
@@ -409,6 +453,7 @@
     d.appendChild(ol); box.appendChild(d);
     lastGroups = h.textContent + '\n' + p.map(function (s, k) { return (k + 1) + '. ' + s.n; }).join('\n') + '\n';
     $('wh-copy').hidden = false;
+    groupPop([{ title: 'លំដាប់ចៃដន្យ · ' + khNum(p.length) + ' នាក់', list: p }], function () { $('wh-order').click(); });
   });
   $('wh-copy').addEventListener('click', function () {
     var btn = this, done = function (ok) { btn.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន'; setTimeout(function () { btn.textContent = 'ចម្លងលទ្ធផល'; }, 1600); };
