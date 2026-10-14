@@ -1,4 +1,4 @@
-/* khmermath.org — «ហ្គេមក្រុម» (play/teamgame.html): a Baamboozle-style classroom game.
+/* khmermath.org — «ហ្គេមក្រុម» (play/teamgame.html): a classroom team game.
    The board is a grid of picture cards (names hidden). A team picks a card, it pops up with fireworks and shows its name,
    an optional question and answer. Some cards hide a special power-up. Everything stays in this browser. */
 (function () {
