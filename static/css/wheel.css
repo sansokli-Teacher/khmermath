@@ -153,3 +153,12 @@
 .wh-pv p { margin: 0; color: #fff; text-align: center; line-height: 1.7; font-size: 15px; }
 .wh-pv img { width: min(100%, 900px); height: auto; border-radius: 12px; background: #fff; }
 .wh-pv .wh-row { flex-wrap: wrap; justify-content: center; }
+
+/* phones: sizes are relative to the visible area (not 100vh, which runs under Safari's bottom toolbar); a close ✕ is always at the top */
+.wh-pop { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.wh-pop-card { position: relative; max-height: 100%; overflow-y: auto; }
+.wh-gcard { max-height: 100%; overflow: hidden; }
+.wh-ggrid { max-height: none; }
+.wh-x { position: absolute; top: 8px; right: 8px; z-index: 3; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.wh-pop-card.wh-gcard.final small, .wh-pop-card.wh-gcard small { padding-right: 56px; }
+.wh-pv .wh-row { order: -1; }

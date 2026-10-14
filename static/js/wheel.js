@@ -80,10 +80,9 @@
         ctx.font = '600 ' + size + 'px "Kantumruy Pro", sans-serif';
         ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 3;
-        var name = list[i].n, maxW = r * 0.7;
-        while (ctx.measureText(name).width > maxW && name.length > 2) name = name.slice(0, -1);
-        if (name !== list[i].n) name += '…';
-        ctx.fillText(name, r - 16, 0);
+        var name = list[i].n, maxW = r * 0.7, w = ctx.measureText(name).width;
+        if (w > maxW && w > 0) { size = Math.max(11, Math.floor(size * maxW / w)); ctx.font = '600 ' + size + 'px "Kantumruy Pro", sans-serif'; }
+        ctx.fillText(name, r - 16, 0, maxW);          // maxWidth keeps the whole name visible even if Safari mis-measures
         ctx.restore();
       }
     }
@@ -398,7 +397,7 @@
     if (!isPhone()) return saveBlob(blob, name);
     var old = document.getElementById('wh-pv'); if (old) old.remove();      // phones: preview with long-press save + share button (in-app browsers often block downloads)
     var url = URL.createObjectURL(blob), box = document.createElement('div'), p = document.createElement('p'), img = document.createElement('img'), row = document.createElement('div');
-    box.id = 'wh-pv'; box.className = 'wh-pv'; p.textContent = 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងក្រោម។'; img.src = url; img.alt = 'លទ្ធផលបែងចែកក្រុម'; row.className = 'wh-row';
+    box.id = 'wh-pv'; box.className = 'wh-pv'; p.textContent = 'ចុចសង្កត់លើរូបភាព រួចជ្រើស «រក្សាទុករូបភាព» ឬប្រើប៊ូតុងខាងលើ។'; img.src = url; img.alt = 'លទ្ធផលបែងចែកក្រុម'; row.className = 'wh-row';
     function btn(t, cls, f) { var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-sm ' + cls; b.textContent = t; b.addEventListener('click', f); row.appendChild(b); }
     var file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) btn('ចែករំលែក / រក្សាទុក', 'btn-primary', function () { navigator.share({ files: [file], title: 'khmermath.org' }).catch(function () {}); });
@@ -423,7 +422,7 @@
       }, 'image/png');
     };
     btn.textContent = 'កំពុងបង្កើត…';
-    (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 30px "Kantumruy Pro"'), document.fonts.load('500 30px "Kantumruy Pro"')]) : Promise.resolve()).then(make, make);
+    (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 30px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]) : Promise.resolve()).then(make, make);
   }
 
   /* popup: one drum roll per group - only that card shuffles, then it locks with a crash and a firework */
@@ -543,6 +542,8 @@
   $('wh-spin').addEventListener('click', spin);
   $('wh-again').addEventListener('click', spin);
   $('wh-close').addEventListener('click', closePop);
+  $('wh-x1').addEventListener('click', closePop);
+  $('wh-x2').addEventListener('click', function () { closeGroupPop(); });
   $('wh-pop').addEventListener('click', function (e) { if (e.target === this) closePop(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('wh-gpop').hidden) closeGroupPop(); else if (!$('wh-pop').hidden) closePop(); } });
   $('wh-absent').addEventListener('click', function () {
@@ -699,5 +700,5 @@
   })();
   setFlag($('wh-sound'), sound, 'សំឡេង'); setFlag($('wh-norepeat'), noRepeat, 'មិនជ្រើសម្ដងទៀត');
   renderAll();
-  if (document.fonts && document.fonts.load) document.fonts.load('600 20px "Kantumruy Pro"').then(redraw);
+  if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('600 20px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('700 30px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]).then(redraw, redraw);
 })();
