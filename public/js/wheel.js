@@ -18,6 +18,23 @@ let wheelClassId = null;
 
 const whGender = (g) => (/^(ស្រី|f|female|girl)$/i.test(String(g || '').trim()) ? 'f' : /^(ប្រុស|m|male|boy)$/i.test(String(g || '').trim()) ? 'm' : '');
 const whShuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// Excel export of the picked-student results (SheetJS is already loaded on the teacher page).
+const whSheetName = (n, used) => { const b = String(n).replace(/[\\/?*[\]:]/g, '').slice(0, 28) || 'Sheet'; let out = b, k = 1; while (used[out]) out = `${b}_${++k}`; used[out] = 1; return out; };
+function whAddSheets(wb, used, label, people, mem) {
+  const cnt = {}; for (const x of mem.hist || []) cnt[x.n] = (cnt[x.n] || 0) + 1;
+  const gw = (g) => (g === 'f' ? 'ស្រី' : g === 'm' ? 'ប្រុស' : '');
+  const by = {}; people.forEach((p) => { by[p.n] = p; });
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = (t) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const sum = XLSX.utils.aoa_to_sheet([['ល.រ', 'លេខសម្គាល់', 'ឈ្មោះសិស្ស', 'ភេទ', 'ចំនួនដងដែលត្រូវបានជ្រើស', 'វត្តមាន'],
+    ...people.map((p, i) => [i + 1, p.id, p.n, gw(p.g), cnt[p.n] || 0, (mem.off || []).includes(p.id) ? 'អវត្តមាន' : 'មាន'])]);
+  sum['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 30 }, { wch: 8 }, { wch: 22 }, { wch: 12 }];
+  const ord = XLSX.utils.aoa_to_sheet([['ល.រ', 'ឈ្មោះសិស្ស', 'ភេទ', 'កាលបរិច្ឆេទ និងម៉ោង'],
+    ...(mem.hist || []).map((x, i) => [i + 1, x.n, by[x.n] ? gw(by[x.n].g) : '', stamp(x.t)])]);
+  ord['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 8 }, { wch: 22 }];
+  XLSX.utils.book_append_sheet(wb, sum, whSheetName(label ? `${label} សរុប` : 'សរុប', used));
+  XLSX.utils.book_append_sheet(wb, ord, whSheetName(label ? `${label} លំដាប់` : 'តាមលំដាប់', used));
+}
 const whKh = (n) => String(n).replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
 
 render.wheel = async function () {
@@ -250,6 +267,25 @@ render.wheel = async function () {
       histList,
       h('div', { class: 'row' }, [
         h('button', { class: 'secondary btn-sm', onclick: async (e) => { const c = histCounts(); const txt = tally ? Object.keys(c).sort((a, b) => c[b] - c[a]).map((n) => `${n}\t${c[n]}`).join('\n') : mem.hist.map((x, i) => `${i + 1}. ${x.n}`).join('\n'); let ok = false; try { await navigator.clipboard.writeText(txt); ok = true; } catch {} e.target.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន'; setTimeout(() => { e.target.textContent = 'ចម្លង'; }, 1600); } }, 'ចម្លង'),
+        h('button', { class: 'btn-sm', onclick: () => {
+          if (!window.XLSX) return Exam.notify('មិនអាចបើកកម្មវិធី Excel បានទេ។');
+          const wb = XLSX.utils.book_new(); whAddSheets(wb, {}, '', people, mem);
+          XLSX.writeFile(wb, `កង់ឈ្មោះ-${(classes.find((c) => c.id === wheelClassId) || {}).name || 'ថ្នាក់'}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
+        } }, 'ទាញយក Excel'),
+        h('button', { class: 'secondary btn-sm', onclick: async (e) => {
+          if (!window.XLSX) return Exam.notify('មិនអាចបើកកម្មវិធី Excel បានទេ។');
+          e.target.disabled = true;
+          try {
+            const wb = XLSX.utils.book_new(), used = {};
+            for (const c of classes) {
+              const { students: st } = await api(`/api/classes/${c.id}/students`);
+              let m = { off: [], done: [], hist: [] }; try { m = Object.assign(m, JSON.parse(localStorage.getItem(`exam_wheel_${c.id}`))); } catch {}
+              whAddSheets(wb, used, c.name, st.map((s) => ({ id: s.id, n: `${s.surname || ''} ${s.first_name || ''}`.trim(), g: whGender(s.gender) })), m);
+            }
+            XLSX.writeFile(wb, `កង់ឈ្មោះ-គ្រប់ថ្នាក់-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
+          } catch (er) { Exam.notify(er.message); }
+          e.target.disabled = false;
+        } }, 'Excel គ្រប់ថ្នាក់'),
         h('button', { class: 'secondary btn-sm', onclick: async () => { if (!mem.hist.length || !(await Exam.confirm('សម្អាតលទ្ធផលទាំងអស់ក្នុងថ្នាក់នេះ?'))) return; mem.hist = []; save(); renderHist(); } }, 'សម្អាតលទ្ធផល'),
       ]),
     ]),
