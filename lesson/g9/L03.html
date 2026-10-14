@@ -24,6 +24,48 @@
 <script>try{var t=localStorage.getItem('km-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="stylesheet" href="../../static/katex/katex.min.css">
 <link rel="stylesheet" href="../../static/css/lesson.css?v=dcf5efc396">
+<style>
+/* Cross multiplication method diagram (វិធីគុណខ្វែង) */
+.cross-calc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.6em auto 0.8em;
+  font-size: 1.05em;
+  color: inherit;
+}
+.cross-grid {
+  display: grid;
+  grid-template-columns: minmax(28px, auto) 48px minmax(28px, auto);
+  grid-template-rows: auto auto;
+  row-gap: 6px;
+  align-items: center;
+}
+.cross-tl { grid-column: 1; grid-row: 1; justify-self: end; padding-right: 4px; }
+.cross-bl { grid-column: 1; grid-row: 2; justify-self: end; padding-right: 4px; }
+.cross-tr { grid-column: 3; grid-row: 1; justify-self: start; padding-left: 4px; }
+.cross-br { grid-column: 3; grid-row: 2; justify-self: start; padding-left: 4px; }
+.cross-arrows {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 48px;
+  height: 48px;
+  display: block;
+  overflow: visible;
+}
+.cross-bar {
+  width: 100%;
+  min-width: 130px;
+  max-width: 220px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+  margin: 4px 0 6px;
+}
+.cross-eq {
+  text-align: center;
+}
+</style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 2 10 18H2L12 2z"/><path d="M12 9v5M12 17h.01"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M2.5 5.5c3-1.6 6.2-1.6 9.5.8 3.3-2.4 6.5-2.4 9.5-.8v13.2c-3-1.5-6.2-1.5-9.5.8-3.3-2.3-6.5-2.3-9.5-.8z"/><path d="M12 6.3v13.2"/></symbol><symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8 20.5h8M12 16.5v4"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.2 14.8c1.8.8 2.9 2.5 3.3 5.2"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-3.8 3.9-5.8 7.5-5.8s6.5 2 7.5 5.8"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.6v.2"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M21.2 3.6 3 10.6c-.8.3-.8 1.5.1 1.7l4.5 1.4 1.7 5.5c.2.8 1.2 1 1.8.4l2.5-2.4 4.7 3.4c.6.5 1.6.1 1.8-.7L22.6 5c.2-.9-.6-1.7-1.4-1.4z"/><path d="m7.6 13.7 9.3-6.2-6.8 7.6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M3.5 3.5v17h17"/><path d="M8 16v-4M12 16V8M16 16v-6.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M16.3 3.7a2.3 2.3 0 0 1 3.3 3.3L8.2 18.4 3.6 19.9l1.5-4.6z"/><path d="m14.5 5.5 3.3 3.3"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17.5" rx="2"/><path d="M9 4V2.6h6V4M8.8 10.5h6.4M8.8 14.5h6.4M8.8 18h3.6"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2.8 9.5 4.7-9.5 4.8-9.5-4.8z"/><path d="m2.5 12.2 9.5 4.8 9.5-4.8"/><path d="m2.5 16.8 9.5 4.7 9.5-4.7"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6"/></symbol><symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18.5 14v4.5a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5H10"/></symbol><symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.3"/><path d="M12 2v2.3M12 19.7V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.3M19.7 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></symbol><symbol id="i-youtube" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9.3 5 2.7-5 2.7z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 4.8 4.8L19.5 7"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.4 2"/></symbol><symbol id="i-calc" viewBox="0 0 24 24"><rect x="4.5" y="2.5" width="15" height="19" rx="2"/><path d="M8 6.5h8M8.3 11h.1M12 11h.1M15.7 11h.1M8.3 14.6h.1M12 14.6h.1M15.7 14.6h.1M8.3 18.2h.1M12 18.2h3.8"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11.5M7 10l5 5 5-5M4.5 20.5h15"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2.8 2.7 5.9 6.4.7-4.8 4.3 1.4 6.4L12 16.9l-5.7 3.2 1.4-6.4-4.8-4.3 6.4-.7z"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.5 2.8 3.8 6 3.8 9.5s-1.3 6.7-3.8 9.5c-2.5-2.8-3.8-6-3.8-9.5S9.5 5.3 12 2.5z"/></symbol><symbol id="i-plan" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M7.5 13.5h4M7.5 17h6.5"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M11 18.5h2"/></symbol><symbol id="i-free" viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.6-7.6V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.8" cy="7.8" r="1.4"/></symbol><symbol id="i-school" viewBox="0 0 24 24"><path d="m12 3.5 10 5-10 5-10-5z"/><path d="M6 10.5v5c1.6 1.6 3.6 2.4 6 2.4s4.4-.8 6-2.4v-5M21.5 8.8v5.5"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11.5l-2 4 2 4H5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m20.5 20.5-4.8-4.8"/></symbol><symbol id="i-sigma" viewBox="0 0 24 24"><path d="M18 4.5H6.5l6 7.5-6 7.5H18"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.3s-7.6-4.6-9.3-9.4C1.5 7.6 3.6 4.3 7.1 4.3c2 0 3.7 1.1 4.9 2.9 1.2-1.8 2.9-2.9 4.9-2.9 3.5 0 5.6 3.3 4.4 6.6-1.7 4.8-9.3 9.4-9.3 9.4z"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-message" viewBox="0 0 24 24"><path d="M20.5 12.5a8 8 0 0 1-11.7 7.1L3.5 21l1.4-5a8 8 0 1 1 15.6-3.5z"/><path d="M8.5 11h7M8.5 14.5h4.5"/></symbol></svg>
@@ -465,201 +507,291 @@ x^2 - 6x - 7 &amp;= (x^2 - 2 \cdot 3 \cdot x + 9) - 9 - 7 &amp;&amp; \text{(ថ�
 &amp;= 2\left[\left(x + \frac{5}{4}\right)^2 - \frac{49}{16}\right] = 2\left[\left(x + \frac{5}{4}\right)^2 - \left(\frac{7}{4}\right)^2\right] \\
 &amp;= 2\left(x + \frac{5}{4} - \frac{7}{4}\right)\left(x + \frac{5}{4} + \frac{7}{4}\right) \\
 &amp;= 2\left(x - \frac{1}{2}\right)(x + 3) = (2x - 1)(x + 3)
-\end{aligned}\]</div><p><b>II. តាមវិធីគុណខ្វែង ៖</b></p><p><b>ក.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; 1 \\
-x &amp; \nearrow &amp; 4
-\end{array} \\
-\hline
-4x + x = 5x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 4)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p><b>II. តាមវិធីគុណខ្វែង ៖</b></p><p><b>ក.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(4\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-1" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-1)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-1)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(4x + x = 5x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 4)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + 5x + 4 &amp;= x^2 + x + 4x + 4 &amp;&amp; \text{(បំបែក $5x = x + 4x$)} \\
 &amp;= x(x + 1) + 4(x + 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x + 1)(x + 4) &amp;&amp; \text{(ដាក់ $x + 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 5x + 4 = (x + 1)(x + 4)\)</span> ។</p><p><b>ខ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; 2 \\
-x &amp; \nearrow &amp; 3
-\end{array} \\
-\hline
-3x + 2x = 5x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 5x + 4 = (x + 1)(x + 4)\)</span> ។</p><p><b>ខ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(2\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(3\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-2" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-2)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-2)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(3x + 2x = 5x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + 5x + 6 &amp;= x^2 + 2x + 3x + 6 &amp;&amp; \text{(បំបែក $5x = 2x + 3x$)} \\
 &amp;= x(x + 2) + 3(x + 2) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x + 2)(x + 3) &amp;&amp; \text{(ដាក់ $x + 2$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 5x + 6 = (x + 2)(x + 3)\)</span> ។</p><p><b>គ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-t &amp; \searrow &amp; 3 \\
-t &amp; \nearrow &amp; 5
-\end{array} \\
-\hline
-5t + 3t = 8t
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (t + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t + 5)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 5x + 6 = (x + 2)(x + 3)\)</span> ។</p><p><b>គ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(t\)</span><span class="cross-tr">\(3\)</span>
+<span class="cross-bl">\(t\)</span><span class="cross-br">\(5\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-3" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-3)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-3)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(5t + 3t = 8t\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (t + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t + 5)\)</span> ។</p><div class="md">\[\begin{aligned}
 t^2 + 8t + 15 &amp;= t^2 + 3t + 5t + 15 &amp;&amp; \text{(បំបែក $8t = 3t + 5t$)} \\
 &amp;= t(t + 3) + 5(t + 3) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (t + 3)(t + 5) &amp;&amp; \text{(ដាក់ $t + 3$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle t^2 + 8t + 15 = (t + 3)(t + 5)\)</span> ។</p><p><b>ឃ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; -9
-\end{array} \\
-\hline
--9x - x = -10x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x - 9)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle t^2 + 8t + 15 = (t + 3)(t + 5)\)</span> ។</p><p><b>ឃ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(-9\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-4" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-4)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-4)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-9x - x = -10x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x - 9)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 - 10x + 9 &amp;= x^2 - x - 9x + 9 &amp;&amp; \text{(បំបែក $-10x = -x - 9x$)} \\
 &amp;= x(x - 1) - 9(x - 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x - 1)(x - 9) &amp;&amp; \text{(ដាក់ $x - 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 - 10x + 9 = (x - 1)(x - 9)\)</span> ។</p><p><b>ង.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-t &amp; \searrow &amp; -4 \\
-t &amp; \nearrow &amp; -7
-\end{array} \\
-\hline
--7t - 4t = -11t
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (t - 4)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 - 10x + 9 = (x - 1)(x - 9)\)</span> ។</p><p><b>ង.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(t\)</span><span class="cross-tr">\(-4\)</span>
+<span class="cross-bl">\(t\)</span><span class="cross-br">\(-7\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-5" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-5)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-5)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-7t - 4t = -11t\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (t - 4)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
 t^2 - 11t + 28 &amp;= t^2 - 4t - 7t + 28 &amp;&amp; \text{(បំបែក $-11t = -4t - 7t$)} \\
 &amp;= t(t - 4) - 7(t - 4) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (t - 4)(t - 7) &amp;&amp; \text{(ដាក់ $t - 4$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle t^2 - 11t + 28 = (t - 4)(t - 7)\)</span> ។</p><p><b>ច.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; 8
-\end{array} \\
-\hline
-8x - x = 7x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 8)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle t^2 - 11t + 28 = (t - 4)(t - 7)\)</span> ។</p><p><b>ច.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(8\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-6" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-6)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-6)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(8x - x = 7x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 8)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + 7x - 8 &amp;= x^2 - x + 8x - 8 &amp;&amp; \text{(បំបែក $7x = -x + 8x$)} \\
 &amp;= x(x - 1) + 8(x - 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x - 1)(x + 8) &amp;&amp; \text{(ដាក់ $x - 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 7x - 8 = (x - 1)(x + 8)\)</span> ។</p><p><b>ឆ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; -2 \\
-x &amp; \nearrow &amp; 3
-\end{array} \\
-\hline
-3x - 2x = x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 7x - 8 = (x - 1)(x + 8)\)</span> ។</p><p><b>ឆ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(-2\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(3\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-7" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-7)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-7)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(3x - 2x = x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + x - 6 &amp;= x^2 - 2x + 3x - 6 &amp;&amp; \text{(បំបែក $x = -2x + 3x$)} \\
 &amp;= x(x - 2) + 3(x - 2) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x - 2)(x + 3) &amp;&amp; \text{(ដាក់ $x - 2$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + x - 6 = (x - 2)(x + 3)\)</span> ។</p><p><b>ជ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; 12
-\end{array} \\
-\hline
-12x - x = 11x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 12)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + x - 6 = (x - 2)(x + 3)\)</span> ។</p><p><b>ជ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(12\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-8" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-8)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-8)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(12x - x = 11x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 12)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + 11x - 12 &amp;= x^2 - x + 12x - 12 &amp;&amp; \text{(បំបែក $11x = -x + 12x$)} \\
 &amp;= x(x - 1) + 12(x - 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x - 1)(x + 12) &amp;&amp; \text{(ដាក់ $x - 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 11x - 12 = (x - 1)(x + 12)\)</span> ។</p><p><b>ឈ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-b &amp; \searrow &amp; -1 \\
-b &amp; \nearrow &amp; 7
-\end{array} \\
-\hline
-7b - b = 6b
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (b - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (b + 7)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 11x - 12 = (x - 1)(x + 12)\)</span> ។</p><p><b>ឈ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(b\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(b\)</span><span class="cross-br">\(7\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-9" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-9)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-9)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(7b - b = 6b\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (b - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (b + 7)\)</span> ។</p><div class="md">\[\begin{aligned}
 b^2 + 6b - 7 &amp;= b^2 - b + 7b - 7 &amp;&amp; \text{(បំបែក $6b = -b + 7b$)} \\
 &amp;= b(b - 1) + 7(b - 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (b - 1)(b + 7) &amp;&amp; \text{(ដាក់ $b - 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle b^2 + 6b - 7 = (b - 1)(b + 7)\)</span> ។</p><p><b>ញ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; 4
-\end{array} \\
-\hline
-4x - x = 3x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 4)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle b^2 + 6b - 7 = (b - 1)(b + 7)\)</span> ។</p><p><b>ញ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(4\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-10" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-10)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-10)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(4x - x = 3x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 4)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 + 3x - 4 &amp;= x^2 - x + 4x - 4 &amp;&amp; \text{(បំបែក $3x = -x + 4x$)} \\
 &amp;= x(x - 1) + 4(x - 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x - 1)(x + 4) &amp;&amp; \text{(ដាក់ $x - 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 3x - 4 = (x - 1)(x + 4)\)</span> ។</p><p><b>ដ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-y &amp; \searrow &amp; 3 \\
-y &amp; \nearrow &amp; -4
-\end{array} \\
-\hline
--4y + 3y = -y
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (y + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (y - 4)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 + 3x - 4 = (x - 1)(x + 4)\)</span> ។</p><p><b>ដ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(y\)</span><span class="cross-tr">\(3\)</span>
+<span class="cross-bl">\(y\)</span><span class="cross-br">\(-4\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-11" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-11)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-11)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-4y + 3y = -y\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (y + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (y - 4)\)</span> ។</p><div class="md">\[\begin{aligned}
 y^2 - y - 12 &amp;= y^2 + 3y - 4y - 12 &amp;&amp; \text{(បំបែក $-y = 3y - 4y$)} \\
 &amp;= y(y + 3) - 4(y + 3) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (y + 3)(y - 4) = (y - 4)(y + 3) &amp;&amp; \text{(ដាក់ $y + 3$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle y^2 - y - 12 = (y - 4)(y + 3)\)</span> ។</p><p><b>ឋ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-y &amp; \searrow &amp; 5 \\
-y &amp; \nearrow &amp; -7
-\end{array} \\
-\hline
--7y + 5y = -2y
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (y + 5)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (y - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle y^2 - y - 12 = (y - 4)(y + 3)\)</span> ។</p><p><b>ឋ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(y\)</span><span class="cross-tr">\(5\)</span>
+<span class="cross-bl">\(y\)</span><span class="cross-br">\(-7\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-12" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-12)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-12)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-7y + 5y = -2y\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (y + 5)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (y - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
 y^2 - 2y - 35 &amp;= y^2 + 5y - 7y - 35 &amp;&amp; \text{(បំបែក $-2y = 5y - 7y$)} \\
 &amp;= y(y + 5) - 7(y + 5) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (y + 5)(y - 7) = (y - 7)(y + 5) &amp;&amp; \text{(ដាក់ $y + 5$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle y^2 - 2y - 35 = (y - 7)(y + 5)\)</span> ។</p><p><b>ឌ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-n &amp; \searrow &amp; 2 \\
-n &amp; \nearrow &amp; -6
-\end{array} \\
-\hline
--6n + 2n = -4n
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (n + 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (n - 6)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle y^2 - 2y - 35 = (y - 7)(y + 5)\)</span> ។</p><p><b>ឌ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(n\)</span><span class="cross-tr">\(2\)</span>
+<span class="cross-bl">\(n\)</span><span class="cross-br">\(-6\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-13" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-13)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-13)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-6n + 2n = -4n\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (n + 2)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (n - 6)\)</span> ។</p><div class="md">\[\begin{aligned}
 n^2 - 4n - 12 &amp;= n^2 + 2n - 6n - 12 &amp;&amp; \text{(បំបែក $-4n = 2n - 6n$)} \\
 &amp;= n(n + 2) - 6(n + 2) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (n + 2)(n - 6) = (n - 6)(n + 2) &amp;&amp; \text{(ដាក់ $n + 2$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle n^2 - 4n - 12 = (n - 6)(n + 2)\)</span> ។</p><p><b>ឍ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-a &amp; \searrow &amp; 3 \\
-a &amp; \nearrow &amp; -6
-\end{array} \\
-\hline
--6a + 3a = -3a
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (a + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (a - 6)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle n^2 - 4n - 12 = (n - 6)(n + 2)\)</span> ។</p><p><b>ឍ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(a\)</span><span class="cross-tr">\(3\)</span>
+<span class="cross-bl">\(a\)</span><span class="cross-br">\(-6\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-14" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-14)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-14)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-6a + 3a = -3a\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (a + 3)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (a - 6)\)</span> ។</p><div class="md">\[\begin{aligned}
 a^2 - 3a - 18 &amp;= a^2 + 3a - 6a - 18 &amp;&amp; \text{(បំបែក $-3a = 3a - 6a$)} \\
 &amp;= a(a + 3) - 6(a + 3) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (a + 3)(a - 6) = (a - 6)(a + 3) &amp;&amp; \text{(ដាក់ $a + 3$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle a^2 - 3a - 18 = (a - 6)(a + 3)\)</span> ។</p><p><b>ណ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-x &amp; \searrow &amp; 1 \\
-x &amp; \nearrow &amp; -7
-\end{array} \\
-\hline
--7x + x = -6x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle a^2 - 3a - 18 = (a - 6)(a + 3)\)</span> ។</p><p><b>ណ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(x\)</span><span class="cross-tr">\(1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(-7\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-15" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-15)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-15)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(-7x + x = -6x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (x + 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x - 7)\)</span> ។</p><div class="md">\[\begin{aligned}
 x^2 - 6x - 7 &amp;= x^2 + x - 7x - 7 &amp;&amp; \text{(បំបែក $-6x = x - 7x$)} \\
 &amp;= x(x + 1) - 7(x + 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (x + 1)(x - 7) = (x - 7)(x + 1) &amp;&amp; \text{(ដាក់ $x + 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 - 6x - 7 = (x - 7)(x + 1)\)</span> ។</p><p><b>ត.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-5t &amp; \searrow &amp; 7 \\
-t &amp; \nearrow &amp; 1
-\end{array} \\
-\hline
-5t + 7t = 12t
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (5t + 7)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t + 1)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle x^2 - 6x - 7 = (x - 7)(x + 1)\)</span> ។</p><p><b>ត.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(5t\)</span><span class="cross-tr">\(7\)</span>
+<span class="cross-bl">\(t\)</span><span class="cross-br">\(1\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-16" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-16)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-16)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(5t + 7t = 12t\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (5t + 7)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (t + 1)\)</span> ។</p><div class="md">\[\begin{aligned}
 5t^2 + 12t + 7 &amp;= 5t^2 + 5t + 7t + 7 &amp;&amp; \text{(បំបែក $12t = 5t + 7t$)} \\
 &amp;= 5t(t + 1) + 7(t + 1) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (5t + 7)(t + 1) &amp;&amp; \text{(ដាក់ $t + 1$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle 5t^2 + 12t + 7 = (5t + 7)(t + 1)\)</span> ។</p><p><b>ថ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-2x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; 7
-\end{array} \\
-\hline
-14x - x = 13x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (2x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 7)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle 5t^2 + 12t + 7 = (5t + 7)(t + 1)\)</span> ។</p><p><b>ថ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(2x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(7\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-17" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-17)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-17)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(14x - x = 13x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (2x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 7)\)</span> ។</p><div class="md">\[\begin{aligned}
 2x^2 + 13x - 7 &amp;= 2x^2 + 14x - x - 7 &amp;&amp; \text{(បំបែក $13x = 14x - x$)} \\
 &amp;= 2x(x + 7) - (x + 7) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (2x - 1)(x + 7) &amp;&amp; \text{(ដាក់ $x + 7$ ជាកត្តារួម)}
-\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle 2x^2 + 13x - 7 = (2x - 1)(x + 7)\)</span> ។</p><p><b>ទ.</b></p><div class="md">\[\begin{array}{c}
-\begin{array}{rcc}
-2x &amp; \searrow &amp; -1 \\
-x &amp; \nearrow &amp; 3
-\end{array} \\
-\hline
-6x - x = 5x
-\end{array}\]</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (2x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
+\end{aligned}\]</div><p>ដូចនេះ <span class="mi">\(\displaystyle 2x^2 + 13x - 7 = (2x - 1)(x + 7)\)</span> ។</p><p><b>ទ.</b></p><div class="cross-calc">
+<div class="cross-grid">
+<span class="cross-tl">\(2x\)</span><span class="cross-tr">\(-1\)</span>
+<span class="cross-bl">\(x\)</span><span class="cross-br">\(3\)</span>
+<svg class="cross-arrows" viewBox="0 0 80 40" aria-hidden="true">
+<defs><marker id="cm-arr-18" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0.5 L5.5,3 L0,5.5 z" fill="currentColor"/></marker></defs>
+<line x1="4" y1="3" x2="74" y2="37" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-18)"/>
+<line x1="4" y1="37" x2="74" y2="3" stroke="currentColor" stroke-width="1.2" marker-end="url(#cm-arr-18)"/>
+</svg>
+</div>
+<div class="cross-bar"></div>
+<div class="cross-eq">\(6x - x = 5x\)</div>
+</div><p>ចាប់យកតួតាមជួរដេក ៖ ជួរទីមួយ <span class="mi">\(\displaystyle (2x - 1)\)</span> ជួរទីពីរ <span class="mi">\(\displaystyle (x + 3)\)</span> ។</p><div class="md">\[\begin{aligned}
 2x^2 + 5x - 3 &amp;= 2x^2 + 6x - x - 3 &amp;&amp; \text{(បំបែក $5x = 6x - x$)} \\
 &amp;= 2x(x + 3) - (x + 3) &amp;&amp; \text{(ផ្ដុំជាគូៗ)} \\
 &amp;= (2x - 1)(x + 3) &amp;&amp; \text{(ដាក់ $x + 3$ ជាកត្តារួម)}

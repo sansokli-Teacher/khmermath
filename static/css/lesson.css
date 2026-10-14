@@ -608,3 +608,45 @@ details.ans[open] > summary { margin-bottom: 8px; background: #faece8; border-co
 
 .bx-rule > .bx-h .bx-sub { flex-basis: auto; color: #ffe3a6; font-size: 15px; font-weight: 600; }
 .bx-rule > .bx-h .bx-sub::before { content: "· "; }
+
+/* Cross multiplication method diagram (វិធីគុណខ្វែង) */
+.cross-calc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.6em auto 0.8em;
+  font-size: 1.05em;
+  color: inherit;
+}
+.cross-grid {
+  display: grid;
+  grid-template-columns: minmax(28px, auto) 80px minmax(28px, auto);
+  grid-template-rows: auto auto;
+  row-gap: 6px;
+  align-items: center;
+}
+.cross-tl { grid-column: 1; grid-row: 1; justify-self: end; padding-right: 4px; }
+.cross-bl { grid-column: 1; grid-row: 2; justify-self: end; padding-right: 4px; }
+.cross-tr { grid-column: 3; grid-row: 1; justify-self: start; padding-left: 4px; }
+.cross-br { grid-column: 3; grid-row: 2; justify-self: start; padding-left: 4px; }
+.cross-arrows {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 80px;
+  height: 40px;
+  display: block;
+  overflow: visible;
+}
+.cross-bar {
+  width: 100%;
+  min-width: 130px;
+  max-width: 220px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+  margin: 4px 0 6px;
+}
+.cross-eq {
+  text-align: center;
+}
+
