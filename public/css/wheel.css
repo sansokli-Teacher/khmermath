@@ -44,7 +44,7 @@
 .wheel-gcard { width: min(96vw, 980px); max-height: 94vh; display: flex; flex-direction: column; padding: 18px 16px 16px; }
 .wheel-pop-card.wheel-gcard small { font-size: 18px; font-weight: 700; color: var(--brand-dark); }
 .wheel-ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 12px 0 14px; overflow-y: auto; text-align: left; flex: 1; min-height: 0; max-height: 66vh; }
-.wheel-ggrid .wheel-g li { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wheel-ggrid .wheel-g li { font-size: 16px; overflow-wrap: anywhere; }
 .wheel-pop-card.wheel-gcard .wheel-g b { margin: 0 0 4px; font-size: 17px; line-height: 1.5; color: var(--brand-dark); }
 .wheel-ggrid .wheel-g.wait { opacity: .45; }
 .wheel-ggrid .wheel-g li.ph { color: var(--muted); list-style: none; letter-spacing: 2px; }
@@ -63,3 +63,12 @@
 .wheel-pop-card.wheel-gcard .wheel-g.done b { margin: 0 0 6px; padding: 10px 14px; font-size: 18px; color: #fff; background: var(--gc, var(--brand)); border-radius: 0; }
 .wheel-ggrid .wheel-g.done ol { padding: 2px 14px 12px 38px; }
 .wheel-ggrid .wheel-g.done li::marker { color: var(--gc, var(--brand)); font-weight: 700; }
+
+/* fixed columns: 2 for up to 4 groups, 3 for five or more (6 groups = 3 x 2); fewer on small screens */
+.wheel-gcard { width: min(96vw, 1080px); }
+.wheel-ggrid.cols-1 { grid-template-columns: 1fr; }
+.wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wheel-ggrid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 440px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: 1fr; } }
+.wheel-fw.behind { z-index: 79; }

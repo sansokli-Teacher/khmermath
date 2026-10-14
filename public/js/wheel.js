@@ -116,7 +116,7 @@ render.wheel = async function () {
         o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + len + 0.02); });
     } catch {}
   }
-  let fwParts = [], fwEnd = 0, fwOn = false, fwNext = 0, fwRandom = false, fwDim = null;
+  let fwSides = false, fwParts = [], fwEnd = 0, fwOn = false, fwNext = 0, fwRandom = false, fwDim = null;
   const fwHues = [8, 40, 52, 130, 190, 280, 330];
   const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fwBurst = (x, y, n) => { const hue = fwHues[Math.floor(Math.random() * fwHues.length)]; for (let i = 0; i < n; i++) { const a = Math.PI * 2 * i / n + Math.random() * 0.2, v = 2.2 + Math.random() * 3.6; fwParts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 25 - 12 }); } };
@@ -124,7 +124,7 @@ render.wheel = async function () {
     if (!fwOn) return;
     const { g, W, H } = fwDim;
     g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
-    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.45), 46); fwNext = now + 260 + Math.random() * 260; }
+    if (fwRandom && now < fwEnd && now > fwNext) { fwBurst(fwSides ? W * (Math.random() < 0.5 ? 0.02 + Math.random() * 0.14 : 0.84 + Math.random() * 0.14) : W * (0.12 + Math.random() * 0.76), H * (0.1 + Math.random() * 0.5), 46); fwNext = now + 260 + Math.random() * 260; }
     fwParts = fwParts.filter((p) => p.life > 0.02);
     for (const p of fwParts) { p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.985; p.vy *= 0.985; p.life -= 0.013; g.fillStyle = `hsla(${p.hue},100%,60%,${Math.max(0, p.life)})`; g.beginPath(); g.arc(p.x, p.y, 2.6, 0, 7); g.fill(); }
     if (now < fwEnd || fwParts.length) requestAnimationFrame(fwFrame); else { fwOn = false; fwRandom = false; g.clearRect(0, 0, W, H); }
@@ -135,8 +135,9 @@ render.wheel = async function () {
     fw.width = W * dpr; fw.height = H * dpr; const g = fw.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
     fwDim = { g, W, H }; fwOn = true; fwParts = []; requestAnimationFrame(fwFrame);
   };
-  const fireworks = () => { if (reduceMotion()) return; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + 3600; };
-  const miniBurst = (x, y) => { if (reduceMotion()) return; fwStart(); fwBurst(x, y, 34); fwEnd = Math.max(fwEnd, performance.now() + 900); };
+  // sides: bursts stay in the margins, behind the result card, so they never cover a name
+  const fireworks = (sides) => { if (reduceMotion()) return; fw.classList.toggle('behind', !!sides); fwSides = !!sides; fwStart(); fwRandom = true; fwNext = 0; fwEnd = performance.now() + (sides ? 2600 : 3600); };
+  const miniBurst = (x, y) => { if (reduceMotion()) return; fw.classList.remove('behind'); fwStart(); fwBurst(x, y, 22); fwEnd = Math.max(fwEnd, performance.now() + 700); };
   const stopFireworks = () => { fwOn = false; fwRandom = false; fwParts = []; fw.getContext('2d').clearRect(0, 0, fw.width, fw.height); };
   // drum roll (noise bursts that speed up) and cymbal crash
   const noise = (t, len, type, freq, vol) => {
@@ -249,7 +250,7 @@ render.wheel = async function () {
     g.quadraticCurveTo(x + w, y + h2, x + w - br, y + h2); g.lineTo(x + bl, y + h2); g.quadraticCurveTo(x, y + h2, x, y + h2 - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
   };
   const posterCanvas = (o) => {
-    const W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    const W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
     const cw = (W - pad * 2 - gap * (cols - 1)) / cols, headH = 80, lineH = 46, cpad = 18, bannerH = 250, footH = 110, dpr = 2;
     const rows = []; for (let i = 0; i < n; i += cols) rows.push(o.groups.slice(i, i + cols));
     const rowH = rows.map((r) => headH + Math.max(...r.map((x) => x.items.length)) * lineH + cpad * 2);
@@ -272,7 +273,7 @@ render.wheel = async function () {
         grp.items.forEach((it, i) => {
           const ty = y + headH + cpad + i * lineH + lineH / 2; g.textAlign = 'left'; g.fillStyle = col; g.font = `700 26px ${FONT}`; g.fillText(`${whKh(i + 1)}.`, x + 24, ty);
           let dx = x + 76; if (it.g) { g.fillStyle = it.g === 'f' ? '#d6336c' : '#1c7ed6'; g.beginPath(); g.arc(dx + 8, ty, 8, 0, 7); g.fill(); dx += 28; }
-          let size = 33; g.font = `500 ${size}px ${FONT}`; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 18) { size -= 2; g.font = `500 ${size}px ${FONT}`; }
+          let size = 33; g.font = `500 ${size}px ${FONT}`; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 12) { size -= 2; g.font = `500 ${size}px ${FONT}`; }
           g.fillStyle = '#1b2733'; g.fillText(it.n, dx, ty);
         });
       });
@@ -311,19 +312,19 @@ render.wheel = async function () {
     let remaining = blocks.flatMap((b) => b.people);
     const per = reduce ? 0 : Math.max(900, Math.min(1800, 12000 / n)), pause = reduce ? 0 : 450;
     lastBlocks = blocks; gPop.firstChild.classList.remove('final'); gSub.hidden = true; gBrand.hidden = true; gPng.hidden = true;
-    closePop(); stopFireworks(); gGrid.innerHTML = ''; gGrid.className = 'wheel-ggrid'; cards.forEach((c, i) => { setNames(c, blocks[i].people, true); gGrid.appendChild(c); });
+    closePop(); stopFireworks(); gGrid.innerHTML = ''; gGrid.className = `wheel-ggrid cols-${n <= 1 ? 1 : n <= 4 ? 2 : 3}`; cards.forEach((c, i) => { setNames(c, blocks[i].people, true); gGrid.appendChild(c); });
     gPop.hidden = false; gAgain.disabled = true; gCopy.disabled = true; gSkip.hidden = n < 2;
     let cur = -1, phase = 'start', t0 = 0, last = 0;
     const lock = (i, burst) => {
       const card = cards[i]; card.className = 'wheel-g done'; setNames(card, blocks[i].people, false);
       const ids = new Set(blocks[i].people.map((p) => p.id)); remaining = remaining.filter((p) => !ids.has(p.id));
-      if (burst) { cymbal(); const r = card.getBoundingClientRect(); if (wheelSettings.fw) miniBurst(r.left + r.width / 2, r.top + r.height / 2); }
+      if (burst) { cymbal(); const r = card.getBoundingClientRect(); if (wheelSettings.fw) miniBurst(r.right - 28, r.top + 22); }
     };
     const finale = () => {
       const total = blocks.reduce((a, b) => a + b.people.length, 0);
       gSmall.textContent = `${isOrder(blocks) ? 'លំដាប់ចៃដន្យ' : 'បែងចែកក្រុមរួចរាល់!'} 🎉`; gPop.firstChild.classList.add('final');
       gSub.textContent = `${className()} · ${whKh(total)} នាក់ · ${khDate()}`; gSub.hidden = false; gBrand.hidden = false; gPng.hidden = false; gSkip.hidden = true; gAgain.disabled = false; gCopy.disabled = false;
-      if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); }
+      if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(true); }
       gAgain.focus({ preventScroll: true });
     };
     gSkip.onclick = () => { gSkipFlag = true; };
