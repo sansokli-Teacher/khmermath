@@ -850,7 +850,7 @@ function submitPrompt() {
 document.getElementById('submit-btn').addEventListener('click', submitPrompt);
 
 async function doSubmit(auto) {
-  if (PREVIEW) { await Exam.notify('នេះគ្រាន់តែជាការមើលសាកល្បង — គ្មានអ្វីត្រូវបានបញ្ជូនទេ។'); return; }
+  if (PREVIEW) { clearInterval(timerInterval); await Exam.notify('នេះគ្រាន់តែជាការមើលសាកល្បង — គ្មានអ្វីត្រូវបានបញ្ជូនទេ។'); location.href = 'student.html'; return; }
   clearInterval(timerInterval);
   clearInterval(heartbeatTimer);
   const sessionId = testState && testState.session_id;
