@@ -221,10 +221,10 @@
     var n = Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value;
     if (mode === 'lesson') {
       var pool = [];
-      ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: 'មេរៀនទី ' + L.n + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, a: q.a, s: q.s || '', h: q.h || '' }; })); });
+      ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: 'មេរៀនទី ' + L.n + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, f: q.f || '', a: q.a, s: q.s || '', h: q.h || '' }; })); });
       if (!pool.length) { $('tg-lessonhint').textContent = 'សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
       var want = parseInt($('tg-qn').value, 10) || pool.length; pool = shuffle(pool).slice(0, want); face = 'num';
-      tiles = pool.map(function (c) { return { k: 'q', n: c.n, img: '', q: c.q, o: c.o, ck: c.ck, a: c.a, s: c.s, h: c.h, p: pts, lq: 1 }; });
+      tiles = pool.map(function (c) { return { k: 'q', n: c.n, img: '', q: c.q, o: c.o, ck: c.ck, f: c.f, a: c.a, s: c.s, h: c.h, p: pts, lq: 1 }; });
     } else {
       var list = cards.filter(function (c) { return clean(c.n); });
       if (!list.length) { $('tg-qcount').textContent = 'សូមបន្ថែមកាតយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
@@ -325,9 +325,14 @@
       if (t.lq) card.classList.add('lq');
       else { var face = el('div', 'tg-cface'); face.appendChild(picNode(t.img, 'big')); card.appendChild(face); }
       card.appendChild(el('div', 'tg-name', t.n));
-      if (t.q) card.appendChild(el('div', 'tg-q', t.q));
-      if (t.o) { var ol = el('div', 'tg-opt'); t.o.forEach(function (o, k) { var li = el('div', 'tg-o' + (k === t.ck ? ' key' : '')); li.appendChild(el('b', '', 'កខគឃ'[k])); li.appendChild(el('span', '', o)); ol.appendChild(li); }); card.appendChild(ol); }
-      var ans = el('div', 'tg-a' + (t.o ? ' tg-a-mcq' : ''), t.o ? '' : (t.a || '')); ans.hidden = true; if (t.a) card.appendChild(ans);
+      var host = card;                                                       // with a figure the card is split: drawing on one side, question + answers on the other
+      if (t.f) {
+        var split = el('div', 'tg-split'), fg = el('div', 'tg-fig'), rc = el('div', 'tg-rc'); fg.innerHTML = t.f;   // inline SVG from our own question bank
+        split.appendChild(fg); split.appendChild(rc); card.appendChild(split); host = rc; card.classList.add('hasfig');
+      }
+      if (t.q) host.appendChild(el('div', 'tg-q', t.q));
+      if (t.o) { var ol = el('div', 'tg-opt'); t.o.forEach(function (o, k) { var li = el('div', 'tg-o' + (k === t.ck ? ' key' : '')); li.appendChild(el('b', '', 'កខគឃ'[k])); li.appendChild(el('span', '', o)); ol.appendChild(li); }); host.appendChild(ol); }
+      var ans = el('div', 'tg-a' + (t.o ? ' tg-a-mcq' : ''), t.o ? '' : (t.a || '')); ans.hidden = true; if (t.a) host.appendChild(ans);
       if (t.s) { var sol = el('div', 'tg-sol', t.s); sol.hidden = true; ans.appendChild(sol); }
       typeset(card);
       if (G.timer) {

@@ -277,3 +277,27 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .tg-a-mcq { padding: 8px 14px; border-style: solid; }
 .tg-a-mcq .tg-sol { margin-top: 0; font-size: clamp(16px, 2.6vh + .4vw, 26px); font-weight: 600; }
 .tg-card.lq .tg-acts { margin-top: 10px; }
+
+/* geometry figure on a question card */
+.tg-fig { display: grid; place-items: center; margin: 4px 22px 6px; }
+.tg-fig svg { width: auto; max-width: 100%; height: clamp(110px, 30vh, 300px); background: #fff; border-radius: 14px; border: 2px solid var(--line-2); padding: 4px; }
+.tg-fig svg text { font-family: "KaTeX_Math", "Times New Roman", serif; font-style: italic; }
+.tg-fig svg text.up { font-style: normal; }
+@media (max-height: 620px) { .tg-fig svg { height: clamp(90px, 26vh, 200px); } }
+
+/* a card with a figure: drawing beside the question on wide screens, stacked on narrow ones */
+.tg-split { display: grid; grid-template-columns: minmax(180px, 40%) 1fr; gap: 6px 14px; align-items: center; padding: 0 18px; }
+.tg-split .tg-fig { margin: 0; }
+.tg-split .tg-fig svg { height: clamp(150px, 42vh, 380px); max-width: 100%; }
+.tg-rc { min-width: 0; text-align: left; }
+.tg-rc .tg-q { margin: 4px 0 8px; text-align: left; font-size: clamp(18px, 3.6vh + .5vw, 34px); }
+.tg-rc .tg-opt { margin: 8px 0 0; grid-template-columns: 1fr 1fr; }
+.tg-rc .tg-o { font-size: clamp(15px, 2.6vh + .4vw, 26px); padding: 6px 10px; }
+.tg-rc .tg-a { margin: 8px 0 0; }
+.tg-card.hasfig { width: min(100%, 1250px); }
+.tg-card.hasfig .tg-acts { margin-top: 8px; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .tg-split { grid-template-columns: 1fr; }
+  .tg-split .tg-fig svg { height: clamp(100px, 24vh, 220px); }
+  .tg-rc .tg-opt { grid-template-columns: 1fr; }
+}
