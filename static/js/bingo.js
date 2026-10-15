@@ -84,10 +84,12 @@
     var ls = (BANK && BANK.lessons) || [];
     if (!ls.length) { box.appendChild(el('small', 'bg-hint', BANK === null ? 'កំពុងផ្ទុក…' : BANK.closed ? 'គ្រូបានបិទហ្គេមនេះជាបណ្តោះអាសន្ន។' : 'គ្រូមិនទាន់បើកមេរៀនណាមួយទេ។')); return; }
     var cfg = load(KEY + '_cfg', { lessons: [1] });
+    var lastG = 0;
     ls.forEach(function (L) {
+      if ((L.g || 7) !== lastG) { lastG = L.g || 7; var hd = el('h3', 'bg-grade', 'ថ្នាក់ទី ' + khNum(lastG)); box.appendChild(hd); }
       var lab = el('label', 'bg-lesson'), cb = el('input'); cb.type = 'checkbox'; cb.value = L.n; cb.checked = cfg.lessons.indexOf(L.n) >= 0; lab.classList.toggle('on', cb.checked);
       cb.addEventListener('change', function () { lab.classList.toggle('on', cb.checked); updateInfo(); });
-      lab.appendChild(cb); lab.appendChild(el('b', '', 'មេរៀនទី ' + khNum(L.n))); lab.appendChild(el('span', '', L.title)); box.appendChild(lab);
+      lab.appendChild(cb); lab.appendChild(el('b', '', 'មេរៀនទី ' + khNum(L.d || L.n))); lab.appendChild(el('span', '', L.title)); box.appendChild(lab);
     });
     updateInfo();
   }

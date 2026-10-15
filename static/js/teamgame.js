@@ -56,7 +56,7 @@
   };
 
   var G = null, hist = [], cards = [], audio = null, timerId = 0, openTileIdx = -1, pendingFile = -1;
-  var BANK = null, mode = 'lesson', selLessons = [1];                                  // lesson question bank (static/data/teamgame_g7.json)
+  var BANK = null, mode = 'lesson', selLessons = [1], curClass = 7;   // curClass: 7, 8 or 9 (lessons are numbered 1.., 101.., 201..)                                  // lesson question bank (static/data/teamgame_g7.json)
   var lastScores = null, lastTurn = -1, lastDone = -1, boardIn = false, flipping = false, flipBtn = null;   // animation bookkeeping
 
   /* ---------- helpers ---------- */
@@ -227,7 +227,7 @@
     var n = Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value;
     if (mode === 'lesson') {
       var pool = [];
-      ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: 'មេរៀនទី ' + L.n + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, f: q.f || '', a: q.a, s: q.s || '', h: q.h || '' }; })); });
+      ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: lessonName(L) + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, f: q.f || '', a: q.a, s: q.s || '', h: q.h || '' }; })); });
       if (!pool.length) { $('tg-lessonhint').textContent = 'សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
       var want = parseInt($('tg-qn').value, 10) || pool.length; pool = shuffle(pool).slice(0, want); face = 'num';
       tiles = pool.map(function (c) { return { k: 'q', n: c.n, img: '', q: c.q, o: c.o, ck: c.ck, f: c.f, a: c.a, s: c.s, h: c.h, p: pts, lq: 1 }; });
@@ -587,13 +587,21 @@
     document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.checked = r.value === mode; });
     $('tg-face').closest('label').hidden = mode === 'lesson';
   }
+  function lessonName(L) { return 'មេរៀនទី ' + khNum(L.d || L.n); }
+  function inClass(L) { return (L.g || 7) === curClass; }
+  function pickClass(c, keep) {                       // switch grade: show that grade's lessons, make sure one is ticked
+    curClass = c; $('tg-class').value = String(c);
+    var mine = ((BANK && BANK.lessons) || []).filter(inClass);
+    if (!keep || !mine.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) { if (mine.length) selLessons = [mine[0].n]; }
+    renderLessons(); saveCfg();
+  }
   function renderLessons() {
-    var box = $('tg-lessons'); box.innerHTML = ''; var ls = (BANK && BANK.lessons) || [];
+    var box = $('tg-lessons'); box.innerHTML = ''; var ls = ((BANK && BANK.lessons) || []).filter(inClass);
     if (!ls.length) box.appendChild(el('small', 'tg-hint', BANK === null ? 'កំពុងផ្ទុក…' : BANK.closed ? 'គ្រូបានបិទហ្គេមនេះជាបណ្តោះអាសន្ន។' : 'គ្រូមិនទាន់បើកមេរៀនណាមួយទៀត។'));
     ls.forEach(function (L) {
       var lab = el('label', 'tg-lesson'), cb = el('input'); cb.type = 'checkbox'; cb.checked = selLessons.indexOf(L.n) >= 0;
-      cb.addEventListener('change', function () { selLessons = ls.filter(function (x) { return x.n === L.n ? cb.checked : selLessons.indexOf(x.n) >= 0; }).map(function (x) { return x.n; }); lab.classList.toggle('on', cb.checked); saveCfg(); });
-      lab.classList.toggle('on', cb.checked); lab.appendChild(cb); lab.appendChild(el('b', '', 'មេរៀនទី ' + khNum(L.n))); lab.appendChild(el('span', '', L.title)); lab.appendChild(el('small', '', khNum(L.qs.length) + ' សំណួរ')); box.appendChild(lab);
+      cb.addEventListener('change', function () { var all = (BANK && BANK.lessons) || []; selLessons = all.filter(function (x) { return x.n === L.n ? cb.checked : selLessons.indexOf(x.n) >= 0; }).map(function (x) { return x.n; }); lab.classList.toggle('on', cb.checked); saveCfg(); });
+      lab.classList.toggle('on', cb.checked); lab.appendChild(cb); lab.appendChild(el('b', '', lessonName(L))); lab.appendChild(el('span', '', L.title)); lab.appendChild(el('small', '', khNum(L.qs.length) + ' សំណួរ')); box.appendChild(lab);
     });
   }
   // The question bank lives on exam.khmermath.org (teachers fix questions and choose the lessons there); the copy shipped with this
@@ -615,13 +623,15 @@
       fetch(BANK_URLS[i++], { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
         if (!d || !d.lessons) throw 0;
         BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : [];
+        var first = d.lessons.filter(function (L) { return selLessons.indexOf(L.n) >= 0; })[0]; curClass = first ? (first.g || 7) : 7; $('tg-class').value = String(curClass);
         renderLessons(); applyGames(d.games);
       }).catch(next);
     })();
   }
   document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { mode = r.value; applyMode(); saveCfg(); } }); });
   $('tg-qn').addEventListener('change', saveCfg);
-  $('tg-alllessons').addEventListener('click', function () { if (BANK) selLessons = BANK.lessons.map(function (L) { return L.n; }); renderLessons(); saveCfg(); });
+  $('tg-alllessons').addEventListener('click', function () { if (BANK) selLessons = BANK.lessons.filter(inClass).map(function (L) { return L.n; }); renderLessons(); saveCfg(); });
+  $('tg-class').addEventListener('change', function () { pickClass(parseInt($('tg-class').value, 10) || 7, false); });
   loadCfg(); (function () { var m = /[?&]style=(wheel|cards|boat)/.exec(location.search); if (m) $('tg-style').value = m[1]; })(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
   if (/[?&]import=1/.test(location.search) && !$('tg-import').hidden) $('tg-import').click();   // opened from the teacher dashboard: teams come from the class
 })();

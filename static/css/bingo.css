@@ -106,3 +106,6 @@ html.bg-noscroll, html.bg-noscroll body { overflow: hidden; }
 .bgx-sum { font-weight: 700; color: var(--ink-2); }
 .bgx-bar .btn-primary { font-size: 20px; padding: 12px 34px; border-radius: 99px; }
 @media (max-width: 640px) { .bgx-sizes { gap: 8px; } .bgx-mini { width: 40px; height: 40px; } .bgx-sizes b { font-size: 18px; } .bgx-bar { gap: 6px; padding: 8px 12px; } .bgx-sum { width: 100%; text-align: center; font-size: 13px; } .bgx-bar .bg-row { width: 100%; flex-wrap: nowrap; } .bgx-bar .btn { flex: 1; } }
+
+.bg-grade { grid-column: 1 / -1; margin: 10px 0 0; font-size: 17px; color: var(--teal-strong); border-bottom: 2px solid var(--teal-soft); padding-bottom: 4px; }
+.bg-lessons .bg-grade:first-child { margin-top: 0; }
