@@ -9,6 +9,7 @@
 import { json, err } from './http.js';
 import { requireTeacher } from './session.js';
 import { ensureColumns } from './schema.js';
+import { TRIAL, PLANS } from './plans.js';
 
 function nowStamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
 
@@ -63,6 +64,24 @@ export async function testAccess(env, t, testId) {
   return accessTo(env, t, 'test', x.id, x.owner_id, x.is_sample);
 }
 
+// A free trial account may do real work on what it owns, up to the TRIAL limits (see plans.js).
+export function limitResponse(what, max) {
+  return json({
+    error: `គណនីសាកល្បងឥតគិតថ្លៃអនុញ្ញាតត្រឹម ${max} ${what}។ ដើម្បីបន្ត សូមដោះសោគណនី (១ ឆ្នាំ $${PLANS.year.price} · ១ ខែ $${PLANS.month.price})។`,
+    locked: true, limit: true, status: 'trial',
+  }, 402);
+}
+
+export async function trialUsage(env, t) {
+  const one = async (sql) => (await env.DB.prepare(sql).bind(t.id).first()).n;
+  return {
+    classes: await one('SELECT COUNT(*) AS n FROM classes WHERE owner_id = ?1'),
+    students: await one('SELECT COUNT(*) AS n FROM students s JOIN classes c ON c.id = s.class_id WHERE c.owner_id = ?1'),
+    tests: await one('SELECT COUNT(*) AS n FROM tests WHERE owner_id = ?1 AND is_bank = 0'),
+    sessions: await one('SELECT COUNT(*) AS n FROM test_sessions s JOIN classes c ON c.id = s.class_id WHERE c.owner_id = ?1'),
+  };
+}
+
 function denied(acc) {
   if (acc == null) return err('រកមិនឃើញ ឬអ្នកមិនមានសិទ្ធិចូលមើលទេ។', 404);
   if (acc === 'sample') return err('នេះជាតេស្តគំរូ — មើលបានតែប៉ុណ្ណោះ។', 403);
@@ -72,14 +91,15 @@ function denied(acc) {
 // Returns a ready Response when the request must be refused, else null.
 function gate(t, acc, level) {
   if (acc == null || RANK[acc] < NEED[level]) return denied(acc);
-  if (NEED[level] > 1 && !t.licensed) return lockedResponse(t);
+  if (NEED[level] > 1 && !t.licensed && !(t.status === 'trial' && acc === 'owner')) return lockedResponse(t);
   return null;
 }
 
-export async function needLicense(req, env) {
+// trialOk: free-trial accounts may use this feature (the endpoint enforces the TRIAL limits itself).
+export async function needLicense(req, env, trialOk = false) {
   const t = await authTeacher(req, env);
   if (!t) return { resp: err('Not logged in.', 401) };
-  if (!t.licensed) return { resp: lockedResponse(t) };
+  if (!t.licensed && !(trialOk && t.status === 'trial')) return { resp: lockedResponse(t) };
   return { t };
 }
 

@@ -2,10 +2,11 @@ import { json, err } from '../lib/http.js';
 import { hashSecretValue, verifySecretValue } from '../lib/crypto.js';
 import { createSessionCookie, clearSessionCookie } from '../lib/session.js';
 import { ensureColumns } from '../lib/schema.js';
-import { authTeacher } from '../lib/access.js';
+import { authTeacher, trialUsage } from '../lib/access.js';
 import { allow, clientIp } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
 import { notifyOwner } from '../lib/notify.js';
+import { TRIAL, PLANS } from '../lib/plans.js';
 
 export async function setupStatus(req, env) {
   const { results } = await env.DB.prepare('SELECT COUNT(*) AS n FROM teachers').all();
@@ -55,6 +56,8 @@ export async function me(req, env) {
   return json({
     id: t.id, username: t.username, role: t.role, display_name: t.display_name,
     status: t.status, licensed: t.licensed, license_until: t.license_until, contact_text: contact ? contact.value : '',
+    contact: (await env.DB.prepare('SELECT contact FROM teachers WHERE id = ?1').bind(t.id).first() || {}).contact || '',
+    plans: PLANS, trial_limits: TRIAL, usage: t.status === 'trial' ? await trialUsage(env, t) : null,
   });
 }
 
@@ -64,7 +67,6 @@ export async function signup(req, env) {
   await ensureColumns(env);
   const open = await env.DB.prepare("SELECT value FROM settings WHERE key = 'signup_open'").first();
   if (open && open.value === '0') return err('ការចុះឈ្មោះបានបិទជាបណ្តោះអាសន្ន។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។', 403);
-  if (!(await allow(env, `signup:${clientIp(req)}`, 5, 3600))) return err('ចុះឈ្មោះច្រើនដងពេក។ សូមសាកល្បងម្តងទៀតនៅពេលក្រោយ។', 429);
   const { username, display_name, password, contact } = await req.json();
   const uname = String(username || '').trim();
   const name = String(display_name || '').trim().slice(0, 60);
@@ -73,6 +75,8 @@ export async function signup(req, env) {
   if (!password || password.length < 6) return err('ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។', 400);
   const taken = await env.DB.prepare('SELECT 1 FROM teachers WHERE username = ?1').bind(uname).first();
   if (taken) return err('ឈ្មោះអ្នកប្រើនេះមានគេប្រើរួចហើយ។ សូមជ្រើសរើសឈ្មោះផ្សេង។', 409);
+  // Only real sign-ups count (mistyped forms must not lock people out); a school shares one IP, so allow plenty.
+  if (!(await allow(env, `signup:${clientIp(req)}`, 30, 3600))) return err('ចុះឈ្មោះច្រើនពេកពីបណ្តាញនេះ។ សូមសាកល្បងម្តងទៀតក្រោយ ១ ម៉ោង ឬទាក់ទងម្ចាស់ប្រព័ន្ធ។', 429);
   const hash = await hashSecretValue(password, uname, env.SESSION_SECRET);
   await env.DB.prepare(
     "INSERT INTO teachers (username, password_hash, role, display_name, plan, contact, created_at, last_login) VALUES (?1, ?2, 'teacher', ?3, 'trial', ?4, datetime('now'), datetime('now'))",
@@ -97,4 +101,19 @@ export async function changePassword(req, env) {
   const newHash = await hashSecretValue(new_password, teacher.username, env.SESSION_SECRET);
   await env.DB.prepare('UPDATE teachers SET password_hash = ?1 WHERE id = ?2').bind(newHash, t.id).run();
   return json({ ok: true });
+}
+
+// A trial teacher asks the owner for an unlock code; the owner is told on Telegram and replies with a code after payment.
+export async function requestUnlock(req, env) {
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
+  const { plan, contact, note } = await req.json();
+  const p = PLANS[plan];
+  if (!p) return err('សូមជ្រើសរើសគម្រោង។', 400);
+  if (!(await allow(env, `unlockreq:${t.id}`, 5, 86400))) return err('អ្នកបានស្នើសុំច្រើនដងហើយ។ ម្ចាស់ប្រព័ន្ធនឹងទាក់ទងអ្នកឆាប់ៗ។', 429);
+  const how = String(contact || '').trim().slice(0, 80);
+  if (how) await env.DB.prepare('UPDATE teachers SET contact = ?1 WHERE id = ?2').bind(how, t.id).run();
+  await audit(env, t, 'license.request', `${plan} $${p.price}`);
+  const sent = await notifyOwner(env, `💳 ស្នើសុំដោះសោ៖ ${t.display_name} (@${t.username}) · គម្រោង ${p.label} $${p.price}${how ? ` · ${how}` : ''}${note ? ` · ${String(note).slice(0, 120)}` : ''}`);
+  return json({ ok: true, notified: sent });
 }

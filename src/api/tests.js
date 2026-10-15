@@ -5,7 +5,8 @@ import { rescoreSession } from '../lib/scoring.js';
 import { audit } from '../lib/audit.js';
 import { syncKeyToFrozen, frozenCountForTest } from '../lib/frozen.js';
 import { checkTemplate, sampleFor, hasVariants } from '../lib/variants.js';
-import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessibleTests, lockedResponse } from '../lib/access.js';
+import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessibleTests, lockedResponse, limitResponse, trialUsage } from '../lib/access.js';
+import { TRIAL } from '../lib/plans.js';
 
 export async function listTests(req, env) {
   const t = await authTeacher(req, env);
@@ -26,8 +27,9 @@ export async function listTests(req, env) {
 }
 
 export async function createTest(req, env) {
-  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   const t = g0.t;
+  if (t.status === 'trial' && (await trialUsage(env, t)).tests >= TRIAL.tests) return limitResponse('តេស្ត', TRIAL.tests);
   const { title } = await req.json();
   if (!title) return err('title is required.', 400);
   const { meta } = await env.DB.prepare('INSERT INTO tests (title, owner_id) VALUES (?1, ?2)').bind(title, t.id).run();
@@ -73,9 +75,14 @@ export async function updateTest(req, env, params) {
   return json({ ok: true });
 }
 
+const questionRoom = async (env, t, testId) => (t.status === 'trial'
+  ? TRIAL.questions - (await env.DB.prepare('SELECT COUNT(*) AS n FROM test_questions WHERE test_id = ?1').bind(testId).first()).n
+  : Infinity);
+
 export async function addQuestion(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
+  if ((await questionRoom(env, g.t, params.testId)) <= 0) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
   const { stem_text, options, correct_index, points, image_key, kind, solution_text, topic, level, shuffle, grade, lesson, params: tplParams } = await req.json();
   const isWriting = kind === 'writing';
   if (!stem_text) return err('stem_text is required.', 400);
@@ -297,7 +304,7 @@ async function bankRows(env, t, { dedupe = true } = {}) {
 }
 
 export async function listBank(req, env) {
-  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   await ensureColumns(env);
   const rows = await bankRows(env, g0.t);
   return json({ questions: rows.map((q) => ({ ...q, options: JSON.parse(q.options_json), options_json: undefined })) });
@@ -319,14 +326,17 @@ export async function copyQuestions(req, env, params) {
   const bank = await bankRows(env, g.t, { dedupe: false });
   const byId = new Map(bank.map((q) => [q.id, q]));
   let n = 0;
-  for (const id of question_ids.slice(0, 200)) { const q = byId.get(Number(id)); if (q) { await copyInto(env, Number(params.testId), q); n++; } }
+  const room = await questionRoom(env, g.t, params.testId);
+  if (room <= 0) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
+  for (const id of question_ids.slice(0, Math.min(200, room))) { const q = byId.get(Number(id)); if (q) { await copyInto(env, Number(params.testId), q); n++; } }
   return json({ ok: true, copied: n });
 }
 
 // build a new draft test by picking random questions per difficulty
 export async function generateTest(req, env) {
-  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   await ensureColumns(env);
+  if (g0.t.status === 'trial' && (await trialUsage(env, g0.t)).tests >= TRIAL.tests) return limitResponse('តេស្ត', TRIAL.tests);
   const { title, counts, topics, kind, grade, lessons } = await req.json();
   if (!title || !String(title).trim()) return err('title is required.', 400);
   const bank = (await bankRows(env, g0.t)).filter((q) => (kind === 'writing' ? q.kind === 'writing' : kind === 'all' ? true : q.kind !== 'writing'))
@@ -341,6 +351,7 @@ export async function generateTest(req, env) {
     picked.push(...pool.slice(0, want));
     if (pool.length < want) shortage[lvl] = want - pool.length;
   }
+  if (g0.t.status === 'trial') picked.splice(TRIAL.questions);
   if (!picked.length) return err('មិនមានសំណួរគ្រប់គ្រាន់ក្នុងធនាគារតាមលក្ខខណ្ឌនេះទេ។', 400);
   const { meta } = await env.DB.prepare('INSERT INTO tests (title, owner_id) VALUES (?1, ?2)').bind(String(title).trim(), g0.t.id).run();
   for (const q of picked) await copyInto(env, meta.last_row_id, q);
@@ -355,6 +366,9 @@ export async function bulkAdd(req, env, params) {
   const { questions } = await req.json();
   if (!Array.isArray(questions) || !questions.length) return err('questions[] is required.', 400);
   if (questions.length > 200) return err('នាំចូលបានអតិបរមា ២០០ សំណួរម្តង។', 400);
+  const room = await questionRoom(env, g.t, params.testId);
+  if (room <= 0) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
+  if (questions.length > room) questions.length = room;
   const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(params.testId).all();
   let order = results[0].m;
   const stmts = []; const bad = [];
@@ -381,7 +395,7 @@ const cleanLesson = (l) => (l ? String(l).trim().slice(0, 120) || null : null);
 
 // lesson list per grade (defaults + this teacher's own additions)
 export async function getCurriculum(req, env) {
-  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   const { lessons } = await loadCurriculum(env, g0.t.id);
   return json({ grades: GRADES, lessons });
 }

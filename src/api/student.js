@@ -191,7 +191,7 @@ export async function start(req, env) {
       `SELECT t.role, t.plan, t.license_until FROM classes c JOIN teachers t ON t.id = c.owner_id WHERE c.id = ?1`,
     ).bind(ses.class_id).first();
     const stamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
-    if (owner && owner.role !== 'owner' && !(owner.plan === 'full' && (!owner.license_until || owner.license_until > stamp))) {
+    if (owner && owner.role !== 'owner' && !(owner.plan === 'trial' || (owner.plan === 'full' && (!owner.license_until || owner.license_until > stamp)))) {
       return err('ការប្រឡងនេះត្រូវបានផ្អាកជាបណ្តោះអាសន្ន។ សូមប្រាប់លោកគ្រូអ្នកគ្រូ។', 403);
     }
   }

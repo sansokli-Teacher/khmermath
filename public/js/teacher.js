@@ -70,17 +70,59 @@ function codeBox(onDone) {
   return h('div', { class: 'code-row' }, [input, h('button', { onclick: go }, '🔓 ដោះសោ')]);
 }
 
+function planButton(key) {
+  const P = ME.plans[key];
+  const btn = h('button', { class: `plan-btn${key === 'year' ? ' best' : ''}`, onclick: () => requestDialog(key) }, [
+    h('div', { class: 'plan-name' }, `${P.label}${P.note ? ' 🔥' : ''}`),
+    h('div', { class: 'plan-price' }, [P.was ? h('s', { class: 'plan-was' }, `$${P.was}`) : null, ` $${P.price}`]),
+    P.note ? h('div', { class: 'plan-note' }, P.note) : h('div', { class: 'plan-note' }, 'សាកល្បងមួយខែ'),
+  ]);
+  return btn;
+}
+
+// The teacher picks a plan, leaves a contact, and the owner is told on Telegram; payment + the unlock code go through the owner.
+function requestDialog(key) {
+  const P = ME.plans[key];
+  const contact = h('input', { type: 'text', placeholder: 'លេខទូរស័ព្ទ ឬ Telegram', value: ME.contact || '', style: 'width:100%;' });
+  const msg = h('div', { class: 'muted', style: 'margin-top:10px;' });
+  const send = h('button', { onclick: async () => {
+    if (!contact.value.trim()) { contact.focus(); return; }
+    send.disabled = true;
+    try {
+      await api('/api/license/request', { method: 'POST', body: { plan: key, contact: contact.value } });
+      msg.textContent = '✅ បានផ្ញើសំណើហើយ។ ម្ចាស់ប្រព័ន្ធនឹងទាក់ទងអ្នក ហើយផ្ញើកូដដោះសោឱ្យបន្ទាប់ពីទទួលការបង់ប្រាក់។ អ្នកអាចបញ្ចូលកូដនៅក្នុងប្រអប់ខាងក្រោម។';
+    } catch (e) { msg.textContent = e.message; send.disabled = false; }
+  } }, 'ស្នើសុំដោះសោ');
+  const box = h('div', { class: 'card', style: 'max-width:440px;margin:12px auto;text-align:left;' }, [
+    h('h3', { style: 'margin-top:0;' }, `គម្រោង ${P.label} — $${P.price}${P.was ? ` (ធម្មតា $${P.was})` : ''}`),
+    h('p', { class: 'muted' }, 'បញ្ចូលរបៀបទាក់ទងអ្នក រួចចុច «ស្នើសុំដោះសោ»។ ម្ចាស់ប្រព័ន្ធនឹងប្រាប់របៀបបង់ប្រាក់ ហើយផ្ញើកូដមកអ្នក។'),
+    ME.contact_text ? h('p', {}, `📞 ឬទាក់ទងផ្ទាល់៖ ${ME.contact_text}`) : null,
+    contact, h('div', { class: 'row', style: 'gap:8px;margin-top:10px;' }, [send, h('button', { class: 'ghost', onclick: () => box.remove() }, 'បិទ')]), msg,
+  ]);
+  document.querySelector('.license-bar').after(box);
+  contact.focus();
+}
+
 function licenseBar() {
   const trial = ME.status === 'trial';
   const until = ME.license_until ? fmtDateTime(ME.license_until) : '';
-  const bar = h('div', { class: `license-bar ${trial ? 'trial' : 'expired'}` }, [
+  const L = ME.trial_limits || {}, U = ME.usage || {};
+  const chip = (label, used, max) => h('span', { class: `chip${used >= max ? ' chip-warn' : ''}` }, `${label} ${used}/${max}`);
+  const bar = h('div', { class: `license-bar ${trial ? 'trial' : 'expired'}`, style: 'flex-direction:column;align-items:stretch;gap:10px;' }, [
     h('div', { class: 'license-text' }, [
-      h('b', {}, trial ? '🔒 គណនីសាកល្បង' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
+      h('b', {}, trial ? '🆓 គណនីសាកល្បងឥតគិតថ្លៃ' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
       h('span', {}, trial
-        ? ' — អ្នកអាចមើលតេស្តគំរូតែប៉ុណ្ណោះ។ បញ្ចូលកូដដើម្បីដោះសោមុខងារទាំងអស់។'
-        : ` (${until}) — មើលទិន្នន័យបាន តែមិនអាចកែប្រែ ឬរៀបចំប្រឡងថ្មីបានទេ។`),
-      ME.contact_text ? h('div', { class: 'license-contact' }, `📞 ស្នើសុំកូដ៖ ${ME.contact_text}`) : null,
+        ? ' — សាកល្បងមុខងារសំខាន់ៗបានពិតប្រាកដ តែមានកំណត់ ៖'
+        : ` (${until}) — មើលទិន្នន័យបាន តែមិនអាចកែប្រែ ឬរៀបចំប្រឡងថ្មីបានទេ។ សូមបន្តដើម្បីប្រើបានពេញលេញ។`),
     ]),
+    trial ? h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;' }, [
+      chip('ថ្នាក់', U.classes || 0, L.classes), chip('សិស្ស', U.students || 0, L.students), chip('តេស្ត', U.tests || 0, L.tests),
+      chip('ប្រឡង', U.sessions || 0, L.sessions), h('span', { class: 'chip' }, `សំណួរ ≤ ${L.questions} ក្នុងមួយតេស្ត`),
+    ]) : null,
+    h('div', { class: 'license-text' }, [h('b', {}, '🔓 ចង់បានមុខងារពេញលេញ (ថ្នាក់ សិស្ស តេស្ត ប្រឡង ពិន្ទុប្រចាំឆ្នាំ មិនកំណត់)?')]),
+    h('div', { class: 'plan-row' }, [planButton('month'), planButton('year')]),
+    ME.contact_text ? h('div', { class: 'license-contact' }, `📞 ${ME.contact_text}`) : null,
+    h('div', { class: 'muted' }, 'មានកូដរួចហើយ?'),
     codeBox(),
   ]);
   return bar;
@@ -175,7 +217,7 @@ async function downloadBackup() {
 function initDashboard() {
   const bk = document.getElementById('backup-btn');
   if (bk) bk.onclick = () => downloadBackup().catch((e) => Exam.notify(e.message));
-  if (ME.status === 'trial') for (const k of Object.keys(LOCK_INFO)) render[k] = () => showLocked(k);
+  if (ME.status === 'trial') for (const k of ['year', 'overview']) render[k] = () => showLocked(k);   // everything else works, within the free-trial limits
   if (ME.status === 'trial' || ME.status === 'expired') {
     const dash = document.getElementById('view-dashboard');
     dash.insertBefore(licenseBar(), dash.querySelector('.tabs'));
@@ -189,7 +231,7 @@ function initDashboard() {
     document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== `tab-${btn.dataset.tab}`; });
     render[btn.dataset.tab]();
   }));
-  if (ME.status === 'trial') document.querySelector('[data-tab=tests]').click(); else render.classes();
+  render.classes();
 }
 
 const render = {};
@@ -673,9 +715,9 @@ render.tests = async function () {
   function testCard(t) {
     const mcq = t.question_count - (t.writing_count || 0);
     const shared = t.owner_id !== ME.id;
-    const canEdit = (t.my_role === 'owner' || t.my_role === 'editor') && ME.licensed;
+    const canEdit = (t.my_role === 'owner' || t.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
     const isSample = t.my_role === 'sample' || t.is_sample;
-    const licensed = ME.licensed;
+    const licensed = ME.licensed, mayWork = ME.licensed || ME.status === 'trial';
 
     const menuBtn = h('button', { class: 'icon-btn', title: 'ជម្រើសផ្សេងទៀត', 'aria-label': 'ជម្រើសផ្សេងទៀត' }, '⋯');
     menuBtn.addEventListener('click', (e) => {
@@ -694,8 +736,8 @@ render.tests = async function () {
           await api(`/api/tests/${t.id}/sample`, { method: 'POST', body: { is_sample: !t.is_sample } }); render.tests();
         }) : null,
         t.my_role === 'owner' && ME.licensed ? item('👥 ចែករំលែកជាមួយគ្រូ', () => openShareDialog('test', t.id, t.title)) : null,
-        t.my_role === 'owner' && ME.licensed ? h('div', { class: 'menu-sep' }) : null,
-        t.my_role === 'owner' && ME.licensed ? item('🗑 លុបតេស្ត', async () => {
+        t.my_role === 'owner' && (ME.licensed || ME.status === 'trial') ? h('div', { class: 'menu-sep' }) : null,
+        t.my_role === 'owner' && (ME.licensed || ME.status === 'trial') ? item('🗑 លុបតេស្ត', async () => {
           if (!confirm(`តើពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
           try { await api(`/api/tests/${t.id}`, { method: 'DELETE' }); render.tests(); } catch (er) { Exam.notify(er.message); }
         }, 'danger') : null,
@@ -720,7 +762,7 @@ render.tests = async function () {
       ]),
       h('div', { class: 'test-actions' }, [
         h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : isSample ? '⭐ មើលតេស្តគំរូ' : t.my_role === 'owner' ? '🔍 មើល' : '🔍 ពិនិត្យ'),
-        licensed && !isSample || ME.role === 'owner' ? h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង') : null,
+        mayWork && !isSample || ME.role === 'owner' ? h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង') : null,
         h('button', { class: 'icon-btn', title: 'មើលជាសិស្ស', 'aria-label': 'មើលជាសិស្ស', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁'),
         h('button', { class: 'icon-btn', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
         h('div', { class: 'menu-wrap' }, [menuBtn]),
@@ -753,7 +795,7 @@ render.tests = async function () {
     }
     listBox.innerHTML = '';
     if (!list.length) {
-      listBox.append(h('div', { class: 'empty-card' }, [h('div', { class: 'empty-icon' }, '🗂'), h('div', { class: 'muted' }, tests.length ? 'រកមិនឃើញតេស្តដែលត្រូវនឹងការស្វែងរកទេ។' : ME.licensed ? 'មិនទាន់មានតេស្តទេ — ចុច «＋ តេស្តថ្មី» ដើម្បីចាប់ផ្តើម។' : 'មិនទាន់មានតេស្តគំរូទេ។ សូមរង់ចាំម្ចាស់ប្រព័ន្ធបន្ថែម។')]));
+      listBox.append(h('div', { class: 'empty-card' }, [h('div', { class: 'empty-icon' }, '🗂'), h('div', { class: 'muted' }, tests.length ? 'រកមិនឃើញតេស្តដែលត្រូវនឹងការស្វែងរកទេ។' : (ME.licensed || ME.status === 'trial') ? 'មិនទាន់មានតេស្តទេ — ចុច «＋ តេស្តថ្មី» ដើម្បីចាប់ផ្តើម។' : 'មិនទាន់មានតេស្តគំរូទេ។ សូមរង់ចាំម្ចាស់ប្រព័ន្ធបន្ថែម។')]));
     }
     list.forEach((t) => listBox.append(testCard(t)));
   }
@@ -771,7 +813,7 @@ render.tests = async function () {
   container.append(h('div', { class: 'card tests-head' }, [
     h('div', { class: 'tests-head-top' }, [
       h('div', {}, [h('h2', { style: 'margin:0;' }, 'តេស្ត'), h('div', { class: 'muted' }, `សរុប ${tests.length} តេស្ត`)]),
-      h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { if (!ME.licensed) return Exam.notify('🔒 ត្រូវដោះសោគណនីសិន ទើបអាចបង្កើតតេស្តបាន។ សូមបញ្ចូលកូដពីម្ចាស់ប្រព័ន្ធ។'); newRow.hidden = false; newTitle.focus(); } }, ME.licensed ? '＋ តេស្តថ្មី' : '🔒 តេស្តថ្មី')]),
+      h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { if (!ME.licensed && ME.status !== 'trial') return Exam.notify('🔒 ត្រូវដោះសោគណនីសិន ទើបអាចបង្កើតតេស្តបាន។ សូមបញ្ចូលកូដពីម្ចាស់ប្រព័ន្ធ។'); newRow.hidden = false; newTitle.focus(); } }, (ME.licensed || ME.status === 'trial') ? '＋ តេស្តថ្មី' : '🔒 តេស្តថ្មី')]),
     ]),
     newRow,
     filterBar,
@@ -792,7 +834,7 @@ async function drawTestBuilder(container) {
   const test = await api(`/api/tests/${selectedTestId}`);
   container.innerHTML = '';
 
-  const mayRename = (test.my_role === 'owner' || test.my_role === 'editor') && ME.licensed;
+  const mayRename = (test.my_role === 'owner' || test.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
   const rename = async () => {
     const inp = h('input', { type: 'text', value: test.title, maxlength: '150' });
     const back = h('div', { class: 'modal-back', onclick: (e) => { if (e.target === back) back.remove(); } });
@@ -847,7 +889,7 @@ async function drawTestBuilder(container) {
     ])),
   ]);
 
-  const canEdit = (test.my_role === 'owner' || test.my_role === 'editor') && ME.licensed;
+  const canEdit = (test.my_role === 'owner' || test.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
   if (!canEdit) {
     container.append(h('div', { class: 'notice' }, test.my_role === 'sample' ? '⭐ នេះជាតេស្តគំរូ — សាកល្បងជាសិស្ស និងមើលទម្រង់វិញ្ញាសាបាន (ចម្លើយត្រឹមត្រូវត្រូវបានលាក់)។' : '👁 អ្នកជាអ្នកពិនិត្យ — អាចមើល សាកល្បងជាសិស្ស និងសរសេរចំណាំលើសំណួរបាន តែមិនអាចកែប្រែបានទេ។'), header, list);
     if (test.my_role === 'sample') list.querySelectorAll('.notes').forEach((n) => n.parentElement.remove());

@@ -1,5 +1,6 @@
 import { json, err } from '../lib/http.js';
-import { authTeacher, needClass, needStudent, needLicense, classAccess, accessibleClasses } from '../lib/access.js';
+import { authTeacher, needClass, needStudent, needLicense, classAccess, accessibleClasses, limitResponse, trialUsage } from '../lib/access.js';
+import { TRIAL } from '../lib/plans.js';
 
 export async function listClasses(req, env) {
   const t = await authTeacher(req, env);
@@ -15,8 +16,9 @@ export async function listClasses(req, env) {
 }
 
 export async function createClass(req, env) {
-  const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   const t = g0.t;
+  if (t.status === 'trial' && (await trialUsage(env, t)).classes >= TRIAL.classes) return limitResponse('ថ្នាក់', TRIAL.classes);
   const { name, grade } = await req.json();
   if (!name || !grade) return err('name and grade are required.', 400);
   const { meta } = await env.DB.prepare('INSERT INTO classes (name, grade, owner_id) VALUES (?1, ?2, ?3)').bind(name, grade, t.id).run();
@@ -57,6 +59,7 @@ export async function addStudent(req, env, params) {
   const g = await needClass(req, env, params.classId, 'edit'); if (g.resp) return g.resp;
   const { id, surname, first_name, gender, dob } = await req.json();
   if (!id || !surname || !first_name) return err('id, surname, and first_name are required.', 400);
+  if (g.t.status === 'trial' && (await trialUsage(env, g.t)).students >= TRIAL.students) return limitResponse('សិស្ស', TRIAL.students);
   const student = await makeStudent(env, g.t, params.classId, id, surname, first_name, gender, dob);
   if (student.conflict) return err(`អត្តលេខ ${student.conflict} មានក្នុងថ្នាក់របស់គ្រូផ្សេងរួចហើយ។`, 409);
   return json(student);
@@ -95,7 +98,13 @@ export async function importRoster(req, env, params) {
   if (!Array.isArray(students) || students.length === 0) return err('students[] is required.', 400);
   const created = [];
   const skipped = [];
+  let room = Infinity;
+  if (g.t.status === 'trial') {
+    room = TRIAL.students - (await trialUsage(env, g.t)).students;
+    if (room <= 0) return limitResponse('សិស្ស', TRIAL.students);
+  }
   for (const s of students) {
+    if (created.length >= room) { skipped.push(`${s.id} (លើសកំណត់សាកល្បង)`); continue; }
     if (!s.id || !s.surname || !s.first_name) continue;
     const r = await makeStudent(env, g.t, params.classId, s.id, s.surname, s.first_name, s.gender, s.dob);
     if (r.conflict) skipped.push(r.conflict); else created.push(r);

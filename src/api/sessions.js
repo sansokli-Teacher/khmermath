@@ -1,6 +1,7 @@
 import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
-import { authTeacher, needClass, needSession, needTest, accessibleClasses } from '../lib/access.js';
+import { authTeacher, needClass, needSession, needTest, accessibleClasses, limitResponse, trialUsage } from '../lib/access.js';
+import { TRIAL } from '../lib/plans.js';
 import { sessionWindow } from '../lib/time.js';
 import { loadMcq, scoreMcq, rescoreSession, submitStudent } from '../lib/scoring.js';
 import { audit } from '../lib/audit.js';
@@ -85,6 +86,7 @@ export async function createSession(req, env) {
   const g1 = await needClass(req, env, body.class_id, 'edit'); if (g1.resp) return g1.resp;
   const g2 = await needTest(req, env, body.test_id, 'view'); if (g2.resp) return g2.resp;
   await ensureColumns(env);
+  if (g1.t.status === 'trial' && (await trialUsage(env, g1.t)).sessions >= TRIAL.sessions) return limitResponse('ការប្រឡង', TRIAL.sessions);
   const { test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin } = body;
   const mode = ['log', 'warn', 'lock'].includes(body.integrity_mode) ? body.integrity_mode : 'warn';
   const maxV = Math.max(1, Math.min(20, Number(body.max_violations) || 3));
