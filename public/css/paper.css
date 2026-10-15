@@ -11,7 +11,7 @@
 .tb-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); }
 .tb-check input { width: 18px; height: 18px; }
 
-.sheet { position: relative; width: 210mm; min-height: 297mm; margin: 18px auto; padding: 7mm 15mm 10mm; background: #fff; box-shadow: 0 6px 30px rgba(0, 0, 0, .15); font-family: 'Times New Roman', 'PaperBody', 'Kantumruy Pro', serif; font-size: 13pt; line-height: 1.7; color: #000; }
+.sheet { position: relative; width: 210mm; min-height: 297mm; margin: 18px auto; padding: 7mm 15mm 7mm; background: #fff; box-shadow: 0 6px 30px rgba(0, 0, 0, .15); font-family: 'Times New Roman', 'PaperBody', 'Kantumruy Pro', serif; font-size: 13pt; line-height: 1.7; color: #000; }
 
 /* ---- header / footer (exam paper) ---- */
 .ph { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1.2pt solid #000; padding-bottom: 3mm; margin-bottom: 4mm; min-height: 17mm; }
@@ -78,9 +78,9 @@
   .paper-body { background: #fff; }
   .sheet { box-shadow: none; margin: 0; width: auto; min-height: 0; padding: 0; }
   .sheet:not(.answers-doc) > .ph { position: fixed; top: 7mm; left: 15mm; right: 15mm; background: #fff; margin: 0; }
-  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 10mm; left: 15mm; right: 15mm; background: #fff; }
+  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 7mm; left: 15mm; right: 15mm; background: #fff; }
   .flow > thead > tr > td { height: 32mm; }
-  .flow > tfoot > tr > td { height: 23mm; }
+  .flow > tfoot > tr > td { height: 20mm; }
   .flow > tbody > tr > td { padding: 0 15mm; }
   .answers-doc { page: answers; padding: 0; }
   @page answers { size: A4; margin: 20mm 15mm 15mm; @bottom-center { content: counter(page, khmer); font-family: 'PaperBody', serif; font-size: 11pt; } }
