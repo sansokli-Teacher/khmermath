@@ -77,10 +77,10 @@
   @page { size: A4; margin: 0; }
   .paper-body { background: #fff; }
   .sheet { box-shadow: none; margin: 0; width: auto; min-height: 0; padding: 0; }
-  .sheet:not(.answers-doc) > .ph { position: fixed; top: 20mm; left: 15mm; right: 15mm; background: #fff; margin: 0; }
-  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 15mm; left: 15mm; right: 15mm; background: #fff; }
-  .flow > thead > tr > td { height: 45mm; }
-  .flow > tfoot > tr > td { height: 28mm; }
+  .sheet:not(.answers-doc) > .ph { position: fixed; top: 10mm; left: 15mm; right: 15mm; background: #fff; margin: 0; }
+  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 10mm; left: 15mm; right: 15mm; background: #fff; }
+  .flow > thead > tr > td { height: 35mm; }
+  .flow > tfoot > tr > td { height: 23mm; }
   .flow > tbody > tr > td { padding: 0 15mm; }
   .answers-doc { page: answers; padding: 0; }
   @page answers { size: A4; margin: 20mm 15mm 15mm; @bottom-center { content: counter(page, khmer); font-family: 'PaperBody', serif; font-size: 11pt; } }
@@ -168,9 +168,9 @@
 
 @media print {
   .pt-doc { page: pretest; }
-  .pt-doc > .pt-ph { position: fixed; top: 20mm; left: 0; right: 0; background: #fff; margin: 0; }
+  .pt-doc > .pt-ph { position: fixed; top: 10mm; left: 0; right: 0; background: #fff; margin: 0; }
   .pt-doc > .pt-pf-screen { display: none; }
-  .pt-doc .flow > thead > tr > td { height: 39mm; }
+  .pt-doc .flow > thead > tr > td { height: 29mm; }
   .pt-doc .flow > tfoot > tr > td { height: 0; }
   .pt-doc .flow > tbody > tr > td { padding: 0; }
   .ptkey-doc { page: ptkey; padding: 0; }
