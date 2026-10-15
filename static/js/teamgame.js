@@ -502,18 +502,30 @@
   }
   function renderLessons() {
     var box = $('tg-lessons'); box.innerHTML = ''; var ls = (BANK && BANK.lessons) || [];
-    if (!ls.length) box.appendChild(el('small', 'tg-hint', BANK === null ? 'កំពុងផ្ទុក…' : 'មិនទាន់មានសំណួរ។'));
+    if (!ls.length) box.appendChild(el('small', 'tg-hint', BANK === null ? 'កំពុងផ្ទុក…' : BANK.closed ? 'គ្រូបានបិទហ្គេមនេះជាបណ្តោះអាសន្ន។' : 'គ្រូមិនទាន់បើកមេរៀនណាមួយទៀត។'));
     ls.forEach(function (L) {
       var lab = el('label', 'tg-lesson'), cb = el('input'); cb.type = 'checkbox'; cb.checked = selLessons.indexOf(L.n) >= 0;
       cb.addEventListener('change', function () { selLessons = ls.filter(function (x) { return x.n === L.n ? cb.checked : selLessons.indexOf(x.n) >= 0; }).map(function (x) { return x.n; }); lab.classList.toggle('on', cb.checked); saveCfg(); });
       lab.classList.toggle('on', cb.checked); lab.appendChild(cb); lab.appendChild(el('b', '', 'មេរៀនទី ' + khNum(L.n))); lab.appendChild(el('span', '', L.title)); lab.appendChild(el('small', '', khNum(L.qs.length) + ' សំណួរ')); box.appendChild(lab);
     });
   }
+  // The question bank lives on exam.khmermath.org (teachers fix questions and choose the lessons there); the copy shipped with this
+  // page is the fallback when that is unreachable.
+  var BANK_URLS = window.TG_URLS || ['https://exam.khmermath.org/api/game/bank', '../static/data/teamgame_g7.json'];
   function loadBank() {
-    fetch('../static/data/teamgame_g7.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) { BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : []; renderLessons(); }).catch(function () { BANK = { lessons: [] }; renderLessons(); });
+    var i = 0;
+    (function next() {
+      if (i >= BANK_URLS.length) { BANK = { lessons: [] }; renderLessons(); return; }
+      fetch(BANK_URLS[i++], { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+        if (!d || !d.lessons) throw 0;
+        BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : [];
+        renderLessons();
+      }).catch(next);
+    })();
   }
   document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { mode = r.value; applyMode(); saveCfg(); } }); });
   $('tg-qn').addEventListener('change', saveCfg);
   $('tg-alllessons').addEventListener('click', function () { if (BANK) selLessons = BANK.lessons.map(function (L) { return L.n; }); renderLessons(); saveCfg(); });
   loadCfg(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
+  if (/[?&]import=1/.test(location.search) && !$('tg-import').hidden) $('tg-import').click();   // opened from the teacher dashboard: teams come from the class
 })();
