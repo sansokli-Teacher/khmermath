@@ -70,8 +70,9 @@ function lvHost(code) {
   const top = h('div', { style: 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 18px;background:#0b1620' });
   const info = h('b', { style: 'font-size:18px' });
   const close = h('button', { class: 'secondary btn-sm', type: 'button' }, '✕ បិទទំព័រនេះ (ហ្គេមនៅតែដំណើរការ)');
-  top.appendChild(info); top.appendChild(close);
-  const main = h('div', { style: 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:18px;text-align:center' });
+  const slot = h('span', { style: 'display:flex;gap:8px;margin-left:auto' });
+  top.appendChild(info); top.appendChild(slot); top.appendChild(close);
+  const main = h('div', { style: 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;padding:18px;text-align:center' });
   ov.appendChild(top); ov.appendChild(main); document.body.appendChild(ov);
   let alive = true, st = null, busy = false, lastKey = '', t0 = 0;
   let iv = 0;
@@ -81,7 +82,15 @@ function lvHost(code) {
   lvKickFn = (pid) => api(`/api/live/host/${code}/action`, { method: 'POST', body: { a: 'kick', pid } }).then(() => poll()).catch((e) => Exam.notify(e.message));
   const btn = (label, fn, extra = '') => h('button', { type: 'button', style: `font-size:22px;padding:14px 34px;border-radius:16px;${extra}`, onclick: fn }, label);
 
+  function topButtons() {
+    slot.innerHTML = '';
+    const mk = (label, bg, fn) => slot.appendChild(h('button', { type: 'button', style: `background:${bg};color:#fff;border:0;border-radius:10px;padding:7px 16px;font-weight:800;font-size:15px;cursor:pointer`, onclick: fn }, label));
+    if (st.phase === 'lobby') { mk('▶ ចាប់ផ្តើមហ្គេម', '#2f9e44', () => act('start')); mk('■ បិទបន្ទប់', '#c92a2a', () => { if (confirm('បិទបន្ទប់នេះ?')) act('end'); }); }
+    else if (st.mode === 'solo' && st.phase !== 'end') mk('■ បញ្ចប់ហ្គេម', '#c92a2a', () => { if (confirm('បញ្ចប់ហ្គេមសម្រាប់សិស្សទាំងអស់?')) act('end'); });
+    else if (st.phase !== 'end') mk('■ បញ្ចប់ហ្គេម', '#c92a2a', () => { if (confirm('បញ្ចប់ហ្គេមឥឡូវនេះ?')) act('end'); });
+  }
   function drawSolo() {
+    topButtons();
     info.textContent = `បន្ទប់ ${st.code} · បែបសុខសាន្ត · ${lvKh(st.players)} នាក់ · ចប់ ${lvKh(st.finished)}`;
     main.dataset.q = ''; main.innerHTML = '';
     if (st.phase === 'end') { st.board = st.board; return drawEnd(); }
@@ -97,6 +106,7 @@ function lvHost(code) {
     row.appendChild(left); row.appendChild(board); main.appendChild(row);
   }
   function draw() {
+    topButtons();
     if (st.mode === 'solo' && st.phase !== 'lobby') return drawSolo();
     const key = [st.phase, st.qi, st.players, st.answered, st.phase === 'lobby' ? st.plist.map((p) => p.pid + p.avatar).join(',') : ''].join('|');
     info.textContent = `បន្ទប់ ${st.code} · ${st.mode === 'solo' ? 'បែបសុខសាន្ត · ' : ''}${lvKh(st.players)} នាក់` + (st.qi >= 0 && st.phase !== 'lobby' && st.phase !== 'end' ? ` · សំណួរ ${lvKh(st.qi + 1)}/${lvKh(st.total)}` : '');
