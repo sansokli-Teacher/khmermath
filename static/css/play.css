@@ -126,3 +126,10 @@
 @media (max-width: 960px) { .pl-hero-grid, .pl-feat { grid-template-columns: 1fr; } .pl-grid { grid-template-columns: repeat(2, 1fr); } .pl-hero-art { order: -1; max-width: 520px; } }
 @media (max-width: 620px) { .pl-grid, .pl-steps-list { grid-template-columns: 1fr; } .pl-hero-art img { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pl-card, .pl-go i { transition: none; } }
+
+/* compact title strip for the game pages, so the game itself is on screen straight away */
+.page-hero.page-hero-sm { padding: 14px 0 12px; }
+.page-hero-sm .crumbs { margin: 0 0 4px; }
+.page-hero-sm h1 { font-size: clamp(24px, 3.4vw, 32px); margin: 0 0 2px; }
+.page-hero-sm .lead { font-size: 15px; margin: 0; max-width: 60em; }
+@media (max-width: 760px) { .page-hero-sm .lead { display: none; } }
