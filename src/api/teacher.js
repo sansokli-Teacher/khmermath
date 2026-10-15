@@ -6,7 +6,7 @@ import { authTeacher, trialUsage } from '../lib/access.js';
 import { allow, clientIp } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
 import { notifyOwner } from '../lib/notify.js';
-import { TRIAL, PLANS } from '../lib/plans.js';
+import { TRIAL, PLANS, OWNER_TELEGRAM } from '../lib/plans.js';
 
 export async function setupStatus(req, env) {
   const { results } = await env.DB.prepare('SELECT COUNT(*) AS n FROM teachers').all();
@@ -57,6 +57,7 @@ export async function me(req, env) {
     id: t.id, username: t.username, role: t.role, display_name: t.display_name,
     status: t.status, licensed: t.licensed, license_until: t.license_until, contact_text: contact ? contact.value : '',
     contact: (await env.DB.prepare('SELECT contact FROM teachers WHERE id = ?1').bind(t.id).first() || {}).contact || '',
+    telegram: OWNER_TELEGRAM, pending_requests: t.role === 'owner' ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM unlock_requests WHERE status = 'pending'").first()).n : 0,
     plans: PLANS, trial_limits: TRIAL, usage: t.status === 'trial' ? await trialUsage(env, t) : null,
   });
 }
@@ -113,6 +114,9 @@ export async function requestUnlock(req, env) {
   if (!(await allow(env, `unlockreq:${t.id}`, 5, 86400))) return err('អ្នកបានស្នើសុំច្រើនដងហើយ។ ម្ចាស់ប្រព័ន្ធនឹងទាក់ទងអ្នកឆាប់ៗ។', 429);
   const how = String(contact || '').trim().slice(0, 80);
   if (how) await env.DB.prepare('UPDATE teachers SET contact = ?1 WHERE id = ?2').bind(how, t.id).run();
+  await ensureColumns(env);
+  await env.DB.prepare("DELETE FROM unlock_requests WHERE teacher_id = ?1 AND status = 'pending'").bind(t.id).run();
+  await env.DB.prepare('INSERT INTO unlock_requests (teacher_id, plan, contact, note) VALUES (?1, ?2, ?3, ?4)').bind(t.id, plan, how, String(note || '').slice(0, 200)).run();
   await audit(env, t, 'license.request', `${plan} $${p.price}`);
   const sent = await notifyOwner(env, `💳 ស្នើសុំដោះសោ៖ ${t.display_name} (@${t.username}) · គម្រោង ${p.label} $${p.price}${how ? ` · ${how}` : ''}${note ? ` · ${String(note).slice(0, 120)}` : ''}`);
   return json({ ok: true, notified: sent });

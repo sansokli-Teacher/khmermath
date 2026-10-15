@@ -27,6 +27,8 @@ render.teachers = async function () {
   const container = document.getElementById('tab-teachers');
   container.innerHTML = '';
   const { teachers, invites } = await api('/api/admin/teachers');
+  const reqData = await api('/api/admin/unlock-requests').catch(() => ({ requests: [], pending: 0 }));
+  container.append(requestsCard(reqData, () => render.teachers()));
 
   const note = h('input', { type: 'text', placeholder: 'ឈ្មោះគ្រូ ឬកំណត់សម្គាល់ (មិនចាំបាច់) ឧ. គ្រូ សុភា ថ្នាក់ទី ៩', style: 'flex:1;min-width:220px;' });
   const inviteMonths = monthsSelect('ការប្រើប្រាស់ពេញលេញ', true);
@@ -392,4 +394,35 @@ async function auditCard() {
     h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('h2', { style: 'margin:0;' }, `🧾 កំណត់ហេតុសកម្មភាព (${log.length})`), h('button', { class: 'secondary btn-sm', onclick: () => { body.hidden = !body.hidden; } }, 'បង្ហាញ/លាក់')]),
     body,
   ]);
+}
+
+// ---------- unlock requests (owner) ----------
+function requestsCard(data, reload) {
+  const PLAN = { month: ['១ ខែ', '$2.99', 1], year: ['១ ឆ្នាំ', '$15', 12] };
+  const pending = data.requests.filter((r) => r.status === 'pending');
+  const card = h('div', { class: 'card req-card' }, [
+    h('h2', {}, ['🔔 សំណើសុំដោះសោ ', pending.length ? h('span', { class: 'req-badge inline' }, pending.length) : h('span', { class: 'muted' }, '(គ្មានសំណើថ្មី)')]),
+  ]);
+  if (!data.requests.length) { card.append(h('p', { class: 'muted' }, 'នៅពេលគ្រូសាកល្បងចុច «ស្នើសុំដោះសោ» ឈ្មោះគាត់នឹងបង្ហាញទីនេះ ជាមួយសញ្ញាក្រហម។')); return card; }
+  for (const r of data.requests.slice(0, 20)) {
+    const pl = PLAN[r.plan] || [r.plan, '', 1];
+    const isPending = r.status === 'pending';
+    const tg = /^@?[A-Za-z0-9_]{4,}$/.test(r.contact || '') ? h('a', { href: `https://t.me/${r.contact.replace('@', '')}`, target: '_blank', rel: 'noopener' }, `💬 ${r.contact}`) : (r.contact || '—');
+    card.append(h('div', { class: `list-item req-row${isPending ? ' is-new' : ''}` }, [
+      h('div', {}, [
+        h('b', {}, r.name), ` (@${r.username}) `,
+        h('span', { class: `badge ${isPending ? 'warn' : 'upcoming'}` }, isPending ? 'រង់ចាំ' : r.status === 'done' ? 'ដោះសោរួច' : 'ច្រានចោល'),
+        h('div', { class: 'muted' }, ['គម្រោង ', h('b', {}, `${pl[0]} ${pl[1]}`), ' · ទាក់ទង៖ ', tg, ` · ${fmtDateTime(r.created_at)}`]),
+      ]),
+      isPending ? h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { onclick: async () => {
+          if (!confirm(`ដោះសោ ${r.name} ${pl[0]}? (សូមប្រាកដថាបានទទួលប្រាក់ ${pl[1]} ហើយ)`)) return;
+          await api(`/api/admin/teachers/${r.teacher_id}/license`, { method: 'POST', body: { action: 'grant', months: pl[2] } });
+          if (window.refreshRequestBadge) window.refreshRequestBadge(); reload();
+        } }, `✅ ដោះសោ ${pl[0]}`),
+        h('button', { class: 'ghost', onclick: async () => { await api(`/api/admin/unlock-requests/${r.id}/dismiss`, { method: 'POST' }); if (window.refreshRequestBadge) window.refreshRequestBadge(); reload(); } }, 'ច្រានចោល'),
+      ]) : null,
+    ]));
+  }
+  return card;
 }

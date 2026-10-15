@@ -70,62 +70,78 @@ function codeBox(onDone) {
   return h('div', { class: 'code-row' }, [input, h('button', { onclick: go }, '🔓 ដោះសោ')]);
 }
 
-function planButton(key) {
-  const P = ME.plans[key];
-  const btn = h('button', { class: `plan-btn${key === 'year' ? ' best' : ''}`, onclick: () => requestDialog(key) }, [
-    h('div', { class: 'plan-name' }, `${P.label}${P.note ? ' 🔥' : ''}`),
-    h('div', { class: 'plan-price' }, [P.was ? h('s', { class: 'plan-was' }, `$${P.was}`) : null, ` $${P.price}`]),
-    P.note ? h('div', { class: 'plan-note' }, P.note) : h('div', { class: 'plan-note' }, 'សាកល្បងមួយខែ'),
-  ]);
-  return btn;
-}
-
 // The teacher picks a plan, leaves a contact, and the owner is told on Telegram; payment + the unlock code go through the owner.
+const tgLink = () => h('a', { href: `https://t.me/${ME.telegram}`, target: '_blank', rel: 'noopener', class: 'tg-link' }, `💬 Telegram @${ME.telegram}`);
+
 function requestDialog(key) {
   const P = ME.plans[key];
-  const contact = h('input', { type: 'text', placeholder: 'លេខទូរស័ព្ទ ឬ Telegram', value: ME.contact || '', style: 'width:100%;' });
+  document.querySelectorAll('.up-dialog').forEach((d) => d.remove());
+  const contact = h('input', { type: 'text', placeholder: 'លេខទូរស័ព្ទ ឬ Telegram របស់អ្នក', value: ME.contact || '', style: 'width:100%;' });
   const msg = h('div', { class: 'muted', style: 'margin-top:10px;' });
   const send = h('button', { onclick: async () => {
     if (!contact.value.trim()) { contact.focus(); return; }
     send.disabled = true;
     try {
       await api('/api/license/request', { method: 'POST', body: { plan: key, contact: contact.value } });
-      msg.textContent = '✅ បានផ្ញើសំណើហើយ។ ម្ចាស់ប្រព័ន្ធនឹងទាក់ទងអ្នក ហើយផ្ញើកូដដោះសោឱ្យបន្ទាប់ពីទទួលការបង់ប្រាក់។ អ្នកអាចបញ្ចូលកូដនៅក្នុងប្រអប់ខាងក្រោម។';
+      msg.textContent = '✅ បានផ្ញើសំណើហើយ! ម្ចាស់ប្រព័ន្ធ (@' + ME.telegram + ') នឹងឃើញសំណើរបស់អ្នកភ្លាមៗ ហើយទាក់ទងអ្នក ប្រាប់របៀបបង់ប្រាក់ ហើយផ្ញើកូដដោះសោឱ្យ។ បន្ទាប់មកបញ្ចូលកូដក្នុងប្រអប់ខាងក្រោម។';
     } catch (e) { msg.textContent = e.message; send.disabled = false; }
-  } }, 'ស្នើសុំដោះសោ');
-  const box = h('div', { class: 'card', style: 'max-width:440px;margin:12px auto;text-align:left;' }, [
-    h('h3', { style: 'margin-top:0;' }, `គម្រោង ${P.label} — $${P.price}${P.was ? ` (ធម្មតា $${P.was})` : ''}`),
-    h('p', { class: 'muted' }, 'បញ្ចូលរបៀបទាក់ទងអ្នក រួចចុច «ស្នើសុំដោះសោ»។ ម្ចាស់ប្រព័ន្ធនឹងប្រាប់របៀបបង់ប្រាក់ ហើយផ្ញើកូដមកអ្នក។'),
-    ME.contact_text ? h('p', {}, `📞 ឬទាក់ទងផ្ទាល់៖ ${ME.contact_text}`) : null,
+  } }, '🔓 ស្នើសុំដោះសោ');
+  const box = h('div', { class: 'up-dialog' }, [
+    h('h3', { style: 'margin:0 0 6px;' }, `គម្រោង ${P.label} — $${P.price}${P.was ? ` (ធម្មតា $${P.was})` : ''}`),
+    h('p', { class: 'muted', style: 'margin:0 0 10px;' }, 'បញ្ចូលរបៀបទាក់ទងអ្នក រួចចុច «ស្នើសុំដោះសោ»។ ម្ចាស់ប្រព័ន្ធនឹងប្រាប់របៀបបង់ប្រាក់ ហើយផ្ញើកូដមកអ្នក។'),
+    h('p', { style: 'margin:0 0 10px;' }, ['ឬទាក់ទងផ្ទាល់៖ ', tgLink(), ME.contact_text ? ` · ${ME.contact_text}` : '']),
     contact, h('div', { class: 'row', style: 'gap:8px;margin-top:10px;' }, [send, h('button', { class: 'ghost', onclick: () => box.remove() }, 'បិទ')]), msg,
   ]);
-  document.querySelector('.license-bar').after(box);
+  document.querySelector('.up-plans').after(box);
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   contact.focus();
+}
+
+function pricingCards(trial) {
+  const M = ME.plans.month, Y = ME.plans.year, L = ME.trial_limits || {};
+  const card = (cls, inner) => h('div', { class: `pc ${cls}` }, inner);
+  const li = (t, no) => h('li', { class: no ? 'no' : '' }, t);
+  const row = [];
+  row.push(card('', [
+    h('div', { class: 'name' }, `${M.label}`),
+    h('div', { class: 'price' }, [`$${M.price}`]),
+    h('div', { class: 'per' }, 'សាកល្បងមួយខែ'),
+    h('ul', {}, [li('ថ្នាក់ សិស្ស តេស្ត ប្រឡង មិនកំណត់'), li('ហ្គេមសំណួរផ្ទាល់ពេញលេញ'), li('ពិន្ទុប្រចាំឆ្នាំ & របាយការណ៍'), li('ចែករំលែកតេស្តជាមួយគ្រូ')]),
+    h('button', { class: 'btn-pc', onclick: () => requestDialog('month') }, 'ជ្រើស ១ ខែ'),
+  ]));
+  row.push(card('best', [
+    h('div', { class: 'ribbon' }, `🔥 សន្សំ ${Math.round((1 - Y.price / Y.was) * 100)}% · ពេញនិយមបំផុត`),
+    h('div', { class: 'name' }, `${Y.label}`),
+    h('div', { class: 'price' }, [h('span', { class: 'was' }, `$${Y.was}`), `$${Y.price}`]),
+    h('div', { class: 'per' }, `ស្មើត្រឹម $${(Y.price / 12).toFixed(2)} ក្នុងមួយខែ`),
+    h('ul', {}, [li('មុខងារទាំងអស់ គ្មានកំណត់'), li('ប្រើពេញមួយឆ្នាំសិក្សា'), li('ការគាំទ្រពីម្ចាស់ប្រព័ន្ធ'), li(`តម្លៃបញ្ចុះពិសេស — សន្សំ $${Y.was - Y.price}`)]),
+    h('button', { class: 'btn-pc', onclick: () => requestDialog('year') }, '⭐ ជ្រើស ១ ឆ្នាំ — $' + Y.price),
+  ]));
+  return h('div', { class: 'pc-row' }, row);
 }
 
 function licenseBar() {
   const trial = ME.status === 'trial';
   const until = ME.license_until ? fmtDateTime(ME.license_until) : '';
   const L = ME.trial_limits || {}, U = ME.usage || {};
-  const chip = (label, used, max) => h('span', { class: `chip${used >= max ? ' chip-warn' : ''}` }, `${label} ${used}/${max}`);
-  const bar = h('div', { class: `license-bar ${trial ? 'trial' : 'expired'}`, style: 'flex-direction:column;align-items:stretch;gap:10px;' }, [
-    h('div', { class: 'license-text' }, [
-      h('b', {}, trial ? '🆓 គណនីសាកល្បងឥតគិតថ្លៃ' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
-      h('span', {}, trial
-        ? ' — សាកល្បងមុខងារសំខាន់ៗបានពិតប្រាកដ តែមានកំណត់ ៖'
-        : ` (${until}) — មើលទិន្នន័យបាន តែមិនអាចកែប្រែ ឬរៀបចំប្រឡងថ្មីបានទេ។ សូមបន្តដើម្បីប្រើបានពេញលេញ។`),
+  const use = (label, used, max) => h('span', { class: `u${used >= max ? ' full' : ''}` }, `${label} ${used}/${max}${used >= max ? ' · ពេញ' : ''}`);
+  return h('div', { class: 'up-card' }, [
+    h('div', { class: 'up-top' }, [
+      h('div', {}, [
+        h('h2', {}, trial ? '🚀 បើកមុខងារពេញលេញ — គ្មានកំណត់' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
+        h('p', {}, trial ? 'អ្នកកំពុងសាកល្បងឥតគិតថ្លៃ។ ឡើងគម្រោងដើម្បីបង្រៀន និងប្រឡងគ្រប់ថ្នាក់របស់អ្នក។' : `(${until}) — អ្នកមើលទិន្នន័យបាន តែមិនអាចកែប្រែបានទេ។ បន្តដើម្បីប្រើបានពេញលេញ។`),
+      ]),
+      h('span', { class: 'up-tag' }, trial ? '🆓 គណនីសាកល្បង' : '🔒 ផុតកំណត់'),
     ]),
-    trial ? h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;' }, [
-      chip('ថ្នាក់', U.classes || 0, L.classes), chip('សិស្ស', U.students || 0, L.students), chip('តេស្ត', U.tests || 0, L.tests),
-      chip('ប្រឡង', U.sessions || 0, L.sessions), h('span', { class: 'chip' }, `សំណួរ ≤ ${L.questions} ក្នុងមួយតេស្ត`),
-    ]) : null,
-    h('div', { class: 'license-text' }, [h('b', {}, '🔓 ចង់បានមុខងារពេញលេញ (ថ្នាក់ សិស្ស តេស្ត ប្រឡង ពិន្ទុប្រចាំឆ្នាំ មិនកំណត់)?')]),
-    h('div', { class: 'plan-row' }, [planButton('month'), planButton('year')]),
-    ME.contact_text ? h('div', { class: 'license-contact' }, `📞 ${ME.contact_text}`) : null,
-    h('div', { class: 'muted' }, 'មានកូដរួចហើយ?'),
-    codeBox(),
+    trial ? h('div', { class: 'up-use' }, [use('ថ្នាក់', U.classes || 0, L.classes), use('សិស្ស', U.students || 0, L.students), use('តេស្ត', U.tests || 0, L.tests), use('ប្រឡង', U.sessions || 0, L.sessions), h('span', { class: 'u' }, `សំណួរ ≤ ${L.questions}/តេស្ត`)]) : null,
+    h('div', { class: 'up-perks' }, ['ថ្នាក់ និងសិស្សមិនកំណត់', 'តេស្ត និងសំណួរមិនកំណត់', 'ប្រឡងគ្រប់ថ្នាក់ ដាក់ពិន្ទុស្វ័យប្រវត្តិ', 'ពិន្ទុប្រចាំឆ្នាំ ស្ថិតិ A–F', 'ហ្គេមសំណួរផ្ទាល់ពេញលេញ', 'ចែករំលែក និងចម្លងតេស្ត'].map((t) => h('div', {}, t))),
+    h('div', { class: 'up-plans' }, [pricingCards(trial)]),
+    h('div', { class: 'up-foot' }, [
+      h('div', {}, ['សួរ ឬបង់ប្រាក់៖ ', tgLink(), ME.contact_text ? ` · ${ME.contact_text}` : '']),
+      h('div', { style: 'margin-top:8px;' }, 'មានកូដដោះសោរួចហើយ?'),
+      codeBox(),
+    ]),
   ]);
-  return bar;
 }
 
 const LOCK_INFO = {
@@ -144,9 +160,11 @@ function showLocked(tab) {
     h('div', { class: 'lock-icon' }, '🔒'),
     h('h2', {}, title),
     h('p', { class: 'muted' }, desc),
-    h('p', {}, 'មុខងារនេះត្រូវការគណនីពេញលេញ។ សូមបញ្ចូលកូដដែលអ្នកទទួលបានពីម្ចាស់ប្រព័ន្ធ៖'),
+    h('p', {}, `🔓 មុខងារនេះសម្រាប់គណនីពេញលេញ — ១ ឆ្នាំត្រឹម $${ME.plans.year.price} (ធម្មតា $${ME.plans.year.was}) ឬ ១ ខែ $${ME.plans.month.price}។`),
+    h('button', { class: 'su-cta', style: 'max-width:320px;margin:0 auto 12px;display:block;', onclick: () => { document.querySelector('[data-tab=classes]').click(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, '⭐ មើលគម្រោង និងឡើងគម្រោង'),
+    h('p', {}, 'មានកូដដោះសោរួចហើយ? បញ្ចូលទីនេះ៖'),
     codeBox(),
-    ME.contact_text ? h('p', { class: 'muted', style: 'margin-top:12px;' }, `📞 ស្នើសុំកូដ៖ ${ME.contact_text}`) : null,
+    h('p', { class: 'muted', style: 'margin-top:12px;' }, ['ស្នើសុំកូដ៖ ', tgLink()]),
   ]));
 }
 
@@ -225,6 +243,7 @@ function initDashboard() {
   const badge = document.getElementById('teacher-username-badge');
   if (badge) badge.textContent = `${ME.display_name} · ${ME.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : ME.status === 'trial' ? 'សាកល្បង 🔒' : ME.status === 'expired' ? 'ផុតកំណត់ ⏰' : `គ្រូ${ME.license_until ? ` · ដល់ ${fmtDateTime(ME.license_until).split(',')[0]}` : ''}`}`;
   if (ME.role !== 'owner') { const tb = document.querySelector('[data-tab="teachers"]'); if (tb) tb.hidden = true; }
+  else startRequestBadge();
   const tabs = document.querySelectorAll('.tabs button');
   tabs.forEach((btn) => btn.addEventListener('click', () => {
     tabs.forEach((b) => b.classList.toggle('active', b === btn));
@@ -2083,3 +2102,22 @@ async function openQuestionEditor(q, test, container, onDone) {
   back.append(box);
   document.body.append(back);
 }
+
+// Owner: red counter on the "Teachers" tab (and the page title) while teachers are waiting to be unlocked.
+function setRequestBadge(n) {
+  const tb = document.querySelector('[data-tab="teachers"]'); if (!tb) return;
+  let b = tb.querySelector('.req-badge');
+  if (!n) { if (b) b.remove(); document.title = document.title.replace(/^\(\d+\) /, ''); return; }
+  if (!b) { b = h('span', { class: 'req-badge' }); tb.append(b); }
+  b.textContent = n;
+  document.title = `(${n}) ` + document.title.replace(/^\(\d+\) /, '');
+}
+let lastPending = null;
+async function pollRequests() {
+  try {
+    const d = await api('/api/admin/unlock-requests');
+    if (lastPending !== null && d.pending > lastPending) { try { new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAABErAAABAAgAZGF0YQAAAAA=').play(); } catch {} }
+    lastPending = d.pending; setRequestBadge(d.pending);
+  } catch {}
+}
+function startRequestBadge() { pollRequests(); setInterval(pollRequests, 45000); window.refreshRequestBadge = pollRequests; }

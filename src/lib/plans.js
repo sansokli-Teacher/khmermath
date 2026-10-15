@@ -7,3 +7,6 @@ export const PLANS = {
   month: { id: 'month', months: 1, price: 2.99, label: '១ ខែ' },
   year: { id: 'year', months: 12, price: 15, was: 30, label: '១ ឆ្នាំ', note: 'បញ្ចុះតម្លៃពិសេស' },
 };
+
+// Where a teacher reaches the owner to pay and receive an unlock code (shown in the app; the owner can still override the text in settings).
+export const OWNER_TELEGRAM = 'soklisan';

@@ -6,26 +6,70 @@
 <title>បង្កើតគណនីគ្រូ</title>
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/interface.css">
+<link rel="stylesheet" href="css/promo.css?v=3">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#285b55">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
-<div class="auth-screen">
-  <div class="auth-card" id="card" style="text-align:left;">
-    <div class="brand-mark" style="margin-left:auto;margin-right:auto;">∑</div>
-    <h1 style="text-align:center;">សាកល្បងឥតគិតថ្លៃ</h1>
-    <p class="muted" style="text-align:center;">បង្កើតគណនីក្នុង ៣០ វិនាទី — បង្កើតថ្នាក់ ១ សិស្ស ១០នាក់ តេស្ត ២ ហើយរៀបចំប្រឡងសាកល្បងបានភ្លាម។ ចង់បានមុខងារពេញលេញ ៖ <b>១ ខែ $2.99</b> ឬ <b>១ ឆ្នាំ <s>$30</s> $15</b>។</p>
+<div class="su-page">
+<div class="su-wrap">
+  <header class="su-head">
+    <span class="su-badge">🎁 សាកល្បងឥតគិតថ្លៃ · មិនចាំបាច់ប្រើកាតធនាគារ</span>
+    <h1>រៀបចំប្រឡងគណិតវិទ្យា <em>លឿន ងាយ</em> និងដាក់ពិន្ទុស្វ័យប្រវត្តិ</h1>
+    <p>បង្កើតតេស្ត ឱ្យសិស្សប្រឡងលើទូរស័ព្ទ ហើយទទួលលទ្ធផលភ្លាមៗ — ជាភាសាខ្មែរទាំងស្រុង បង្កើតដោយគ្រូគណិតវិទ្យា សម្រាប់គ្រូខ្មែរ។</p>
+  </header>
+
+  <section class="su-form" id="card">
+    <div class="brand-mark" style="margin:0 0 10px;">∑</div>
+    <h2>បង្កើតគណនី — ៣០ វិនាទី</h2>
+    <p class="su-sub">សាកល្បងបានភ្លាម៖ ថ្នាក់ ១ · សិស្ស ១០នាក់ · តេស្ត ២ · ប្រឡង ២។</p>
     <label for="f-name">ឈ្មោះរបស់អ្នក</label>
     <input type="text" id="f-name" placeholder="ឧ. គ្រូ សុភា" autocomplete="name">
     <label for="f-user">ឈ្មោះសម្រាប់ចូល <span class="muted">(ប្រើលេខទូរស័ព្ទក៏បាន)</span></label>
-    <input type="text" id="f-user" placeholder="ឧ. 012345678 ឬ sopha" autocomplete="username" autocapitalize="none" inputmode="text">
+    <input type="text" id="f-user" placeholder="ឧ. 012345678 ឬ sopha" autocomplete="username" autocapitalize="none">
     <label for="f-pass">ពាក្យសម្ងាត់ <span class="muted">(យ៉ាងតិច ៦ តួ)</span></label>
-    <div class="pw-wrap"><input type="password" id="f-pass" autocomplete="new-password" style="width:100%;padding-right:42px;"><button type="button" id="f-eye" aria-label="បង្ហាញពាក្យសម្ងាត់">👁</button></div>
-    <button id="f-go" class="btn-block" style="margin-top:16px;">បង្កើតគណនី — សាកល្បងឥតគិតថ្លៃ</button>
-    <a href="teacher.html" class="back-link" style="display:block;text-align:center;">មានគណនីរួចហើយ? ចូលប្រើ</a>
-  </div>
+    <div class="pw-wrap"><input type="password" id="f-pass" autocomplete="new-password" style="padding-right:42px;"><button type="button" id="f-eye" aria-label="បង្ហាញពាក្យសម្ងាត់">👁</button></div>
+    <button id="f-go" class="su-cta">🚀 ចាប់ផ្តើមសាកល្បងឥតគិតថ្លៃ</button>
+    <div class="su-trust"><span>🔒 ទិន្នន័យរក្សាទុកសុវត្ថិភាព</span><span>↩ ឡើងគម្រោងពេលណាក៏បាន</span></div>
+    <a href="teacher.html" class="back-link" style="display:block;text-align:center;margin-top:12px;">មានគណនីរួចហើយ? ចូលប្រើ</a>
+  </section>
+
+  <section class="su-feat" aria-label="មុខងារ">
+    <div class="su-f"><div class="ic">📱</div><div><b>ប្រឡងលើទូរស័ព្ទសិស្ស</b><span>ដាក់ពិន្ទុស្វ័យប្រវត្តិ ឃើញលទ្ធផលភ្លាមៗ</span></div></div>
+    <div class="su-f"><div class="ic">🛡</div><div><b>ការពារការលួចចម្លង</b><span>ចាក់សោអេក្រង់ពេលសិស្សចាកចេញពីតេស្ត</span></div></div>
+    <div class="su-f"><div class="ic">🎮</div><div><b>ហ្គេមសំណួរផ្ទាល់</b><span>ប្រកួតក្នុងថ្នាក់ជាមួយទូរស័ព្ទ ដូច Kahoot ជាភាសាខ្មែរ</span></div></div>
+    <div class="su-f"><div class="ic">🗂</div><div><b>ធនាគារសំណួរ</b><span>បង្កើតតេស្តដោយចៃដន្យតាមមេរៀន និងកម្រិត</span></div></div>
+    <div class="su-f"><div class="ic">📊</div><div><b>របាយការណ៍ និងពិន្ទុប្រចាំឆ្នាំ</b><span>ស្ថិតិ A–F វិភាគសំណួរ សៀវភៅតាមដានសិស្ស</span></div></div>
+    <div class="su-f"><div class="ic">📥</div><div><b>នាំចូលសិស្សពី Excel</b><span>បញ្ចូលបញ្ជីសិស្សទាំងថ្នាក់ក្នុងមួយនាទី</span></div></div>
+  </section>
+
+  <section class="su-price">
+    <h2>ជ្រើសគម្រោងដែលសមនឹងអ្នក</h2>
+    <div class="pc-row">
+      <div class="pc">
+        <div class="name">សាកល្បង</div>
+        <div class="price">$0</div><div class="per">ឥតគិតថ្លៃ</div>
+        <ul><li>១ ថ្នាក់ · ១០ សិស្ស</li><li>២ តេស្ត · ១០ សំណួរ/តេស្ត</li><li>ប្រឡងសិស្សពិតប្រាកដ ២ដង</li><li class="no">ពិន្ទុប្រចាំឆ្នាំ & ការចែករំលែក</li></ul>
+        <a class="btn-pc" href="#card" onclick="document.getElementById('f-name').focus()">ចាប់ផ្តើមឥតគិតថ្លៃ</a>
+      </div>
+      <div class="pc">
+        <div class="name">១ ខែ</div>
+        <div class="price">$2.99</div><div class="per">សាកល្បងមួយខែ</div>
+        <ul><li>ថ្នាក់ សិស្ស តេស្ត ប្រឡង មិនកំណត់</li><li>ហ្គេមសំណួរផ្ទាល់ពេញលេញ</li><li>ពិន្ទុប្រចាំឆ្នាំ & របាយការណ៍</li><li>ចែករំលែកតេស្តជាមួយគ្រូ</li></ul>
+        <a class="btn-pc" href="#card" onclick="document.getElementById('f-name').focus()">បង្កើតគណនី រួចជ្រើស</a>
+      </div>
+      <div class="pc best">
+        <div class="ribbon">🔥 សន្សំ ៥០% · ពេញនិយមបំផុត</div>
+        <div class="name">១ ឆ្នាំ</div>
+        <div class="price"><span class="was">$30</span>$15</div><div class="per">ស្មើត្រឹម $1.25 ក្នុងមួយខែ</div>
+        <ul><li>មុខងារទាំងអស់ គ្មានកំណត់</li><li>ប្រើពេញមួយឆ្នាំសិក្សា</li><li>ការគាំទ្រពីម្ចាស់ប្រព័ន្ធ</li><li>តម្លៃបញ្ចុះពិសេស — មិនទាន់ដល់ $30</li></ul>
+        <a class="btn-pc" href="#card" onclick="document.getElementById('f-name').focus()">ចាប់ផ្តើម ហើយឡើង ១ ឆ្នាំ</a>
+      </div>
+    </div>
+  </section>
+</div>
 </div>
 <script src="js/common.js"></script>
 <script>

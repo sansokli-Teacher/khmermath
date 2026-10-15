@@ -244,6 +244,7 @@ export async function redeemCode(req, env) {
   const claim = await env.DB.prepare("UPDATE license_codes SET used_by = ?1, used_at = datetime('now') WHERE id = ?2 AND used_at IS NULL").bind(t.id, row.id).run();
   if (!claim.meta.rows_written) return err('កូដនេះត្រូវបានប្រើរួចហើយ។', 409);
   await env.DB.prepare("UPDATE teachers SET plan = 'full', license_until = ?1 WHERE id = ?2").bind(until, t.id).run();
+  await env.DB.prepare("UPDATE unlock_requests SET status = 'done', handled_at = datetime('now') WHERE teacher_id = ?1 AND status = 'pending'").bind(t.id).run();
   await audit(env, t, 'license.redeem', `${c} → ${until || 'lifetime'}`);
   await notifyOwner(env, `🔓 ${t.display_name} (@${t.username}) បានដោះសោដោយកូដ ${c} — ${until ? `ដល់ ${until.slice(0, 10)}` : 'ពេញមួយជីវិត'}`);
   return json({ ok: true, license_until: until });
@@ -263,7 +264,26 @@ export async function setLicense(req, env, params) {
     const until = m > 0 ? addMonths(target.plan === 'full' ? target.license_until : null, m) : null;
     await env.DB.prepare("UPDATE teachers SET plan = 'full', license_until = ?1 WHERE id = ?2").bind(until, target.id).run();
   }
+  if (action !== 'lock') await env.DB.prepare("UPDATE unlock_requests SET status = 'done', handled_at = datetime('now') WHERE teacher_id = ?1 AND status = 'pending'").bind(target.id).run();
   await audit(env, g.t, 'license.set', `teacher ${target.id}: ${action === 'lock' ? 'lock' : `${months || 'lifetime'} months`}`);
+  return json({ ok: true });
+}
+
+// Owner: who asked to be unlocked (pending first). The red counter in the app is the length of the pending list.
+export async function listUnlockRequests(req, env) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const { results } = await env.DB.prepare(
+    `SELECT r.id, r.plan, r.contact, r.note, r.status, r.created_at, t.id AS teacher_id, t.username, COALESCE(t.display_name, t.username) AS name
+     FROM unlock_requests r JOIN teachers t ON t.id = r.teacher_id
+     ORDER BY (r.status = 'pending') DESC, r.id DESC LIMIT 100`,
+  ).all();
+  return json({ requests: results, pending: results.filter((r) => r.status === 'pending').length });
+}
+
+export async function dismissUnlockRequest(req, env, params) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  await env.DB.prepare("UPDATE unlock_requests SET status = 'dismissed', handled_at = datetime('now') WHERE id = ?1").bind(params.id).run();
   return json({ ok: true });
 }
 

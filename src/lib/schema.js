@@ -100,6 +100,17 @@ export async function ensureColumns(env) {
       used_by INTEGER,
       used_at TEXT
     )`),
+    // "Please unlock me" requests from trial teachers: shown to the owner with a red counter.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS unlock_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_id INTEGER NOT NULL,
+      plan TEXT NOT NULL,
+      contact TEXT,
+      note TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',   -- pending | done | dismissed
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      handled_at TEXT
+    )`),
     // Simple fixed-window rate limiting (login, sign-up, codes, PIN guesses).
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS rate_limits (
       key TEXT PRIMARY KEY,
