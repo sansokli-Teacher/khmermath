@@ -20,15 +20,26 @@ render.teamgame = async function () {
 
   const intro = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'ហ្គេមក្រុមសម្រាប់ថ្នាក់រៀន'),
-    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ មេរៀនទី ១–២២ (ក្នុងមួយមេរៀនមាន ២០ សំណួរ មានរូបធរណីមាត្រ)។ មានពីរស្ទីលដែលប្រើសំណួរដូចគ្នា៖ «កាតបើក» (ជ្រើសប្រអប់លេខ) និង «កង់វិល» (បង្វិលកង់ជ្រើសសំណួរ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
+    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ មេរៀនទី ១–២២ (ក្នុងមួយមេរៀនមាន ២០ សំណួរ មានរូបធរណីមាត្រ)។ មានបីស្ទីលដែលប្រើសំណួរដូចគ្នា៖ «កាតបើក» (ជ្រើសប្រអប់លេខ) «កង់វិល» (បង្វិលកង់ជ្រើសសំណួរ) និង «ប្រណាំងទូកង» (ឆ្លើយត្រូវ ទូកទៅមុខ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
   ]);
   root.appendChild(intro);
 
+  const hubAfter = () => {
+    // the two other games, which do not need teams
+    root.appendChild(h('div', { class: 'card' }, [
+      h('h3', { style: 'margin-top:0' }, 'ហ្គេមផ្សេងទៀត (ប្រើសំណួរដូចគ្នា)'),
+      h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px' }, [
+        h('div', { style: 'border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff' }, [h('b', {}, '📱 សំណួរផ្ទាល់លើទូរស័ព្ទ'), h('p', { class: 'muted', style: 'margin:6px 0 10px' }, 'សិស្សទាំងអស់ឆ្លើយលើទូរស័ព្ទក្នុងពេលតែមួយ ឆ្លើយលឿនបានពិន្ទុច្រើន មានតារាងចំណាត់ថ្នាក់ផ្ទាល់។'), h('button', { type: 'button', onclick: () => document.querySelector('[data-tab="live"]').click() }, 'បើកបន្ទប់ →')]),
+        h('div', { style: 'border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff' }, [h('b', {}, '🎯 ប៊ីងហ្គោគណិតវិទ្យា'), h('p', { class: 'muted', style: 'margin:6px 0 10px' }, 'បោះពុម្ពកាតចម្លើយឱ្យសិស្សម្នាក់មួយសន្លឹក ហៅសំណួរម្តងមួយៗ សិស្សដោះស្រាយ រួចគូសចម្លើយលើកាត។ មិនត្រូវការទូរស័ព្ទ។'), h('a', { class: 'btn', href: 'bingo.html' }, 'បង្កើតកាត →')]),
+      ]),
+    ]));
+    };
   if (!classes.length) {
     root.appendChild(h('div', { class: 'card' }, [
       h('p', {}, 'មិនទាន់មានថ្នាក់ទេ។ អ្នកអាចលេងដោយបង្កើតក្រុមដោយខ្លួនឯង ឬបង្កើតថ្នាក់ និងបញ្ចូលសិស្សនៅក្នុង «ថ្នាក់ និងសិស្ស» ជាមុន។'),
       h('a', { class: 'btn', href: 'teamgame.html' }, '▶ លេងហ្គេមដោយមិនមានថ្នាក់'),
     ]));
+    hubAfter();
     return;
   }
   if (!classes.some((c) => c.id === tgClassId)) tgClassId = classes[0].id;
@@ -79,15 +90,17 @@ render.teamgame = async function () {
   };
   const play = h('button', { type: 'button' }, '▶ កាតបើក'); play.onclick = launch('cards');
   const spin = h('button', { type: 'button', style: 'background:#e8590c' }, '🎡 កង់វិល'); spin.onclick = launch('wheel');
+  const boat = h('button', { type: 'button', style: 'background:#1c7ed6' }, '🚣 ប្រណាំងទូកង'); boat.onclick = launch('boat');
 
   card.appendChild(h('div', { class: 'row', style: 'gap:12px;align-items:end;flex-wrap:wrap' }, [
     h('label', {}, ['ថ្នាក់', h('br'), sel]),
     h('label', {}, ['ចំនួនក្រុម', h('br'), num]),
     h('label', { style: 'display:flex;gap:6px;align-items:center' }, [absent, 'មិនរួមសិស្សអវត្តមាន']),
-    again, play, spin,
+    again, play, spin, boat,
     h('a', { class: 'btn secondary', href: 'teamgame.html', style: 'background:#fff;color:var(--brand);border:1px solid #bcd0f3' }, 'លេងដោយមិនមានថ្នាក់'),
   ]));
   card.appendChild(info);
   card.appendChild(preview);
+  hubAfter();
   await loadClass();
 };

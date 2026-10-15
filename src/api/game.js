@@ -21,28 +21,32 @@ async function ensureTable(env) {
 }
 export function _resetGameForTests() { tableReady = false; }
 
-async function loadBase(req, env) {
+export async function loadBase(req, env) {
   const r = await env.ASSETS.fetch(new Request(new URL('/data/teamgame_g7.json', req.url)));
   if (!r.ok) throw new Error('Question bank file is missing.');
   return r.json();
 }
-async function loadEdits(env) {
+export async function loadEdits(env) {
   await ensureTable(env);
   const { results } = await env.DB.prepare('SELECT lesson, idx, bq, data, off, updated_at FROM game_edits').all();
   const m = new Map();
   for (const r of results) m.set(`${r.lesson}:${r.idx}`, { bq: r.bq, data: JSON.parse(r.data), off: !!r.off, at: r.updated_at });
   return m;
 }
-async function loadCfg(env) {
+export async function loadCfg(env) {
   const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'game_config'").first();
   let c = {};
   try { c = row ? JSON.parse(row.value) : {}; } catch { c = {}; }
-  return { enabled: c.enabled !== false, lessons: Array.isArray(c.lessons) ? c.lessons : null };
+  const games = {};
+  for (const k of GAMES) games[k] = !(c.games && c.games[k] === false);
+  return { enabled: c.enabled !== false, lessons: Array.isArray(c.lessons) ? c.lessons : null, games };
 }
+// the game styles a teacher can release to students on khmermath.org (teachers always have them all here in the exam system)
+export const GAMES = ['cards', 'wheel', 'boat', 'live', 'bingo'];
 
 // khmermath.org plays the same bank, so it may read it from the browser
 const ORIGINS = ['https://khmermath.org', 'https://www.khmermath.org'];
-function cors(req) {
+export function cors(req) {
   const o = req.headers.get('Origin');
   return o && ORIGINS.includes(o) ? { 'Access-Control-Allow-Origin': o, Vary: 'Origin' } : { Vary: 'Origin' };
 }
@@ -51,6 +55,7 @@ export async function bank(req, env) {
   const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
   const out = mergeBank(base, edits, cfg);
   out.closed = !cfg.enabled;
+  out.games = cfg.games;
   return json(out, 200, { 'Cache-Control': 'public, max-age=20', ...cors(req) });
 }
 
@@ -59,7 +64,7 @@ export async function admin(req, env) {
   if (!t) return err('Not logged in.', 401);
   const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
   const out = mergeBank(base, edits, cfg, { admin: true });
-  out.config = { enabled: cfg.enabled, lessons: cfg.lessons };
+  out.config = { enabled: cfg.enabled, lessons: cfg.lessons, games: cfg.games };
   out.can_edit = t.role === 'owner';
   return json(out);
 }
@@ -101,7 +106,9 @@ export async function saveConfig(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const b = await req.json();
   const lessons = Array.isArray(b.lessons) ? [...new Set(b.lessons.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 99))].sort((a, c) => a - c) : null;
-  const value = JSON.stringify({ enabled: b.enabled !== false, lessons });
+  const games = {};
+  for (const k of GAMES) games[k] = !(b.games && b.games[k] === false);
+  const value = JSON.stringify({ enabled: b.enabled !== false, lessons, games });
   await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('game_config', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1").bind(value).run();
   await audit(env, g.t, 'game.config', value);
   return json({ ok: true });

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ហ្គេមសំណួរផ្ទាល់ — Exam Khmer</title>
+<link rel="stylesheet" href="fonts/kantumruy-pro.css">
+<link rel="stylesheet" href="katex/katex.min.css">
+<link rel="stylesheet" href="css/tgshim.css">
+<link rel="stylesheet" href="css/live.css?v=20261016a">
+<meta name="theme-color" content="#1f6f66">
+</head>
+<body>
+<header class="tgx-top"><a class="tgx-brand" href="/"><span aria-hidden="true">∑</span> KhmerMath · សំណួរផ្ទាល់</a></header>
+<main>
+<div class="lv" id="lv">
+  <div id="lv-join" class="lv-card">
+    <h2>📱 ហ្គេមសំណួរផ្ទាល់</h2>
+    <label for="lv-code">លេខកូដបន្ទប់ (ពីលោកគ្រូអ្នកគ្រូ)</label>
+    <input type="text" id="lv-code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="······">
+    <label for="lv-name">ឈ្មោះរបស់អ្នក</label>
+    <input type="text" id="lv-name" maxlength="24" autocomplete="off">
+    <p class="lv-msg" id="lv-msg"></p>
+    <button type="button" class="lv-btn" id="lv-go">ចូលហ្គេម</button>
+  </div>
+  <div id="lv-play" hidden>
+    <div class="lv-top-bar"><span class="lv-who" id="lv-who"></span><button type="button" class="lv-leave" id="lv-leave">ចាកចេញ</button></div>
+    <p class="lv-net" id="lv-net" hidden>ការភ្ជាប់ខ្សោយ… កំពុងព្យាយាមម្តងទៀត</p>
+    <div class="lv-timer" id="lv-timer" hidden><div class="lv-track"><div class="lv-bar" id="lv-bar"></div></div><span class="lv-time" id="lv-time"></span></div>
+    <div class="lv-card" id="lv-body"></div>
+  </div>
+</div>
+
+</main>
+<script src="katex/katex.min.js"></script>
+<script src="katex/contrib/auto-render.min.js"></script>
+<script src="js/live.js?v=20261016a"></script>
+</body>
+</html>

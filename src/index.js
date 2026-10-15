@@ -18,6 +18,7 @@ import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 import * as game from './api/game.js';
+import * as live from './api/live.js';
 
 function compile(pattern) {
   const keys = [];
@@ -161,6 +162,12 @@ const ROUTES = [
   ['POST', '/api/game/question', game.saveQuestion],
   ['POST', '/api/game/reset', game.resetQuestion],
   ['POST', '/api/game/config', game.saveConfig],
+  ['POST', '/api/live/create', live.create],
+  ['GET', '/api/live/host/:code', live.hostState],
+  ['POST', '/api/live/host/:code/action', live.hostAction],
+  ['POST', '/api/live/join', live.join],
+  ['GET', '/api/live/state', live.state],
+  ['POST', '/api/live/answer', live.answer],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {
@@ -177,6 +184,12 @@ export default {
 
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
+
+    if (req.method === 'OPTIONS' && (url.pathname.startsWith('/api/live/') || url.pathname === '/api/game/bank')) {
+      const o = req.headers.get('Origin');
+      const ok = o === 'https://khmermath.org' || o === 'https://www.khmermath.org';
+      return new Response(null, { status: 204, headers: { ...(ok ? { 'Access-Control-Allow-Origin': o } : {}), 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400', Vary: 'Origin' } });
+    }
 
     if (url.pathname.startsWith('/api/')) {
       for (const route of ROUTES) {

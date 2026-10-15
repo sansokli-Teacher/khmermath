@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ប៊ីងហ្គោគណិតវិទ្យា — Exam Khmer</title>
+<link rel="stylesheet" href="fonts/kantumruy-pro.css">
+<link rel="stylesheet" href="katex/katex.min.css">
+<link rel="stylesheet" href="css/tgshim.css">
+<link rel="stylesheet" href="css/bingo.css?v=20261016a">
+<meta name="theme-color" content="#1f6f66">
+</head>
+<body>
+<header class="tgx-top">
+  <a class="tgx-brand" href="teacher.html"><span aria-hidden="true">∑</span> KhmerMath · ប៊ីងហ្គោគណិតវិទ្យា</a>
+  <a class="btn btn-ghost btn-sm" href="teacher.html">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a>
+</header>
+<main class="tgx-main">
+<div class="bg" id="bg">
+
+  <!-- ===== SETUP ===== -->
+  <div id="bg-v-setup">
+    <div class="bg-box">
+      <div class="bg-head"><b>១. ជ្រើសមេរៀន</b><small class="bg-hint">ចម្លើយនៃសំណួរក្នុងមេរៀនទាំងនេះនឹងនៅលើកាត</small></div>
+      <div class="bg-lessons" id="bg-lessons"></div>
+    </div>
+    <div class="bg-box">
+      <div class="bg-head"><b>២. កាតប៊ីងហ្គោ</b></div>
+      <div class="bg-opts">
+        <label>ទំហំតារាង <select id="bg-size"><option value="3">៣ × ៣ (ងាយ)</option><option value="4" selected>៤ × ៤</option><option value="5">៥ × ៥ (មានផ្កាយកណ្តាល ★)</option></select></label>
+        <label>ចំនួនសំណួរដែលត្រូវហៅ <input type="number" id="bg-calls" min="8" max="60"></label>
+        <label>ចំនួនកាត (ចំនួនសិស្ស) <input type="number" id="bg-n" min="1" max="100" value="30"></label>
+      </div>
+      <p class="bg-hint" id="bg-info"></p>
+      <p class="bg-hint">របៀបលេង៖ បោះពុម្ពកាតឱ្យសិស្សម្នាក់មួយសន្លឹក។ លោកគ្រូអ្នកគ្រូហៅសំណួរម្តងមួយៗលើអេក្រង់ សិស្សដោះស្រាយ រួចគូសចម្លើយនៅលើកាតរបស់ខ្លួន (បើមាន)។ សិស្សដែលគូសបានមួយជួរ (ដេក បញ្ឈរ ឬទ្រេត) ស្រែក «ប៊ីងហ្គោ!» ហើយលោកគ្រូអ្នកគ្រូពិនិត្យកាតតាមលេខកាត។ ហ្គេមនេះមិនត្រូវការទូរស័ព្ទទេ។</p>
+      <div class="bg-row"><button type="button" class="btn btn-primary" id="bg-make">បង្កើតកាត</button><button type="button" class="btn btn-ghost" id="bg-resume" hidden>បន្តហ្គេមចុងក្រោយ</button></div>
+    </div>
+  </div>
+
+  <!-- ===== PRINT ===== -->
+  <div id="bg-v-print" hidden>
+    <div class="bg-toolbar">
+      <button type="button" class="btn btn-primary" id="bg-print">🖨 បោះពុម្ពកាត</button>
+      <button type="button" class="btn btn-primary" id="bg-tocall">▶ ចាប់ផ្តើមហៅសំណួរ</button>
+      <button type="button" class="btn btn-ghost" id="bg-newgame">← បង្កើតកាតថ្មី</button>
+      <span class="bg-hint" id="bg-printinfo"></span>
+    </div>
+    <div class="bg-cards" id="bg-cards"></div>
+  </div>
+
+  <!-- ===== CALL (projector) ===== -->
+  <div id="bg-v-call" hidden>
+    <div class="bg-top">
+      <b>ហៅសំណួរ <span id="bg-count"></span></b>
+      <div class="bg-row">
+        <button type="button" class="btn btn-ghost btn-sm" id="bg-undo">↶ ត្រឡប់ក្រោយ</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="bg-full">ពេញអេក្រង់</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="bg-toprint">កាត</button>
+      </div>
+    </div>
+    <div class="bg-main">
+      <div class="bg-left">
+        <div class="bg-q" id="bg-q"></div>
+        <div class="bg-answer" id="bg-ans" hidden></div>
+        <div class="bg-row bg-ctl"><button type="button" class="btn btn-ghost" id="bg-show" hidden>បង្ហាញចម្លើយ</button><button type="button" class="btn btn-primary" id="bg-next">▶ សំណួរបន្ទាប់</button></div>
+      </div>
+      <aside class="bg-right">
+        <b>ចម្លើយដែលបានហៅ</b>
+        <div class="bg-hist" id="bg-hist"></div>
+        <div class="bg-checkbox">
+          <b>ពិនិត្យកាត</b>
+          <div class="bg-row"><input type="number" id="bg-cardno" min="1" placeholder="លេខកាត"><button type="button" class="btn btn-primary btn-sm" id="bg-check">ពិនិត្យ</button></div>
+          <div id="bg-check-out"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</main>
+<script>window.TG_URLS = ['/api/game/bank', 'data/teamgame_g7.json']; window.TG_NOGATE = true;</script>
+<script src="katex/katex.min.js"></script>
+<script src="katex/contrib/auto-render.min.js"></script>
+<script src="js/bingo.js?v=20261016a"></script>
+</body>
+</html>

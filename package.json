@@ -2,5 +2,5 @@
   "name": "exam-khmer",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test test/exam.test.mjs test/game.test.mjs" }
+  "scripts": { "test": "node --test test/exam.test.mjs test/game.test.mjs test/live.test.mjs" }
 }

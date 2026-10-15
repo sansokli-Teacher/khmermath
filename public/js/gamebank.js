@@ -31,6 +31,17 @@ render.gamebank = async function () {
     ]);
     return { cb, lab };
   });
+  const GB_GAMES = [['cards', '🃏 កាតបើក'], ['wheel', '🎡 កង់វិល'], ['boat', '🚣 ប្រណាំងទូកង'], ['live', '📱 សំណួរផ្ទាល់លើទូរស័ព្ទ'], ['bingo', '🎯 ប៊ីងហ្គោ']];
+  const gcb = {};
+  const gamesCard = h('div', { class: 'card' }, [
+    h('h3', { style: 'margin-top:0' }, 'ហ្គេមដែលបើកឱ្យសិស្សលេងនៅ khmermath.org'),
+    h('p', { class: 'muted' }, 'គ្រូ (នៅក្នុង exam.khmermath.org) អាចលេងបានគ្រប់ហ្គេមជានិច្ច។ ការបិទនៅទីនេះ គឺបិទចំពោះទំព័រសាធារណៈនៅ khmermath.org ប៉ុណ្ណោះ។'),
+    h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, GB_GAMES.map(([k, label]) => {
+      const cb = h('input', { type: 'checkbox' }); cb.checked = gbData.config.games ? gbData.config.games[k] !== false : true; cb.disabled = !can; gcb[k] = cb;
+      return h('label', { style: 'display:flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff' }, [cb, label]);
+    })),
+  ]);
+  root.appendChild(gamesCard);
   const cfgCard = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'មេរៀនដែលអនុញ្ញាតឱ្យលេង'),
     h('label', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:10px' }, [on, h('b', {}, 'បើកហ្គេម (បិទទាំងអស់ពេលមិនចង់ឱ្យសិស្សលេង)')]),
@@ -39,10 +50,10 @@ render.gamebank = async function () {
   if (can) {
     const all = h('button', { class: 'secondary btn-sm', type: 'button' }, 'ជ្រើសទាំងអស់'); all.onclick = () => boxes.forEach((b) => { b.cb.checked = true; });
     const none = h('button', { class: 'secondary btn-sm', type: 'button' }, 'មិនជ្រើសទាំងអស់'); none.onclick = () => boxes.forEach((b) => { b.cb.checked = false; });
-    const save = h('button', { type: 'button' }, 'រក្សាទុកការកំណត់');
+    const save = h('button', { type: 'button' }, 'រក្សាទុកការកំណត់ (មេរៀន និងហ្គេម)');
     save.onclick = async () => {
       const lessons = gbData.lessons.filter((L, i) => boxes[i].cb.checked).map((L) => L.n);
-      try { await api('/api/game/config', { method: 'POST', body: { enabled: on.checked, lessons } }); Exam.notify(`បានរក្សាទុក។ ហ្គេមផ្តល់ ${lessons.length} មេរៀន។`); render.gamebank(); } catch (e) { Exam.notify(e.message); }
+      try { await api('/api/game/config', { method: 'POST', body: { enabled: on.checked, lessons, games: Object.fromEntries(Object.entries(gcb).map(([k, c]) => [k, c.checked])) } }); Exam.notify(`បានរក្សាទុក។ ហ្គេមផ្តល់ ${lessons.length} មេរៀន។`); render.gamebank(); } catch (e) { Exam.notify(e.message); }
     };
     cfgCard.appendChild(h('div', { class: 'row', style: 'margin-top:12px;gap:8px;flex-wrap:wrap' }, [save, all, none]));
   }
