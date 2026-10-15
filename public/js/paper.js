@@ -2,6 +2,7 @@ const { h, api } = Exam;
 const params = new URLSearchParams(location.search);
 const TEST_ID = params.get('test');
 const LETTERS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
+const LEVEL_LABELS = [['easy', 'កម្រិត ១៖ ចំណេះដឹងមូលដ្ឋាន'], ['medium', 'កម្រិត ២៖ ការគណនា និងអនុវត្ត'], ['hard', 'កម្រិត ៣៖ ការវិភាគ និងដោះស្រាយបញ្ហា'], ['pisa', 'កម្រិត ៤៖ បែប PISA']];
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
 const kh = (n) => String(n).replace(/\d/g, (d) => KH_DIGITS[d]);
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
@@ -66,9 +67,14 @@ function examDoc(o) {
   ]));
   kids.push(h('div', { class: 'p-instr' }, `សម្គាល់៖ សូមអានសំណួរឱ្យបានល្អិតល្អន់។ ${mcq.length ? `ផ្នែក ក ជ្រើសរើសចម្លើយត្រឹមត្រូវ (${kh(mcqPts)} ពិន្ទុ)។ ` : ''}${writing.length ? `ផ្នែក ខ សរសេរចម្លើយលើក្រដាសឆ្លើយ ដោយបង្ហាញវិធីដោះស្រាយ (${kh(wPts)} ពិន្ទុ)។ ` : ''}មិនអនុញ្ញាតឱ្យប្រើទូរស័ព្ទ ឬម៉ាស៊ីនគិតលេខទេ។`));
 
+  const tagged = mcq.some((q) => q.level);
+  const grouped = !!(o.group && tagged);
+  const optCount = Math.min(5, Math.max(4, ...mcq.map((q) => q.options.length)));
   if (mcq.length) {
     kids.push(h('div', { class: 'p-part' }, [`ផ្នែក ក · ពហុជ្រើសរើស `, h('small', {}, `(${kh(mcq.length)} សំណួរ × ${kh(mcq[0].points)} ពិន្ទុ)`)]));
-    mcq.forEach((q, i) => {
+    let no = 0;
+    const drawQ = (q) => {
+      const i = no++;
       const long = q.options.some((x) => x.length > 22);
       kids.push(h('div', { class: 'p-q' }, [
         h('div', { class: 'n' }, `${kh(i + 1)}.`),
@@ -78,7 +84,16 @@ function examDoc(o) {
           h('div', { class: `p-opts${long ? ' two' : ''}` }, q.options.map((x, j) => h('div', { class: 'p-opt' }, [h('b', {}, `${LETTERS[j]}.`), mathEl('span', {}, x)]))),
         ]),
       ]));
-    });
+    };
+    if (grouped) {
+      LEVEL_LABELS.forEach(([lv, label]) => {
+        const grp = mcq.filter((q) => q.level === lv);
+        if (!grp.length) return;
+        kids.push(h('div', { class: 'p-lvl' }, `${label} (${kh(grp.length)} សំណួរ × ${kh(grp[0].points)} ពិន្ទុ)`));
+        grp.forEach(drawQ);
+      });
+      mcq.filter((q) => !q.level).forEach(drawQ);
+    } else mcq.forEach(drawQ);
   }
   if (writing.length) {
     kids.push(h('div', { class: 'p-part' }, [`ផ្នែក ខ · សរសេរ `, h('small', {}, `(${kh(writing.length)} សំណួរ · ${kh(wPts)} ពិន្ទុ)`)]));
@@ -88,7 +103,28 @@ function examDoc(o) {
         h('div', { class: 'sect' }, [h('span', { class: 'rn' }, `${ROMAN[i] || i + 1}.`), h('span', { class: 'sc' }, `(${kh(q.points)}ពិន្ទុ)`), mathEl('span', { class: 'st' }, intro || (subs.length ? '' : q.stem_text))]),
         ...subs.map((s) => h('div', { class: 'sq' }, [h('span', { class: 'n' }, `${s.l}.`), mathEl('span', { class: 't' }, s.t)])),
         q.image_key ? h('img', { src: `/api/images/${q.image_key}`, alt: '' }) : null,
-        space ? h('div', { class: 'p-space', style: `height:${Math.max(24, q.points * 4.5)}mm;` }) : null,
+        (space && !o.omr) ? h('div', { class: 'p-space', style: `height:${Math.max(24, q.points * 4.5)}mm;` }) : null,
+      ]));
+    });
+  }
+  if (o.omr && mcq.length) {
+    kids.push(h('div', { class: 'pt-break' }));
+    kids.push(OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped, letters: 'khmer', title: test.title, subtitle: `សន្លឹកចម្លើយ OMR${profile.school ? ' · ' + profile.school : ''}` }));
+  }
+  if (o.omr && writing.length) {
+    kids.push(h('div', { class: 'pt-break' }));
+    kids.push(h('div', { class: 'pt-title' }, [h('div', { class: 'a' }, 'សន្លឹកសរសេរចម្លើយ'), h('div', { class: 'b' }, test.title)]));
+    kids.push(h('div', { class: 'p-student' }, [
+      h('div', { class: 'f wide' }, ['ឈ្មោះ៖ ', h('i', { class: 'p-line' })]),
+      h('div', { class: 'f' }, ['ថ្នាក់៖ ', h('i', { class: 'p-line' })]),
+      h('div', { class: 'f' }, ['លេខ៖ ', h('i', { class: 'p-line' })]),
+    ]));
+    kids.push(h('div', { class: 'pt-note' }, 'បង្ហាញវិធីដោះស្រាយឱ្យបានច្បាស់ ហើយសរសេរឯកតា។'));
+    writing.forEach((q, i) => {
+      kids.push(h('div', { class: 'pt-ans-q' }, [
+        h('div', {}, `${ROMAN[i] || i + 1}.  (${kh(q.points)} ពិន្ទុ)`),
+        h('div', { class: 'pt-lines' }, [...Array(Math.min(8, Math.max(3, Math.round(q.points / 2)))).keys()].map(() => h('i'))),
+        h('div', { class: 'pt-lines-score' }, `ពិន្ទុ: ______/${kh(q.points)}`),
       ]));
     });
   }
@@ -142,12 +178,14 @@ const pageOptions = () => ({
   subtitle: document.getElementById('opt-sub').value.trim(),
   omr: document.getElementById('opt-omr').checked,
   group: document.getElementById('opt-group').checked,
+  idDigits: Math.min(12, Math.max(1, Number(document.getElementById('opt-iddigits').value) || 7)),
 });
 
 function render() {
   const o = pageOptions();
   const tpl = tplValue();
-  for (const id of ['opt-sub', 'lbl-omr', 'lbl-group']) document.getElementById(id).hidden = tpl !== 'pretest';
+  document.getElementById('opt-sub').hidden = tpl !== 'pretest';
+  document.getElementById('lbl-iddigits').hidden = !document.getElementById('opt-omr').checked;
   const answers = document.getElementById('opt-key').checked;
   const sheet = document.getElementById('sheet');
   sheet.innerHTML = '';
@@ -271,7 +309,7 @@ async function init() {
   if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
   try { const t = params.get('tpl') || localStorage.getItem('paper_tpl'); if (t === 'pretest' || t === 'exam') document.getElementById('opt-tpl').value = t; } catch {}
   document.getElementById('opt-tpl').addEventListener('change', () => { try { localStorage.setItem('paper_tpl', tplValue()); } catch {} });
-  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
+  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date', 'opt-iddigits']) document.getElementById(id).addEventListener('input', render);
   if (window.innerWidth <= 860) document.getElementById('side-opts').open = false;   // phone: keep the page itself in view
   document.getElementById('print-btn').onclick = () => window.print();
   const pdfBtn = document.getElementById('pdf-btn');
@@ -285,6 +323,7 @@ async function init() {
     } catch (e) { Exam.notify(`មិនអាចបង្កើត PDF បានទេ៖ ${e.message}`); }
     pdfBtn.disabled = false; pdfBtn.textContent = label;
   };
+  document.getElementById('scan-link').href = `scan.html?test=${test.id}`;
   document.getElementById('profile-btn').onclick = openProfile;
   const toWord = async (btn) => {
     const label = btn ? btn.textContent : '';

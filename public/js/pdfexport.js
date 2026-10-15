@@ -3,7 +3,7 @@
    browser, so it uses the fonts installed on this computer (Khmer OS Battambang, Khmer M1, Mathcad UniMath). */
 (function () {
   const MM = 96 / 25.4;
-  const KEEP_NEXT = /(^|\s)(p-part|pt-sec|pt-lvl|pt-note|ptk-h|ptk-banner|pt-title|ans-title|ptk-title)(\s|$)/;
+  const KEEP_NEXT = /(^|\s)(p-part|p-lvl|pt-sec|pt-lvl|pt-note|ptk-h|ptk-banner|pt-title|ans-title|ptk-title)(\s|$)/;
   const SPLIT = /(^|\s)(ans-cols|ptk-cols)(\s|$)/;
   const KH = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
   const kh = (n) => String(n).replace(/\d/g, (d) => KH[d]);

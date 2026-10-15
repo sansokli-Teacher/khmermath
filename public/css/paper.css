@@ -237,3 +237,25 @@
 .pdf-page .pt-pf-screen { margin-top: 0; }
 .pdf-page .pf { margin-top: 0; }
 .pdf-page .pf > span:last-child:not(:first-child) { margin-left: auto; }
+
+.p-lvl { font-weight: 700; font-size: 12pt; margin: 3mm 0 1.5mm; break-after: avoid; }
+
+/* ---- OMR answer sheet (positions come from omr.js; keep sizes in mm so the scanner's layout stays true) ---- */
+.omr-sheet { position: relative; box-sizing: border-box; color: #000; font-family: 'Times New Roman', 'PaperBody', serif; break-inside: avoid; page-break-inside: avoid; margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.omr-sheet > div { position: absolute; box-sizing: border-box; }
+.omr-mk { background: #000; }
+.omr-title { text-align: center; font-family: 'Times New Roman', 'PaperTitle', 'PaperBody', serif; font-weight: 700; font-size: 14pt; line-height: 1.25; display: flex; align-items: center; justify-content: center; }
+.omr-sub { text-align: center; font-size: 10.5pt; }
+.omr-fld { font-size: 10.5pt; line-height: 5.2mm; border-bottom: .3mm dotted #000; white-space: nowrap; overflow: hidden; }
+.omr-cap { font-size: 9.5pt; font-weight: 700; line-height: 4.5mm; white-space: nowrap; }
+.omr-write { border: .3mm solid #000; }
+.omr-dl { font-size: 8pt; text-align: right; line-height: 4mm; }
+.omr-bub { border: .35mm solid #000; border-radius: 50%; }
+.omr-hl { text-align: center; font-size: 9pt; font-weight: 700; line-height: 4.5mm; }
+.omr-ql { font-size: 9pt; text-align: right; line-height: 4.4mm; }
+.omr-bit { border: .3mm solid #000; }
+.omr-bit.on { background: #000; }
+.omr-note { font-size: 9pt; line-height: 1.45; border: .3mm solid #777; padding: 1.5mm 2mm; text-align: justify; }
+.omr-ex { margin-top: 1.5mm; font-size: 9pt; }
+.omr-ex-b { width: 3.6mm; height: 3.6mm; vertical-align: middle; margin-right: 1mm; }
+.omr-x { background: linear-gradient(45deg, transparent 46%, #000 46% 54%, transparent 54%), linear-gradient(-45deg, transparent 46%, #000 46% 54%, transparent 54%); }

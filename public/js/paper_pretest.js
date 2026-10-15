@@ -56,7 +56,7 @@
   ]);
 
   function examDoc(ctx, o) {
-    const { h, mathEl, kh, mcq, writing, mcqPts, wPts, splitWriting, test } = ctx;
+    const { h, mathEl, kh, mcq, writing, mcqPts, wPts, splitWriting, test, profile } = ctx;
     const kids = [];
     kids.push(h('div', { class: 'pt-title' }, [h('div', { class: 'a' }, test.title), o.subtitle ? h('div', { class: 'b' }, o.subtitle) : null]));
     kids.push(infoGrid(ctx, o, false));
@@ -118,17 +118,8 @@
     if (o.omr) {
       if (mcq.length) {
         kids.push(h('div', { class: 'pt-break' }));
-        kids.push(h('div', { class: 'pt-title' }, [h('div', { class: 'a' }, 'សន្លឹកចម្លើយសម្រាប់សិស្ស'), h('div', { class: 'b' }, test.title)]));
-        kids.push(infoGrid(ctx, o, true));
-        kids.push(h('div', { class: 'pt-sec' }, `ផ្នែកទី ១៖ សន្លឹកចម្លើយ OMR (${kh(mcqPts)} ពិន្ទុ)`));
-        kids.push(h('div', { class: 'pt-note' }, 'គូសរង្វង់ឱ្យពេញ និងច្បាស់តែមួយក្នុងមួយសំណួរ។ កុំគូសលើសពីមួយចម្លើយ។'));
-        const half = Math.ceil(mcq.length / 2);
-        const tbl = (from, to) => h('table', { class: 'pt-omr' }, [
-          h('thead', {}, h('tr', {}, [h('th', {}, 'No.'), ...['A', 'B', 'C', 'D'].map((x) => h('th', {}, x))])),
-          h('tbody', {}, mcq.slice(from, to).map((_, i) => h('tr', {}, [h('td', { class: 'no' }, String(from + i + 1)), ...[0, 1, 2, 3].map(() => h('td', {}, h('span', { class: 'pt-bub' })))]))),
-        ]);
-        kids.push(h('div', { class: 'pt-omr-frame' }, [tbl(0, half), mcq.length > half ? tbl(half, mcq.length) : null, h('span', { class: 'c2', style: 'top:-1px;' }), h('span', { class: 'c2', style: 'bottom:-1px;' })]));
-        kids.push(h('div', { class: 'pt-score-line' }, `ពិន្ទុផ្នែកទី ១: ________/${kh(mcqPts)}`));
+        const optCount = Math.min(5, Math.max(4, ...mcq.map((q) => q.options.length)));
+        kids.push(window.OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped: !!(o.group && mcq.some((q) => q.level)), letters: 'latin', title: test.title, subtitle: `សន្លឹកចម្លើយ OMR${profile.school ? ' · ' + profile.school : ''}` }));
       }
       if (writing.length) {
         kids.push(h('div', { class: 'pt-break' }));

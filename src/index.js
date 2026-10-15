@@ -123,6 +123,7 @@ const ROUTES = [
   ['POST', '/api/sessions/:sessionId/force-submit', sessions.forceSubmit],
   ['POST', '/api/sessions/:sessionId/reset-device', sessions.resetDevice],
   ['POST', '/api/sessions/:sessionId/rescore', sessions.rescoreOne],
+  ['POST', '/api/sessions/:sessionId/omr', sessions.saveOmr],
   ['GET', '/api/sessions/:sessionId/writing-marks', sessions.getWritingMarks],
   ['POST', '/api/sessions/:sessionId/writing-marks', sessions.setWritingMarks],
   ['POST', '/api/sessions/:sessionId/writing', sessions.setWritingScore],

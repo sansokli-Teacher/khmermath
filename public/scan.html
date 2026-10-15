@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ស្កេនសន្លឹកចម្លើយ OMR</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2260d6">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/scan.css">
+</head>
+<body class="scan-body">
+<header class="scan-top">
+  <a href="teacher.html" class="scan-back">← ត្រឡប់</a>
+  <div class="scan-ttl">📷 ស្កេនសន្លឹកចម្លើយ OMR</div>
+</header>
+
+<main class="scan-main">
+  <section class="scan-card" id="pick">
+    <label for="ses-pick" class="scan-lbl">១. ជ្រើសរើសសម័យប្រឡង (ថ្នាក់ + វិញ្ញាសា)</label>
+    <select id="ses-pick"></select>
+    <div id="ses-info" class="scan-info"></div>
+    <div id="ses-empty" class="scan-warn" hidden>មិនទាន់មានសម័យប្រឡងសម្រាប់ស្កេនទេ។ សូមបង្កើតសម័យប្រឡងសម្រាប់ថ្នាក់នេះនៅផ្ទាំងគ្រូសិន (ផ្ទាំង «សម័យប្រឡង») ទើបអាចស្កេនសន្លឹកចម្លើយបាន។ <a href="teacher.html">ទៅផ្ទាំងគ្រូ</a></div>
+  </section>
+
+  <section class="scan-card" id="capture" hidden>
+    <div class="scan-lbl">២. ស្កេនសន្លឹកចម្លើយរបស់សិស្ស</div>
+    <div class="scan-actions">
+      <button id="cam-btn" class="scan-big">📷 ថតស្កេនស្វ័យប្រវត្តិ</button>
+      <label class="scan-big secondary" for="file-in">🖼 ជ្រើសរូបពីទូរស័ព្ទ / កុំព្យូទ័រ</label>
+      <input type="file" id="file-in" accept="image/*" multiple hidden>
+    </div>
+    <label class="scan-sw"><input type="checkbox" id="auto-save" checked><span>រក្សាទុកដោយស្វ័យប្រវត្តិ បើសន្លឹកច្បាស់លាស់ (ស្គាល់សិស្ស + គ្មានចម្លើយគូសច្រើន)</span></label>
+    <details class="scan-tips"><summary>គន្លឹះថតឱ្យបានល្អ</summary>
+      <ul><li>ដាក់សន្លឹកលើតុរាប ពន្លឺគ្រប់គ្រាន់ មិនឱ្យមានស្រមោលធំ។</li><li>ឱ្យឃើញការ៉េខ្មៅទាំង ៤ ជ្រុងពេញលេញ (ការ៉េធំនៅជ្រុងខាងក្រោមស្តាំ)។</li><li>ថតពីលើត្រង់ៗ ឱ្យសន្លឹកពេញអេក្រង់ ហើយកុំឱ្យព្រិល។</li><li>សន្លឹកអាចដាក់បញ្ច្រាស់ ឬបង្វិលបាន ប្រព័ន្ធនឹងស្គាល់ដោយខ្លួនឯង។</li></ul>
+    </details>
+  </section>
+
+  <section id="summary" class="scan-sum" hidden></section>
+  <section id="list"></section>
+</main>
+
+<div id="cam" class="cam" hidden>
+  <video id="cam-v" playsinline muted autoplay></video>
+  <div class="cam-guide"></div>
+  <div class="cam-msg" id="cam-msg">ដាក់សន្លឹកឱ្យឃើញការ៉េខ្មៅទាំង ៤</div>
+  <div class="cam-bar">
+    <button id="cam-close" class="secondary">✕ បិទ</button>
+    <button id="cam-snap">📸 ថតឥឡូវ</button>
+  </div>
+</div>
+
+<script src="js/common.js"></script>
+<script src="js/omr.js"></script>
+<script src="js/scan.js"></script>
+</body>
+</html>

@@ -48,7 +48,7 @@ export async function listSessions(req, env) {
   await ensureColumns(env);
   const mine = await accessibleClasses(env, t);
   const { results } = await env.DB.prepare(
-    `SELECT ts.id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin, ts.integrity_mode, ts.max_violations,
+    `SELECT ts.id, ts.test_id, ts.class_id, ts.scheduled_start, ts.duration_minutes, ts.scheduled_end, ts.status, ts.pin, ts.integrity_mode, ts.max_violations,
             c.name AS class_name, t.title AS test_title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted_count,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS total_students,
@@ -403,4 +403,34 @@ export async function setWritingMarks(req, env, params) {
   await env.DB.batch(stmts);
   await audit(env, g.t, 'session.writing_marks', `session ${g.ses.id}, ${student_id}: ${total}/${max}`);
   return json({ ok: true, writing_score: total, writing_max: max });
+}
+
+// ---------- paper test: save the answers read from a scanned OMR sheet ----------
+// body: { student_id, answers: { "<question id>": option index | null } }. The sheet's bubbles were already
+// matched to question ids in the browser (printed order), so this only checks and stores them like an online submit.
+export async function saveOmr(req, env, params) {
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const body = await req.json().catch(() => ({}));
+  const studentId = String(body.student_id ?? '').trim();
+  const stu = await env.DB.prepare('SELECT id FROM students WHERE id = ?1 AND class_id = ?2').bind(studentId, g.ses.class_id).first();
+  if (!stu) return err('រកមិនឃើញសិស្សលេខនេះក្នុងថ្នាក់នៃសម័យប្រឡងនេះទេ។', 404);
+  const qs = await loadMcq(env, g.ses.id, g.ses.test_id);
+  const byId = Object.fromEntries(qs.map((q) => [String(q.id), q]));
+  const answers = body.answers && typeof body.answers === 'object' ? body.answers : {};
+  const stmts = [env.DB.prepare('DELETE FROM responses WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, stu.id)];
+  let n = 0;
+  for (const [qid, sel] of Object.entries(answers)) {
+    const q = byId[qid];
+    if (!q) return err('សំណួរមិនត្រូវនឹងវិញ្ញាសានេះទេ។', 400);
+    if (sel === null || sel === undefined) continue;
+    const opts = JSON.parse(q.options_json || '[]');
+    if (!Number.isInteger(sel) || sel < 0 || sel >= Math.max(opts.length, 1)) return err('ចម្លើយមិនត្រឹមត្រូវ។', 400);
+    stmts.push(env.DB.prepare("INSERT INTO responses (session_id, student_id, question_id, selected_index, answered_at) VALUES (?1, ?2, ?3, ?4, datetime('now'))").bind(g.ses.id, stu.id, q.id, sel));
+    n++;
+  }
+  await env.DB.batch(stmts);
+  const r = await submitStudent(env, g.ses, stu.id, 'paper');
+  await audit(env, g.t, 'session.omr', `session ${g.ses.id}: student ${stu.id} ${r.score}/${r.max} (${n} answers)`);
+  return json({ ok: true, score: r.score, max: r.max, answered: n });
 }

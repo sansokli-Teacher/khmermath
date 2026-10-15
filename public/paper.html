@@ -47,9 +47,11 @@
       <label class="sw"><input type="checkbox" id="opt-key"><span>បង្ហាញជាសន្លឹកចម្លើយ <small>អត្រាកំណែ — សម្រាប់គ្រូ</small></span></label>
       <label class="sw"><input type="checkbox" id="opt-space" checked><span>ទុកចន្លោះសរសេរចម្លើយ</span></label>
       <label class="sw" id="lbl-omr"><input type="checkbox" id="opt-omr" checked><span>សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</span></label>
+      <label class="fld" id="lbl-iddigits"><span>ចំនួនខ្ទង់លេខសម្គាល់សិស្ស (សម្រាប់ស្កេន OMR)</span><input type="number" id="opt-iddigits" value="7" min="1" max="12"></label>
       <label class="sw" id="lbl-group"><input type="checkbox" id="opt-group"><span>ដាក់ជាក្រុមតាមកម្រិត</span></label>
     </section>
     <section>
+      <a class="btn secondary side-wide" id="scan-link" href="scan.html" style="text-align:center;">📷 ស្កេនសន្លឹកចម្លើយ OMR</a>
       <button id="profile-btn" class="secondary side-wide">⚙ ក្បាល / ជើងទំព័រ</button>
     </section>
     <p class="side-tip">ចុច «ទាញយក PDF» ដើម្បីរក្សាទុកឯកសារ PDF ភ្លាមៗ (មានក្បាល/ជើងទំព័រ និងលេខទំព័រគ្រប់ទំព័រ)។ ប៊ូតុង 🖨 សម្រាប់បោះពុម្ពផ្ទាល់។</p>
@@ -62,6 +64,7 @@
 <script src="js/common.js"></script>
 <script src="js/mathtype.js"></script>
 <script src="js/docx.js"></script>
+<script src="js/omr.js"></script>
 <script src="js/paper_pretest.js"></script>
 <script src="js/pdfexport.js"></script>
 <script src="js/paper.js"></script>

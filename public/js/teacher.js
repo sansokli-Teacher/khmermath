@@ -1290,7 +1290,7 @@ function exportSessionToExcel(session) {
 
     let submitLabel = 'មិនបានចូល';
     if (s.submitted_at) {
-      submitLabel = s.submit_type === 'auto' ? 'ស្វ័យប្រវត្តិ (Auto-submit)' : 'ដាក់ផ្ទាល់ (Manual)';
+      submitLabel = s.submit_type === 'auto' ? 'ស្វ័យប្រវត្តិ (Auto-submit)' : s.submit_type === 'paper' ? 'ស្កេនក្រដាស (OMR)' : 'ដាក់ផ្ទាល់ (Manual)';
     } else if (s.started_at) {
       submitLabel = `កំពុងប្រឡង (${s.answered_count || 0} សំណួរ)`;
     }
@@ -1611,6 +1611,7 @@ async function renderGradingSession(container) {
         h('button', { class: 'secondary btn-sm', title: 'គណនាពិន្ទុឡើងវិញតាមចម្លើយត្រឹមត្រូវបច្ចុប្បន្ន', onclick: async () => {
           try { const r = await api(`/api/sessions/${selectedSessionId}/rescore`, { method: 'POST' }); await Exam.notify(`បានគណនាឡើងវិញ៖ ផ្លាស់ប្តូរ ${r.changed} នាក់ ក្នុងចំណោម ${r.total}។`); refresh(); } catch (e) { Exam.notify(e.message); }
         } }, '🔄 រាប់ពិន្ទុឡើងវិញ'),
+        h('a', { class: 'btn secondary btn-sm', href: `scan.html?session=${selectedSessionId}`, title: 'ស្កេនសន្លឹកចម្លើយ OMR នៃតេស្តលើក្រដាស' }, '📷 ស្កេនសន្លឹក OMR'),
         h('button', { class: 'secondary btn-sm', onclick: () => window.print() }, '🖨 បោះពុម្ពតារាងពិន្ទុ'),
         h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
       ]),
