@@ -17,6 +17,7 @@ import { notifyOwner } from './lib/notify.js';
 import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
+import * as game from './api/game.js';
 
 function compile(pattern) {
   const keys = [];
@@ -155,6 +156,11 @@ const ROUTES = [
   ['POST', '/api/sessions/:sessionId/notes', integrity.addSessionNote],
   ['DELETE', '/api/sessions/:sessionId/notes/:noteId', integrity.deleteSessionNote],
   ['GET', '/api/overview', sessions.overview],
+  ['GET', '/api/game/bank', game.bank],
+  ['GET', '/api/game/admin', game.admin],
+  ['POST', '/api/game/question', game.saveQuestion],
+  ['POST', '/api/game/reset', game.resetQuestion],
+  ['POST', '/api/game/config', game.saveConfig],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {
