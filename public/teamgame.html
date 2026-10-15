@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="fonts/kantumruy-pro.css">
 <link rel="stylesheet" href="katex/katex.min.css">
 <link rel="stylesheet" href="css/tgshim.css">
-<link rel="stylesheet" href="css/teamgame.css?v=20261015a">
+<link rel="stylesheet" href="css/teamgame.css?v=20261015c">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1f6f66">
 </head>
@@ -80,6 +80,7 @@
           <div class="tg-head"><b>៣. ជម្រើស</b></div>
           <div class="tg-opts">
             <label>ពិន្ទុក្នុងមួយកាត <input type="number" id="tg-pts" min="1" max="1000" value="10"></label>
+            <label>ស្ទីលហ្គេម <select id="tg-style"><option value="cards">កាតបើក (ជ្រើសប្រអប់លេខ)</option><option value="wheel">🎡 កង់វិល (បង្វិលជ្រើសសំណួរ)</option></select></label>
             <label>មុខកាត <select id="tg-face"><option value="img">បង្ហាញរូបភាព</option><option value="num">បង្ហាញលេខ</option></select></label>
             <label>ម៉ោងឆ្លើយ (វិនាទី, ០ = មិនកំណត់)
               <select id="tg-timer"><option value="0">មិនកំណត់</option><option value="15">១៥</option><option value="30">៣០</option><option value="60">៦០</option><option value="90">៩០</option></select></label>
@@ -123,6 +124,6 @@
 <script>window.TG_URLS = ['/api/game/bank', 'data/teamgame_g7.json'];</script>
 <script src="katex/katex.min.js"></script>
 <script src="katex/contrib/auto-render.min.js"></script>
-<script src="js/teamgame.js?v=20261015b"></script>
+<script src="js/teamgame.js?v=20261015c"></script>
 </body>
 </html>

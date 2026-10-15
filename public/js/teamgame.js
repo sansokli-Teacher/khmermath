@@ -206,13 +206,13 @@
     sets.forEach(function (s, i) { var o = el('option', '', s.name + ' (' + s.cards.length + ')'); o.value = i; sel.appendChild(o); });
   }
   function saveCfg() {
-    var ok = put(CFG, { n: $('tg-nteams').value, names: teamNames, members: teamMembers, cards: cards, mode: mode, lessons: selLessons, qn: $('tg-qn').value, pts: $('tg-pts').value, timer: $('tg-timer').value, face: $('tg-face').value, sp: $('tg-special').checked, nsp: $('tg-nspecial').value, snd: $('tg-sound').checked });
+    var ok = put(CFG, { n: $('tg-nteams').value, names: teamNames, members: teamMembers, cards: cards, mode: mode, lessons: selLessons, qn: $('tg-qn').value, pts: $('tg-pts').value, style: $('tg-style').value, timer: $('tg-timer').value, face: $('tg-face').value, sp: $('tg-special').checked, nsp: $('tg-nspecial').value, snd: $('tg-sound').checked });
     if (!ok) $('tg-qcount').textContent += ' (ទំហំផ្ទុកពេញ — សូមកាត់បន្ថយរូបថត)';
   }
   function loadCfg() {
     var c = load(CFG, null); if (!c) { useCards(PACKS.math[1]); return; }
     mode = c.mode || 'lesson'; selLessons = c.lessons || [1]; if (c.qn) $('tg-qn').value = c.qn; $('tg-nteams').value = c.n || 4; teamNames = c.names || []; teamMembers = c.members || []; cards = (c.cards || []).slice();
-    $('tg-pts').value = c.pts || 10; $('tg-timer').value = c.timer || '0'; $('tg-face').value = c.face || 'img'; $('tg-special').checked = c.sp !== false; $('tg-nspecial').value = c.nsp === undefined ? 3 : c.nsp; $('tg-sound').checked = c.snd !== false;
+    $('tg-pts').value = c.pts || 10; $('tg-style').value = c.style || 'cards'; $('tg-timer').value = c.timer || '0'; $('tg-face').value = c.face || 'img'; $('tg-special').checked = c.sp !== false; $('tg-nspecial').value = c.nsp === undefined ? 3 : c.nsp; $('tg-sound').checked = c.snd !== false;
     if (!cards.length) cards = PACKS.math[1].slice();
   }
 
@@ -235,7 +235,7 @@
       while (deck.length < cnt) deck = deck.concat(shuffle(keys));
       deck.slice(0, cnt).forEach(function (sp) { var src = tiles[Math.floor(Math.random() * tiles.length)]; tiles.push({ k: 's', sp: sp, img: src.img }); });   // a special card wears an ordinary picture
     }
-    G = { teams: [], tiles: shuffle(tiles), turn: 0, pts: pts, timer: parseInt($('tg-timer').value, 10) || 0, face: face, mute: false, finished: false };
+    G = { style: $('tg-style').value, teams: [], tiles: shuffle(tiles), turn: 0, pts: pts, timer: parseInt($('tg-timer').value, 10) || 0, face: face, mute: false, finished: false };
     for (var i = 0; i < n; i++) G.teams.push({ name: clean(teamNames[i]) || ('ក្រុមទី ' + khNum(i + 1)), color: COLORS[i % COLORS.length], score: 0, members: teamMembers[i] || [] });
     hist = []; lastScores = null; saveCfg(); saveGame(); showPlay();
   }
@@ -279,7 +279,9 @@
     lastScores = G.teams.map(function (t) { return t.score; });
   }
   function renderBoard() {
-    var box = $('tg-board'), n = G.tiles.length; box.innerHTML = ''; box.className = 'tg-board c' + (n <= 9 ? 3 : n <= 16 ? 4 : 5) + (boardIn ? ' in' : '');
+    var box = $('tg-board'), n = G.tiles.length; box.innerHTML = '';
+    if (G.style === 'wheel') return renderWheel(box);
+    box.removeAttribute('style'); box.className = 'tg-board c' + (n <= 9 ? 3 : n <= 16 ? 4 : 5) + (boardIn ? ' in' : '');
     var avail = box.getBoundingClientRect(), ratio = avail.width && avail.height ? avail.width / avail.height : 1.6, cols = Math.max(2, Math.min(n, Math.ceil(Math.sqrt(n * ratio / 1.2)))), rows = Math.ceil(n / cols);
     while (cols > 2 && (cols - 1) * rows >= n) cols--;
     box.style.setProperty('--cols', cols); box.style.setProperty('--rows', rows);
@@ -300,6 +302,48 @@
     });
     boardIn = false; lastDone = -1;
   }
+
+  /* ---------- spin style: a wheel picks the next question (same teams, scores, special boxes and questions as the cards) ---------- */
+  var wAng = 0, spinning = false, WCOL = ['#ff6b81', '#2fd4a0', '#ffb347', '#4dabf7', '#b57cf5', '#ff7eb3'];
+  function renderWheel(box) {
+    box.className = 'tg-board tg-wheelmode'; box.removeAttribute('style');
+    var rem = []; G.tiles.forEach(function (t, i) { if (!t.done) rem.push(i); });
+    var wrap = el('div', 'tg-wheel'), cv = el('canvas', 'tg-wcanvas'), ptr = el('div', 'tg-ptr'), btn = el('button', 'tg-spin', G.finished || !rem.length ? '✓' : 'ស្ពីន!');
+    btn.type = 'button'; btn.setAttribute('aria-label', 'វិលកង់'); wrap.appendChild(cv); wrap.appendChild(ptr); wrap.appendChild(btn); box.appendChild(wrap);
+    function draw() {
+      var s = parseFloat(cv.style.width) || 300, dpr = cv.width / s, c = cv.getContext('2d'), R = cv.width / 2, n = Math.max(1, rem.length), seg = Math.PI * 2 / n;
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height); c.translate(R, R);
+      c.beginPath(); c.arc(0, 0, R * 0.985, 0, 7); c.fillStyle = '#243447'; c.fill();
+      rem.forEach(function (idx, k) {
+        var a0 = wAng + k * seg - Math.PI / 2 * 0, a1 = a0 + seg; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R * 0.93, a0, a1); c.closePath();
+        c.fillStyle = WCOL[k % WCOL.length]; c.fill(); c.lineWidth = Math.max(1.5, R * 0.012); c.strokeStyle = '#fff'; c.stroke();
+        c.save(); c.rotate(a0 + seg / 2); c.fillStyle = '#fff'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 4 * dpr;
+        c.font = '800 ' + Math.max(10 * dpr, Math.min(R * 0.14, R * 0.93 * seg * 0.45)) + 'px "Kantumruy Pro", sans-serif'; c.fillText(String(idx + 1), R * 0.88, 0); c.restore();
+      });
+      for (var k2 = 0; k2 < n; k2++) { var a = wAng + k2 * seg; c.beginPath(); c.arc(Math.cos(a) * R * 0.955, Math.sin(a) * R * 0.955, R * 0.017, 0, 7); c.fillStyle = '#ffe066'; c.fill(); }
+    }
+    function fit() {
+      var r = box.getBoundingClientRect(), side = Math.max(200, Math.floor(Math.min(r.width, r.height)) - 14), dpr = Math.min(2, window.devicePixelRatio || 1);
+      wrap.style.width = wrap.style.height = side + 'px'; cv.style.width = cv.style.height = side + 'px'; cv.width = cv.height = Math.round(side * dpr); draw();
+    }
+    fit(); window.__tgFit = fit;
+    function atPointer() { var n = rem.length, seg = Math.PI * 2 / n, x = ((-Math.PI / 2 - wAng) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2); return Math.floor(x / seg) % n; }
+    btn.addEventListener('click', function () {
+      if (spinning || openTileIdx >= 0 || G.finished || !rem.length) return;
+      var n = rem.length, seg = Math.PI * 2 / n, k = Math.floor(Math.random() * n), jit = (Math.random() - 0.5) * seg * 0.7;
+      var base = -Math.PI / 2 - (k + 0.5) * seg + jit, cur = ((wAng % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2), turns = 4 + Math.floor(Math.random() * 3);
+      var delta = ((((base - cur) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) + turns * Math.PI * 2, start = wAng, t0 = performance.now(), dur = 4200 + Math.random() * 1200, last = atPointer();
+      var done = function () { wAng = start + delta; draw(); spinning = false; setTimeout(function () { sfx.flip(); openTile(rem[k], null); }, 380); };
+      spinning = true; btn.disabled = true; sfx.special();
+      if (reduceMotion()) return done();
+      (function step(now) {
+        var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3); wAng = start + delta * e; draw();
+        var seg2 = atPointer(); if (seg2 !== last) { last = seg2; sfx.tick(); }
+        if (p < 1) requestAnimationFrame(step); else done();
+      })(t0);
+    });
+  }
+  window.addEventListener('resize', function () { if (G && G.style === 'wheel' && window.__tgFit && !$('tg-play').hidden && !spinning) window.__tgFit(); });
 
   /* ---------- card popup ---------- */
   function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; } }
@@ -456,7 +500,7 @@
 
   /* ---------- wiring ---------- */
   $('tg-nteams').addEventListener('change', function () { renderTeamSetup(); saveCfg(); });
-  ['tg-pts', 'tg-timer', 'tg-face', 'tg-special', 'tg-nspecial', 'tg-sound'].forEach(function (id) { $(id).addEventListener('change', saveCfg); });
+  ['tg-pts', 'tg-style', 'tg-timer', 'tg-face', 'tg-special', 'tg-nspecial', 'tg-sound'].forEach(function (id) { $(id).addEventListener('change', saveCfg); });
   $('tg-addcard').addEventListener('click', function () { cards.push({ n: '', img: '', q: '', a: '', p: '' }); renderCards(); saveCfg(); var rows = document.querySelectorAll('.tg-crow'); if (rows.length) { var last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center' }); var inp = last.querySelector('input'); if (inp) inp.focus(); } });
   $('tg-clearcards').addEventListener('click', function () { if (cards.length && !confirm('លុបកាតទាំងអស់?')) return; cards = []; renderCards(); saveCfg(); });
   $('tg-pastebtn').addEventListener('click', function () { $('tg-pastebox').hidden = !$('tg-pastebox').hidden; if (!$('tg-pastebox').hidden) $('tg-questions').focus(); });
@@ -526,6 +570,6 @@
   document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { mode = r.value; applyMode(); saveCfg(); } }); });
   $('tg-qn').addEventListener('change', saveCfg);
   $('tg-alllessons').addEventListener('click', function () { if (BANK) selLessons = BANK.lessons.map(function (L) { return L.n; }); renderLessons(); saveCfg(); });
-  loadCfg(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
+  loadCfg(); (function () { var m = /[?&]style=(wheel|cards)/.exec(location.search); if (m) $('tg-style').value = m[1]; })(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
   if (/[?&]import=1/.test(location.search) && !$('tg-import').hidden) $('tg-import').click();   // opened from the teacher dashboard: teams come from the class
 })();

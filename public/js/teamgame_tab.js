@@ -20,7 +20,7 @@ render.teamgame = async function () {
 
   const intro = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'ហ្គេមក្រុមសម្រាប់ថ្នាក់រៀន'),
-    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ មេរៀនទី ១–២២ (ក្នុងមួយមេរៀនមាន ២០ សំណួរ មានរូបធរណីមាត្រ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
+    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ មេរៀនទី ១–២២ (ក្នុងមួយមេរៀនមាន ២០ សំណួរ មានរូបធរណីមាត្រ)។ មានពីរស្ទីលដែលប្រើសំណួរដូចគ្នា៖ «កាតបើក» (ជ្រើសប្រអប់លេខ) និង «កង់វិល» (បង្វិលកង់ជ្រើសសំណួរ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
   ]);
   root.appendChild(intro);
 
@@ -71,19 +71,20 @@ render.teamgame = async function () {
 
   const again = h('button', { class: 'secondary', type: 'button' }, '🔀 ចែកក្រុមម្តងទៀត');
   again.onclick = draw;
-  const play = h('button', { type: 'button' }, '▶ លេងហ្គេម');
-  play.onclick = () => {
+  const launch = (style) => () => {
     if (!teams.length || !teams.some((t) => t.length)) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
     const cls = (classes.find((c) => c.id === tgClassId) || {}).name || '';
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls, groups: teams })); } catch {}
-    location.href = 'teamgame.html?import=1';
+    location.href = `teamgame.html?import=1&style=${style}`;
   };
+  const play = h('button', { type: 'button' }, '▶ កាតបើក'); play.onclick = launch('cards');
+  const spin = h('button', { type: 'button', style: 'background:#e8590c' }, '🎡 កង់វិល'); spin.onclick = launch('wheel');
 
   card.appendChild(h('div', { class: 'row', style: 'gap:12px;align-items:end;flex-wrap:wrap' }, [
     h('label', {}, ['ថ្នាក់', h('br'), sel]),
     h('label', {}, ['ចំនួនក្រុម', h('br'), num]),
     h('label', { style: 'display:flex;gap:6px;align-items:center' }, [absent, 'មិនរួមសិស្សអវត្តមាន']),
-    again, play,
+    again, play, spin,
     h('a', { class: 'btn secondary', href: 'teamgame.html', style: 'background:#fff;color:var(--brand);border:1px solid #bcd0f3' }, 'លេងដោយមិនមានថ្នាក់'),
   ]));
   card.appendChild(info);
