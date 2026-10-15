@@ -33,6 +33,13 @@ render.bank = async function () {
   const editable = tests.filter((t) => (t.my_role === 'owner' || t.my_role === 'editor') && !t.is_sample);
   const selected = new Set();
   const S = bankState;
+  // What's new in the shared library since this teacher last looked (ids only grow, so "bigger than last seen" = added since).
+  let seenMax = 0; try { seenMax = Number(localStorage.getItem('bank_seen_max') || 0); } catch {}
+  const sharedQs = questions.filter((q) => q.shared);
+  const maxShared = sharedQs.reduce((m, q) => Math.max(m, q.id), 0);
+  const isNew = (q) => q.shared && seenMax > 0 && q.id > seenMax;
+  const newCount = sharedQs.filter(isNew).length;
+  if (seenMax === 0 && maxShared) { try { localStorage.setItem('bank_seen_max', String(maxShared)); } catch {} }
   const topics = [...new Set(questions.map((q) => q.topic).filter(Boolean))].sort();
   const reload = async () => { const y = window.scrollY; await render.bank(); window.scrollTo(0, y); };   // stay where the teacher was
 
@@ -51,6 +58,10 @@ render.bank = async function () {
     ...curr.grades.map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
     gradePill('-', 'មិនទាន់កំណត់ថ្នាក់', count((q) => !q.grade)),
   ]);
+  if (newCount) container.append(h('div', { class: 'card', style: 'background:#fff4dc;border:1px solid #f1d28a;display:flex;gap:12px;align-items:center;flex-wrap:wrap;' }, [
+    h('div', { style: 'flex:1;min-width:200px;' }, [h('b', {}, `🆕 ឃ្លាំងសំណួររួមមាន ${newCount} សំណួរថ្មី`), h('div', { class: 'muted' }, 'ម្ចាស់ប្រព័ន្ធទើបបន្ថែម — មើលសំណួរដែលមានស្លាក «🆕 ថ្មី» ខាងក្រោម។')]),
+    h('button', { class: 'secondary', onclick: () => { try { localStorage.setItem('bank_seen_max', String(maxShared)); } catch {} render.bank(); } }, '✓ បានមើលហើយ'),
+  ]));
   container.append(h('div', { class: 'card' }, [
     h('h2', {}, `🗂 ធនាគារសំណួរ (${questions.length})`),
     h('p', { class: 'muted' }, 'រៀបតាមថ្នាក់ → មេរៀន។ បន្ថែមសំណួរចូលមេរៀន រួចពេលបង្កើតតេស្ត គ្រាន់តែជ្រើសរើសពីមេរៀន ឬផ្នែកដែលចង់បាន។ សំណួរចាស់ៗពីតេស្តរបស់លោកគ្រូក៏នៅទីនេះដែរ — ជ្រើសរើសពួកវា រួចចុច «🏷 ដាក់ក្នុងមេរៀន»។'),
@@ -155,7 +166,7 @@ render.bank = async function () {
             h('span', { class: 'muted', style: 'font-size:12px;' }, x.test_title),
           ]),
         ]),
-        x.shared ? h('span', { class: 'chip chip-plain', title: 'សំណួររួមរបស់ប្រព័ន្ធ — ចម្លងទៅតេស្តរបស់អ្នកបាន' }, '🌐 រួម') : h('button', { class: 'secondary btn-sm', onclick: (e) => { e.preventDefault(); e.stopPropagation(); openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload); } }, '✏️'),
+        x.shared ? h('span', { class: `chip ${isNew(x) ? 'chip-closed' : 'chip-plain'}`, title: 'សំណួររួមរបស់ប្រព័ន្ធ — ចម្លងទៅតេស្តរបស់អ្នកបាន' }, (isNew(x) ? '🆕 ថ្មី' : '🌐 រួម')) : h('button', { class: 'secondary btn-sm', onclick: (e) => { e.preventDefault(); e.stopPropagation(); openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload); } }, '✏️'),
       ]));
     });
     if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
