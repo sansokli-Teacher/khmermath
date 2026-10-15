@@ -375,3 +375,44 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 @keyframes tg-water { from { background-position: 0 0; } to { background-position: 72px 0; } }
 @media (prefers-reduced-motion: reduce) { .tg-lane { animation: none; } .tg-boat { transition: none; } }
 @media (max-width: 640px) { .tg-lane { grid-template-columns: 62px 1fr 40px; padding: 0 4px; gap: 4px; } .tg-boat { --bw: 34%; } .tg-lname { font-size: 12px; padding: 2px 4px; } }
+
+/* ===== simple setup screen (static/js/tgui.js) ===== */
+.gx { display: flex; flex-direction: column; gap: 16px; padding-bottom: 96px; }
+.gx-step { padding: 18px clamp(14px, 2.4vw, 24px); border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(16, 42, 67, .06); display: flex; flex-direction: column; gap: 12px; }
+.gx-step h2 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.gx-n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--teal); color: #fff; font-size: 16px; font-weight: 800; flex: none; }
+.gx-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.gx-lab { font-weight: 700; color: var(--ink-2); }
+.gx-styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.gx-style { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 0 0 12px; border-radius: 16px; border: 3px solid var(--line-2); background: var(--surface-2); cursor: pointer; font: inherit; color: inherit; overflow: hidden; transition: transform .15s, border-color .15s, box-shadow .15s; }
+.gx-style img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.gx-style b { font-size: 18px; padding: 6px 14px 0; } .gx-style small { padding: 0 14px; color: var(--ink-3); line-height: 1.5; }
+.gx-style:hover:not(:disabled) { transform: translateY(-3px); }
+.gx-style.on { border-color: var(--teal); box-shadow: 0 0 0 4px var(--teal-soft), 0 10px 24px rgba(16, 42, 67, .15); }
+.gx-style.on b::after { content: " ✓"; color: var(--teal); }
+.gx-style:disabled { opacity: .4; cursor: not-allowed; }
+.gx-stepper { display: inline-flex; align-items: center; border-radius: 99px; border: 2px solid var(--line-2); background: var(--surface-2); overflow: hidden; }
+.gx-stepper button { width: 48px; height: 46px; border: 0; background: transparent; font-size: 26px; font-weight: 700; cursor: pointer; color: var(--teal); }
+.gx-stepper button:hover { background: var(--teal-soft); }
+.gx-stepper output { min-width: 46px; text-align: center; font-size: 24px; font-weight: 800; }
+.gx-seg { display: inline-flex; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line-2); padding: 3px; align-self: flex-start; }
+.gx-seg label { cursor: pointer; margin: 0; }
+.gx-seg input { position: absolute; opacity: 0; pointer-events: none; }
+.gx-seg span { display: block; padding: 8px 16px; border-radius: 11px; font-weight: 700; }
+.gx-seg input:checked + span { background: var(--teal); color: #fff; }
+.gx-seg input:focus-visible + span { outline: 3px solid var(--teal-soft); }
+.gx-chips { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.gx-chips button { min-width: 52px; height: 44px; padding: 0 14px; border-radius: 99px; border: 2px solid var(--line-2); background: var(--surface-2); font: inherit; font-weight: 700; cursor: pointer; color: var(--ink-2); }
+.gx-chips button.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.gx-class { margin-left: auto; font-size: 14px; color: var(--ink-3); }
+.gx .tg-lessons { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.gx .tg-lesson { padding: 8px 10px; }
+.gx-more { border-radius: 16px; border: 1px dashed var(--line-2); padding: 4px 14px; background: transparent; }
+.gx-more > summary { cursor: pointer; font-weight: 700; padding: 12px 0; list-style: none; } .gx-more > summary::-webkit-details-marker { display: none; }
+.gx-more > summary::before { content: "▸ "; } .gx-more[open] > summary::before { content: "▾ "; }
+.gx-more small { font-weight: 400; color: var(--ink-3); }
+.gx-more .tg-opts { padding-bottom: 12px; }
+.gx-bar { position: sticky; bottom: 0; z-index: 20; margin: 0 calc(-1 * clamp(0px, 1vw, 8px)); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 18px 18px 0 0; background: var(--surface); border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -8px 24px rgba(16, 42, 67, .14); }
+.gx-sum { font-weight: 700; color: var(--ink-2); font-size: 16px; }
+.gx-bar .tg-go .btn-primary { font-size: 20px; padding: 12px 34px; border-radius: 99px; }
+@media (max-width: 760px) { .gx-styles { grid-template-columns: 1fr; } .gx-style { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 0; } .gx-style img { width: 140px; aspect-ratio: 16/10; } .gx-style b { padding: 0 8px; flex: 1; } .gx-style small { display: none; } .gx-bar { gap: 6px; padding: 8px 12px; } .gx-sum { font-size: 13px; width: 100%; text-align: center; } .gx-bar .tg-go { width: 100%; flex-wrap: nowrap; } .gx-bar .tg-go .btn { flex: 1; padding: 10px 12px; font-size: 17px; } .gx-class { margin-left: 0; } }

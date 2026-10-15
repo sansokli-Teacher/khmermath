@@ -18,45 +18,95 @@ render.live = async function () {
     closed ? h('p', { class: 'error' }, 'ហ្គេមនេះត្រូវបានបិទ — សូមបើកក្នុង «សំណួរហ្គេម» ជាមុនសិន។') : null,
   ]));
 
-  const boxes = lessons.map((L) => {
-    const cb = h('input', { type: 'checkbox' }); cb.checked = lvLessons.includes(L.n); cb.onchange = () => { lvLessons = lessons.filter((x, i) => boxes[i].cb.checked).map((x) => x.n); };
-    return { cb, lab: h('label', { style: 'display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff' }, [cb, h('span', {}, [h('b', {}, `មេរៀនទី ${lvKh(L.n)} `), L.title])]) };
-  });
-  const count = h('select', {}, [10, 15, 20, 30].map((n) => h('option', { value: n }, `${lvKh(n)} សំណួរ`))); count.value = '15';
-  const secs = h('select', {}, [15, 20, 30, 45, 60, 90].map((n) => h('option', { value: n }, `${lvKh(n)} វិនាទី/សំណួរ`))); secs.value = '30';
-  const mode = h('select', {}, [h('option', { value: 'classic' }, '👩‍🏫 បែបថ្នាក់ (គ្រូគ្រប់គ្រង)'), h('option', { value: 'solo' }, '🧘 បែបសុខសាន្ត (សិស្សលេងដោយខ្លួនឯង)')]);
   let classes = [];
   try { classes = (await api('/api/classes')).classes || []; } catch { classes = []; }
-  const hwOn = h('input', { type: 'checkbox' });
+  if (!document.getElementById('lvx-css')) {
+    const st = document.createElement('style'); st.id = 'lvx-css';
+    st.textContent = `
+.lvx { display: flex; flex-direction: column; gap: 14px; padding-bottom: 80px; }
+.lvx-step { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; box-shadow: 0 6px 18px rgba(16,42,67,.06); }
+.lvx-step h3 { margin: 0 0 12px; display: flex; align-items: center; gap: 10px; font-size: 18px; }
+.lvx-n { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--teal, #1f6f66); color: #fff; font-size: 15px; }
+.lvx-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.lvx-mode { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 10px; border-radius: 16px; border: 3px solid var(--line); background: #f7f9fb; cursor: pointer; font: inherit; color: inherit; text-align: center; }
+.lvx-mode.on { border-color: var(--teal, #1f6f66); background: #e6f4f1; box-shadow: 0 0 0 3px #e6f4f1; }
+.lvx-mode:disabled { opacity: .4; cursor: not-allowed; }
+.lvx-ic { font-size: 38px; line-height: 1.1; } .lvx-mode b { font-size: 18px; } .lvx-mode small { color: #5f6f81; line-height: 1.5; }
+.lvx-hw { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #f1f6ff; }
+.lvx-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.lvx-lesson { display: flex; gap: 8px; align-items: center; padding: 9px 12px; border-radius: 12px; border: 2px solid var(--line); background: #f7f9fb; cursor: pointer; }
+.lvx-lesson.on { border-color: var(--teal, #1f6f66); background: #e6f4f1; }
+.lvx-lab { font-weight: 700; margin: 4px 0 6px; color: #3b4a5c; }
+.lvx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.lvx-chips button { height: 44px; padding: 0 16px; border-radius: 99px; border: 2px solid var(--line); background: #f7f9fb; font: inherit; font-weight: 700; cursor: pointer; color: #3b4a5c; }
+.lvx-chips button.on { background: var(--teal, #1f6f66); border-color: var(--teal, #1f6f66); color: #fff; }
+.lvx-bar { position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 16px 16px 0 0; background: #fff; border: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(16,42,67,.14); }
+.lvx-sum { font-weight: 700; color: #3b4a5c; }
+.lvx-go { font-size: 19px; padding: 12px 30px; border-radius: 99px; }
+@media (max-width: 700px) { .lvx-modes { grid-template-columns: 1fr; } .lvx-mode { flex-direction: row; text-align: left; gap: 12px; } .lvx-mode small { display: none; } }`;
+    document.head.appendChild(st);
+  }
+
+  // ---- 1. how to play: three picture cards ----
+  let modeVal = 'classic';
+  const MODES = [['classic', '👩‍🏫', 'បែបថ្នាក់', 'គ្រូចេញសំណួរម្តងមួយៗលើអេក្រង់ធំ សិស្សទាំងអស់ឆ្លើយព្រមគ្នា'], ['solo', '🧘', 'បែបសុខសាន្ត', 'សិស្សលេងតាមល្បឿនខ្លួន គ្មានគ្រូគ្រប់គ្រង'], ['hw', '📚', 'កិច្ចការផ្ទះ', 'ឱ្យថ្នាក់មួយលេងមុនថ្ងៃផុតកំណត់ ពិន្ទុត្រូវរក្សាទុក']];
+  const modeBtns = MODES.map(([v, ic, t, d]) => {
+    const b = h('button', { type: 'button', class: 'lvx-mode', onclick: () => { modeVal = v; sync(); } }, [h('span', { class: 'lvx-ic' }, ic), h('b', {}, t), h('small', {}, d)]);
+    b.dataset.v = v; return b;
+  });
+  if (!classes.length) modeBtns[2].disabled = true;
+
+  // ---- 2. lessons as chips ----
+  const boxes = lessons.map((L) => {
+    const cb = h('input', { type: 'checkbox' }); cb.checked = lvLessons.includes(L.n);
+    const lab = h('label', { class: 'lvx-lesson' + (cb.checked ? ' on' : '') }, [cb, h('span', {}, [h('b', {}, `មេរៀនទី ${lvKh(L.n)} `), L.title])]);
+    cb.onchange = () => { lvLessons = lessons.filter((x, i) => boxes[i].cb.checked).map((x) => x.n); lab.classList.toggle('on', cb.checked); sync(); };
+    return { cb, lab };
+  });
+  const all = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => { boxes.forEach((b) => { b.cb.checked = true; b.lab.classList.add('on'); }); lvLessons = lessons.map((x) => x.n); sync(); } }, 'ជ្រើសទាំងអស់');
+  const none = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => { boxes.forEach((b) => { b.cb.checked = false; b.lab.classList.remove('on'); }); lvLessons = []; sync(); } }, 'មិនជ្រើស');
+
+  // ---- 3. how many questions, how long ----
+  let countVal = 15, secsVal = 30;
+  const chips = (vals, get, set, fmt) => { const row = h('div', { class: 'lvx-chips' }); vals.forEach((v) => row.appendChild(h('button', { type: 'button', 'data-v': v, onclick: () => { set(v); sync(); } }, fmt(v)))); row.paint = () => [...row.children].forEach((b) => b.classList.toggle('on', Number(b.dataset.v) === get())); return row; };
+  const countRow = chips([10, 15, 20, 30], () => countVal, (v) => { countVal = v; }, (v) => `${lvKh(v)} សំណួរ`);
+  const secsRow = chips([15, 20, 30, 45, 60], () => secsVal, (v) => { secsVal = v; }, (v) => `${lvKh(v)} វិនាទី`);
+
+  // homework: class + deadline
   const hwClass = h('select', {}, classes.map((c) => h('option', { value: c.id }, c.name)));
   const dl = new Date(Date.now() + 3 * 86400000); dl.setHours(20, 0, 0, 0);
   const hwDate = h('input', { type: 'datetime-local', value: new Date(dl - dl.getTimezoneOffset() * 60000).toISOString().slice(0, 16) });
-  const hwBox = h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:10px' }, [
-    h('label', { style: 'display:flex;gap:6px;align-items:center;font-weight:700' }, [hwOn, '📚 កិច្ចការផ្ទះ (សម្រាប់ថ្នាក់មួយ)']), hwClass, h('span', {}, 'ផុតកំណត់៖'), hwDate,
-    h('small', { class: 'muted' }, 'សិស្សចូលតាមគណនីរបស់ខ្លួននៅ exam.khmermath.org/student ហើយពិន្ទុត្រូវរក្សាទុកក្នុងប្រវត្តិ។ (ត្រូវជ្រើស «បែបសុខសាន្ត»)'),
-  ]);
-  const syncHw = () => { hwBox.style.display = mode.value === 'solo' && classes.length ? '' : 'none'; if (mode.value !== 'solo') hwOn.checked = false; };
-  mode.onchange = syncHw; syncHw();
-  const go = h('button', { type: 'button' }, '▶ បង្កើតបន្ទប់');
-  go.disabled = !!closed;
+  const hwBox = h('div', { class: 'lvx-hw' }, [h('label', {}, ['ថ្នាក់ ', hwClass]), h('label', {}, ['ផុតកំណត់ ', hwDate]), h('small', { class: 'muted' }, 'សិស្សចូលតាមគណនីខ្លួននៅ exam.khmermath.org/student ហើយឃើញកិច្ចការនៅទីនោះ។')]);
+
+  const go = h('button', { type: 'button', class: 'lvx-go' }, '▶ បង្កើតបន្ទប់');
+  const sum = h('div', { class: 'lvx-sum' });
+  function sync() {
+    modeBtns.forEach((b) => b.classList.toggle('on', b.dataset.v === modeVal));
+    countRow.paint(); secsRow.paint(); hwBox.style.display = modeVal === 'hw' ? '' : 'none';
+    const m = MODES.find((x) => x[0] === modeVal);
+    sum.textContent = `${m[1]} ${m[2]} · មេរៀន ${lvKh(lvLessons.length)} · ${lvKh(countVal)} សំណួរ · ${lvKh(secsVal)} វិនាទី`;
+    go.disabled = !!closed || !lvLessons.length;
+    go.textContent = modeVal === 'hw' ? '📚 ចេញកិច្ចការផ្ទះ' : '▶ បង្កើតបន្ទប់';
+  }
   go.onclick = async () => {
     if (!lvLessons.length) return Exam.notify('សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១។');
     go.disabled = true;
-    try { const r = await api('/api/live/create', { method: 'POST', body: { lessons: lvLessons, count: Number(count.value), secs: Number(secs.value), mode: mode.value, ...(hwOn.checked ? { class_id: Number(hwClass.value), deadline: new Date(hwDate.value).getTime() } : {}) } });
+    try {
+      const body = { lessons: lvLessons, count: countVal, secs: secsVal, mode: modeVal === 'classic' ? 'classic' : 'solo' };
+      if (modeVal === 'hw') { body.class_id = Number(hwClass.value); body.deadline = new Date(hwDate.value).getTime(); }
+      const r = await api('/api/live/create', { method: 'POST', body });
       lvLast = r.code;
-      if (r.homework) { Exam.notify('បានបង្កើតកិច្ចការផ្ទះ — សិស្សឃើញវានៅក្នុងគណនីរបស់ខ្លួន។'); render.live(); } else lvHost(r.code); }
-    catch (e) { Exam.notify(e.message); } finally { go.disabled = !!closed; }
+      if (r.homework) { Exam.notify('បានបង្កើតកិច្ចការផ្ទះ — សិស្សឃើញវានៅក្នុងគណនីរបស់ខ្លួន។'); render.live(); } else lvHost(r.code);
+    } catch (e) { Exam.notify(e.message); } finally { sync(); }
   };
-  const all = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => boxes.forEach((b) => { b.cb.checked = true; lvLessons = lessons.map((x) => x.n); }) }, 'ជ្រើសទាំងអស់');
-  const none = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => boxes.forEach((b) => { b.cb.checked = false; lvLessons = []; }) }, 'មិនជ្រើស');
-  root.appendChild(h('div', { class: 'card' }, [
-    h('b', {}, 'ជ្រើសមេរៀន'),
-    h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:10px 0' }, boxes.map((b) => b.lab)),
-    h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center' }, [mode, count, secs, go, all, none]),
-    hwBox,
-    h('p', { class: 'muted', style: 'margin:8px 0 0' }, 'បែបថ្នាក់៖ លោកគ្រូអ្នកគ្រូចេញសំណួរម្តងមួយៗលើអេក្រង់ធំ សិស្សទាំងអស់ឆ្លើយព្រមគ្នា។ បែបសុខសាន្ត៖ សិស្សម្នាក់ៗលេងតាមល្បឿនខ្លួន ដោយមិនចាំបាច់មានគ្រូគ្រប់គ្រង (សមស្របជាកិច្ចការផ្ទះ ឬពេលសិស្សរៀនដោយខ្លួនឯង)។'),
-    lvLast ? h('p', { class: 'muted', style: 'margin-bottom:0' }, ['បន្ទប់ចុងក្រោយ៖ ', h('b', {}, lvLast), ' ', h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvHost(lvLast) }, 'បើកវិញ')]) : null,
+  const step = (n, title, ...kids) => h('section', { class: 'lvx-step' }, [h('h3', {}, [h('span', { class: 'lvx-n' }, n), ' ', title]), ...kids]);
+  root.appendChild(h('div', { class: 'lvx' }, [
+    step('១', 'ជ្រើសរបៀបលេង', h('div', { class: 'lvx-modes' }, modeBtns), hwBox),
+    step('២', 'ជ្រើសមេរៀន', h('div', { class: 'lvx-lessons' }, boxes.map((b) => b.lab)), h('div', { class: 'row', style: 'gap:8px;margin-top:8px' }, [all, none])),
+    step('៣', 'ចំនួនសំណួរ និងម៉ោង', h('div', { class: 'lvx-lab' }, 'ចំនួនសំណួរ'), countRow, h('div', { class: 'lvx-lab' }, 'ម៉ោងក្នុងមួយសំណួរ'), secsRow),
+    h('div', { class: 'lvx-bar' }, [sum, h('div', { class: 'row', style: 'gap:8px;align-items:center' }, [lvLast ? h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvHost(lvLast) }, `បើកបន្ទប់ ${lvLast} វិញ`) : null, go])]),
   ]));
+  sync();
 
   // ---- history of every room: results survive after the room closes ----
   const hist = h('div', { class: 'card' }, [h('h3', { style: 'margin-top:0' }, '📊 ប្រវត្តិហ្គេម និងលទ្ធផល'), h('p', { class: 'muted' }, 'កំពុងផ្ទុក…')]);

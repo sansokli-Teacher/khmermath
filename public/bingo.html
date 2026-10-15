@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="fonts/kantumruy-pro.css">
 <link rel="stylesheet" href="katex/katex.min.css">
 <link rel="stylesheet" href="css/tgshim.css">
-<link rel="stylesheet" href="css/bingo.css?v=20261016a">
+<link rel="stylesheet" href="css/bingo.css?v=20261019a">
 <meta name="theme-color" content="#1f6f66">
 </head>
 <body>
@@ -18,22 +18,37 @@
 <main class="tgx-main">
 <div class="bg" id="bg">
 
-  <!-- ===== SETUP ===== -->
-  <div id="bg-v-setup">
-    <div class="bg-box">
-      <div class="bg-head"><b>១. ជ្រើសមេរៀន</b><small class="bg-hint">ចម្លើយនៃសំណួរក្នុងមេរៀនទាំងនេះនឹងនៅលើកាត</small></div>
+  <!-- ===== SETUP: three short steps, one big button ===== -->
+  <div id="bg-v-setup" class="bgx">
+    <section class="bgx-step">
+      <h2><span class="bgx-n">១</span> ជ្រើសមេរៀន <small>ចម្លើយនៃសំណួរក្នុងមេរៀនទាំងនេះនឹងនៅលើកាត</small></h2>
       <div class="bg-lessons" id="bg-lessons"></div>
-    </div>
-    <div class="bg-box">
-      <div class="bg-head"><b>២. កាតប៊ីងហ្គោ</b></div>
-      <div class="bg-opts">
-        <label>ទំហំតារាង <select id="bg-size"><option value="3">៣ × ៣ (ងាយ)</option><option value="4" selected>៤ × ៤</option><option value="5">៥ × ៥ (មានផ្កាយកណ្តាល ★)</option></select></label>
-        <label>ចំនួនសំណួរដែលត្រូវហៅ <input type="number" id="bg-calls" min="8" max="60"></label>
-        <label>ចំនួនកាត (ចំនួនសិស្ស) <input type="number" id="bg-n" min="1" max="100" value="30"></label>
+    </section>
+    <section class="bgx-step">
+      <h2><span class="bgx-n">២</span> ទំហំកាត</h2>
+      <div class="bgx-sizes" id="bgx-sizes">
+        <button type="button" data-v="3"><i class="bgx-mini g3"></i><b>៣ × ៣</b><small>ងាយ · លេងលឿន</small></button>
+        <button type="button" data-v="4"><i class="bgx-mini g4"></i><b>៤ × ៤</b><small>ល្អសម្រាប់ភាគច្រើន</small></button>
+        <button type="button" data-v="5"><i class="bgx-mini g5"></i><b>៥ × ៥ ★</b><small>ពិបាក · មានផ្កាយកណ្តាល</small></button>
+      </div>
+      <select id="bg-size" hidden><option value="3">៣ × ៣</option><option value="4" selected>៤ × ៤</option><option value="5">៥ × ៥</option></select>
+    </section>
+    <section class="bgx-step">
+      <h2><span class="bgx-n">៣</span> ចំនួនកាត <small>ម្នាក់មួយសន្លឹក</small></h2>
+      <div class="bgx-row">
+        <div class="bgx-chips" id="bgx-n"><button type="button" data-v="10">១០</button><button type="button" data-v="20">២០</button><button type="button" data-v="30">៣០</button><button type="button" data-v="40">៤០</button><button type="button" data-v="50">៥០</button></div>
+        <label class="bgx-or">ឬវាយចំនួន <input type="number" id="bg-n" min="1" max="100" value="30"></label>
       </div>
       <p class="bg-hint" id="bg-info"></p>
-      <p class="bg-hint">របៀបលេង៖ បោះពុម្ពកាតឱ្យសិស្សម្នាក់មួយសន្លឹក។ លោកគ្រូអ្នកគ្រូហៅសំណួរម្តងមួយៗលើអេក្រង់ សិស្សដោះស្រាយ រួចគូសចម្លើយនៅលើកាតរបស់ខ្លួន (បើមាន)។ សិស្សដែលគូសបានមួយជួរ (ដេក បញ្ឈរ ឬទ្រេត) ស្រែក «ប៊ីងហ្គោ!» ហើយលោកគ្រូអ្នកគ្រូពិនិត្យកាតតាមលេខកាត។ ហ្គេមនេះមិនត្រូវការទូរស័ព្ទទេ។</p>
-      <div class="bg-row"><button type="button" class="btn btn-primary" id="bg-make">បង្កើតកាត</button><button type="button" class="btn btn-ghost" id="bg-resume" hidden>បន្តហ្គេមចុងក្រោយ</button></div>
+    </section>
+    <details class="bgx-more">
+      <summary>⚙️ ការកំណត់បន្ថែម · របៀបលេង</summary>
+      <label class="bgx-or">ចំនួនសំណួរដែលត្រូវហៅ <input type="number" id="bg-calls" min="8" max="60"></label>
+      <p class="bg-hint">របៀបលេង៖ បោះពុម្ពកាតឱ្យសិស្សម្នាក់មួយសន្លឹក។ លោកគ្រូអ្នកគ្រូហៅសំណួរម្តងមួយៗលើអេក្រង់ សិស្សដោះស្រាយ រួចគូសចម្លើយនៅលើកាតរបស់ខ្លួន។ សិស្សដែលគូសបានមួយជួរ (ដេក បញ្ឈរ ឬទ្រេត) ស្រែក «ប៊ីងហ្គោ!» ហើយលោកគ្រូអ្នកគ្រូពិនិត្យកាតតាមលេខកាត។ មិនត្រូវការទូរស័ព្ទទេ។</p>
+    </details>
+    <div class="bgx-bar">
+      <div class="bgx-sum" id="bgx-sum"></div>
+      <div class="bg-row"><button type="button" class="btn btn-ghost" id="bg-resume" hidden>↺ បន្តហ្គេមចុងក្រោយ</button><button type="button" class="btn btn-primary" id="bg-make">🎯 បង្កើតកាត</button></div>
     </div>
   </div>
 
@@ -80,6 +95,7 @@
 <script>window.TG_URLS = ['/api/game/bank', 'data/teamgame_g7.json']; window.TG_NOGATE = true;</script>
 <script src="katex/katex.min.js"></script>
 <script src="katex/contrib/auto-render.min.js"></script>
-<script src="js/bingo.js?v=20261016a"></script>
+<script src="js/bingo.js?v=20261019a"></script>
+<script src="js/bgui.js?v=20261019a"></script>
 </body>
 </html>
