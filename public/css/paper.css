@@ -266,3 +266,10 @@
 .omr-exhead { margin-top: .5mm; }
 .omr-x { background: linear-gradient(45deg, transparent 46%, #000 46% 54%, transparent 54%), linear-gradient(-45deg, transparent 46%, #000 46% 54%, transparent 54%); }
 .omr-hint { font-size: 7.5pt; line-height: 3.4mm; white-space: nowrap; }
+
+.omr-qf { border: .3mm solid #000; border-radius: 1.2mm; }
+.omr-qh { background: #e4e4e4; border-radius: 1.2mm 1.2mm 0 0; border-bottom: .3mm solid #000; }
+.omr-qno { font-size: 7pt; text-align: right; line-height: 4.4mm; font-weight: 700; white-space: nowrap; }
+.omr-sep { border-top: .2mm dotted #666; }
+.omr-ql { font-weight: 700; }
+.omr-hl { z-index: 1; }

@@ -6,7 +6,7 @@
   const W = 180, H = 236;
   const MARK = { tl: [4, 4, 8], tr: [176, 4, 8], bl: [4, 232, 8], br: [174.5, 230.5, 11] };   // centre x, y, size
   const R_BUB = 2.2, R_READ = 1.55;                // bubble radius drawn / radius read
-  const ROWS = 20, COL_PITCH = 33.5, Q_Y0 = 108, Q_PITCH = 6;
+  const ROWS = 20, COL_PITCH = 33.5, Q_Y0 = 111, Q_PITCH = 5.7;
   const ID_Y0 = 46, ID_PITCH = 5.0, ID_X0 = 16, ID_COL_PITCH = 6.2;
   const CODE_X0 = 20, CODE_Y = 231, CODE_PITCH = 4.6, CODE_BITS = 20;
   const MAX_Q = ROWS * 5;
@@ -14,7 +14,7 @@
   const LAT_LET = ['A', 'B', 'C', 'D', 'E'];
   const LEVELS = ['easy', 'medium', 'hard', 'pisa'];
 
-  const optPitch = (optCount) => (optCount >= 5 ? 5.4 : 6.2);
+  const optPitch = (optCount) => (optCount >= 5 ? 5.2 : 5.8);
 
   function layout(nQ, optCount, idDigits) {
     optCount = Math.min(5, Math.max(2, optCount || 4));
@@ -72,6 +72,8 @@
     kids.push(abs('omr-hint', 8, 30.4, 90, 3.4, '', null, 'គូសរង្វង់ ១ ខ្ទង់ក្នុងមួយជួរឈរ ឱ្យត្រូវនឹងលេខដែលបានសរសេរ'));
     for (let c = 0; c < L.idDigits; c++) kids.push(abs('omr-write', ID_X0 + c * ID_COL_PITCH - 2.7, 34.5, 5.4, 7));
     for (let d = 0; d < 10; d++) kids.push(abs('omr-dl', ID_X0 - 8.5, ID_Y0 + d * ID_PITCH - 2, 5, 4, '', null, String(d)));
+    kids.push(abs('omr-qf', 6.5, 42.3, ID_X0 + (L.idDigits - 1) * ID_COL_PITCH + 2.2 + 1.5 - 6.5, 94.4 - 42.3));
+    kids.push(abs('omr-sep', 7.5, ID_Y0 + 4.5 * ID_PITCH, ID_X0 + (L.idDigits - 1) * ID_COL_PITCH + 2.2 + 0.5 - 7.5, 0));
     L.id.forEach((col) => col.forEach(([x, y]) => kids.push(abs('omr-bub', x - R_BUB, y - R_BUB, 2 * R_BUB, 2 * R_BUB))));
     // marking instructions
     const ix = Math.max(100, ID_X0 + L.idDigits * ID_COL_PITCH + 6);
@@ -85,10 +87,16 @@
       ]));
     }
     // answers
-    kids.push(abs('omr-cap', 8, 94.3, 120, 4.5, '', null, `ចម្លើយពហុជ្រើសរើស (${nQ} សំណួរ)`));
+    kids.push(abs('omr-cap', 8, 96.3, 120, 4.5, '', null, `ចម្លើយពហុជ្រើសរើស (${nQ} សំណួរ)`));
     for (let c = 0; c < L.cols; c++) {
-      const x0 = 8 + c * COL_PITCH;
-      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + 10 + k * optPitch(L.optCount) - 3, Q_Y0 - 8, 6, 4.5, '', null, lt)));
+      const x0 = 8 + c * COL_PITCH, rowsHere = Math.min(ROWS, Math.min(nQ, MAX_Q) - c * ROWS);
+      const lastX = x0 + 10 + (L.optCount - 1) * optPitch(L.optCount);
+      const left = x0 - 1, right = lastX + 2.2 + 1.2, top = 101.8, bottom = Q_Y0 + (rowsHere - 1) * Q_PITCH + 2.2 + 1.5;
+      kids.push(abs('omr-qf', left, top, right - left, bottom - top));
+      kids.push(abs('omr-qh', left, top, right - left, 5.6));
+      kids.push(abs('omr-qno', left + 0.3, top + 0.6, 6.4, 4.4, '', null, 'ល.រ'));
+      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + 10 + k * optPitch(L.optCount) - 3, top + 0.6, 6, 4.5, '', null, lt)));
+      for (let g = 5; g < rowsHere; g += 5) kids.push(abs('omr-sep', left + 1, Q_Y0 + (g - 1) * Q_PITCH + Q_PITCH / 2, right - left - 2, 0));
     }
     L.q.forEach((r) => {
       kids.push(abs('omr-ql', r.labelX, r.y - 2.2, 6.3, 4.4, '', null, String(r.i + 1)));
