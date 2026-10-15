@@ -58,13 +58,13 @@ function examDoc(o) {
     date ? h('div', { class: 't2' }, `សម័យប្រឡង ${date}`) : null,
     h('div', { class: 't3' }, `វិញ្ញាសា ${profile.subject || 'គណិតវិទ្យា'}`),
   ]));
-  kids.push(h('div', { class: 'p-meta' }, [h('span', {}, `រយៈពេល៖ ${kh(minutes)} នាទី`), h('span', {}, `ពិន្ទុសរុប៖ ${kh(mcqPts + wPts)} ពិន្ទុ`)]));
+  kids.push(h('div', { class: 'p-meta' }, [h('span', {}, ['រយៈពេល៖ ', h('b', {}, `${kh(minutes)} នាទី`)]), h('span', {}, ['ពិន្ទុសរុប៖ ', h('b', {}, `${kh(mcqPts + wPts)} ពិន្ទុ`)])]));
   kids.push(h('div', { class: 'p-student' }, [
-    h('div', {}, ['ឈ្មោះ៖ ', h('span', { class: 'p-line', style: 'display:inline-block;width:78%;' })]),
-    h('div', {}, ['ថ្នាក់៖ ', h('span', { class: 'p-line', style: 'display:inline-block;width:60%;' })]),
-    h('div', {}, ['លេខ៖ ', h('span', { class: 'p-line', style: 'display:inline-block;width:60%;' })]),
+    h('div', { class: 'f wide' }, ['ឈ្មោះ៖ ', h('i', { class: 'p-line' })]),
+    h('div', { class: 'f' }, ['ថ្នាក់៖ ', h('i', { class: 'p-line' })]),
+    h('div', { class: 'f' }, ['លេខ៖ ', h('i', { class: 'p-line' })]),
   ]));
-  kids.push(h('div', { class: 'p-instr' }, `សូមអានសំណួរឱ្យបានល្អិតល្អន់។ ${mcq.length ? `ផ្នែក ក ជ្រើសរើសចម្លើយត្រឹមត្រូវ (${kh(mcqPts)} ពិន្ទុ)។ ` : ''}${writing.length ? `ផ្នែក ខ សរសេរចម្លើយលើក្រដាសឆ្លើយ ដោយបង្ហាញវិធីដោះស្រាយ (${kh(wPts)} ពិន្ទុ)។ ` : ''}មិនអនុញ្ញាតឱ្យប្រើទូរស័ព្ទ ឬម៉ាស៊ីនគណនាទេ។`));
+  kids.push(h('div', { class: 'p-instr' }, `សម្គាល់៖ សូមអានសំណួរឱ្យបានល្អិតល្អន់។ ${mcq.length ? `ផ្នែក ក ជ្រើសរើសចម្លើយត្រឹមត្រូវ (${kh(mcqPts)} ពិន្ទុ)។ ` : ''}${writing.length ? `ផ្នែក ខ សរសេរចម្លើយលើក្រដាសឆ្លើយ ដោយបង្ហាញវិធីដោះស្រាយ (${kh(wPts)} ពិន្ទុ)។ ` : ''}មិនអនុញ្ញាតឱ្យប្រើទូរស័ព្ទ ឬម៉ាស៊ីនគណនាទេ។`));
 
   if (mcq.length) {
     kids.push(h('div', { class: 'p-part' }, [`ផ្នែក ក · ពហុជ្រើសរើស `, h('small', {}, `(${kh(mcq.length)} សំណួរ × ${kh(mcq[0].points)} ពិន្ទុ)`)]));
