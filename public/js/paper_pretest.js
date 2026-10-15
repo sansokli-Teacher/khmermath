@@ -16,7 +16,7 @@
     const center = profile.email ? `Email: ${profile.email}` : '';
     const right = profile.telegram ? `Telegram: ${profile.telegram}` : '';
     const base = "border-top: .8pt solid #000; padding-top: 1.5mm; vertical-align: top; font-size: 10pt;";
-    return `@media print { @page pretest { size: A4; margin: 0 15mm 15mm 15mm;
+    return `@media print { @page pretest { size: A4; margin: 0 15mm 17mm 15mm;
       @bottom-left { content: ${cssStr(left)}; ${base} text-align: left; font-family: 'PaperHead', 'PaperBody', serif; }
       @bottom-center { content: ${cssStr(center)}; ${base} text-align: center; font-family: 'Times New Roman', serif; font-style: italic; }
       @bottom-right { content: ${cssStr(right)}; ${base} text-align: right; padding-right: 3mm; font-family: 'Times New Roman', serif; font-style: italic; }
