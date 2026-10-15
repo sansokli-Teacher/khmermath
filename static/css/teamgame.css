@@ -356,3 +356,22 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
   .tg-rc .tg-q { font-size: clamp(15px, 4.2vh, 22px); }
   .tg-card .tg-acts .btn { min-height: 36px; }
 }
+
+/* boat race */
+.tg.tg-live .tg-board.tg-boatmode { display: flex; flex-direction: column; gap: 10px; min-height: 0; grid-template-columns: none; grid-template-rows: none; }
+.tg-river { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; padding: 8px; border-radius: 16px; background: linear-gradient(180deg, #8ad8ff, #36a8e8 55%, #1c7ed6); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .12); }
+.tg-lane { position: relative; display: grid; grid-template-columns: minmax(70px, 14%) 1fr 56px; align-items: center; gap: 8px; min-height: 0; border-radius: 12px; padding: 0 8px; background: repeating-linear-gradient(100deg, rgba(255, 255, 255, .13) 0 18px, rgba(255, 255, 255, 0) 18px 36px); background-size: 72px 100%; animation: tg-water 3s linear infinite; }
+.tg-lane.turn { outline: 3px solid #fff; box-shadow: 0 0 0 3px var(--c), 0 6px 14px rgba(0, 0, 0, .25); }
+.tg-lname { padding: 3px 10px; border-radius: 10px; background: var(--c); color: #fff; font-weight: 800; font-size: clamp(13px, 2.4vh, 20px); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); }
+.tg-track { position: relative; height: 100%; min-height: 28px; border-bottom: 3px dashed rgba(255, 255, 255, .55); }
+.tg-flag { position: absolute; right: 0; top: 50%; transform: translateY(-60%); font-size: clamp(22px, 5vh, 40px); }
+.tg-boat { position: absolute; left: calc(var(--p, 0) * (100% - var(--bw, 24%))); top: 50%; width: var(--bw, 24%); max-width: 190px; transform: translateY(-58%); transition: left 1.1s cubic-bezier(.25, .8, .3, 1); filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .3)); }
+.tg-boat svg { display: block; width: 100%; height: auto; max-height: 100%; }
+.tg-lcount { color: #fff; text-align: center; font-size: clamp(14px, 2.6vh, 22px); text-shadow: 0 2px 4px rgba(0, 0, 0, .4); }
+.tg-go-q { flex: none; padding: 12px 18px; border: 0; border-radius: 16px; background: var(--c, var(--teal)); color: #fff; font: inherit; font-weight: 800; font-size: clamp(16px, 3vh, 26px); cursor: pointer; box-shadow: 0 5px 0 rgba(0, 0, 0, .22); transition: transform .1s; }
+.tg-go-q:hover:not(:disabled) { filter: brightness(1.08); }
+.tg-go-q:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, .22); }
+.tg-go-q:disabled { opacity: .6; cursor: default; }
+@keyframes tg-water { from { background-position: 0 0; } to { background-position: 72px 0; } }
+@media (prefers-reduced-motion: reduce) { .tg-lane { animation: none; } .tg-boat { transition: none; } }
+@media (max-width: 640px) { .tg-lane { grid-template-columns: 62px 1fr 40px; padding: 0 4px; gap: 4px; } .tg-boat { --bw: 34%; } .tg-lname { font-size: 12px; padding: 2px 4px; } }
