@@ -21,3 +21,15 @@ body { font-family: 'Kantumruy Pro', system-ui, sans-serif; background: var(--bg
 .tgx-brand { color: var(--teal-strong); font-weight: 800; font-size: 18px; text-decoration: none; }
 .tgx-main { padding: 18px clamp(12px, 3vw, 28px) 40px; }
 .tg.tg-live { z-index: 70; }
+
+/* student mode (opened from the student's page): the setup steps are skipped, the game starts by itself */
+.tg-student #tg-setup { display: none !important; }
+.tg-loading { text-align: center; padding: 80px 20px; font-size: 20px; font-weight: 600; color: #4a5872; }
+.tg-student .tg-tctl { display: none !important; }
+.tg-student .tg-card.auto .tg-acts { display: none !important; }
+.tg-student .tg-o.tg-tap { cursor: pointer; transition: transform .1s, border-color .12s, background .12s; }
+.tg-student .tg-o.tg-tap:hover { border-color: var(--teal, #1c9a74); transform: translateX(3px); }
+.tg-student .tg-card:not(.revealed) .tg-o.tg-tap:active { transform: scale(.99); }
+.tg-student .tg-card.revealed .tg-o.wrong { border-color: #d9454f; background: #fdeceb; color: #7a1f26; opacity: 1; }
+.tg-student .tg-card.revealed .tg-o.wrong b { background: #d9454f; }
+.tg-student .tg-card.revealed .tg-o.tg-tap { pointer-events: none; }

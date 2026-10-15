@@ -190,6 +190,86 @@ function gameCard(studentName) {
   ]);
 }
 
+// ---------- learning + games hub (by the student's grade) ----------
+const SITE = 'https://khmermath.org';
+const CBA = 'https://cba.khmermath.org';
+const GAMES = [
+  { style: 'cards', icon: '🃏', name: 'កាតបើក', desc: 'ជ្រើសប្រអប់លេខ ប្រយ័ត្នប្រអប់ពិសេស', img: 'img/play/teamgame.jpg' },
+  { style: 'wheel', icon: '🎡', name: 'កង់វិល', desc: 'បង្វិលកង់ ហើយកង់ជ្រើសសំណួរឱ្យ', img: 'img/play/wheel.jpg' },
+  { style: 'boat', icon: '🚣', name: 'ប្រណាំងទូកង', desc: 'ឆ្លើយត្រូវ ទូកទៅមុខ ដល់ទីបញ្ចប់មុនគេឈ្នះ', img: 'img/play/boat.jpg' },
+];
+const khd = (n) => String(n).replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
+
+function openGame(g, grade, myName) {
+  document.querySelectorAll('.gm-back').forEach((e) => e.remove());
+  let who = 'solo', count = 2, qn = 10;
+  const names = ['ខ្ញុំ', 'មិត្តទី ១', 'មិត្តទី ២', 'មិត្តទី ៣'];
+  const body = h('div', { class: 'gm-body' });
+  const draw = () => {
+    body.innerHTML = '';
+    body.append(
+      h('div', { class: 'gm-seg', role: 'tablist' }, [
+        h('button', { type: 'button', class: who === 'solo' ? 'on' : '', onclick: () => { who = 'solo'; draw(); } }, '👤 លេងម្នាក់ឯង'),
+        h('button', { type: 'button', class: who === 'friends' ? 'on' : '', onclick: () => { who = 'friends'; draw(); } }, '👥 លេងជាមួយមិត្ត'),
+      ]),
+    );
+    if (who === 'friends') {
+      body.append(
+        h('div', { class: 'gm-row' }, [h('span', {}, 'ចំនួនអ្នកលេង'), h('div', { class: 'gm-chips' }, [2, 3, 4].map((n) => h('button', { type: 'button', class: count === n ? 'on' : '', onclick: () => { count = n; draw(); } }, khd(n))))]),
+        h('div', { class: 'gm-names' }, [...Array(count).keys()].map((i) => h('input', { type: 'text', maxlength: '20', value: names[i], 'aria-label': `ឈ្មោះអ្នកលេងទី ${i + 1}`, oninput: (e) => { names[i] = e.target.value; } }))),
+        h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:13px;' }, 'ប្តូរវេនគ្នាឆ្លើយ — ប្រើទូរស័ព្ទ ឬកុំព្យូទ័រតែមួយជាមួយគ្នា។'),
+      );
+    }
+    body.append(h('div', { class: 'gm-row' }, [h('span', {}, 'ចំនួនសំណួរ'), h('div', { class: 'gm-chips' }, [5, 10, 20].map((n) => h('button', { type: 'button', class: qn === n ? 'on' : '', onclick: () => { qn = n; draw(); } }, khd(n))))]));
+  };
+  draw();
+  const go = () => {
+    const players = who === 'solo' ? [myName || 'ខ្ញុំ'] : names.slice(0, count).map((x, i) => (x || '').trim() || (i ? `មិត្តទី ${khd(i)}` : 'ខ្ញុំ'));
+    location.href = `teamgame.html?student=1&style=${g.style}&grade=${grade}&n=${qn}&p=${encodeURIComponent(players.join('|'))}`;
+  };
+  const back = h('div', { class: 'modal-back gm-back', onclick: (e) => { if (e.target === back) back.remove(); } }, [
+    h('div', { class: 'modal-box gm-box', role: 'dialog', 'aria-modal': 'true' }, [
+      h('div', { class: 'gm-head' }, [h('span', { class: 'gm-ico' }, g.icon), h('div', {}, [h('h2', { style: 'margin:0;' }, g.name), h('p', { class: 'muted', style: 'margin:2px 0 0;' }, `ថ្នាក់ទី ${khd(grade)} · ${g.desc}`)])]),
+      body,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:16px;' }, [h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'), h('button', { onclick: go }, '▶ ចាប់ផ្ដើមលេង')]),
+    ]),
+  ]);
+  document.body.append(back);
+}
+
+function hubSection(data) {
+  const g = Number(data.grade) || 0;
+  const wrap = h('div', { class: 'hub' });
+  if (!g) return wrap;
+  const hasLessons = g >= 7 && g <= 9;
+  const hasGames = g >= 7 && g <= 9;
+  const link = (href, label, cls = '') => h('a', { class: `btn ${cls}`, href, target: '_blank', rel: 'noopener' }, label);
+  const tile = (icon, title, desc, actions, tone) => h('div', { class: `hub-tile${tone ? ' ' + tone : ''}` }, [h('div', { class: 'hub-ico', 'aria-hidden': 'true' }, icon), h('div', { class: 'hub-t' }, title), h('div', { class: 'hub-d' }, desc), h('div', { class: 'hub-a' }, actions)]);
+
+  wrap.append(h('h2', { class: 'section-title' }, `រៀន និងហ្វឹកហាត់ — ថ្នាក់ទី ${khd(g)}`));
+  wrap.append(h('div', { class: 'hub-grid' }, [
+    hasLessons
+      ? tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'មេរៀនគ្រប់ជំពូក មានឧទាហរណ៍ លំហាត់គំរូ និងលំហាត់ប្រតិបត្តិ។', [link(`${SITE}/lesson/g${g}/`, 'បើកមេរៀន →')], 'blue')
+      : tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'កំពុងរៀបចំ — នឹងមកដល់ឆាប់ៗ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'blue soon'),
+    tile('📐', `រូបមន្តថ្នាក់ទី ${khd(g)}`, 'សៀវភៅរូបមន្តសង្ខេប ងាយស្រួលរកមើល និងចងចាំ។', [link(`${SITE}/formular/g${g}/`, 'បើករូបមន្ត →')], 'teal'),
+    tile('🌏', 'PISA TEST (MoEYS)', 'ប្រធានបទតេស្តគំរូ PISA ៣៨ ពីក្រសួងអប់រំ — សម្រាប់គ្រប់ថ្នាក់។', [link(`${CBA}/?nocert=1#moeys`, 'ចាប់ផ្ដើមហាត់ →')], 'amber'),
+    tile('🧠', `PISA ថ្នាក់ទី ${khd(g)}`, 'លំហាត់ PISA តាមថ្នាក់របស់អ្នក — កំពុងរៀបចំ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'violet soon'),
+  ]));
+
+  if (hasGames) {
+    wrap.append(h('h2', { class: 'section-title' }, 'ហ្គេមគណិតវិទ្យា'));
+    wrap.append(h('p', { class: 'muted', style: 'margin:-6px 0 12px;' }, `លេងម្នាក់ឯង ឬជាមួយមិត្ត — សំណួរមេរៀនថ្នាក់ទី ${khd(g)}។`));
+    wrap.append(h('div', { class: 'game-grid' }, GAMES.map((gm) => h('button', { type: 'button', class: 'game-tile', onclick: () => openGame(gm, g, data.student_name && !/^សិស្ស \d/.test(data.student_name) ? data.student_name : 'ខ្ញុំ') }, [
+      h('img', { src: gm.img, alt: '', loading: 'lazy' }),
+      h('span', { class: 'game-ico' }, gm.icon),
+      h('span', { class: 'game-name' }, gm.name),
+      h('span', { class: 'game-desc' }, gm.desc),
+      h('span', { class: 'game-go' }, 'លេង →'),
+    ]))));
+  }
+  return wrap;
+}
+
 function renderHome(data) {
   clearInterval(timerInterval);
   clearInterval(waitInterval);
@@ -200,16 +280,8 @@ function renderHome(data) {
   const body = document.getElementById('home-body');
   body.innerHTML = '';
 
-  if (data.year) body.append(yearCard(data.year));
-  const progressHolder = h('div', {});
-  body.append(progressHolder);
-  fillProgress(progressHolder);
-  body.append(installCard());
-  body.append(gameCard(data.student_name));
-  const hwHolder = h('div', {}); body.append(hwHolder); homeworkCard(hwHolder);
-
-  // --- upcoming / open tests
-  body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));
+  // --- upcoming / open tests first: that is why most students open this page
+  body.append(h('h2', { class: 'section-title', style: 'margin-top:4px;' }, 'ការប្រឡងខាងមុខ'));
   if (data.upcoming.length === 0) {
     body.append(h('div', { class: 'empty-card' }, [
       h('div', { class: 'empty-icon' }, '📭'),
@@ -218,6 +290,15 @@ function renderHome(data) {
     ]));
   }
   for (const s of data.upcoming) body.append(examCard(s));
+
+  body.append(hubSection(data));
+  body.append(gameCard(data.student_name));
+  const hwHolder = h('div', {}); body.append(hwHolder); homeworkCard(hwHolder);
+  body.append(installCard());
+  if (data.year) body.append(yearCard(data.year));
+  const progressHolder = h('div', {});
+  body.append(progressHolder);
+  fillProgress(progressHolder);
 
   // --- past results
   body.append(h('h2', { class: 'section-title', style: 'margin-top:28px;' }, 'លទ្ធផលពីមុន'));

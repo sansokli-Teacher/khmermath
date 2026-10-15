@@ -89,7 +89,7 @@ export async function status(req, env) {
   const session = await requireStudent(req, env);
   if (!session) return err('Not logged in.', 401);
   await ensureColumns(env);
-  const cls = await env.DB.prepare('SELECT name FROM classes WHERE id = ?1').bind(session.classId).first();
+  const cls = await env.DB.prepare('SELECT name, grade FROM classes WHERE id = ?1').bind(session.classId).first();
   const { results: rows } = await env.DB.prepare(
     `SELECT ts.id, ts.scheduled_start, ts.scheduled_end, ts.duration_minutes, ts.status,
             t.title AS test_title,
@@ -122,7 +122,7 @@ export async function status(req, env) {
   }
   upcoming.sort((a, b) => Date.parse(a.scheduled_start) - Date.parse(b.scheduled_start));
   return json({
-    student_id: session.id, student_name: session.name, class_name: cls ? cls.name : '',
+    student_id: session.id, student_name: session.name, class_name: cls ? cls.name : '', grade: cls ? Number(cls.grade) || null : null,
     server_now: Date.now(), upcoming, history,
     year: await studentYear(env, session).catch(() => null),
   });

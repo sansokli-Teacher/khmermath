@@ -230,7 +230,7 @@
 
   /* ---------- game ---------- */
   function startGame() {
-    var n = noTeam() ? 1 : Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value;
+    var n = noTeam() ? 1 : Math.max(window.TG_STUDENT ? 1 : 2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value;
     if (mode === 'lesson') {
       var pool = [];
       ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: lessonName(L) + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, f: q.f || '', a: q.a, s: q.s || '', h: q.h || '' }; })); });
@@ -242,7 +242,7 @@
       if (!list.length) { $('tg-qcount').textContent = 'សូមបន្ថែមកាតយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
       tiles = list.map(function (c) { return { k: 'q', n: clean(c.n), img: c.img || '', q: clean(c.q), a: clean(c.a), p: parseInt(c.p, 10) > 0 ? parseInt(c.p, 10) : pts }; });
     }
-    if ($('tg-special').checked && !noTeam()) {            // swap / steal / bomb need other teams, so no special cards without teams
+    if ($('tg-special').checked && !noTeam() && n > 1) {            // swap / steal / bomb need other teams, so no special cards without teams
       var keys = Object.keys(SPECIALS), cnt = Math.max(0, Math.min(12, parseInt($('tg-nspecial').value, 10) || 0)), deck = [];
       while (deck.length < cnt) deck = deck.concat(shuffle(keys));
       deck.slice(0, cnt).forEach(function (sp) { var src = tiles[Math.floor(Math.random() * tiles.length)]; tiles.push({ k: 's', sp: sp, img: src.img }); });   // a special card wears an ordinary picture
@@ -254,7 +254,7 @@
   function saveGame() { if (G) put(GAME, G); }
   function snapshot() { hist.push(JSON.stringify(G)); if (hist.length > 40) hist.shift(); }
   function showPlay() { bgm('lobby', 0.3); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
-  function showSetup() { try { if (window.KmSound) KmSound.stop(); } catch (e) {} stopTimer(); closePop(); $('tg').classList.remove('tg-live'); document.documentElement.classList.remove('tg-noscroll'); if (document.fullscreenElement) document.exitFullscreen(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
+  function showSetup() { if (window.TG_STUDENT) { location.href = 'student.html'; return; }  try { if (window.KmSound) KmSound.stop(); } catch (e) {} stopTimer(); closePop(); $('tg').classList.remove('tg-live'); document.documentElement.classList.remove('tg-noscroll'); if (document.fullscreenElement) document.exitFullscreen(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
   function refreshResume() { var g = load(GAME, null); $('tg-resume').hidden = !(g && g.tiles && !g.finished && g.tiles.some(function (t) { return !t.done; })); }
   function remaining() { return G.tiles.filter(function (t) { return !t.done; }).length; }
 
@@ -426,7 +426,21 @@
         split.appendChild(fg); split.appendChild(rc); card.appendChild(split); host = rc; card.classList.add('hasfig');
       }
       if (t.q) host.appendChild(el('div', 'tg-q', t.q));
-      if (t.o) { var ol = el('div', 'tg-opt'); t.o.forEach(function (o, k) { var li = el('div', 'tg-o' + (k === t.ck ? ' key' : '')); li.appendChild(el('b', '', 'កខគឃ'[k])); li.appendChild(el('span', '', o)); ol.appendChild(li); }); host.appendChild(ol); }
+      var tapped = false;
+      if (t.o) {
+        var ol = el('div', 'tg-opt');
+        t.o.forEach(function (o, k) {
+          var li = el('div', 'tg-o' + (k === t.ck ? ' key' : '')); li.appendChild(el('b', '', 'កខគឃ'[k])); li.appendChild(el('span', '', o)); ol.appendChild(li);
+          if (window.TG_STUDENT && t.ck != null) {              // a student taps the answer and the game marks it
+            li.classList.add('tg-tap'); card.classList.add('auto');
+            li.addEventListener('click', function () {
+              if (tapped) return; tapped = true; li.classList.add(k === t.ck ? 'right' : 'wrong'); card.classList.add('revealed'); if (ans) ans.hidden = false;
+              setTimeout(function () { (k === t.ck ? ok : bad).click(); }, k === t.ck ? 900 : 1700);
+            });
+          }
+        });
+        host.appendChild(ol);
+      }
       var ans = el('div', 'tg-a' + (t.o ? ' tg-a-mcq' : ''), t.o ? '' : (t.a || '')); ans.hidden = true; if (t.a) host.appendChild(ans);
       if (t.s) { var sol = el('div', 'tg-sol', t.s); sol.hidden = true; ans.appendChild(sol); }
       typeset(card);
@@ -644,4 +658,28 @@
   $('tg-class').addEventListener('change', function () { pickClass(parseInt($('tg-class').value, 10) || 7, false); });
   loadCfg(); (function () { var m = /[?&]style=(wheel|cards|boat)/.exec(location.search); if (m) $('tg-style').value = m[1]; })(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
   if (/[?&]import=1/.test(location.search) && !$('tg-import').hidden) $('tg-import').click();   // opened from the teacher dashboard: teams come from the class
+
+  /* ---------- student mode: ?student=1&style=cards|wheel|boat&grade=7&p=name1|name2&n=10 -> starts straight away ---------- */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get('student') !== '1') return;
+    window.TG_STUDENT = true; document.body.classList.add('tg-student');
+    var players = (q.get('p') || 'ខ្ញុំ').split('|').map(clean).filter(Boolean).slice(0, 4); if (!players.length) players = ['ខ្ញុំ'];
+    var grade = parseInt(q.get('grade'), 10) || 7, qn = Math.max(5, Math.min(30, parseInt(q.get('n'), 10) || 10)), style = /^(wheel|cards|boat)$/.test(q.get('style')) ? q.get('style') : 'cards';
+    var load = document.createElement('div'); load.className = 'tg-loading'; load.textContent = 'កំពុងរៀបចំហ្គេម…'; $('tg').parentNode.insertBefore(load, $('tg'));
+    var link = document.querySelector('.tgx-top .btn'); if (link) { link.href = 'student.html'; link.textContent = '← ត្រឡប់'; }
+    var brand = document.querySelector('.tgx-brand'); if (brand) brand.href = 'student.html';
+    $('tg-back').textContent = '← ទំព័រសិស្ស';
+    var tries = 0, t = setInterval(function () {
+      if (BANK === null && ++tries < 60) return;
+      clearInterval(t);
+      var ls = ((BANK && BANK.lessons) || []).filter(function (L) { return (L.g || 7) === grade; });
+      if (!ls.length) { load.textContent = 'មិនទាន់មានសំណួរហ្គេមសម្រាប់ថ្នាក់ទី ' + khNum(grade) + ' ទេ — សូមសួរលោកគ្រូអ្នកគ្រូ។'; return; }
+      mode = 'lesson'; applyMode(); curClass = grade; $('tg-class').value = String(grade); selLessons = ls.map(function (L) { return L.n; });
+      setQn(qn); $('tg-style').value = style; $('tg-nteams').value = String(players.length); teamNames = players.slice(); teamMembers = [];
+      if ($('tg-noteam')) $('tg-noteam').checked = false;
+      $('tg-special').checked = players.length > 1;
+      load.remove(); startGame();
+    }, 150);
+  })();
 })();

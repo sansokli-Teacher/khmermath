@@ -337,4 +337,54 @@
     #dashboard-content .list-item > .row, #dashboard-content .list-item > div:last-child:not(:first-child) { justify-content: flex-start; flex-wrap: wrap; }
     #dashboard-content .list-item button { flex: 1 1 auto; }
   }
+
+  /* ---------- student hub: lessons, formulas, PISA, games ---------- */
+  .hub { margin-top: 8px; }
+  .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .hub-tile { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 18px 18px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+  .hub-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--tone, var(--brand)); }
+  .hub-tile.blue { --tone: #3d5fd9; --soft: #eceffd; } .hub-tile.teal { --tone: #1c9a74; --soft: #e1f5ec; }
+  .hub-tile.amber { --tone: #f2a53b; --soft: #fff1d6; } .hub-tile.violet { --tone: #8a63d2; --soft: #f0eafb; }
+  .hub-ico { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; font-size: 26px; background: var(--soft, var(--brand-soft)); }
+  .hub-t { font-weight: 700; font-size: 17px; color: var(--navy); line-height: 1.5; margin-top: 4px; }
+  .hub-d { color: var(--muted); font-size: 14px; line-height: 1.65; flex: 1; }
+  .hub-a { margin-top: 8px; }
+  .hub-a .btn { width: 100%; text-align: center; background: var(--tone); border-color: var(--tone); box-shadow: none; }
+  .hub-tile.soon { opacity: .75; background: #fbf9f4; }
+  .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .game-tile { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; min-height: 210px; padding: 0; border-radius: 20px; overflow: hidden; background: var(--navy); color: #fff; border: 0; box-shadow: var(--shadow); isolation: isolate; }
+  .game-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform .35s; }
+  .game-tile::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(29, 37, 64, 0) 5%, rgba(29, 37, 64, .93) 82%); }
+  .game-tile:hover img { transform: scale(1.06); }
+  .game-tile:hover { box-shadow: var(--shadow-lg); }
+  .game-ico { position: absolute; top: 12px; left: 14px; font-size: 26px; background: rgba(255, 255, 255, .9); width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; }
+  .game-name { text-shadow: 0 1px 6px rgba(0,0,0,.45); font-size: 20px; font-weight: 800; padding: 0 16px; line-height: 1.5; }
+  .game-desc { font-size: 13px; opacity: .88; padding: 0 16px; line-height: 1.55; }
+  .game-go { margin: 10px 16px 14px; background: var(--accent); color: #3a2200; font-weight: 800; font-size: 14px; border-radius: 99px; padding: 4px 16px; }
+  @media (max-width: 700px) { .game-grid { grid-template-columns: 1fr; } .game-tile { min-height: 150px; } }
+
+  /* game launcher */
+  .gm-box { text-align: left; max-width: 480px; }
+  .gm-head { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+  .gm-ico { width: 52px; height: 52px; border-radius: 18px; display: grid; place-items: center; font-size: 28px; background: var(--brand-soft); flex: none; }
+  .gm-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f3efe6; border-radius: 16px; padding: 5px; margin-bottom: 14px; }
+  .gm-seg button, .gm-chips button { box-shadow: none; background: transparent; color: #4a5872; border: 0; min-height: 44px; border-radius: 12px; font-size: 15px; }
+  .gm-seg button.on { background: #fff; color: var(--brand-dark); box-shadow: 0 1px 4px rgba(40, 30, 15, .15); }
+  .gm-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; font-weight: 600; color: var(--ink); }
+  .gm-chips { display: flex; gap: 6px; }
+  .gm-chips button { min-width: 46px; background: #fff; border: 1.5px solid var(--line); }
+  .gm-chips button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .gm-names { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  @media (max-width: 480px) { .gm-names { grid-template-columns: 1fr; } }
+
+  @media (min-width: 701px) { .hub-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  @media (max-width: 700px) {
+    .hub-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hub-tile { padding: 14px 12px 12px; border-radius: 18px; }
+    .hub-ico { width: 40px; height: 40px; font-size: 22px; border-radius: 13px; }
+    .hub-t { font-size: 15px; }
+    .hub-d { font-size: 12.5px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .hub-a .btn { font-size: 13px; padding: 8px 6px; min-height: 40px; }
+  }
 }
