@@ -181,7 +181,6 @@
 .pt-doc .katex, .ptkey-doc .katex { font-size: 1.02em; }
 .ptk-item .tt .katex { font-weight: 400; }
 
-/* maths: Mathcad UniMath italic for variables, Times New Roman for digits/operators */
-.sheet .katex { font-family: 'Times New Roman', serif; }
+/* maths: Mathcad UniMath italic for variables; digits, ° and ∠ and other symbols stay in KaTeX's own Times-like font */
 .sheet .katex .mathnormal, .sheet .katex .mathit { font-family: 'PaperMath', 'Times New Roman', serif; font-style: italic; }
 @media (max-width: 800px) { .p-opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 5mm; } .sheet { padding: 14px 12px 24px; } .p-student { grid-template-columns: 1fr; } .etitle .t1 { font-size: 15pt; } .etitle .t2, .etitle .t3 { font-size: 13pt; } .p-q, .sq { margin-left: 0; } .sq { margin-left: 0; } .p-space, .wblock img { margin-left: 0; } .sect .rn { width: 9mm; } .sect .sc { width: auto; margin-right: 6px; } }
