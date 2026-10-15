@@ -1,7 +1,8 @@
 /* Printable exam paper + answer sheet (A4). Fonts follow the NGS exam templates; the teacher's own
    installed copies are used when present, otherwise the site font. */
-@font-face { font-family: 'PaperBody'; src: local('Khmer Kep'), local('Khmer Kep Regular'), local('Khmer OS Battambang'), local('Kantumruy Pro'); }
-@font-face { font-family: 'PaperTitle'; src: local('Khmer M1'), local('KHMER M1'), local('Khmer OS Muol Light'), local('Khmer OS Muol'); }
+@font-face { font-family: 'PaperBody'; src: local('Khmer OS Battambang'), local('KhmerOS_battambang'), local('KhmerOSBattambang'), local('Khmer Kep'), local('Kantumruy Pro'); }
+@font-face { font-family: 'PaperTitle'; src: local('Khmer M1'), local('KHMER M1'), local('KhmerM1'), local('Khmer OS Muol Light'), local('Khmer OS Muol'); }
+@font-face { font-family: 'PaperMath'; font-style: italic; src: local('Mathcad UniMath Italic'), local('MathcadUniMath-Italic'), local('MATHCADUNIMATHITALIC'), local('Mathcad UniMath'); }
 @font-face { font-family: 'PaperHead'; src: local('Khmer OS Bokor'), local('Khmer M1'), local('Khmer Kep'); }
 
 .paper-body { background: #e9edf3; }
@@ -10,7 +11,7 @@
 .tb-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); }
 .tb-check input { width: 18px; height: 18px; }
 
-.sheet { position: relative; width: 210mm; min-height: 297mm; margin: 18px auto; padding: 10mm 14mm 22mm; background: #fff; box-shadow: 0 6px 30px rgba(0, 0, 0, .15); font-family: 'PaperBody', 'Kantumruy Pro', 'Times New Roman', serif; font-size: 13pt; line-height: 1.7; color: #000; }
+.sheet { position: relative; width: 210mm; min-height: 297mm; margin: 18px auto; padding: 20mm 15mm 15mm; background: #fff; box-shadow: 0 6px 30px rgba(0, 0, 0, .15); font-family: 'Times New Roman', 'PaperBody', 'Kantumruy Pro', serif; font-size: 13pt; line-height: 1.7; color: #000; }
 
 /* ---- header / footer (exam paper) ---- */
 .ph { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1.2pt solid #000; padding-bottom: 3mm; margin-bottom: 4mm; min-height: 17mm; }
@@ -22,7 +23,7 @@
 .sheet > .pf { margin-top: 10mm; }
 
 /* ---- titles ---- */
-.etitle { text-align: center; margin: 2mm 0 3mm; font-family: 'PaperTitle', 'PaperBody', serif; line-height: 1.45; }
+.etitle { text-align: center; margin: 2mm 0 3mm; font-family: 'Times New Roman', 'PaperTitle', 'PaperBody', serif; line-height: 1.45; }
 .etitle .t1 { font-size: 17pt; font-weight: 700; }
 .etitle .t2, .etitle .t3 { font-size: 15pt; font-weight: 700; }
 .p-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px 24px; font-size: 12pt; margin-bottom: 2mm; }
@@ -58,7 +59,7 @@
 .ans-head { width: 100%; border-collapse: collapse; margin-bottom: 2mm; font-weight: 700; font-size: 12pt; }
 .ans-head td { padding: 1px 0; vertical-align: top; background: none; border: 0; }
 .ans-head td:last-child { text-align: right; }
-.ans-title { text-align: center; font-family: 'PaperTitle', 'PaperBody', serif; font-size: 17pt; line-height: 1.4; margin: 2mm 0 4mm; }
+.ans-title { text-align: center; font-family: 'Times New Roman', 'PaperTitle', 'PaperBody', serif; font-size: 17pt; line-height: 1.4; margin: 2mm 0 4mm; }
 .ans-cols { column-count: 2; column-gap: 9mm; font-size: 11.5pt; line-height: 1.55; }
 .ans-ex { break-inside: avoid; margin-bottom: 8px; }
 .ans-ex h4 { margin: 6px 0 3px; font-size: 12pt; font-weight: 700; }
@@ -77,13 +78,13 @@
   @page { size: A4; margin: 0; }
   .paper-body { background: #fff; }
   .sheet { box-shadow: none; margin: 0; width: auto; min-height: 0; padding: 0; }
-  .sheet:not(.answers-doc) > .ph { position: fixed; top: 8mm; left: 14mm; right: 14mm; background: #fff; margin: 0; }
-  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 7mm; left: 14mm; right: 14mm; background: #fff; }
-  .flow > thead > tr > td { height: 33mm; }
-  .flow > tfoot > tr > td { height: 20mm; }
-  .flow > tbody > tr > td { padding: 0 14mm; }
+  .sheet:not(.answers-doc) > .ph { position: fixed; top: 20mm; left: 15mm; right: 15mm; background: #fff; margin: 0; }
+  .sheet:not(.answers-doc) > .pf { position: fixed; bottom: 15mm; left: 15mm; right: 15mm; background: #fff; }
+  .flow > thead > tr > td { height: 45mm; }
+  .flow > tfoot > tr > td { height: 28mm; }
+  .flow > tbody > tr > td { padding: 0 15mm; }
   .answers-doc { page: answers; padding: 0; }
-  @page answers { size: A4; margin: 17mm 14mm 16mm; @bottom-center { content: counter(page, khmer); font-family: 'PaperBody', serif; font-size: 11pt; } }
+  @page answers { size: A4; margin: 20mm 15mm 15mm; @bottom-center { content: counter(page, khmer); font-family: 'PaperBody', serif; font-size: 11pt; } }
 }
 @media (max-width: 800px) { .sheet { width: auto; margin: 0; padding: 12px 12px 30mm; font-size: 12pt; } .p-opts { grid-template-columns: repeat(2, auto); } .ans-cols { column-count: 1; } }
 
@@ -168,15 +169,20 @@
 
 @media print {
   .pt-doc { page: pretest; }
-  .pt-doc > .pt-ph { position: fixed; top: 8mm; left: 0; right: 0; background: #fff; margin: 0; }
+  .pt-doc > .pt-ph { position: fixed; top: 20mm; left: 0; right: 0; background: #fff; margin: 0; }
   .pt-doc > .pt-pf-screen { display: none; }
-  .pt-doc .flow > thead > tr > td { height: 27mm; }
+  .pt-doc .flow > thead > tr > td { height: 39mm; }
   .pt-doc .flow > tfoot > tr > td { height: 0; }
   .pt-doc .flow > tbody > tr > td { padding: 0; }
   .ptkey-doc { page: ptkey; padding: 0; }
-  @page ptkey { size: A4; margin: 17mm 14mm 16mm; @bottom-center { content: counter(page); font-family: 'PaperBody', serif; font-size: 11pt; } }
+  @page ptkey { size: A4; margin: 20mm 15mm 15mm; @bottom-center { content: counter(page); font-family: 'PaperBody', serif; font-size: 11pt; } }
   .pt-omr th, .pt-omr td, .ptk-note, .pt-pf-screen .pg, .ptk-banner { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 .pt-doc .katex, .ptkey-doc .katex { font-size: 1.02em; }
 .ptk-item .tt .katex { font-weight: 400; }
+
+/* maths: Mathcad UniMath italic for variables, Times New Roman for digits/operators */
+.sheet .katex { font-family: 'Times New Roman', serif; }
+.sheet .katex .mathnormal, .sheet .katex .mathit { font-family: 'PaperMath', 'Times New Roman', serif; font-style: italic; }
+@media (max-width: 800px) { .sheet { padding: 14px 12px 24px; } .p-student { grid-template-columns: 1fr; } .etitle .t1 { font-size: 15pt; } .etitle .t2, .etitle .t3 { font-size: 13pt; } .p-q, .sq { margin-left: 0; } .sq { margin-left: 0; } .p-space, .wblock img { margin-left: 0; } .sect .rn { width: 9mm; } .sect .sc { width: auto; margin-right: 6px; } }
