@@ -313,3 +313,46 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .tg-spin:disabled { filter: grayscale(.4) brightness(.95); cursor: default; }
 @media (prefers-reduced-motion: no-preference) { .tg-spin:not(:disabled) { animation: tg-spinpulse 1.4s ease-in-out infinite; } }
 @keyframes tg-spinpulse { 0%, 100% { box-shadow: 0 6px 18px rgba(0, 0, 0, .35), 0 0 0 0 rgba(255, 146, 43, .55); } 50% { box-shadow: 0 6px 18px rgba(0, 0, 0, .35), 0 0 0 14px rgba(255, 146, 43, 0); } }
+
+/* ===== phones: smaller type in the question card, answer buttons always reachable, bigger touch targets ===== */
+.tg-card .tg-acts { position: sticky; bottom: 0; z-index: 2; background: var(--surface); padding: 8px 0 4px; }
+@media (max-width: 640px) {
+  .tg-card.lq .tg-q, .tg-rc .tg-q { font-size: clamp(16px, 4.8vw, 22px); line-height: 1.6; margin: 6px 12px 6px; }
+  .tg-rc .tg-q { margin: 4px 0 6px; }
+  .tg-card.lq .tg-name { font-size: 13px; margin: 8px 48px 0; }
+  .tg-split { padding: 0 12px; gap: 4px; }
+  .tg-split .tg-fig svg { height: clamp(96px, 20vh, 190px); }
+  .tg-o { font-size: 15px; padding: 6px 8px; gap: 8px; }
+  .tg-opt { margin: 6px 12px 0; }
+  .tg-rc .tg-opt { margin: 6px 0 0; }
+  .tg-card .tg-a { font-size: 17px; padding: 8px 10px; margin: 6px 12px 0; }
+  .tg-rc .tg-a { margin: 6px 0 0; }
+  .tg-sol { font-size: 14px; }
+  .tg-card .tg-acts { margin-left: 12px; margin-right: 12px; gap: 6px; }
+  .tg-card .tg-acts .btn { min-height: 44px; padding: 6px 12px; font-size: 14px; }
+  .tg-card .tg-chead { padding: 10px 52px 0; }
+  .tg-pop { padding: 8px; }
+  .tg-spin { width: 28%; font-size: clamp(15px, 4.4vw, 22px); border-width: 4px; }
+  .tg-ptr { border-left-width: 16px; border-right-width: 16px; border-top-width: 34px; }
+}
+@media (pointer: coarse) {
+  .tg-tctl button { width: 44px; height: 36px; }
+  .tg.tg-live .tg-tctl button { height: 32px; width: 42px; }
+  .tg.tg-live .tg-bar .btn { min-height: 40px; }
+  .tg-x { width: 48px; height: 48px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .tg.tg-live .tg-play { padding-top: 4px; padding-bottom: 4px; }
+  .tg.tg-live .tg-bar { margin-bottom: 4px; }
+  .tg.tg-live .tg-turn { font-size: 15px; }
+  .tg.tg-live .tg-bar .btn { min-height: 34px; padding: 2px 10px; font-size: 13px; }
+  .tg.tg-live .tg-stage { gap: 4px; }
+  .tg.tg-live .tg-score { padding: 2px 8px 4px; }
+  .tg.tg-live .tg-tn { font-size: 13px; padding: 0 8px; }
+  .tg.tg-live .tg-ts { font-size: 22px; line-height: 1.1; }
+  .tg.tg-live .tg-tctl button { height: 24px; width: 36px; font-size: 15px; }
+  .tg-card .tg-chead { padding-top: 6px; }
+  .tg-split .tg-fig svg { height: clamp(90px, 38vh, 200px); }
+  .tg-rc .tg-q { font-size: clamp(15px, 4.2vh, 22px); }
+  .tg-card .tg-acts .btn { min-height: 36px; }
+}
