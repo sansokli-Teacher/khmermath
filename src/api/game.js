@@ -116,7 +116,7 @@ export async function resetQuestion(req, env) {
 export async function saveConfig(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const b = await req.json();
-  const lessons = Array.isArray(b.lessons) ? [...new Set(b.lessons.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 99))].sort((a, c) => a - c) : null;
+  const lessons = Array.isArray(b.lessons) ? [...new Set(b.lessons.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 999))].sort((a, c) => a - c) : null;
   const games = {};
   for (const k of GAMES) games[k] = !(b.games && b.games[k] === false);
   const value = JSON.stringify({ enabled: b.enabled !== false, lessons, games, locked: b.locked === true });

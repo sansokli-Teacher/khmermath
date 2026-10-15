@@ -1,6 +1,8 @@
 // Teacher side of the live quiz: open a room, show the code on the projector, run the questions, see the podium.
 let lvLessons = null, lvLast = null;
 const lvKh = (n) => String(n).replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
+// lessons are numbered 1.. (grade 7), 101.. (grade 8), 201.. (grade 9): show them as "8/3" in short lists
+const lvLn = (n) => (n >= 100 ? `${lvKh(Math.floor(n / 100) + 7)}/${lvKh(n % 100)}` : lvKh(n));
 const LV_COL = ['#e03131', '#1c7ed6', '#f08c00', '#2f9e44', '#ae3ec9', '#0c8599'];
 
 render.live = async function () {
@@ -34,6 +36,7 @@ render.live = async function () {
 .lvx-ic { font-size: 38px; line-height: 1.1; } .lvx-mode b { font-size: 18px; } .lvx-mode small { color: #5f6f81; line-height: 1.5; }
 .lvx-hw { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #f1f6ff; }
 .lvx-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.lvx-grade { grid-column: 1 / -1; margin: 8px 0 0; color: var(--teal, #1f6f66); border-bottom: 2px solid #e6f4f1; }
 .lvx-lesson { display: flex; gap: 8px; align-items: center; padding: 9px 12px; border-radius: 12px; border: 2px solid var(--line); background: #f7f9fb; cursor: pointer; }
 .lvx-lesson.on { border-color: var(--teal, #1f6f66); background: #e6f4f1; }
 .lvx-lab { font-weight: 700; margin: 4px 0 6px; color: #3b4a5c; }
@@ -59,7 +62,8 @@ render.live = async function () {
   // ---- 2. lessons as chips ----
   const boxes = lessons.map((L) => {
     const cb = h('input', { type: 'checkbox' }); cb.checked = lvLessons.includes(L.n);
-    const lab = h('label', { class: 'lvx-lesson' + (cb.checked ? ' on' : '') }, [cb, h('span', {}, [h('b', {}, `មេរៀនទី ${lvKh(L.n)} `), L.title])]);
+    const lab = h('label', { class: 'lvx-lesson' + (cb.checked ? ' on' : '') }, [cb, h('span', {}, [h('b', {}, `មេរៀនទី ${lvKh(L.d || L.n)} `), L.title])]);
+    lab.dataset.g = String(L.g || 7);
     cb.onchange = () => { lvLessons = lessons.filter((x, i) => boxes[i].cb.checked).map((x) => x.n); lab.classList.toggle('on', cb.checked); sync(); };
     return { cb, lab };
   });
@@ -102,7 +106,7 @@ render.live = async function () {
   const step = (n, title, ...kids) => h('section', { class: 'lvx-step' }, [h('h3', {}, [h('span', { class: 'lvx-n' }, n), ' ', title]), ...kids]);
   root.appendChild(h('div', { class: 'lvx' }, [
     step('១', 'ជ្រើសរបៀបលេង', h('div', { class: 'lvx-modes' }, modeBtns), hwBox),
-    step('២', 'ជ្រើសមេរៀន', h('div', { class: 'lvx-lessons' }, boxes.map((b) => b.lab)), h('div', { class: 'row', style: 'gap:8px;margin-top:8px' }, [all, none])),
+    step('២', 'ជ្រើសមេរៀន', h('div', { class: 'lvx-lessons' }, boxes.flatMap((b, i) => { const gg = b.lab.dataset.g; return i === 0 || boxes[i - 1].lab.dataset.g !== gg ? [h('h4', { class: 'lvx-grade' }, `ថ្នាក់ទី ${lvKh(gg)}`), b.lab] : [b.lab]; })), h('div', { class: 'row', style: 'gap:8px;margin-top:8px' }, [all, none])),
     step('៣', 'ចំនួនសំណួរ និងម៉ោង', h('div', { class: 'lvx-lab' }, 'ចំនួនសំណួរ'), countRow, h('div', { class: 'lvx-lab' }, 'ម៉ោងក្នុងមួយសំណួរ'), secsRow),
     h('div', { class: 'lvx-bar' }, [sum, h('div', { class: 'row', style: 'gap:8px;align-items:center' }, [lvLast ? h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvHost(lvLast) }, `បើកបន្ទប់ ${lvLast} វិញ`) : null, go])]),
   ]));
@@ -120,7 +124,7 @@ render.live = async function () {
       h('tbody', {}, rooms.map((r) => h('tr', {}, [
         h('td', {}, new Date(r.created_at).toLocaleString('km-KH', { dateStyle: 'short', timeStyle: 'short' })), h('td', {}, r.code),
         h('td', {}, (r.mode === 'solo' ? (r.class_id ? '📚 កិច្ចការផ្ទះ' : '🧘 សុខសាន្ត') : '👩‍🏫 ថ្នាក់') + (r.over ? '' : ' · កំពុងបើក')),
-        h('td', {}, `${r.class_name ? r.class_name + ' · ' : ''}មេរៀន ${(r.lessons || []).map(lvKh).join(', ')}`),
+        h('td', {}, `${r.class_name ? r.class_name + ' · ' : ''}មេរៀន ${(r.lessons || []).map(lvLn).join(', ')}`),
         h('td', {}, `${lvKh(r.players)}${r.mode === 'solo' ? ` (ចប់ ${lvKh(r.finished)})` : ''}`), h('td', {}, lvKh(r.avg_score)),
         h('td', {}, h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvResults(r.code) }, 'មើលលទ្ធផល')),
       ]))),

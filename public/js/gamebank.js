@@ -26,7 +26,7 @@ render.gamebank = async function () {
     const cb = h('input', { type: 'checkbox' }); cb.checked = gbData.config.lessons === null ? true : gbData.config.lessons.includes(L.n); cb.disabled = !can;
     const fixed = L.qs.filter((q) => q.edited).length, hid = L.qs.filter((q) => q.off).length;
     const lab = h('label', { style: 'display:grid;grid-template-columns:22px 1fr;gap:2px 8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff' }, [
-      cb, h('span', {}, [h('b', {}, `មេរៀនទី ${gbKh(L.n)} `), L.title]),
+      cb, h('span', {}, [h('b', {}, `${L.g && L.g !== 7 ? `ថ្នាក់ទី ${gbKh(L.g)} · ` : ''}មេរៀនទី ${gbKh(L.d || L.n)} `), L.title]),
       h('span'), h('small', { class: 'muted' }, `${gbKh(L.qs.length)} សំណួរ${fixed ? ` · កែរួច ${gbKh(fixed)}` : ''}${hid ? ` · លាក់ ${gbKh(hid)}` : ''}`),
     ]);
     return { cb, lab };
@@ -66,7 +66,7 @@ render.gamebank = async function () {
   root.appendChild(cfgCard);
 
   // ---- the questions ----
-  const sel = h('select', { 'aria-label': 'មេរៀន' }, gbData.lessons.map((L) => h('option', { value: L.n }, `មេរៀនទី ${gbKh(L.n)} · ${L.title}`)));
+  const sel = h('select', { 'aria-label': 'មេរៀន' }, gbData.lessons.map((L) => h('option', { value: L.n }, `${L.g && L.g !== 7 ? `ថ្នាក់ទី ${gbKh(L.g)} · ` : ''}មេរៀនទី ${gbKh(L.d || L.n)} · ${L.title}`)));
   sel.value = gbLesson; sel.onchange = () => { gbLesson = Number(sel.value); render.gamebank(); };
   const flt = h('select', { 'aria-label': 'តម្រង' }, [['all', 'សំណួរទាំងអស់'], ['edited', 'ដែលបានកែ'], ['off', 'ដែលបានលាក់'], ['fig', 'ដែលមានរូប']].map(([v, t]) => h('option', { value: v }, t)));
   flt.value = gbFilter; flt.onchange = () => { gbFilter = flt.value; render.gamebank(); };
@@ -113,7 +113,7 @@ function gbEdit(L, q, can) {
   const pv = h('div', { class: 'card', style: 'margin:0;background:#fbfdff' });
   function preview() {
     pv.innerHTML = '';
-    pv.appendChild(h('small', { class: 'muted' }, `មេរៀនទី ${gbKh(L.n)} · ${t_.value}`));
+    pv.appendChild(h('small', { class: 'muted' }, `${L.g && L.g !== 7 ? `ថ្នាក់ទី ${gbKh(L.g)} · ` : ''}មេរៀនទី ${gbKh(L.d || L.n)} · ${t_.value}`));
     pv.appendChild(gbMath(h('div', { style: 'font-weight:700;font-size:18px;line-height:1.8;margin:6px 0' }), q_.value));
     if (q.f) { const fg = h('div', { style: 'text-align:center;margin:6px 0' }); fg.innerHTML = q.f; const sv = fg.querySelector('svg'); if (sv) sv.style.cssText = 'max-width:100%;height:150px;background:#fff;border:1px solid #e1e8f0;border-radius:10px'; pv.appendChild(fg); }
     if (f.o) pv.appendChild(h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:6px' }, opts.map((o, k) => gbMath(h('div', { style: `padding:6px 10px;border:2px solid ${radios[k].checked ? '#2f9e44' : '#e1e8f0'};border-radius:10px;background:${radios[k].checked ? '#d3f9d8' : '#fff'}` }), `${'កខគឃ'[k]}. ${o.value}`))));
@@ -145,7 +145,7 @@ function gbEdit(L, q, can) {
     } }, 'រក្សាទុក') : null,
   ]);
   overlay.appendChild(h('div', { class: 'card', style: 'max-width:1100px;width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px' }, [
-    h('div', {}, [h('h3', { style: 'margin:0 0 4px' }, `មេរៀនទី ${gbKh(L.n)} · សំណួរទី ${gbKh(q.i + 1)}`), form, actions]),
+    h('div', {}, [h('h3', { style: 'margin:0 0 4px' }, `${L.g && L.g !== 7 ? `ថ្នាក់ទី ${gbKh(L.g)} · ` : ''}មេរៀនទី ${gbKh(L.d || L.n)} · សំណួរទី ${gbKh(q.i + 1)}`), form, actions]),
     h('div', {}, [h('b', {}, 'មើលជាមុន'), pv]),
   ]));
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });

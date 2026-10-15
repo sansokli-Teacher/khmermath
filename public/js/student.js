@@ -168,7 +168,7 @@ async function homeworkCard(holder) {
           } catch (e) { showError(e); }
         } }, g.done ? 'មើលលទ្ធផល' : g.started ? 'បន្តលេង' : 'ចាប់ផ្តើមលេង') : h('span', { class: 'muted' }, 'ផុតកំណត់');
         return h('div', { style: 'display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)' }, [
-          h('div', {}, [h('div', {}, `មេរៀន ${g.lessons.join(', ')} · ${g.total} សំណួរ`), h('small', { class: 'muted' }, `ផុតកំណត់ ${dl}${g.started ? ` · ពិន្ទុ ${g.score}` : ''}`)]), btn]);
+          h('div', {}, [h('div', {}, `មេរៀន ${g.lessons.map((n) => (n >= 100 ? `${Math.floor(n / 100) + 7}/${n % 100}` : n)).join(', ')} · ${g.total} សំណួរ`), h('small', { class: 'muted' }, `ផុតកំណត់ ${dl}${g.started ? ` · ពិន្ទុ ${g.score}` : ''}`)]), btn]);
       }),
     ]));
   } catch { /* the home screen works without it */ }

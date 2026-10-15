@@ -65,7 +65,7 @@ export function mergeBank(base, edits, cfg, { admin = false } = {}) {
       }
       qs.push(q);
     });
-    lessons.push({ n: L.n, title: L.title, qs, ...(admin ? { enabled: on } : {}) });
+    lessons.push({ n: L.n, ...(L.g ? { g: L.g, d: L.d } : {}), title: L.title, qs, ...(admin ? { enabled: on } : {}) });
   }
   return { class: base.class, lessons };
 }
