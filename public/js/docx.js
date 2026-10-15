@@ -117,7 +117,7 @@
     const logo = !answers && prof.logo ? await load(prof.logo) : null;
     const pic = (key) => {
       const im = images[key]; if (!im) return '';
-      const maxW = 9.5 * 360000, maxH = 7 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
+      const maxW = 7 * 360000, maxH = 4.5 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
       const f = Math.min(1, maxW / wE, maxH / hE); wE = Math.round(wE * f); hE = Math.round(hE * f);
       return para(image(im.rid, wE, hE, im.n), { align: 'center', after: 80 });
     };
@@ -239,7 +239,7 @@
     const logo = !answers && prof.logo ? await load(prof.logo) : null;
     const pic = (key, left) => {
       const im = images[key]; if (!im) return '';
-      const maxW = 9.5 * 360000, maxH = 6.5 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
+      const maxW = 7 * 360000, maxH = 4.5 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
       const f = Math.min(1, maxW / wE, maxH / hE); wE = Math.round(wE * f); hE = Math.round(hE * f);
       return para(image(im.rid, wE, hE, im.n), { align: 'center', after: 80 });
     };
