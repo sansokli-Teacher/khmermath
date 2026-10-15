@@ -505,7 +505,7 @@
     });
   }
   function loadBank() {
-    fetch('../static/data/teamgame_g7.json').then(function (r) { return r.json(); }).then(function (d) { BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : []; renderLessons(); }).catch(function () { BANK = { lessons: [] }; renderLessons(); });
+    fetch('../static/data/teamgame_g7.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) { BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : []; renderLessons(); }).catch(function () { BANK = { lessons: [] }; renderLessons(); });
   }
   document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { mode = r.value; applyMode(); saveCfg(); } }); });
   $('tg-qn').addEventListener('change', saveCfg);
