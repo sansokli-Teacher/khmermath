@@ -57,8 +57,8 @@ export async function me(req, env) {
     id: t.id, username: t.username, role: t.role, display_name: t.display_name,
     status: t.status, licensed: t.licensed, license_until: t.license_until, contact_text: contact ? contact.value : '',
     contact: (await env.DB.prepare('SELECT contact FROM teachers WHERE id = ?1').bind(t.id).first() || {}).contact || '',
-    telegram: OWNER_TELEGRAM, pending_requests: t.role === 'owner' ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM unlock_requests WHERE status = 'pending'").first()).n : 0,
-    plans: PLANS, trial_limits: TRIAL, usage: t.status === 'trial' ? await trialUsage(env, t) : null,
+    telegram: OWNER_TELEGRAM, pending_requests: t.role === 'owner' ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM unlock_requests WHERE status = 'pending'").first().catch(() => null)) || { n: 0 }).n : 0,
+    plans: PLANS, trial_limits: TRIAL, usage: t.status === 'trial' ? await trialUsage(env, t).catch(() => null) : null,
   });
 }
 

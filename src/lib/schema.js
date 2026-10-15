@@ -4,7 +4,7 @@
 // Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
 // skips everything else; the (batched) migration runs once per version, not once per cold start.
 // (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
-const SCHEMA_VERSION = '2026-10-09-c';
+const SCHEMA_VERSION = '2026-10-15-a';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
