@@ -265,3 +265,4 @@
 .omr-exh { width: 3.6mm; text-align: center; font-weight: 700; font-size: 8pt; }
 .omr-exhead { margin-top: .5mm; }
 .omr-x { background: linear-gradient(45deg, transparent 46%, #000 46% 54%, transparent 54%), linear-gradient(-45deg, transparent 46%, #000 46% 54%, transparent 54%); }
+.omr-hint { font-size: 7.5pt; line-height: 3.4mm; white-space: nowrap; }
