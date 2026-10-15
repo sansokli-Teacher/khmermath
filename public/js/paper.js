@@ -161,17 +161,31 @@ function render() {
       mcqPts: mcq.reduce((a, q) => a + q.points, 0), wPts: writing.reduce((a, q) => a + q.points, 0) };
     sheet.append(answers ? window.PaperPT.keyDoc(ctx, o) : window.PaperPT.examDoc(ctx, o));
     restyleDiagrams(sheet);
+    fitPreview();
     return;
   }
   sheet.append(answers ? answerDoc(o) : examDoc(o));
   restyleDiagrams(sheet);
   fitOptions(sheet);
+  fitPreview();
 }
+
+// Scale the A4 page to the space available: whole page visible on a phone (pinch to zoom), centred next to the options on a computer.
+function fitPreview() {
+  const stage = document.getElementById('stage'), sheet = document.getElementById('sheet');
+  if (!stage || !sheet) return;
+  const cs = getComputedStyle(stage);
+  const avail = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const page = 210 / 25.4 * 96;                          // A4 width in CSS px
+  sheet.style.zoom = String(Math.min(1, Math.max(0.3, avail / (page + 8))));
+}
+window.addEventListener('resize', () => { fitPreview(); });
+window.addEventListener('beforeprint', () => { document.getElementById('sheet').style.zoom = '1'; });
+window.addEventListener('afterprint', fitPreview);
 
 // ក ខ គ ឃ always share one line: if a row is too wide at 13pt, shrink it a little (down to 10.5pt);
 // only when it still cannot fit does it fall back to two columns.
 function fitOptions(root) {
-  if (window.innerWidth < 801) return;
   const run = () => root.querySelectorAll('.p-opts').forEach((row) => {
     row.style.fontSize = ''; row.classList.remove('fit2');
     let pt = 13;
@@ -258,6 +272,7 @@ async function init() {
   try { const t = params.get('tpl') || localStorage.getItem('paper_tpl'); if (t === 'pretest' || t === 'exam') document.getElementById('opt-tpl').value = t; } catch {}
   document.getElementById('opt-tpl').addEventListener('change', () => { try { localStorage.setItem('paper_tpl', tplValue()); } catch {} });
   for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
+  if (window.innerWidth <= 860) document.getElementById('side-opts').open = false;   // phone: keep the page itself in view
   document.getElementById('print-btn').onclick = () => window.print();
   document.getElementById('profile-btn').onclick = openProfile;
   const toWord = async (btn) => {

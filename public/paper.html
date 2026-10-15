@@ -14,35 +14,49 @@
 </head>
 <body class="paper-body">
 
-<div class="paper-toolbar no-print" id="toolbar">
-  <div class="paper-toolbar-in">
-    <div class="row">
-      <button id="print-btn">🖨 បោះពុម្ព / រក្សាទុកជា PDF</button>
-      <button id="docx-btn" class="secondary">📝 ទាញយក Word (.docx)</button>
-      <label class="tb-check"><input type="checkbox" id="opt-key"> បង្ហាញជាសន្លឹកចម្លើយ (អត្រាកំណែ — សម្រាប់គ្រូ)</label>
-      <label class="tb-check"><input type="checkbox" id="opt-space" checked> ទុកចន្លោះសរសេរចម្លើយ</label>
-    </div>
-    <div class="row">
-      <span class="muted">ទម្រង់៖</span>
-      <select id="opt-tpl" style="width:auto;max-width:300px;">
+<div class="paper-app">
+<aside class="paper-side no-print" id="toolbar">
+  <div class="side-head">
+    <a href="teacher.html" class="side-back">← ត្រឡប់</a>
+    <div class="side-title">ចេញវិញ្ញាសា</div>
+  </div>
+  <div class="side-actions">
+    <button id="print-btn" class="act-main">🖨 បោះពុម្ព / PDF</button>
+    <button id="docx-btn" class="secondary act-alt">📝 Word</button>
+  </div>
+  <details class="side-opts" id="side-opts" open>
+    <summary>⚙ ជម្រើសវិញ្ញាសា</summary>
+    <section>
+      <h3>ទម្រង់</h3>
+      <select id="opt-tpl">
         <option value="exam">ទម្រង់ ១ — ប្រឡងសញ្ញាបត្រ (NGS)</option>
         <option value="pretest">ទម្រង់ ២ — បុរេតេស្ត (Pre-test)</option>
       </select>
-      <input type="text" id="opt-sub" placeholder="ចំណងជើងរង (ទម្រង់ ២)" style="width:210px;">
-      <label class="tb-check" id="lbl-omr"><input type="checkbox" id="opt-omr" checked> សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</label>
-      <label class="tb-check" id="lbl-group"><input type="checkbox" id="opt-group"> ដាក់ជាក្រុមតាមកម្រិត</label>
-    </div>
-    <div class="row">
-      <span class="muted">រយៈពេល</span><input type="number" id="opt-min" value="70" style="width:80px;">
-      <span class="muted">នាទី · កាលបរិច្ឆេទ</span><input type="text" id="opt-date" placeholder="ថ្ងៃទី ... ខែ ... ឆ្នាំ ..." style="width:200px;">
-      <button id="profile-btn" class="secondary btn-sm">⚙ ក្បាល/ជើងទំព័រ</button>
-      <a href="teacher.html" class="btn secondary">← ត្រឡប់</a>
-    </div>
-    <div class="muted" style="font-size:13px;">ពេលចុចបោះពុម្ព សូមជ្រើស «Save as PDF / រក្សាទុកជា PDF» ជាគោលដៅ។ បើកជម្រើស «Background graphics» ហើយបិទ «Headers and footers» ដើម្បីឱ្យវិញ្ញាសាស្អាត។</div>
-  </div>
-</div>
+      <input type="text" id="opt-sub" placeholder="ចំណងជើងរង (ទម្រង់ ២)">
+    </section>
+    <section>
+      <h3>ពេលវេលា</h3>
+      <div class="two-col">
+        <label class="fld"><span>រយៈពេល (នាទី)</span><input type="number" id="opt-min" value="70"></label>
+        <label class="fld"><span>កាលបរិច្ឆេទ</span><input type="text" id="opt-date" placeholder="ថ្ងៃទី … ខែ … ឆ្នាំ …"></label>
+      </div>
+    </section>
+    <section>
+      <h3>មាតិកា</h3>
+      <label class="sw"><input type="checkbox" id="opt-key"><span>បង្ហាញជាសន្លឹកចម្លើយ <small>អត្រាកំណែ — សម្រាប់គ្រូ</small></span></label>
+      <label class="sw"><input type="checkbox" id="opt-space" checked><span>ទុកចន្លោះសរសេរចម្លើយ</span></label>
+      <label class="sw" id="lbl-omr"><input type="checkbox" id="opt-omr" checked><span>សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</span></label>
+      <label class="sw" id="lbl-group"><input type="checkbox" id="opt-group"><span>ដាក់ជាក្រុមតាមកម្រិត</span></label>
+    </section>
+    <section>
+      <button id="profile-btn" class="secondary side-wide">⚙ ក្បាល / ជើងទំព័រ</button>
+    </section>
+    <p class="side-tip">ពេលបោះពុម្ព ជ្រើស «Save as PDF» ហើយបើក «Background graphics» បិទ «Headers and footers»។</p>
+  </details>
+</aside>
 
-<main id="sheet"></main>
+<main class="paper-stage" id="stage"><div id="sheet"></div></main>
+</div>
 
 <script src="js/common.js"></script>
 <script src="js/mathtype.js"></script>
