@@ -387,4 +387,29 @@
     .hub-d { font-size: 12.5px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .hub-a .btn { font-size: 13px; padding: 8px 6px; min-height: 40px; }
   }
+
+  /* ---------- phone: dialogs and edit forms ---------- */
+  @media (max-width: 700px) {
+    .modal-back { padding: 0; }
+    .modal-box { border-radius: 22px 22px 0 0; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); max-width: none; }
+    .modal-box[style*="margin:20px auto"] { margin: 12px 0 0 !important; width: 100%; min-height: 60vh; }
+    .modal-box h2 { font-size: 19px; }
+    .modal-box select, .modal-box input[type=text], .modal-box input[type=number], .modal-box input[type=date], .modal-box textarea { width: 100% !important; }
+    .modal-box > .row:not(:last-child), .modal-box > div > .row:not(:last-child) { flex-direction: column; align-items: stretch !important; gap: 4px !important; }
+    .modal-box .row > div, .modal-box .row > label { width: 100%; min-width: 0 !important; flex: none !important; }
+    .modal-box label { margin-top: 14px; }
+    .modal-box label:has(> input[type=checkbox]) { display: flex !important; gap: 12px !important; align-items: center !important; min-height: 48px; padding: 8px 12px; border-radius: 14px; background: #f6f2ea; font-weight: 600; margin-top: 12px; }
+    .modal-box label:has(> input[type=checkbox])[style*="a52a2a"] { background: #fdeceb; }
+    .modal-box input[type=checkbox] { width: 22px !important; height: 22px !important; flex: none; accent-color: var(--brand); }
+    .modal-box > .row:last-child { position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); z-index: 3; margin: 18px -16px calc(-16px - env(safe-area-inset-bottom)) !important; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -8px 20px rgba(40, 30, 15, .06); justify-content: stretch !important; }
+    .modal-box > .row:last-child button { flex: 1; min-height: 48px; }
+    .mathbar { gap: 5px; padding: 6px; }
+    .mk { min-width: 40px; height: 40px; }
+    .mk-morebtn { margin-left: 0; flex-basis: 100%; }
+  }
+
+  input[type=file] { width: 100%; padding: 8px; border: 1.5px dashed #cfc7b4; border-radius: 12px; background: #faf7f0; font-family: inherit; font-size: 14px; color: var(--muted); }
+  input[type=file]::file-selector-button { margin-right: 12px; border: 0; border-radius: 10px; background: var(--brand); color: #fff; padding: 9px 16px; font-weight: 600; font-family: inherit; cursor: pointer; }
+  input[type=file]::file-selector-button:hover { background: var(--brand-dark); }
+  .modal-box input[type=text] { margin-bottom: 6px; }
 }
