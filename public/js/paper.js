@@ -160,12 +160,12 @@ function render() {
     const ctx = { h, mathEl, kh, test, profile, mcq, writing, splitWriting, logoSrc,
       mcqPts: mcq.reduce((a, q) => a + q.points, 0), wPts: writing.reduce((a, q) => a + q.points, 0) };
     sheet.append(answers ? window.PaperPT.keyDoc(ctx, o) : window.PaperPT.examDoc(ctx, o));
-    restyleDiagrams(sheet);
+    window.__diagramsReady = restyleDiagrams(sheet);
     fitPreview();
     return;
   }
   sheet.append(answers ? answerDoc(o) : examDoc(o));
-  restyleDiagrams(sheet);
+  window.__diagramsReady = restyleDiagrams(sheet);
   fitOptions(sheet);
   fitPreview();
 }
@@ -274,6 +274,17 @@ async function init() {
   for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date']) document.getElementById(id).addEventListener('input', render);
   if (window.innerWidth <= 860) document.getElementById('side-opts').open = false;   // phone: keep the page itself in view
   document.getElementById('print-btn').onclick = () => window.print();
+  const pdfBtn = document.getElementById('pdf-btn');
+  pdfBtn.onclick = async () => {
+    const label = pdfBtn.textContent; pdfBtn.disabled = true; pdfBtn.textContent = '⏳ កំពុងរៀបចំ…';
+    try {
+      await window.PdfExport.download({
+        sheet: document.querySelector('#sheet > .sheet'), title: test.title, ready: window.__diagramsReady,
+        onProgress: (i, n) => { pdfBtn.textContent = `⏳ ទំព័រ ${i}/${n}`; },
+      });
+    } catch (e) { Exam.notify(`មិនអាចបង្កើត PDF បានទេ៖ ${e.message}`); }
+    pdfBtn.disabled = false; pdfBtn.textContent = label;
+  };
   document.getElementById('profile-btn').onclick = openProfile;
   const toWord = async (btn) => {
     const label = btn ? btn.textContent : '';

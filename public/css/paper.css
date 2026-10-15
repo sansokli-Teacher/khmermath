@@ -12,8 +12,9 @@
 .side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .side-title { font-size: 18px; font-weight: 700; color: var(--ink); }
 .side-back { color: var(--brand); text-decoration: none; font-weight: 600; font-size: 15px; }
-.side-actions { display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; }
+.side-actions { display: grid; grid-template-columns: 1.6fr 1fr 44px; gap: 8px; }
 .side-actions button { width: 100%; padding: 12px 8px; font-size: 16px; }
+.side-actions .act-print { padding: 12px 0; }
 .side-opts summary { cursor: pointer; font-weight: 700; padding: 8px 0; list-style: none; color: var(--ink); }
 .side-opts summary::-webkit-details-marker { display: none; }
 .side-opts summary::after { content: '▾'; float: right; color: var(--brand); transition: transform .15s; }
@@ -223,4 +224,16 @@
 
 /* maths: Mathcad UniMath italic for variables; digits, ° and ∠ and other symbols stay in KaTeX's own Times-like font */
 .sheet .katex .mathnormal, .sheet .katex .mathit { font-family: 'PaperMath', 'Times New Roman', serif; font-style: italic; }
-@media (max-width: 800px) { .p-opts { flex-wrap: wrap; } .p-opts.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 5mm; } .p-opt { white-space: normal; } .sheet { padding: 14px 12px 24px; } .p-student { flex-wrap: wrap; gap: 2mm 6mm; } .p-student .f.wide { flex-basis: 100%; } .etitle .t1 { font-size: 15pt; } .etitle .t2, .etitle .t3 { font-size: 13pt; } .p-q, .sq { margin-left: 0; } .sq { margin-left: 0; } .p-space { margin-left: 0; } .sect .rn { width: 9mm; } .sect .sc { width: auto; margin-right: 6px; } }
+
+/* ---- offscreen A4 pages used to build the downloadable PDF ---- */
+.pdf-host { position: absolute; left: -10000px; top: 0; width: 210mm; }
+.pdf-page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: #fff; color: #000; margin: 0 0 10px; font-family: 'Times New Roman', 'PaperBody', 'Kantumruy Pro', serif; font-size: 13pt; line-height: 1.7; }
+.pdf-page.pt-doc { font-size: 12.5pt; line-height: 1.55; }
+.pdf-body { position: absolute; display: flow-root; overflow: visible; }
+.pdf-hdr { position: absolute; top: 7mm; margin: 0; }
+.pdf-ftr { position: absolute; bottom: 7mm; }
+.pdf-num { left: 0; right: 0; text-align: center; font-family: 'PaperBody', serif; font-size: 11pt; }
+.pdf-ftr span.pn { margin-left: auto; }
+.pdf-page .pt-pf-screen { margin-top: 0; }
+.pdf-page .pf { margin-top: 0; }
+.pdf-page .pf > span:last-child:not(:first-child) { margin-left: auto; }
