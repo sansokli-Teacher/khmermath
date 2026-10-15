@@ -68,6 +68,7 @@
     const nm = document.getElementById('user-name'), av = document.getElementById('user-avatar');
     if (nm) nm.textContent = name;
     if (av) av.textContent = [...name][0] || 'គ';
+    const eb = document.querySelector('.dashboard-header .eyebrow'); if (eb) eb.textContent = `សួស្តី ${name} 👋`;
   };
   if (badge) { new MutationObserver(syncUser).observe(badge, { childList: true, characterData: true, subtree: true }); syncUser(); }
 

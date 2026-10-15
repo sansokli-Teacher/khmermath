@@ -307,6 +307,115 @@
     field.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  // ---- extra symbols (LaTeX), grouped. «|» marks where the caret goes. Outside a \( \) / $ $ region they are wrapped in \( \) automatically. ----
+  const SETS = [
+    ['កាល់គុល', [
+      ['\\int', 'អាំងតេក្រាលឥតកំណត់ ∫', '\\int | \\,dx'],
+      ['\\int_a^b', 'អាំងតេក្រាលកំណត់ ∫ពី a ដល់ b', '\\int_{a}^{b} | \\,dx'],
+      ['\\oint', 'អាំងតេក្រាលបិទ ∮', '\\oint |'],
+      ['\\lim_{x\\to a}', 'លីមីត lim', '\\lim_{x \\to |} '],
+      ['\\lim_{x\\to\\infty}', 'លីមីតនៅអនន្ត', '\\lim_{x \\to \\infty} |'],
+      ['\\sum', 'ផលបូក Σ', '\\sum_{i=1}^{n} |'],
+      ['\\prod', 'ផលគុណ Π', '\\prod_{i=1}^{n} |'],
+      ['\\frac{d}{dx}', 'ដេរីវេ d/dx', '\\dfrac{d}{dx}(|)'],
+      ["f'(x)", 'ដេរីវេ f′(x)', "f'(|)"],
+      ['\\frac{\\partial}{\\partial x}', 'ដេរីវេដោយផ្នែក ∂', '\\dfrac{\\partial |}{\\partial x}'],
+      ['\\infty', 'អនន្ត ∞', '\\infty '],
+      ['\\Delta', 'ដែលតា Δ', '\\Delta '],
+      ['\\nabla', 'ណាប្លា ∇', '\\nabla '],
+      ['\\log_a', 'លោការីតគោល a', '\\log_{|}(\\,)'],
+      ['\\ln', 'លោការីតនេពែ ln', '\\ln |'],
+      ['e^{x}', 'e ស្វ័យគុណ', 'e^{|}'],
+      ['\\sin', 'sin', '\\sin |'], ['\\cos', 'cos', '\\cos |'], ['\\tan', 'tan', '\\tan |'], ['\\cot', 'cot', '\\cot |'],
+      ['\\left|x\\right|', 'តម្លៃដាច់ខាត |x|', '\\left| | \\right|'],
+      ['\\lfloor x\\rfloor', 'ផ្នែកគត់ ⌊x⌋', '\\lfloor | \\rfloor'],
+    ]],
+    ['វ៉ិចទ័រ & ម៉ាទ្រីស', [
+      ['\\vec{v}', 'វ៉ិចទ័រ v⃗', '\\vec{|}'],
+      ['\\overrightarrow{AB}', 'វ៉ិចទ័រ AB (ព្រួញធំ)', '\\overrightarrow{|}'],
+      ['\\overline{AB}', 'អង្កត់ត្រង់ AB (ឆ្នូតលើ)', '\\overline{|}'],
+      ['\\widehat{ABC}', 'មុំ / ធ្នូ (មួក)', '\\widehat{|}'],
+      ['\\|\\vec{v}\\|', 'ម៉ូឌុលវ៉ិចទ័រ ‖v⃗‖', '\\left\\|\\vec{|}\\right\\|'],
+      ['\\vec{a}\\cdot\\vec{b}', 'ផលគុណស្កាឡែរ a⃗·b⃗', '\\vec{|}\\cdot\\vec{}'],
+      ['\\vec{a}\\times\\vec{b}', 'ផលគុណវ៉ិចទ័រ a⃗×b⃗', '\\vec{|}\\times\\vec{}'],
+      ['\\begin{pmatrix}a\\\\b\\end{pmatrix}', 'វ៉ិចទ័រជួរឈរ', '\\begin{pmatrix} | \\\\ \\end{pmatrix}'],
+      ['\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}', 'ម៉ាទ្រីស 2×2', '\\begin{pmatrix} | & \\\\ & \\end{pmatrix}'],
+      ['\\begin{vmatrix}a&b\\\\c&d\\end{vmatrix}', 'ដេទែមីណង់ 2×2', '\\begin{vmatrix} | & \\\\ & \\end{vmatrix}'],
+      ['\\begin{cases}x\\\\y\\end{cases}', 'ប្រព័ន្ធសមីការ / ក្នុងករណី', '\\begin{cases} | \\\\ \\end{cases}'],
+      ['\\binom{n}{k}', 'បន្សំ C(n,k)', '\\binom{|}{}'],
+      ['n!', 'ហ្វាក់តូរីយែល n!', '|!'],
+    ]],
+    ['ធរណីមាត្រ', [
+      ['\\angle', 'មុំ ∠', '\\angle '],
+      ['\\triangle', 'ត្រីកោណ △', '\\triangle '],
+      ['\\perp', 'កែង ⟂', '\\perp '],
+      ['\\parallel', 'ស្រប ∥', '\\parallel '],
+      ['\\cong', 'ដូចគ្នាទាំងអស់ ≅', '\\cong '],
+      ['\\sim', 'ដូចគ្នា (រាងដូច) ∼', '\\sim '],
+      ['\\overset{\\frown}{AB}', 'ធ្នូ AB', '\\overset{\\frown}{|}'],
+      ['\\circ', 'ដឺក្រេ °', '^{\\circ}'],
+      ["{}'", 'មីនុត ′', "'"],
+      ["{}''", 'សេកុង ″', "''"],
+      ['\\odot', 'រង្វង់ ⊙', '\\odot '],
+      ['\\square', 'ការ៉េ □', '\\square '],
+    ]],
+    ['សំណុំ & តក្កវិជ្ជា', [
+      ['\\in', 'ជាធាតុនៃ ∈', '\\in '], ['\\notin', 'មិនមែនជាធាតុនៃ ∉', '\\notin '],
+      ['\\subset', 'សំណុំរងពិត ⊂', '\\subset '], ['\\subseteq', 'សំណុំរង ⊆', '\\subseteq '],
+      ['\\cup', 'ប្រជុំ ∪', '\\cup '], ['\\cap', 'ប្រសព្វ ∩', '\\cap '], ['\\emptyset', 'សំណុំទទេ ∅', '\\emptyset '],
+      ['\\mathbb{R}', 'ចំនួនពិត ℝ', '\\mathbb{R}'], ['\\mathbb{N}', 'ចំនួនធម្មជាតិ ℕ', '\\mathbb{N}'],
+      ['\\mathbb{Z}', 'ចំនួនគត់ ℤ', '\\mathbb{Z}'], ['\\mathbb{Q}', 'ចំនួនសនិទាន ℚ', '\\mathbb{Q}'], ['\\mathbb{C}', 'ចំនួនកុំផ្លិច ℂ', '\\mathbb{C}'],
+      ['\\forall', 'គ្រប់ ∀', '\\forall '], ['\\exists', 'មាន ∃', '\\exists '],
+      ['\\Rightarrow', 'នាំឱ្យ ⇒', '\\Rightarrow '], ['\\Leftrightarrow', 'សមមូល ⇔', '\\Leftrightarrow '],
+      ['\\neg', 'ប្រកែក ¬', '\\neg '], ['\\wedge', 'និង ∧', '\\wedge '], ['\\vee', 'ឬ ∨', '\\vee '],
+      ['\\{\\ \\}', 'សំណុំ { }', '\\{ | \\}'],
+    ]],
+    ['អក្សរក្រិក', ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'theta', 'lambda', 'mu', 'rho', 'sigma', 'tau', 'varphi', 'omega', 'Delta', 'Sigma', 'Omega', 'Pi', 'Theta']
+      .map((n) => ['\\' + n, n, '\\' + n + ' '])],
+    ['ព្រួញ & ផ្សេងៗ', [
+      ['\\rightarrow', 'ព្រួញស្តាំ →', '\\rightarrow '], ['\\leftarrow', 'ព្រួញឆ្វេង ←', '\\leftarrow '],
+      ['\\leftrightarrow', 'ព្រួញទ្វេ ↔', '\\leftrightarrow '], ['\\uparrow', '↑', '\\uparrow '], ['\\downarrow', '↓', '\\downarrow '],
+      ['\\therefore', 'ដូចនេះ ∴', '\\therefore '], ['\\because', 'ព្រោះ ∵', '\\because '],
+      ['\\propto', 'សមាមាត្រនឹង ∝', '\\propto '], ['\\equiv', 'សមមូល ≡', '\\equiv '],
+      ['\\ll', 'តូចជាងឆ្ងាយ ≪', '\\ll '], ['\\gg', 'ធំជាងឆ្ងាយ ≫', '\\gg '], ['\\cdots', 'ចំណុចបន្ត ⋯', '\\cdots '],
+      ['\\dfrac{a}{b}', 'ប្រភាគធំ', '\\dfrac{|}{}'],
+      ['x_{n}', 'សន្ទស្សន៍ក្រោម x₍ₙ₎', '_{|}'], ['x^{n}', 'ស្វ័យគុណ xⁿ', '^{|}'],
+      ['\\underline{x}', 'គូសក្រោម', '\\underline{|}'], ['\\text{ក}', 'អត្ថបទខ្មែរក្នុងរូបមន្ត', '\\text{|}'],
+      ['\\%', 'ភាគរយ %', '\\%'], ['\\mathrm{cm}^2', 'cm²', '\\mathrm{cm}^{2}'], ['\\mathrm{m}^3', 'm³', '\\mathrm{m}^{3}'],
+    ]],
+  ];
+
+  // Is the caret inside an open \( .. \), \[ .. \], $ .. $ or $$ .. $$ ?
+  function insideMath(v, pos) {
+    let close = null;
+    for (let i = 0; i < pos; i++) {
+      if (close) {
+        if (v.startsWith(close, i)) { i += close.length - 1; close = null; }
+        continue;
+      }
+      if (v.startsWith('\\(', i)) { close = '\\)'; i += 1; }
+      else if (v.startsWith('\\[', i)) { close = '\\]'; i += 1; }
+      else if (v.startsWith('$$', i)) { close = '$$'; i += 1; }
+      else if (v[i] === '$') { close = '$'; }
+    }
+    return !!close;
+  }
+
+  function insertTex(field, tpl) {
+    if (!field) return;
+    const a = field.selectionStart != null ? field.selectionStart : field.value.length;
+    const b = field.selectionEnd != null ? field.selectionEnd : a;
+    const sel = field.value.slice(a, b);
+    const bar = tpl.indexOf('|');
+    let body = tpl.replace('|', sel);
+    let caret = bar >= 0 ? bar + sel.length : body.length;
+    if (!insideMath(field.value, a)) { body = '\\(' + body + '\\)'; caret += 2; }
+    field.focus();
+    field.setRangeText(body, a, b, 'end');
+    field.setSelectionRange(a + caret, a + caret);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
   // A toolbar whose buttons insert into whatever field getTarget() currently
   // returns — lets one toolbar serve several fields (e.g. a stem + options).
   Exam.mathBar = function (getTarget) {
@@ -320,6 +429,24 @@
       b.innerHTML = label;
       bar.append(b);
     });
+    // more symbols: vectors, integrals, limits, sets, Greek letters…
+    const panel = h('div', { class: 'mk-more', hidden: true });
+    const grid = h('div', { class: 'mk-grid' });
+    const tabs = h('div', { class: 'mk-tabs', role: 'tablist' });
+    const render = (idx) => {
+      [...tabs.children].forEach((t, i) => { t.classList.toggle('on', i === idx); t.setAttribute('aria-selected', String(i === idx)); });
+      grid.innerHTML = '';
+      SETS[idx][1].forEach(([tex, name, tpl]) => {
+        const k = h('button', { type: 'button', class: 'mk mk-tex', title: name, 'aria-label': name, onmousedown: (e) => e.preventDefault(), onclick: () => insertTex(getTarget(), tpl) });
+        try { k.innerHTML = window.katex ? window.katex.renderToString(tex, { throwOnError: false, strict: 'ignore' }) : tex; } catch { k.textContent = name; }
+        grid.append(k);
+      });
+    };
+    SETS.forEach(([title], i) => tabs.append(h('button', { type: 'button', class: 'mk-tab', role: 'tab', onmousedown: (e) => e.preventDefault(), onclick: () => render(i) }, title)));
+    panel.append(tabs, grid);
+    render(0);
+    const more = h('button', { type: 'button', class: 'mk mk-morebtn', title: 'និមិត្តសញ្ញាគណិតវិទ្យាច្រើនទៀត', 'aria-expanded': 'false', onmousedown: (e) => e.preventDefault(), onclick: () => { panel.hidden = !panel.hidden; more.setAttribute('aria-expanded', String(!panel.hidden)); more.classList.toggle('on', !panel.hidden); } }, '∫ ∑ lim … ច្រើនទៀត ▾');
+    bar.append(more, panel);
     return bar;
   };
 
