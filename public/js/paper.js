@@ -133,41 +133,60 @@ function examDoc(o) {
   return h('div', { class: 'sheet' }, [headerEl(), flow, footerEl()]);
 }
 
-// Answer sheet in the "អត្រាកំណែ" style: school block, centred title, two columns, boxed conclusions
+// Teacher answer key (អត្រាកំណែ): same header and footer as the paper, an answer grid for the multiple-choice part,
+// then every written question with its figure and the solution, one step per line.
 function answerDoc(o) {
   const { minutes } = o;
   const mcq = test.questions.filter((q) => q.kind !== 'writing');
   const writing = test.questions.filter((q) => q.kind === 'writing');
   const mcqPts = mcq.reduce((a, q) => a + q.points, 0), wPts = writing.reduce((a, q) => a + q.points, 0);
-  const year = kh(new Date().getFullYear());
+  const grouped = !!(o.group && mcq.some((q) => q.level));
+  const ordered = OMR.mcqOrder(mcq, grouped);                    // same numbering as the printed paper
   const kids = [];
-  kids.push(h('table', { class: 'ans-head' }, h('tbody', {}, [
-    h('tr', {}, [h('td', {}, profile.school || ''), h('td', {}, `${profile.group || 'ក្រុមគ្រូគណិតវិទ្យា'} ឆ្នាំ ${year}`)]),
-    h('tr', {}, [h('td', {}, `មុខវិជ្ជា៖ ${profile.subject || 'គណិតវិទ្យា'}`), h('td', {}, `រយៈពេល៖ ${kh(minutes)} នាទី (ពិន្ទុ៖ ${kh(mcqPts + wPts)})`)]),
-  ])));
-  kids.push(h('div', { class: 'ans-title' }, [h('div', {}, 'អត្រាកំណែ'), h('div', {}, `វិញ្ញាសា៖ ${profile.subject || 'គណិតវិទ្យា'}`), h('div', { style: 'font-size:12pt;' }, test.title)]));
-  const cols = [];
+  kids.push(h('div', { class: 'etitle' }, [
+    h('div', { class: 't1' }, 'អត្រាកំណែ'),
+    h('div', { class: 't3' }, `វិញ្ញាសា ${profile.subject || 'គណិតវិទ្យា'} · ${test.title}`),
+  ]));
+  kids.push(h('div', { class: 'p-meta' }, [
+    h('span', {}, ['រយៈពេល៖ ', h('b', {}, `${kh(minutes)} នាទី`)]),
+    h('span', {}, ['ពិន្ទុសរុប៖ ', h('b', {}, `${kh(mcqPts + wPts)} ពិន្ទុ`)]),
+    h('span', {}, [profile.group || 'ក្រុមគ្រូគណិតវិទ្យា', ' · ', h('b', {}, `ឆ្នាំ ${kh(new Date().getFullYear())}`)]),
+  ]));
   if (mcq.length) {
-    cols.push(h('div', { class: 'ans-ex' }, [
-      h('h4', {}, `ផ្នែក ក · ពហុជ្រើសរើស (${kh(mcqPts)}ពិន្ទុ)`),
-      h('div', { class: 'ans-mcq' }, mcq.map((q, i) => h('span', {}, [`${kh(i + 1)}. `, h('b', {}, LETTERS[q.correct_index] + (q.alt_correct_index != null ? `/${LETTERS[q.alt_correct_index]}` : ''))]))),
+    kids.push(h('div', { class: 'p-part' }, [`ផ្នែក ក · ចម្លើយពហុជ្រើសរើស `, h('small', {}, `(${kh(mcq.length)} សំណួរ · ${kh(mcqPts)} ពិន្ទុ)`)]));
+    const cells = ordered.map((q, i) => h('div', { class: `ak-cell${q.cancelled ? ' cancelled' : ''}${i % 5 === 4 ? ' g5' : ''}` }, [
+      h('span', { class: 'n' }, kh(i + 1)),
+      h('span', { class: 'a' }, LETTERS[q.correct_index] + (q.alt_correct_index != null ? `/${LETTERS[q.alt_correct_index]}` : '')),
     ]));
+    kids.push(h('div', { class: 'ak-grid' }, cells));
+    if (ordered.some((q) => q.cancelled)) kids.push(h('div', { class: 'ak-note' }, 'សំណួរដែលមានសញ្ញាសម្គាល់ត្រូវបានលុបចោល — សិស្សទាំងអស់ទទួលបានពិន្ទុ។'));
   }
-  writing.forEach((q, i) => {
-    const lines = String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n');
-    cols.push(h('div', { class: 'ans-ex' }, [
-      h('h4', {}, `លំហាត់ទី${kh(i + 1)} (${kh(q.points)}ពិន្ទុ)`),
-      ...lines.map((ln) => {
-        if (/^\s*ដូចនេះ/.test(ln)) return mathEl('div', { class: 'ans-box' }, ln.trim());
-        const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
-        const el = h('div', { class: 'ans-line' });
-        el.innerHTML = (m ? `<span class="lbl">${m[1]}.</span> ` : '') + Exam.mathHtml(m ? m[2] : ln);
-        return el;
-      }),
-    ]));
-  });
-  kids.push(h('div', { class: 'ans-cols' }, cols));
-  return h('div', { class: 'sheet answers-doc' }, kids);
+  if (writing.length) {
+    kids.push(h('div', { class: 'p-part' }, [`ផ្នែក ខ · ចម្លើយសរសេរ `, h('small', {}, `(${kh(writing.length)} សំណួរ · ${kh(wPts)} ពិន្ទុ)`)]));
+    writing.forEach((q, i) => {
+      const lines = String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').filter((ln) => ln.trim());
+      const stem = h('div', { class: 'ak-stem' });
+      stem.innerHTML = Exam.mathHtml(String(q.stem_text || '').trim());
+      kids.push(h('div', { class: 'ak-item' }, [
+        h('div', { class: 'ak-h' }, [h('b', {}, `${ROMAN[i] || i + 1}.`), `  លំហាត់ទី${kh(i + 1)}`, h('span', { class: 'pts' }, `${kh(q.points)} ពិន្ទុ`)]),
+        stem,
+        q.image_key ? h('img', { class: 'ak-img', src: `/api/images/${q.image_key}`, alt: '' }) : null,
+        h('div', { class: 'ak-sol' }, [
+          h('div', { class: 'ak-sol-t' }, 'ចម្លើយគំរូ'),
+          ...lines.map((ln) => {
+            if (/^\s*ដូចនេះ/.test(ln)) return mathEl('div', { class: 'ans-box' }, ln.trim());
+            const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+            const el = h('div', { class: `ans-line${m ? ' sub' : ''}` });
+            el.innerHTML = (m ? `<span class="lbl">${m[1]}.</span> ` : '') + Exam.mathHtml(m ? m[2] : ln);
+            return el;
+          }),
+        ]),
+      ]));
+    });
+  }
+  const spacer = () => h('tr', {}, h('td', {}));
+  const flow = h('table', { class: 'flow' }, [h('thead', {}, spacer()), h('tfoot', {}, spacer()), h('tbody', {}, h('tr', {}, h('td', {}, kids)))]);
+  return h('div', { class: 'sheet key-doc' }, [headerEl(), flow, footerEl()]);
 }
 
 const tplValue = () => document.getElementById('opt-tpl').value;
