@@ -78,3 +78,5 @@ html.bg-noscroll, html.bg-noscroll body { overflow: hidden; }
   .bg-cards.s3 .bg-cell { height: 26mm; }
 }
 .bg.bg-live #bg-v-call { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.bg-cell.long { font-size: 13px !important; line-height: 1.25; }

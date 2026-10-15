@@ -63,7 +63,7 @@
     cells.forEach(function (c, i) {
       var cell = el('div', 'bg-cell');
       if (c.free) { cell.classList.add('free'); cell.textContent = '★'; if (opts.check) mark[i] = 1; }
-      else { var it = itemById(items, c.id); cell.textContent = it ? it.a : '?'; if (opts.check && called.indexOf(c.id) >= 0) { cell.classList.add('hit'); mark[i] = 1; } }
+      else { var it = itemById(items, c.id); cell.textContent = it ? it.a : '?'; if (it && it.a.length > 11) cell.classList.add('long'); if (opts.check && called.indexOf(c.id) >= 0) { cell.classList.add('hit'); mark[i] = 1; } }
       g.appendChild(cell);
     });
     card.appendChild(g);
