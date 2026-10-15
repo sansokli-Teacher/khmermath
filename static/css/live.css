@@ -29,7 +29,7 @@ html.lv-lock, body.lv-lock { overflow: hidden !important; overscroll-behavior: n
 .lv-net { margin: 0 10px 6px; padding: 5px 10px; border-radius: 10px; background: #fff3bf; color: #7a5a00; font-size: 13px; text-align: center; }
 .lv-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .lv-stage { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 8px 14px; text-align: center; }
-.lv-q { background: #fff; color: #1c1330; border-radius: 16px; padding: 12px 14px; font-size: clamp(17px, 4.8vw, 24px); font-weight: 700; line-height: 1.6; width: 100%; box-sizing: border-box; overflow-wrap: anywhere; box-shadow: 0 4px 0 rgba(0, 0, 0, .18); }
+.lv-q { background: #fff; color: #1c1330; border-radius: 16px; padding: 12px 14px; font-size: clamp(15px, 4.1vw, 20px); font-weight: 700; line-height: 1.6; width: 100%; box-sizing: border-box; overflow-wrap: anywhere; box-shadow: 0 4px 0 rgba(0, 0, 0, .18); }
 .lv-fig svg { max-width: 100%; height: auto; max-height: 26vh; background: #fff; border-radius: 12px; padding: 3px; }
 .lv-fig svg text { font-family: "KaTeX_Math", serif; font-style: italic; } .lv-fig svg text.up { font-style: normal; }
 .lv-emoji { font-size: 54px; line-height: 1.1; } .lv-emoji.ok { color: #69db7c; } .lv-emoji.no { color: #ff8787; }
