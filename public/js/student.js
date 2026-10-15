@@ -195,6 +195,7 @@ function renderHome(data) {
   clearInterval(waitInterval);
   showView('home');
   document.getElementById('home-name').textContent = data.student_name;
+  const av = document.getElementById('home-avatar'); if (av) av.textContent = [...String(data.student_name || '?')][0];
   document.getElementById('home-sub').textContent = `អត្តលេខ ${data.student_id}${data.class_name ? ` · ថ្នាក់ ${data.class_name}` : ''}`;
   const body = document.getElementById('home-body');
   body.innerHTML = '';
@@ -309,11 +310,8 @@ function yearCard(y) {
       h('div', { class: 'gr' }, g ? `${g.grade} · ${g.label}` : 'មិនទាន់មាន'),
     ]);
   };
-  return h('div', { class: 'year-card', style: 'margin-bottom:8px;' }, [
-    h('div', { class: 'year-head' }, [
-      h('h2', { style: 'margin:0;' }, `📈 ពិន្ទុឆ្នាំសិក្សា ${y.label}`),
-      h('span', { class: 'muted' }, `ឆមាស = មធ្យមខែ ${y.monthly_weight}% + ប្រឡងឆមាស ${y.exam_weight}%`),
-    ]),
+  const any = y.assessments.some((a) => a.pct != null);
+  const body = [
     h('div', { class: 'year-steps' }, steps),
     h('div', { class: 'year-sum' }, [
       tile('មធ្យមភាគប្រចាំខែ', y.monthly_avg),
@@ -321,7 +319,17 @@ function yearCard(y) {
       tile('មធ្យមភាគប្រចាំឆ្នាំ', y.year_avg, true),
     ]),
     h('div', { class: 'row', style: 'margin-top:12px;' }, [h('a', { class: 'btn secondary btn-sm', href: 'reportcard.html', target: '_blank' }, '📄 ទាញយកសៀវភៅរបាយការណ៍ (PDF)')]),
+  ];
+  // nothing to show yet: keep the card folded so the first screen is about the exams
+  const det = h('details', { class: 'year-card', style: 'margin-bottom:8px;' }, [
+    h('summary', { class: 'year-head' }, [
+      h('h2', { style: 'margin:0;' }, `📈 ពិន្ទុឆ្នាំសិក្សា ${y.label}`),
+      h('span', { class: 'muted' }, any ? `ឆមាស = មធ្យមខែ ${y.monthly_weight}% + ប្រឡងឆមាស ${y.exam_weight}%` : 'មិនទាន់មានពិន្ទុ — ចុចមើល'),
+    ]),
+    ...body,
   ]);
+  if (any) det.open = true;
+  return det;
 }
 
 function examCard(s) {
@@ -712,15 +720,19 @@ function renderNav() {
   nav.innerHTML = '';
   let answered = 0;
   const mcqTotal = testState.questions.filter((q) => q.kind !== 'writing').length;
+  let wNo = 0;
   testState.questions.forEach((q, i) => {
     const writing = q.kind === 'writing';
+    if (writing) wNo++;
     if (!writing && q.selected_index != null) answered++;
     nav.append(h('button', {
       class: `${q.selected_index != null ? 'answered ' : ''}${writing ? 'writing ' : ''}${flags.has(q.id) ? 'flagged ' : ''}${i === testState.current ? 'current' : ''}`,
       title: writing ? 'សំណួរសរសេរ' : '',
       onclick: () => { testState.current = i; renderQuestion(); renderNav(); },
-    }, writing ? `✎${i + 1 - mcqTotal}` : String(i + 1)));
+    }, writing ? `✎${wNo}` : String(i + 1 - (wNo)))); // numbering of multiple-choice questions skips written ones
   });
+  const cur = nav.querySelector('.current');
+  if (cur && nav.scrollWidth > nav.clientWidth + 2) nav.scrollLeft = cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2;
   document.getElementById('progress-fill').style.width = `${mcqTotal ? (answered / mcqTotal) * 100 : 0}%`;
 }
 

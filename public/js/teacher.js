@@ -125,23 +125,32 @@ function licenseBar() {
   const until = ME.license_until ? fmtDateTime(ME.license_until) : '';
   const L = ME.trial_limits || {}, U = ME.usage || {};
   const use = (label, used, max) => h('span', { class: `u${used >= max ? ' full' : ''}` }, `${label} ${used}/${max}${used >= max ? ' · ពេញ' : ''}`);
-  return h('div', { class: 'up-card' }, [
+  let card;
+  const toggle = () => { card.classList.toggle('open'); toggleBtn.setAttribute('aria-expanded', String(card.classList.contains('open'))); if (card.classList.contains('open')) card.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const toggleBtn = h('button', { class: 'up-toggle', type: 'button', 'aria-expanded': 'false', onclick: toggle }, trial ? '⬆ ដំឡើងគណនី' : '⬆ បន្តការប្រើប្រាស់');
+  card = h('div', { class: 'up-card' }, [
     h('div', { class: 'up-top' }, [
-      h('div', {}, [
-        h('h2', {}, trial ? '🚀 បើកមុខងារពេញលេញ — គ្មានកំណត់' : '⏰ ការប្រើប្រាស់បានផុតកំណត់'),
-        h('p', {}, trial ? 'អ្នកកំពុងសាកល្បងឥតគិតថ្លៃ។ ឡើងគម្រោងដើម្បីបង្រៀន និងប្រឡងគ្រប់ថ្នាក់របស់អ្នក។' : `(${until}) — អ្នកមើលទិន្នន័យបាន តែមិនអាចកែប្រែបានទេ។ បន្តដើម្បីប្រើបានពេញលេញ។`),
-      ]),
       h('span', { class: 'up-tag' }, trial ? '🆓 គណនីសាកល្បង' : '🔒 ផុតកំណត់'),
+      trial ? h('div', { class: 'up-use' }, [use('ថ្នាក់', U.classes || 0, L.classes), use('សិស្ស', U.students || 0, L.students), use('តេស្ត', U.tests || 0, L.tests), use('ប្រឡង', U.sessions || 0, L.sessions), h('span', { class: 'u' }, `សំណួរ ≤ ${L.questions}/តេស្ត`)])
+        : h('div', { class: 'up-note' }, `(${until}) — មើលទិន្នន័យបាន តែមិនអាចកែប្រែបានទេ។`),
+      toggleBtn,
     ]),
-    trial ? h('div', { class: 'up-use' }, [use('ថ្នាក់', U.classes || 0, L.classes), use('សិស្ស', U.students || 0, L.students), use('តេស្ត', U.tests || 0, L.tests), use('ប្រឡង', U.sessions || 0, L.sessions), h('span', { class: 'u' }, `សំណួរ ≤ ${L.questions}/តេស្ត`)]) : null,
-    h('div', { class: 'up-perks' }, ['ថ្នាក់ និងសិស្សមិនកំណត់', 'តេស្ត និងសំណួរមិនកំណត់', 'ប្រឡងគ្រប់ថ្នាក់ ដាក់ពិន្ទុស្វ័យប្រវត្តិ', 'ពិន្ទុប្រចាំឆ្នាំ ស្ថិតិ A–F', 'ហ្គេមសំណួរផ្ទាល់ពេញលេញ', 'ចែករំលែក និងចម្លងតេស្ត'].map((t) => h('div', {}, t))),
-    h('div', { class: 'up-plans' }, [pricingCards(trial)]),
-    h('div', { class: 'up-foot' }, [
-      h('div', {}, ['សួរ ឬបង់ប្រាក់៖ ', tgLink(), ME.contact_text ? ` · ${ME.contact_text}` : '']),
-      h('div', { style: 'margin-top:8px;' }, 'មានកូដដោះសោរួចហើយ?'),
-      codeBox(),
+    h('div', { class: 'up-more' }, [
+      h('div', { class: 'up-head' }, [
+        h('h2', {}, trial ? 'បើកមុខងារពេញលេញ — គ្មានកំណត់' : 'ការប្រើប្រាស់បានផុតកំណត់'),
+        h('p', {}, trial ? 'ឡើងគម្រោងដើម្បីបង្រៀន និងប្រឡងគ្រប់ថ្នាក់របស់អ្នក ដោយគ្មានដែនកំណត់។' : 'បន្តដើម្បីប្រើបានពេញលេញ។'),
+      ]),
+      h('div', { class: 'up-perks' }, ['ថ្នាក់ និងសិស្សមិនកំណត់', 'តេស្ត និងសំណួរមិនកំណត់', 'ប្រឡងគ្រប់ថ្នាក់ ដាក់ពិន្ទុស្វ័យប្រវត្តិ', 'ពិន្ទុប្រចាំឆ្នាំ ស្ថិតិ A–F', 'ហ្គេមសំណួរផ្ទាល់ពេញលេញ', 'ចែករំលែក និងចម្លងតេស្ត'].map((t) => h('div', {}, t))),
+      h('div', { class: 'up-plans' }, [pricingCards(trial)]),
+      h('div', { class: 'up-foot' }, [
+        h('div', {}, ['សួរ ឬបង់ប្រាក់៖ ', tgLink(), ME.contact_text ? ` · ${ME.contact_text}` : '']),
+        h('div', { style: 'margin-top:8px;' }, 'មានកូដដោះសោរួចហើយ?'),
+        codeBox(),
+      ]),
     ]),
   ]);
+  window.openUpgrade = () => { if (!card.classList.contains('open')) toggle(); };
+  return card;
 }
 
 const LOCK_INFO = {
@@ -161,7 +170,7 @@ function showLocked(tab) {
     h('h2', {}, title),
     h('p', { class: 'muted' }, desc),
     h('p', {}, `🔓 មុខងារនេះសម្រាប់គណនីពេញលេញ — ១ ឆ្នាំត្រឹម $${ME.plans.year.price} (ធម្មតា $${ME.plans.year.was}) ឬ ១ ខែ $${ME.plans.month.price}។`),
-    h('button', { class: 'su-cta', style: 'max-width:320px;margin:0 auto 12px;display:block;', onclick: () => { document.querySelector('[data-tab=classes]').click(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, '⭐ មើលគម្រោង និងឡើងគម្រោង'),
+    h('button', { class: 'su-cta', style: 'max-width:320px;margin:0 auto 12px;display:block;', onclick: () => { document.querySelector('[data-tab=classes]').click(); if (window.openUpgrade) window.openUpgrade(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, '⭐ មើលគម្រោង និងឡើងគម្រោង'),
     h('p', {}, 'មានកូដដោះសោរួចហើយ? បញ្ចូលទីនេះ៖'),
     codeBox(),
     h('p', { class: 'muted', style: 'margin-top:12px;' }, ['ស្នើសុំកូដ៖ ', tgLink()]),
