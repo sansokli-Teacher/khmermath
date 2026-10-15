@@ -280,16 +280,23 @@ export async function setSample(req, env, params) {
 }
 
 // ---------- question bank: every question from tests this teacher owns or can edit ----------
-async function bankRows(env, t, { dedupe = true } = {}) {
+// includeShared: every teacher can also use the owner's question bank (the owner's hidden "🗂 ឃ្លាំងសំណួរ" test) —
+// read-only: they can search and copy questions into their own tests, never change them.
+async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
   const mine = await accessibleTests(env, t);
   const ids = [...mine.entries()].filter(([, r]) => r === 'owner' || r === 'editor').map(([id]) => id);
+  if (includeShared && t.role !== 'owner') {
+    const { results: lib } = await env.DB.prepare("SELECT x.id FROM tests x JOIN teachers o ON o.id = x.owner_id WHERE x.is_bank = 1 AND o.role = 'owner'").all();
+    for (const r of lib) if (!ids.includes(r.id)) ids.push(r.id);
+  }
   if (!ids.length) return [];
-  const ph = ids.map(() => '?').join(',');
-  const { results } = await env.DB.prepare(
+  const sharedIds = new Set(ids.filter((id) => !mine.has(id) || !['owner', 'editor'].includes(mine.get(id))));
+  const { results: raw } = await env.DB.prepare(
     `SELECT q.id, q.test_id, x.title AS test_title, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind,
             q.topic, q.level, q.grade, q.lesson, q.shuffle, q.solution_text, q.cancelled, q.params
-     FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ph}) ORDER BY q.test_id DESC, q.order_no`,
+     FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ids.map(() => '?').join(',')}) ORDER BY q.test_id DESC, q.order_no`,
   ).bind(...ids).all();
+  const results = raw.map((q) => (sharedIds.has(q.test_id) ? { ...q, shared: 1, test_title: 'ឃ្លាំងសំណួររួម' } : q));
   if (!dedupe) return results.filter((q) => !q.cancelled);
   // the same question often lives in several tests (copies) — show it once, preferring the tagged copy
   const byKey = new Map();
@@ -306,7 +313,7 @@ async function bankRows(env, t, { dedupe = true } = {}) {
 export async function listBank(req, env) {
   const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   await ensureColumns(env);
-  const rows = await bankRows(env, g0.t);
+  const rows = await bankRows(env, g0.t, { includeShared: true });
   return json({ questions: rows.map((q) => ({ ...q, options: JSON.parse(q.options_json), options_json: undefined })) });
 }
 
@@ -323,7 +330,7 @@ export async function copyQuestions(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
   const { question_ids } = await req.json();
   if (!Array.isArray(question_ids) || !question_ids.length) return err('question_ids is required.', 400);
-  const bank = await bankRows(env, g.t, { dedupe: false });
+  const bank = await bankRows(env, g.t, { dedupe: false, includeShared: true });
   const byId = new Map(bank.map((q) => [q.id, q]));
   let n = 0;
   const room = await questionRoom(env, g.t, params.testId);
@@ -339,7 +346,7 @@ export async function generateTest(req, env) {
   if (g0.t.status === 'trial' && (await trialUsage(env, g0.t)).tests >= TRIAL.tests) return limitResponse('តេស្ត', TRIAL.tests);
   const { title, counts, topics, kind, grade, lessons } = await req.json();
   if (!title || !String(title).trim()) return err('title is required.', 400);
-  const bank = (await bankRows(env, g0.t)).filter((q) => (kind === 'writing' ? q.kind === 'writing' : kind === 'all' ? true : q.kind !== 'writing'))
+  const bank = (await bankRows(env, g0.t, { includeShared: true })).filter((q) => (kind === 'writing' ? q.kind === 'writing' : kind === 'all' ? true : q.kind !== 'writing'))
     .filter((q) => !topics || !topics.length || topics.includes(q.topic))
     .filter((q) => !grade || q.grade === String(grade))
     .filter((q) => !Array.isArray(lessons) || !lessons.length || lessons.includes(q.lesson));

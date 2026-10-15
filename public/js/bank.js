@@ -155,7 +155,7 @@ render.bank = async function () {
             h('span', { class: 'muted', style: 'font-size:12px;' }, x.test_title),
           ]),
         ]),
-        h('button', { class: 'secondary btn-sm', onclick: (e) => { e.preventDefault(); e.stopPropagation(); openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload); } }, '✏️'),
+        x.shared ? h('span', { class: 'chip chip-plain', title: 'សំណួររួមរបស់ប្រព័ន្ធ — ចម្លងទៅតេស្តរបស់អ្នកបាន' }, '🌐 រួម') : h('button', { class: 'secondary btn-sm', onclick: (e) => { e.preventDefault(); e.stopPropagation(); openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload); } }, '✏️'),
       ]));
     });
     if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
