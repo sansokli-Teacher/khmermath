@@ -54,7 +54,20 @@
   // ---------- picture -> PNG (browser only) ----------
   // `ref` is either an uploaded-image key or a site path such as /ngs.png
   async function rasterize(ref) {
-    const res = await fetch(String(ref).startsWith('/') ? ref : `/api/images/${ref}`); const blob = await res.blob();
+    const res = await fetch(String(ref).startsWith('/') ? ref : `/api/images/${ref}`); let blob = await res.blob();
+    if (/svg/.test(blob.type)) {   // diagram labels in Mathcad UniMath italic, numbers/units upright Times (as on the paper page)
+      try {
+        const svg = new DOMParser().parseFromString(await blob.text(), 'image/svg+xml').documentElement;
+        if (svg.nodeName === 'svg') {
+          svg.setAttribute('font-family', "'Times New Roman', serif");
+          for (const t of svg.querySelectorAll('text')) {
+            if (/^([A-Z]{1,3}|[a-z])['\u2032]?[0-9]?$/.test(t.textContent.trim())) { t.setAttribute('font-family', "'Mathcad UniMath Italic','Mathcad UniMath','Times New Roman',serif"); t.setAttribute('font-style', 'italic'); t.removeAttribute('font-weight'); }
+            else t.setAttribute('font-family', "'Times New Roman', serif");
+          }
+          blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
+        }
+      } catch { /* use the original */ }
+    }
     const url = URL.createObjectURL(blob);
     try {
       const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
@@ -106,7 +119,7 @@
       const im = images[key]; if (!im) return '';
       const maxW = 9.5 * 360000, maxH = 7 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
       const f = Math.min(1, maxW / wE, maxH / hE); wE = Math.round(wE * f); hE = Math.round(hE * f);
-      return para(image(im.rid, wE, hE, im.n), { left: 1871, after: 80 });
+      return para(image(im.rid, wE, hE, im.n), { align: 'center', after: 80 });
     };
 
     const body = []; const extra = []; let sect;
@@ -228,7 +241,7 @@
       const im = images[key]; if (!im) return '';
       const maxW = 9.5 * 360000, maxH = 6.5 * 360000; let wE = im.w * 9525, hE = im.h * 9525;
       const f = Math.min(1, maxW / wE, maxH / hE); wE = Math.round(wE * f); hE = Math.round(hE * f);
-      return para(image(im.rid, wE, hE, im.n), { left, after: 80 });
+      return para(image(im.rid, wE, hE, im.n), { align: 'center', after: 80 });
     };
     const body = []; const extra = [];
     const PAGE = '<w:pgSz w:w="11906" w:h="16838"/>';
