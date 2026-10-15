@@ -170,12 +170,14 @@
     var from = angle, norm = ((target - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     var to = from + turns * Math.PI * 2 + norm, dur = S().dur * 1000 * (0.9 + Math.random() * 0.2), t0 = performance.now(), lastSlice = -1;
     spinning = true; $('wh-spin').disabled = true;
+    try { if (window.KmSound && sound) { KmSound.unlock(); KmSound.loop('question', 0.32); } } catch (e) {}
     (function frame(now) {
       var t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 4);
       angle = from + (to - from) * e; draw();
       var sl = Math.floor(((-angle % (Math.PI * 2)) + Math.PI * 2 + a / 2) / a); if (sl !== lastSlice) { lastSlice = sl; tone([900], 0.04, 0.025); }
       if (t < 1) return requestAnimationFrame(frame);
       spinning = false; $('wh-spin').disabled = false; angle = to % (Math.PI * 2); draw();
+      try { if (window.KmSound && sound) { KmSound.stop(); KmSound.sfx('reveal'); } } catch (e) {}
       finish(list[pick]);
     })(t0);
   }

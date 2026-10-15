@@ -127,8 +127,11 @@
   function say(t) { msgEl.textContent = t; }
 
   /* ---- sound ---- */
+  // quiz-show music while a game is being played, a short fanfare at the end (sfx.js, original tracks)
+  function bgm(on) { try { if (!window.KmSound || !sound) return; if (on) { KmSound.unlock(); KmSound.loop('lobby', 0.22); } else KmSound.stop(); } catch (e) {} }
   function tone(f, d) {
     if (!sound) return;
+    if (window.KmSound && !over) bgm(true);
     try {
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();
       var o = ac.createOscillator(), g = ac.createGain();
@@ -198,6 +201,7 @@
     var a = score[0], b = score[1];
     var res = nameOf(0) + ' ' + km(a) + ' គ្រាប់ · ' + nameOf(1) + ' ' + km(b) + ' គ្រាប់។ ';
     tone(660, .5);
+    try { if (window.KmSound && sound) { KmSound.stop(); KmSound.sfx('fanfare'); } } catch (e) {}
     if (!match) return say('ល្បែងចប់។ ' + res + (a === b ? 'ស្មើគ្នា!' : nameOf(a > b ? 0 : 1) + ' ឈ្នះ!'));
     totals = [score[0] + reserve[0], score[1] + reserve[1]];
     var lost = totals[0] < 5 ? 0 : totals[1] < 5 ? 1 : -1;   /* fewer seeds than the Kbal Chi Mueng needs */
