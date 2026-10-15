@@ -152,6 +152,28 @@ document.getElementById('home-logout').onclick = logoutStudent;
 
 // ---------- Home ----------
 // Join the live quiz with the code from the teacher (the student's own name is filled in, nothing is put in the address)
+async function homeworkCard(holder) {
+  try {
+    const { games, locked } = await api('/api/student/games');
+    if (locked || !games.length) return;
+    holder.append(h('div', { class: 'card', style: 'margin:12px 0;border:2px solid #1c7ed6' }, [
+      h('div', { style: 'font-weight:700;margin-bottom:6px' }, '📚 កិច្ចការផ្ទះ — ហ្គេមសំណួរ'),
+      ...games.map((g) => {
+        const dl = new Date(g.deadline).toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' });
+        const btn = g.open ? h('button', { type: 'button', onclick: async () => {
+          try {
+            const r = await api('/api/student/games/join', { method: 'POST', body: { code: g.code } });
+            sessionStorage.setItem('km_live_v1', JSON.stringify({ code: r.code, pid: r.pid, token: r.token, name: r.name, avatar: r.avatar }));
+            location.href = '/live';
+          } catch (e) { showError(e); }
+        } }, g.done ? 'មើលលទ្ធផល' : g.started ? 'បន្តលេង' : 'ចាប់ផ្តើមលេង') : h('span', { class: 'muted' }, 'ផុតកំណត់');
+        return h('div', { style: 'display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)' }, [
+          h('div', {}, [h('div', {}, `មេរៀន ${g.lessons.join(', ')} · ${g.total} សំណួរ`), h('small', { class: 'muted' }, `ផុតកំណត់ ${dl}${g.started ? ` · ពិន្ទុ ${g.score}` : ''}`)]), btn]);
+      }),
+    ]));
+  } catch { /* the home screen works without it */ }
+}
+
 function gameCard(studentName) {
   const code = h('input', { type: 'text', inputmode: 'numeric', maxlength: 6, placeholder: 'លេខកូដ ៦ ខ្ទង់', style: 'max-width:180px;text-align:center;letter-spacing:.2em;font-weight:700' });
   const go = () => {
@@ -183,6 +205,7 @@ function renderHome(data) {
   fillProgress(progressHolder);
   body.append(installCard());
   body.append(gameCard(data.student_name));
+  const hwHolder = h('div', {}); body.append(hwHolder); homeworkCard(hwHolder);
 
   // --- upcoming / open tests
   body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));

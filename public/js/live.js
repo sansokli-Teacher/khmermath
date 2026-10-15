@@ -49,7 +49,14 @@
     clearTimeout(pollId);
     api('/api/live/state?code=' + me.code + '&pid=' + me.pid + '&token=' + me.token).then(function (d) { st = d; recvAt = performance.now(); $('lv-net').hidden = true; render(); })
       .catch(function (e) { if (e.status === 404) { try { sessionStorage.removeItem(SK); } catch (x) {} me = null; clearTimeout(pollId); setFull(false); $('lv-msg').textContent = 'អ្នកមិននៅក្នុងបន្ទប់នេះទៀតទេ (គ្រូបានដកចេញ ឬបន្ទប់បានបិទ)។'; return; } $('lv-net').hidden = false; })
-      .then(function () { if (me) pollId = setTimeout(poll, st && st.mode === 'solo' ? (st.phase === 'question' ? 4000 : 6000) : (st && st.phase === 'question' && !st.answered ? 900 : 1600)); });
+      .then(function () { if (me) pollId = setTimeout(poll, nextDelay()); });
+  }
+  // Every phone asking once a second would burn through the free server quota, so the pace follows what can actually change:
+  // the timer runs on the phone itself, so a student mid-question only needs to hear about the reveal, and a hidden tab barely asks.
+  function nextDelay() {
+    var base = !st ? 2500 : st.mode === 'solo' ? (st.phase === 'question' ? 6000 : 8000) : (st.phase === 'lobby' ? 3500 : st.phase === 'question' ? (st.answered ? 3000 : 2500) : st.phase === 'reveal' ? 2500 : 4000);
+    if (document.hidden) base = Math.max(base, 8000);
+    return base + Math.random() * 600;                 // spread the phones out so they do not all ask in the same instant
   }
   function remaining() { return Math.max(0, st.left - (performance.now() - recvAt)); }
   function tick() {
@@ -57,7 +64,7 @@
     var r = remaining(); $('lv-time').textContent = khNum(Math.ceil(r / 1000)); $('lv-bar').style.width = (100 * r / (st.secs * 1000)) + '%';
     $('lv-bar').classList.toggle('hot', r < 6000);
     var sec = Math.ceil(r / 1000); if (sec !== lastSec) { lastSec = sec; if (sec > 0 && sec <= 5 && !st.answered) KmSound.sfx('tick'); }
-    if (r <= 0 && st.mode === 'solo' && !st.answered && !tick.asked) { tick.asked = true; setTimeout(poll, 1700); }   // let the server record the timeout
+    if (r <= 0 && !tick.asked) { tick.asked = true; setTimeout(poll, st.mode === 'solo' ? 1700 : 700); }   // let the server record the timeout
   }
   function render() {
     if (st.avatar && st.avatar !== me.avatar) { me.avatar = st.avatar; saveMe(); }

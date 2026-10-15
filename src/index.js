@@ -170,6 +170,10 @@ const ROUTES = [
   ['POST', '/api/live/answer', live.answer],
   ['POST', '/api/live/next', live.next],
   ['POST', '/api/live/avatar', live.setAvatar],
+  ['GET', '/api/live/history', live.history],
+  ['GET', '/api/live/history/:code', live.historyDetail],
+  ['GET', '/api/student/games', live.studentGames],
+  ['POST', '/api/student/games/join', live.studentJoin],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {

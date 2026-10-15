@@ -39,7 +39,7 @@ export async function loadCfg(env) {
   try { c = row ? JSON.parse(row.value) : {}; } catch { c = {}; }
   const games = {};
   for (const k of GAMES) games[k] = !(c.games && c.games[k] === false);
-  return { enabled: c.enabled !== false, lessons: Array.isArray(c.lessons) ? c.lessons : null, games };
+  return { enabled: c.enabled !== false, lessons: Array.isArray(c.lessons) ? c.lessons : null, games, locked: c.locked === true };
 }
 // the game styles a teacher can release to students on khmermath.org (teachers always have them all here in the exam system)
 export const GAMES = ['cards', 'wheel', 'boat', 'live', 'bingo'];
@@ -51,7 +51,18 @@ export function cors(req) {
   return o && ORIGINS.includes(o) ? { 'Access-Control-Allow-Origin': o, Vary: 'Origin' } : { Vary: 'Origin' };
 }
 
+// Exam-day lock: while on, the live quiz is closed and the public bank answers with a tiny 503, so the games fall back to their
+// built-in copy of the questions and put no load on the exam system. The flag is cached for a few seconds because every phone asks.
+let lockAt = 0, lockVal = false;
+export async function isLocked(env) {
+  if (Date.now() - lockAt < 10000) return lockVal;
+  lockVal = (await loadCfg(env)).locked; lockAt = Date.now();
+  return lockVal;
+}
+export function _forgetLock() { lockAt = 0; }
+
 export async function bank(req, env) {
+  if (await isLocked(env)) return json({ error: 'locked' }, 503, { 'Cache-Control': 'public, max-age=60', ...cors(req) });
   const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
   const out = mergeBank(base, edits, cfg);
   out.closed = !cfg.enabled;
@@ -64,7 +75,7 @@ export async function admin(req, env) {
   if (!t) return err('Not logged in.', 401);
   const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
   const out = mergeBank(base, edits, cfg, { admin: true });
-  out.config = { enabled: cfg.enabled, lessons: cfg.lessons, games: cfg.games };
+  out.config = { enabled: cfg.enabled, lessons: cfg.lessons, games: cfg.games, locked: cfg.locked };
   out.can_edit = t.role === 'owner';
   return json(out);
 }
@@ -108,8 +119,9 @@ export async function saveConfig(req, env) {
   const lessons = Array.isArray(b.lessons) ? [...new Set(b.lessons.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 99))].sort((a, c) => a - c) : null;
   const games = {};
   for (const k of GAMES) games[k] = !(b.games && b.games[k] === false);
-  const value = JSON.stringify({ enabled: b.enabled !== false, lessons, games });
+  const value = JSON.stringify({ enabled: b.enabled !== false, lessons, games, locked: b.locked === true });
   await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('game_config', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1").bind(value).run();
+  lockAt = 0;
   await audit(env, g.t, 'game.config', value);
   return json({ ok: true });
 }

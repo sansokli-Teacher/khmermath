@@ -25,12 +25,26 @@ render.live = async function () {
   const count = h('select', {}, [10, 15, 20, 30].map((n) => h('option', { value: n }, `${lvKh(n)} សំណួរ`))); count.value = '15';
   const secs = h('select', {}, [15, 20, 30, 45, 60, 90].map((n) => h('option', { value: n }, `${lvKh(n)} វិនាទី/សំណួរ`))); secs.value = '30';
   const mode = h('select', {}, [h('option', { value: 'classic' }, '👩‍🏫 បែបថ្នាក់ (គ្រូគ្រប់គ្រង)'), h('option', { value: 'solo' }, '🧘 បែបសុខសាន្ត (សិស្សលេងដោយខ្លួនឯង)')]);
+  let classes = [];
+  try { classes = (await api('/api/classes')).classes || []; } catch { classes = []; }
+  const hwOn = h('input', { type: 'checkbox' });
+  const hwClass = h('select', {}, classes.map((c) => h('option', { value: c.id }, c.name)));
+  const dl = new Date(Date.now() + 3 * 86400000); dl.setHours(20, 0, 0, 0);
+  const hwDate = h('input', { type: 'datetime-local', value: new Date(dl - dl.getTimezoneOffset() * 60000).toISOString().slice(0, 16) });
+  const hwBox = h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:8px 10px;border:1px dashed var(--line);border-radius:10px' }, [
+    h('label', { style: 'display:flex;gap:6px;align-items:center;font-weight:700' }, [hwOn, '📚 កិច្ចការផ្ទះ (សម្រាប់ថ្នាក់មួយ)']), hwClass, h('span', {}, 'ផុតកំណត់៖'), hwDate,
+    h('small', { class: 'muted' }, 'សិស្សចូលតាមគណនីរបស់ខ្លួននៅ exam.khmermath.org/student ហើយពិន្ទុត្រូវរក្សាទុកក្នុងប្រវត្តិ។ (ត្រូវជ្រើស «បែបសុខសាន្ត»)'),
+  ]);
+  const syncHw = () => { hwBox.style.display = mode.value === 'solo' && classes.length ? '' : 'none'; if (mode.value !== 'solo') hwOn.checked = false; };
+  mode.onchange = syncHw; syncHw();
   const go = h('button', { type: 'button' }, '▶ បង្កើតបន្ទប់');
   go.disabled = !!closed;
   go.onclick = async () => {
     if (!lvLessons.length) return Exam.notify('សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១។');
     go.disabled = true;
-    try { const r = await api('/api/live/create', { method: 'POST', body: { lessons: lvLessons, count: Number(count.value), secs: Number(secs.value), mode: mode.value } }); lvLast = r.code; lvHost(r.code); }
+    try { const r = await api('/api/live/create', { method: 'POST', body: { lessons: lvLessons, count: Number(count.value), secs: Number(secs.value), mode: mode.value, ...(hwOn.checked ? { class_id: Number(hwClass.value), deadline: new Date(hwDate.value).getTime() } : {}) } });
+      lvLast = r.code;
+      if (r.homework) { Exam.notify('បានបង្កើតកិច្ចការផ្ទះ — សិស្សឃើញវានៅក្នុងគណនីរបស់ខ្លួន។'); render.live(); } else lvHost(r.code); }
     catch (e) { Exam.notify(e.message); } finally { go.disabled = !!closed; }
   };
   const all = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => boxes.forEach((b) => { b.cb.checked = true; lvLessons = lessons.map((x) => x.n); }) }, 'ជ្រើសទាំងអស់');
@@ -39,10 +53,58 @@ render.live = async function () {
     h('b', {}, 'ជ្រើសមេរៀន'),
     h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:10px 0' }, boxes.map((b) => b.lab)),
     h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center' }, [mode, count, secs, go, all, none]),
+    hwBox,
     h('p', { class: 'muted', style: 'margin:8px 0 0' }, 'បែបថ្នាក់៖ លោកគ្រូអ្នកគ្រូចេញសំណួរម្តងមួយៗលើអេក្រង់ធំ សិស្សទាំងអស់ឆ្លើយព្រមគ្នា។ បែបសុខសាន្ត៖ សិស្សម្នាក់ៗលេងតាមល្បឿនខ្លួន ដោយមិនចាំបាច់មានគ្រូគ្រប់គ្រង (សមស្របជាកិច្ចការផ្ទះ ឬពេលសិស្សរៀនដោយខ្លួនឯង)។'),
     lvLast ? h('p', { class: 'muted', style: 'margin-bottom:0' }, ['បន្ទប់ចុងក្រោយ៖ ', h('b', {}, lvLast), ' ', h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvHost(lvLast) }, 'បើកវិញ')]) : null,
   ]));
+
+  // ---- history of every room: results survive after the room closes ----
+  const hist = h('div', { class: 'card' }, [h('h3', { style: 'margin-top:0' }, '📊 ប្រវត្តិហ្គេម និងលទ្ធផល'), h('p', { class: 'muted' }, 'កំពុងផ្ទុក…')]);
+  root.appendChild(hist);
+  try {
+    const { rooms } = await api('/api/live/history');
+    hist.lastChild.remove();
+    if (!rooms.length) hist.appendChild(h('p', { class: 'muted' }, 'មិនទាន់មានហ្គេមនៅឡើយទេ។'));
+    else hist.appendChild(h('div', { style: 'overflow:auto' }, [h('table', { class: 'tbl', style: 'width:100%' }, [
+      h('thead', {}, [h('tr', {}, ['ថ្ងៃ', 'កូដ', 'របៀប', 'ថ្នាក់/មេរៀន', 'អ្នកលេង', 'ពិន្ទុមធ្យម', ''].map((x) => h('th', {}, x)))]),
+      h('tbody', {}, rooms.map((r) => h('tr', {}, [
+        h('td', {}, new Date(r.created_at).toLocaleString('km-KH', { dateStyle: 'short', timeStyle: 'short' })), h('td', {}, r.code),
+        h('td', {}, (r.mode === 'solo' ? (r.class_id ? '📚 កិច្ចការផ្ទះ' : '🧘 សុខសាន្ត') : '👩‍🏫 ថ្នាក់') + (r.over ? '' : ' · កំពុងបើក')),
+        h('td', {}, `${r.class_name ? r.class_name + ' · ' : ''}មេរៀន ${(r.lessons || []).map(lvKh).join(', ')}`),
+        h('td', {}, `${lvKh(r.players)}${r.mode === 'solo' ? ` (ចប់ ${lvKh(r.finished)})` : ''}`), h('td', {}, lvKh(r.avg_score)),
+        h('td', {}, h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvResults(r.code) }, 'មើលលទ្ធផល')),
+      ]))),
+    ])]));
+  } catch (e) { hist.lastChild.textContent = e.message; }
 };
+
+// per-question results (what to re-teach) + every student's score
+async function lvResults(code) {
+  let d; try { d = await api(`/api/live/history/${code}`); } catch (e) { return Exam.notify(e.message); }
+  document.querySelectorAll('.lvr').forEach((e) => e.remove());
+  const ov = h('div', { class: 'lvr', style: 'position:fixed;inset:0;z-index:85;background:rgba(10,20,30,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px' });
+  const box = h('div', { class: 'card', style: 'width:min(980px,100%);margin:0' });
+  const qs = [...d.questions].sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+  const mathCell = (t) => { const e = h('span', {}); e.innerHTML = Exam.mathHtml(t); return e; };
+  box.appendChild(h('div', { style: 'display:flex;justify-content:space-between;gap:10px;align-items:center' }, [h('h3', { style: 'margin:0' }, `លទ្ធផលបន្ទប់ ${code}`), h('div', { style: 'display:flex;gap:8px' }, [
+    h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => {
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ល.រ', 'ឈ្មោះ', 'អត្តលេខ', 'ពិន្ទុ', 'សំណួរដែលបានធ្វើ'], ...d.players.map((p, i) => [i + 1, p.name, p.student_id || '', p.score, p.cur])]), 'សិស្ស');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['សំណួរ', 'ចម្លើយត្រឹមត្រូវ', 'បានឆ្លើយ', 'ត្រូវ', '% ត្រូវ', 'វិនាទីមធ្យម'], ...d.questions.map((q) => [q.q, q.show, q.answered, q.right, q.pct ?? '', q.avg_sec ?? ''])]), 'សំណួរ');
+      XLSX.writeFile(wb, `លទ្ធផលហ្គេម_${code}.xlsx`); } }, '⬇ Excel'),
+    h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => ov.remove() }, '✕ បិទ')])]));
+  box.appendChild(h('h4', {}, 'សំណួរដែលសិស្សធ្វើខុសច្រើនបំផុត (ត្រូវរៀនឡើងវិញ)'));
+  box.appendChild(h('div', { style: 'overflow:auto' }, [h('table', { class: 'tbl', style: 'width:100%' }, [
+    h('thead', {}, [h('tr', {}, ['%ត្រូវ', 'សំណួរ', 'ចម្លើយត្រឹមត្រូវ', 'ឆ្លើយ'].map((x) => h('th', {}, x)))]),
+    h('tbody', {}, qs.map((q) => h('tr', {}, [h('td', { style: `font-weight:800;color:${q.pct == null ? '#888' : q.pct < 50 ? '#c92a2a' : q.pct < 75 ? '#e67700' : '#2b8a3e'}` }, q.pct == null ? '—' : `${lvKh(q.pct)}%`), h('td', {}, mathCell(q.q)), h('td', {}, mathCell(q.show)), h('td', {}, lvKh(q.answered))]))),
+  ])]));
+  box.appendChild(h('h4', {}, 'ពិន្ទុរបស់សិស្ស'));
+  box.appendChild(h('div', { style: 'overflow:auto' }, [h('table', { class: 'tbl', style: 'width:100%' }, [
+    h('thead', {}, [h('tr', {}, ['#', 'ឈ្មោះ', 'អត្តលេខ', 'ពិន្ទុ', 'បានធ្វើ'].map((x) => h('th', {}, x)))]),
+    h('tbody', {}, d.players.map((p, i) => h('tr', {}, [h('td', {}, lvKh(i + 1)), h('td', {}, [lvAv(p, 24), ' ', p.name]), h('td', {}, p.student_id || '—'), h('td', {}, lvKh(p.score)), h('td', {}, `${lvKh(p.cur)}/${lvKh(d.room.total)}`)]))),
+  ])]));
+  ov.appendChild(box); document.body.appendChild(ov);
+}
 
 function lvAv(p, px) { const a = h('span', { style: `width:${px}px;height:${px}px;border-radius:50%;overflow:hidden;line-height:0;flex:none;display:inline-block` }); a.innerHTML = KmAvatar.svg(p.avatar || p.name, px); return a; }
 function lvChip(p, kick) {

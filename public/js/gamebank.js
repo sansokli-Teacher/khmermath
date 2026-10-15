@@ -41,6 +41,12 @@ render.gamebank = async function () {
       return h('label', { style: 'display:flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff' }, [cb, label]);
     })),
   ]);
+  const lockCb = h('input', { type: 'checkbox' }); lockCb.checked = !!gbData.config.locked; lockCb.disabled = !can;
+  root.appendChild(h('div', { class: 'card', style: 'border:2px solid #f08c00' }, [
+    h('h3', { style: 'margin-top:0' }, '🛡️ ថ្ងៃប្រឡង — ការពារប្រព័ន្ធប្រឡង'),
+    h('p', { class: 'muted' }, 'ពេលបើក៖ ហ្គេមសំណួរផ្ទាល់បិទទាំងស្រុង (គ្មានអ្នកណាបង្កើត ឬចូលបន្ទប់បាន) ហើយហ្គេមផ្សេងទៀតប្រើសំណួរដែលមានស្រាប់ក្នុងគេហទំព័រ ដោយមិនហៅប្រព័ន្ធប្រឡង។ វាការពារកុំឱ្យអ្នកលេងហ្គេមផ្សេងប្រើកូតាឥតគិតថ្លៃរបស់ Cloudflare អស់ មុនពេលសិស្សប្រឡង។ ការកែសំណួរក្នុងពេលនេះនឹងមិនបង្ហាញលើហ្គេមទេ រហូតដល់បិទការចាក់សោ។'),
+    h('label', { style: 'display:flex;gap:8px;align-items:center;font-weight:700' }, [lockCb, 'ចាក់សោហ្គេមសាធារណៈ (បើកនៅថ្ងៃប្រឡង)']),
+  ]));
   root.appendChild(gamesCard);
   const cfgCard = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'មេរៀនដែលអនុញ្ញាតឱ្យលេង'),
@@ -53,7 +59,7 @@ render.gamebank = async function () {
     const save = h('button', { type: 'button' }, 'រក្សាទុកការកំណត់ (មេរៀន និងហ្គេម)');
     save.onclick = async () => {
       const lessons = gbData.lessons.filter((L, i) => boxes[i].cb.checked).map((L) => L.n);
-      try { await api('/api/game/config', { method: 'POST', body: { enabled: on.checked, lessons, games: Object.fromEntries(Object.entries(gcb).map(([k, c]) => [k, c.checked])) } }); Exam.notify(`បានរក្សាទុក។ ហ្គេមផ្តល់ ${lessons.length} មេរៀន។`); render.gamebank(); } catch (e) { Exam.notify(e.message); }
+      try { await api('/api/game/config', { method: 'POST', body: { enabled: on.checked, lessons, games: Object.fromEntries(Object.entries(gcb).map(([k, c]) => [k, c.checked])), locked: lockCb.checked } }); Exam.notify(`បានរក្សាទុក។ ហ្គេមផ្តល់ ${lessons.length} មេរៀន។`); render.gamebank(); } catch (e) { Exam.notify(e.message); }
     };
     cfgCard.appendChild(h('div', { class: 'row', style: 'margin-top:12px;gap:8px;flex-wrap:wrap' }, [save, all, none]));
   }
