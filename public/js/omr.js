@@ -6,7 +6,7 @@
   const W = 180, H = 236;
   const MARK = { tl: [4, 4, 8], tr: [176, 4, 8], bl: [4, 232, 8], br: [174.5, 230.5, 11] };   // centre x, y, size
   const R_BUB = 2.2, R_READ = 1.55;                // bubble radius drawn / radius read
-  const ROWS = 20, COL_PITCH = 33.5, Q_Y0 = 111, Q_PITCH = 5.7;
+  const ROWS = 20, Q_Y0 = 111;
   const ID_Y0 = 46, ID_PITCH = 5.0, ID_X0 = 16, ID_COL_PITCH = 6.2;
   const CODE_X0 = 20, CODE_Y = 231, CODE_PITCH = 4.6, CODE_BITS = 20;
   const MAX_Q = ROWS * 5;
@@ -14,21 +14,30 @@
   const LAT_LET = ['A', 'B', 'C', 'D', 'E'];
   const LEVELS = ['easy', 'medium', 'hard', 'pisa'];
 
-  const optPitch = (optCount) => (optCount >= 5 ? 5.2 : 5.8);
+  // The questions are split evenly between blocks (2 blocks = left half / right half; more only when there are many).
+  function plan(nQ, optCount) {
+    nQ = Math.min(nQ, MAX_Q);
+    let nb = Math.max(2, Math.ceil(nQ / ROWS)); if (nb === 3) nb = 4; if (nb > 5) nb = 5;
+    const rows = Math.max(1, Math.ceil(nQ / nb)), five = optCount >= 5;
+    const g = nb === 2 ? { pitchX: 88, width: 76, dx0: 24, bp: five ? 11.5 : 15 }
+      : nb === 4 ? { pitchX: 41.3, width: 40, dx0: 12.5, bp: five ? 6.0 : 7.4 }
+        : { pitchX: 33.5, width: 32, dx0: 10, bp: five ? 5.2 : 5.8 };
+    return { nb, rows, ...g, x0: (c) => 8 + c * g.pitchX, rowPitch: Math.min(8, 114 / Math.max(rows, 14)) };
+  }
 
   function layout(nQ, optCount, idDigits) {
     optCount = Math.min(5, Math.max(2, optCount || 4));
     idDigits = Math.min(12, Math.max(1, idDigits || 7));
-    const q = [];
+    const P = plan(nQ, optCount), q = [];
     for (let i = 0; i < Math.min(nQ, MAX_Q); i++) {
-      const col = Math.floor(i / ROWS), row = i % ROWS;
-      const x0 = 8 + col * COL_PITCH, y = Q_Y0 + row * Q_PITCH;
-      q.push({ i, labelX: x0, y, bubbles: [...Array(optCount).keys()].map((k) => [x0 + 10 + k * optPitch(optCount), y]) });
+      const blk = Math.floor(i / P.rows), row = i % P.rows;
+      const x0 = P.x0(blk), y = Q_Y0 + row * P.rowPitch;
+      q.push({ i, blk, row, x0, labelX: x0 + 1, labelW: P.dx0 - 1 - 3.7, y, bubbles: [...Array(optCount).keys()].map((k) => [x0 + P.dx0 + k * P.bp, y]) });
     }
     const id = [];
     for (let c = 0; c < idDigits; c++) id.push([...Array(10).keys()].map((d) => [ID_X0 + c * ID_COL_PITCH, ID_Y0 + d * ID_PITCH]));
     const code = [...Array(CODE_BITS).keys()].map((b) => [CODE_X0 + b * CODE_PITCH, CODE_Y]);
-    return { q, id, code, optCount, idDigits, cols: Math.ceil(Math.min(nQ, MAX_Q) / ROWS) };
+    return { q, id, code, optCount, idDigits, plan: P, cols: P.nb };
   }
 
   // ---- header code: test id (14 bits) + grouped flag + id digits (4 bits) + parity ----
@@ -88,18 +97,19 @@
     }
     // answers
     kids.push(abs('omr-cap', 8, 96.3, 120, 4.5, '', null, `ចម្លើយពហុជ្រើសរើស (${nQ} សំណួរ)`));
-    for (let c = 0; c < L.cols; c++) {
-      const x0 = 8 + c * COL_PITCH, rowsHere = Math.min(ROWS, Math.min(nQ, MAX_Q) - c * ROWS);
-      const lastX = x0 + 10 + (L.optCount - 1) * optPitch(L.optCount);
-      const left = x0 - 1, right = lastX + 2.2 + 1.2, top = 101.8, bottom = Q_Y0 + (rowsHere - 1) * Q_PITCH + 2.2 + 1.5;
-      kids.push(abs('omr-qf', left, top, right - left, bottom - top));
-      kids.push(abs('omr-qh', left, top, right - left, 5.6));
-      kids.push(abs('omr-qno', left + 0.3, top + 0.6, 6.4, 4.4, '', null, 'ល.រ'));
-      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + 10 + k * optPitch(L.optCount) - 3, top + 0.6, 6, 4.5, '', null, lt)));
-      for (let g = 5; g < rowsHere; g += 5) kids.push(abs('omr-sep', left + 1, Q_Y0 + (g - 1) * Q_PITCH + Q_PITCH / 2, right - left - 2, 0));
+    const P = L.plan;
+    for (let c = 0; c < P.nb; c++) {
+      const rowsHere = Math.min(P.rows, Math.min(nQ, MAX_Q) - c * P.rows);
+      if (rowsHere <= 0) continue;
+      const x0 = P.x0(c), top = 101.8, bottom = Q_Y0 + (rowsHere - 1) * P.rowPitch + 2.2 + 1.5;
+      kids.push(abs('omr-qf', x0, top, P.width, bottom - top));
+      kids.push(abs('omr-qh', x0, top, P.width, 5.6));
+      kids.push(abs('omr-qno', x0 + 1, top + 0.6, P.dx0 - 1 - 3.7, 4.4, '', null, 'ល.រ'));
+      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + P.dx0 + k * P.bp - 3, top + 0.6, 6, 4.5, '', null, lt)));
+      for (let g = 5; g < rowsHere; g += 5) kids.push(abs('omr-sep', x0 + 1, Q_Y0 + (g - 1) * P.rowPitch + P.rowPitch / 2, P.width - 2, 0));
     }
     L.q.forEach((r) => {
-      kids.push(abs('omr-ql', r.labelX, r.y - 2.2, 6.3, 4.4, '', null, String(r.i + 1)));
+      kids.push(abs('omr-ql', r.labelX, r.y - 2.2, r.labelW, 4.4, '', null, String(r.i + 1)));
       r.bubbles.forEach(([x, y]) => kids.push(abs('omr-bub', x - R_BUB, y - R_BUB, 2 * R_BUB, 2 * R_BUB)));
     });
     // header code (printed by the system — do not touch)
