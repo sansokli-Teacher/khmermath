@@ -74,9 +74,11 @@ function lvHost(code) {
   top.appendChild(info); top.appendChild(slot); top.appendChild(close);
   const main = h('div', { style: 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;padding:18px;text-align:center' });
   ov.appendChild(top); ov.appendChild(main); document.body.appendChild(ov);
+  let endPlayed = false, lastPlayers = 0, soloStarted = false, lastSec = -1;
+  KmSound.unlock();
   let alive = true, st = null, busy = false, lastKey = '', t0 = 0;
   let iv = 0;
-  close.onclick = () => { alive = false; clearInterval(iv); ov.remove(); };
+  close.onclick = () => { KmSound.stop(); alive = false; clearInterval(iv); ov.remove(); };
   const act = async (a) => { if (busy) return; busy = true; try { await api(`/api/live/host/${code}/action`, { method: 'POST', body: { a } }); } catch (e) { Exam.notify(e.message); } busy = false; poll(true); };
 
   lvKickFn = (pid) => api(`/api/live/host/${code}/action`, { method: 'POST', body: { a: 'kick', pid } }).then(() => poll()).catch((e) => Exam.notify(e.message));
@@ -84,6 +86,8 @@ function lvHost(code) {
 
   function topButtons() {
     slot.innerHTML = '';
+    const sb = h('button', { type: 'button', title: 'សំឡេង', style: 'border:0;background:#1c3247;color:#fff;border-radius:10px;padding:7px 12px;font-size:16px;cursor:pointer' }, KmSound.muted() ? '🔇' : '🔊');
+    sb.onclick = () => { sb.textContent = KmSound.toggle() ? '🔇' : '🔊'; }; slot.appendChild(sb);
     const mk = (label, bg, fn) => slot.appendChild(h('button', { type: 'button', style: `background:${bg};color:#fff;border:0;border-radius:10px;padding:7px 16px;font-weight:800;font-size:15px;cursor:pointer`, onclick: fn }, label));
     if (st.phase === 'lobby') { mk('▶ ចាប់ផ្តើមហ្គេម', '#2f9e44', () => act('start')); mk('■ បិទបន្ទប់', '#c92a2a', () => { if (confirm('បិទបន្ទប់នេះ?')) act('end'); }); }
     else if (st.mode === 'solo' && st.phase !== 'end') mk('■ បញ្ចប់ហ្គេម', '#c92a2a', () => { if (confirm('បញ្ចប់ហ្គេមសម្រាប់សិស្សទាំងអស់?')) act('end'); });
@@ -91,6 +95,7 @@ function lvHost(code) {
   }
   function drawSolo() {
     topButtons();
+    if (!soloStarted) { soloStarted = true; KmSound.stop(); KmSound.sfx('start'); }
     info.textContent = `បន្ទប់ ${st.code} · បែបសុខសាន្ត · ${lvKh(st.players)} នាក់ · ចប់ ${lvKh(st.finished)}`;
     main.dataset.q = ''; main.innerHTML = '';
     if (st.phase === 'end') { st.board = st.board; return drawEnd(); }
@@ -118,6 +123,7 @@ function lvHost(code) {
     lastKey = key; main.innerHTML = ''; main.dataset.q = '';
     setTimeout(() => { if (window.renderMathInElement) try { renderMathInElement(main, { delimiters: [{ left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {} }, 0);
     if (st.phase === 'lobby') {
+      KmSound.loop('lobby', 1); if (st.players > lastPlayers) KmSound.sfx('join'); lastPlayers = st.players;
       const row = h('div', { style: 'display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap' });
       row.appendChild(lvQr(st.code, Math.min(300, Math.round(innerHeight * 0.4))));
       const side = h('div', { style: 'display:flex;flex-direction:column;gap:10px;align-items:center' });
@@ -134,6 +140,7 @@ function lvHost(code) {
     } else if (st.phase === 'question' || st.phase === 'reveal') {
       main.dataset.q = st.phase === 'question' ? String(st.qi) : '';
       const q = st.q, rv = st.reveal;
+      if (st.phase === 'question') { lastSec = -1; KmSound.loop('question', 1); } else { KmSound.stop(); KmSound.sfx('reveal'); }
       const qd = h('div', { style: 'font-size:clamp(24px,4.2vw,50px);font-weight:700;line-height:1.55;max-width:1100px' }); qd.textContent = q.q; main.appendChild(qd);
       if (q.f) { const f = h('div', {}); f.innerHTML = q.f; const sv = f.querySelector('svg'); if (sv) sv.style.cssText = 'height:30vh;max-width:90vw;background:#fff;border-radius:14px;padding:4px'; main.appendChild(f); }
       if (q.k === 'mcq' || q.k === 'tf') {
@@ -165,7 +172,7 @@ function lvHost(code) {
     }
   }
   function drawEnd() {
-    main.innerHTML = '';
+    main.innerHTML = ''; if (!endPlayed) { endPlayed = true; KmSound.stop(); KmSound.sfx('fanfare'); }
       main.appendChild(h('div', { style: 'font-size:clamp(34px,6vw,64px);font-weight:900' }, '🏆 លទ្ធផលចុងក្រោយ'));
       const pod = h('div', { style: 'display:flex;align-items:flex-end;gap:14px;justify-content:center;height:34vh;min-height:200px' });
       const ord = [1, 0, 2].filter((i) => st.board[i]);
@@ -177,7 +184,7 @@ function lvHost(code) {
   }
   function lvTick() {
     const c = main.querySelector('.lv-clock'); if (!c || st.phase !== 'question') return;
-    const r = Math.max(0, st.left - (performance.now() - t0)); c.textContent = lvKh(Math.ceil(r / 1000)); c.style.color = r < 6000 ? '#ff8787' : '#fff';
+    const r = Math.max(0, st.left - (performance.now() - t0)); c.textContent = lvKh(Math.ceil(r / 1000)); { const sec = Math.ceil(r / 1000); if (sec !== lastSec) { lastSec = sec; if (sec > 0 && sec <= 5) KmSound.sfx('tick'); } } c.style.color = r < 6000 ? '#ff8787' : '#fff';
     if (r <= 0 && !busy) act('reveal');                                // time is up: show the answer
   }
   async function poll(now) {
