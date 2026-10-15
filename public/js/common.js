@@ -138,3 +138,20 @@ Exam.gradeOf = function (pct) {
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
+
+// 👁 show/hide button on every password box (also on boxes that appear later, e.g. in dialogs).
+(function () {
+  function addEye(input) {
+    if (input.dataset.eye || input.closest('.pw-wrap') || input.id === 'f-pass') return;
+    input.dataset.eye = '1';
+    const wrap = document.createElement('div'); wrap.className = 'pw-wrap'; wrap.style.display = input.style.display || 'block';
+    input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+    input.style.paddingRight = '44px'; input.style.width = '100%'; input.style.boxSizing = 'border-box';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pw-eye'; b.setAttribute('aria-label', 'បង្ហាញ/លាក់ពាក្យសម្ងាត់'); b.textContent = '👁';
+    b.addEventListener('click', () => { const show = input.type === 'password'; input.type = show ? 'text' : 'password'; b.textContent = show ? '🙈' : '👁'; input.focus(); });
+    wrap.appendChild(b);
+  }
+  const scan = (root) => (root || document).querySelectorAll('input[type=password]').forEach(addEye);
+  const start = () => { scan(); new MutationObserver((m) => { for (const x of m) for (const n of x.addedNodes) if (n.nodeType === 1) { if (n.matches && n.matches('input[type=password]')) addEye(n); else scan(n); } }).observe(document.body, { childList: true, subtree: true }); };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();

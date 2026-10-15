@@ -71,3 +71,8 @@
 @keyframes reqpulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(225, 29, 46, .22); } 50% { box-shadow: 0 0 0 7px rgba(225, 29, 46, 0); } }
 .req-row.is-new { background: #fff5f5; border-left: 4px solid #e11d2e; }
 .tg-link { font-weight: 800; color: #1c8adb; }
+
+/* password eye (common.js adds it to every password box) */
+.pw-wrap { position: relative; width: 100%; }
+.pw-wrap .pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #285b55; font-size: 1.15em; cursor: pointer; line-height: 1; }
+.pw-wrap .pw-eye:hover { background: rgba(34, 96, 214, .12); }
