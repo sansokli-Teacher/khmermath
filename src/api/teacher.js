@@ -121,3 +121,38 @@ export async function requestUnlock(req, env) {
   const sent = await notifyOwner(env, `💳 ស្នើសុំដោះសោ៖ ${t.display_name} (@${t.username}) · គម្រោង ${p.label} $${p.price}${how ? ` · ${how}` : ''}${note ? ` · ${String(note).slice(0, 120)}` : ''}`);
   return json({ ok: true, notified: sent });
 }
+
+// "Forgot password" for teachers: the owner is notified (red counter) and sends a one-time reset link.
+// Always answers ok, so nobody can use it to find out which usernames exist.
+export async function forgotPassword(req, env) {
+  await ensureColumns(env);
+  const { username, contact } = await req.json();
+  if (!(await allow(env, `forgot:${clientIp(req)}`, 6, 3600))) return err('សំណើច្រើនពេក។ សូមរង់ចាំមួយម៉ោង ឬទាក់ទងម្ចាស់ប្រព័ន្ធ។', 429);
+  const t = await env.DB.prepare('SELECT id, username, display_name, role FROM teachers WHERE username = ?1 AND active = 1').bind(String(username || '').trim()).first();
+  if (t && t.role !== 'owner') {
+    const how = String(contact || '').trim().slice(0, 80);
+    await env.DB.prepare("DELETE FROM unlock_requests WHERE teacher_id = ?1 AND plan = 'reset' AND status = 'pending'").bind(t.id).run();
+    await env.DB.prepare("INSERT INTO unlock_requests (teacher_id, plan, contact) VALUES (?1, 'reset', ?2)").bind(t.id, how).run();
+    await notifyOwner(env, `🔑 ភ្លេចពាក្យសម្ងាត់៖ ${t.display_name || t.username} (@${t.username})${how ? ` · ${how}` : ''}`);
+  }
+  return json({ ok: true });
+}
+
+// Owner recovery. Works only if the owner has set the Cloudflare secret OWNER_RECOVERY_CODE
+// (`npx wrangler secret put OWNER_RECOVERY_CODE`); without it this route stays closed.
+export async function ownerReset(req, env) {
+  if (!env.OWNER_RECOVERY_CODE || env.OWNER_RECOVERY_CODE.length < 12) return err('មិនទាន់បានបើកការស្តារម្ចាស់ប្រព័ន្ធទេ។', 404);
+  if (!(await allow(env, `ownerreset:${clientIp(req)}`, 5, 3600))) return err('ព្យាយាមច្រើនពេក។ សូមរង់ចាំមួយម៉ោង។', 429);
+  const { username, code, password } = await req.json();
+  const a = new TextEncoder().encode(String(code || '')), b = new TextEncoder().encode(env.OWNER_RECOVERY_CODE);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) diff |= (a[i] || 0) ^ b[i];
+  const row = await env.DB.prepare("SELECT id, username FROM teachers WHERE username = ?1 AND role = 'owner'").bind(String(username || '').trim()).first();
+  if (diff !== 0 || !row) return err('កូដស្តារ ឬឈ្មោះអ្នកប្រើមិនត្រឹមត្រូវទេ។', 403);
+  if (!password || password.length < 10) return err('ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងតិច ១០ តួអក្សរ។', 400);
+  const hash = await hashSecretValue(password, row.username, env.SESSION_SECRET);
+  await env.DB.prepare('UPDATE teachers SET password_hash = ?1, active = 1 WHERE id = ?2').bind(hash, row.id).run();
+  await audit(env, null, 'owner.recover', row.username);
+  await notifyOwner(env, '⚠️ ពាក្យសម្ងាត់ម្ចាស់ប្រព័ន្ធត្រូវបានកំណត់ថ្មីតាមកូដស្តារ។');
+  return json({ ok: true });
+}

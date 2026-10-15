@@ -30,6 +30,8 @@ const ROUTES = [
   ['GET', '/api/teacher/setup-status', teacher.setupStatus],
   ['POST', '/api/teacher/setup', teacher.setup],
   ['POST', '/api/teacher/login', teacher.login],
+  ['POST', '/api/teacher/forgot', teacher.forgotPassword],
+  ['POST', '/api/teacher/owner-reset', teacher.ownerReset],
   ['POST', '/api/teacher/signup', teacher.signup],
   ['POST', '/api/license/redeem', admin.redeemCode],
   ['POST', '/api/license/request', teacher.requestUnlock],

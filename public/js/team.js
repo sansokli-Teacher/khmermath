@@ -405,6 +405,7 @@ function requestsCard(data, reload) {
   ]);
   if (!data.requests.length) { card.append(h('p', { class: 'muted' }, 'នៅពេលគ្រូសាកល្បងចុច «ស្នើសុំដោះសោ» ឈ្មោះគាត់នឹងបង្ហាញទីនេះ ជាមួយសញ្ញាក្រហម។')); return card; }
   for (const r of data.requests.slice(0, 20)) {
+    if (r.plan === 'reset') { card.append(resetRow(r, reload)); continue; }
     const pl = PLAN[r.plan] || [r.plan, '', 1];
     const isPending = r.status === 'pending';
     const tg = /^@?[A-Za-z0-9_]{4,}$/.test(r.contact || '') ? h('a', { href: `https://t.me/${r.contact.replace('@', '')}`, target: '_blank', rel: 'noopener' }, `💬 ${r.contact}`) : (r.contact || '—');
@@ -425,4 +426,26 @@ function requestsCard(data, reload) {
     ]));
   }
   return card;
+}
+
+// A teacher who forgot the password: the owner makes a one-time reset link and sends it (Telegram etc.).
+function resetRow(r, reload) {
+  const isPending = r.status === 'pending';
+  const slot = h('div', {});
+  return h('div', { class: `list-item req-row${isPending ? ' is-new' : ''}`, style: 'flex-wrap:wrap;' }, [
+    h('div', {}, [
+      h('b', {}, r.name), ` (@${r.username}) `,
+      h('span', { class: `badge ${isPending ? 'warn' : 'upcoming'}` }, isPending ? '🔑 ភ្លេចពាក្យសម្ងាត់' : 'បានដោះស្រាយ'),
+      h('div', { class: 'muted' }, ['ទាក់ទង៖ ', r.contact || '—', ` · ${fmtDateTime(r.created_at)}`]),
+    ]),
+    isPending ? h('div', { class: 'row', style: 'gap:6px;' }, [
+      h('button', { onclick: async () => {
+        const x = await api(`/api/admin/teachers/${r.teacher_id}/reset-link`, { method: 'POST' });
+        slot.innerHTML = ''; slot.append(linkBox(inviteUrl(x.token), `តំណកំណត់ពាក្យសម្ងាត់ថ្មីសម្រាប់ ${r.name} — ផ្ញើទៅគាត់`));
+        await api(`/api/admin/unlock-requests/${r.id}/dismiss`, { method: 'POST' }).catch(() => {});
+        if (window.refreshRequestBadge) window.refreshRequestBadge();
+      } }, '🔑 បង្កើតតំណកំណត់ថ្មី'),
+    ]) : null,
+    slot,
+  ]);
 }

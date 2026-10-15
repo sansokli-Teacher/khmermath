@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ភ្លេចពាក្យសម្ងាត់</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/interface.css">
+<link rel="stylesheet" href="css/promo.css?v=3">
+<meta name="theme-color" content="#285b55">
+</head>
+<body>
+<div class="auth-screen">
+  <div class="auth-card" id="card" style="text-align:left;max-width:460px;">
+    <div class="brand-mark" style="margin:0 0 10px;">🔑</div>
+    <h1 style="font-size:1.4em;">ភ្លេចពាក្យសម្ងាត់</h1>
+
+    <h3 style="margin:14px 0 4px;">គ្រូបង្រៀន</h3>
+    <p class="muted" style="margin:0 0 8px;">បញ្ចូលឈ្មោះអ្នកប្រើ ហើយរបៀបទាក់ទងអ្នក។ ម្ចាស់ប្រព័ន្ធនឹងឃើញសំណើ ហើយផ្ញើតំណកំណត់ពាក្យសម្ងាត់ថ្មីឱ្យអ្នក។</p>
+    <label for="t-user">ឈ្មោះអ្នកប្រើ</label><input type="text" id="t-user" autocapitalize="none" style="width:100%;">
+    <label for="t-contact">លេខទូរស័ព្ទ ឬ Telegram</label><input type="text" id="t-contact" style="width:100%;">
+    <button id="t-go" class="su-cta" style="margin-top:12px;">ផ្ញើសំណើ</button>
+    <div id="t-msg" class="muted" style="margin-top:8px;"></div>
+    <p class="muted" style="margin-top:6px;">ឬទាក់ទងផ្ទាល់៖ <a class="tg-link" href="https://t.me/soklisan" target="_blank" rel="noopener">💬 Telegram @soklisan</a></p>
+
+    <details style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px;">
+      <summary style="cursor:pointer;font-weight:700;">ខ្ញុំជាម្ចាស់ប្រព័ន្ធ (ប្រើកូដស្តារ)</summary>
+      <p class="muted">ត្រូវការ «កូដស្តារ» ដែលម្ចាស់បានកំណត់ក្នុង Cloudflare (OWNER_RECOVERY_CODE)។</p>
+      <label for="o-user">ឈ្មោះអ្នកប្រើម្ចាស់</label><input type="text" id="o-user" autocapitalize="none" style="width:100%;">
+      <label for="o-code">កូដស្តារ</label><input type="password" id="o-code" autocomplete="off" style="width:100%;">
+      <label for="o-pass">ពាក្យសម្ងាត់ថ្មី (យ៉ាងតិច ១០ តួ)</label><input type="password" id="o-pass" autocomplete="new-password" style="width:100%;">
+      <button id="o-go" class="su-cta" style="margin-top:12px;">កំណត់ពាក្យសម្ងាត់ថ្មី</button>
+      <div id="o-msg" class="muted" style="margin-top:8px;"></div>
+    </details>
+    <a href="teacher.html" class="back-link" style="display:block;text-align:center;margin-top:14px;">← ត្រឡប់ទៅចូលប្រើ</a>
+  </div>
+</div>
+<script src="js/common.js"></script>
+<script>
+const { api } = Exam;
+const $ = (id) => document.getElementById(id);
+$('t-go').onclick = async () => {
+  if (!$('t-user').value.trim()) return $('t-user').focus();
+  $('t-go').disabled = true;
+  try { await api('/api/teacher/forgot', { method: 'POST', body: { username: $('t-user').value, contact: $('t-contact').value } });
+    $('t-msg').textContent = '✅ បានផ្ញើសំណើហើយ។ ម្ចាស់ប្រព័ន្ធនឹងផ្ញើតំណកំណត់ពាក្យសម្ងាត់ថ្មីមកអ្នកតាមការទាក់ទងដែលអ្នកបានឱ្យ។';
+  } catch (e) { $('t-msg').textContent = e.message; $('t-go').disabled = false; }
+};
+$('o-go').onclick = async () => {
+  $('o-go').disabled = true;
+  try { await api('/api/teacher/owner-reset', { method: 'POST', body: { username: $('o-user').value, code: $('o-code').value, password: $('o-pass').value } });
+    $('o-msg').textContent = '✅ ពាក្យសម្ងាត់ថ្មីត្រូវបានកំណត់។ ចូលប្រើបានហើយ។'; $('o-code').value = ''; $('o-pass').value = '';
+  } catch (e) { $('o-msg').textContent = e.message; } $('o-go').disabled = false;
+};
+</script>
+</body>
+</html>
