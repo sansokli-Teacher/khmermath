@@ -169,6 +169,7 @@ const ROUTES = [
   ['GET', '/api/live/state', live.state],
   ['POST', '/api/live/answer', live.answer],
   ['POST', '/api/live/next', live.next],
+  ['POST', '/api/live/avatar', live.setAvatar],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {

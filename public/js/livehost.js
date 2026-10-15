@@ -44,6 +44,17 @@ render.live = async function () {
   ]));
 };
 
+function lvAv(p, px) { const a = h('span', { style: `width:${px}px;height:${px}px;border-radius:50%;overflow:hidden;line-height:0;flex:none;display:inline-block` }); a.innerHTML = KmAvatar.svg(p.avatar || p.name, px); return a; }
+function lvChip(p, kick) {
+  const c = h('span', { style: 'display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 4px;border-radius:99px;background:#1c3247;font-weight:700' });
+  const a = h('span', { style: 'width:44px;height:44px;border-radius:50%;overflow:hidden;line-height:0;flex:none' }); a.innerHTML = KmAvatar.svg(p.avatar || p.name, 44); c.appendChild(a);
+  c.appendChild(h('span', {}, p.name));
+  if (kick) { const x = h('button', { type: 'button', title: 'ដកចេញ', style: 'border:0;background:#c92a2a;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:12px;padding:0', onclick: () => lvKick(p) }, '✕'); c.appendChild(x); }
+  return c;
+}
+let lvKickFn = null;
+function lvKick(p) { if (lvKickFn && confirm(`ដក «${p.name}» ចេញពីហ្គេម?`)) lvKickFn(p.pid); }
+
 function lvQr(code, size) {
   const url = `${location.origin}/live?c=${code}`;
   const q = qrcode(0, 'M'); q.addData(url); q.make();
@@ -67,6 +78,7 @@ function lvHost(code) {
   close.onclick = () => { alive = false; clearInterval(iv); ov.remove(); };
   const act = async (a) => { if (busy) return; busy = true; try { await api(`/api/live/host/${code}/action`, { method: 'POST', body: { a } }); } catch (e) { Exam.notify(e.message); } busy = false; poll(true); };
 
+  lvKickFn = (pid) => api(`/api/live/host/${code}/action`, { method: 'POST', body: { a: 'kick', pid } }).then(() => poll()).catch((e) => Exam.notify(e.message));
   const btn = (label, fn, extra = '') => h('button', { type: 'button', style: `font-size:22px;padding:14px 34px;border-radius:16px;${extra}`, onclick: fn }, label);
 
   function drawSolo() {
@@ -80,14 +92,14 @@ function lvHost(code) {
     left.appendChild(btn('■ បញ្ចប់ហ្គេម', () => { if (confirm('បញ្ចប់ហ្គេមសម្រាប់សិស្សទាំងអស់?')) act('end'); }, 'background:#e03131;color:#fff;border:0;font-size:18px;padding:10px 22px'));
     const board = h('div', { style: 'flex:1;min-width:300px;display:flex;flex-direction:column;gap:6px;text-align:left' });
     board.appendChild(h('div', { style: 'font-size:22px;font-weight:800' }, '🏆 ចំណាត់ថ្នាក់ផ្ទាល់'));
-    (st.board.length ? st.board.slice(0, 12) : []).forEach((p, i) => board.appendChild(h('div', { style: 'position:relative;padding:8px 12px;border-radius:10px;background:#1c3247;overflow:hidden;display:flex;justify-content:space-between;gap:10px' }, [h('div', { style: `position:absolute;left:0;top:0;bottom:0;width:${Math.round(100 * p.cur / st.total)}%;background:#2b5a3a;opacity:.7` }), h('span', { style: 'position:relative' }, `${lvKh(i + 1)}. ${p.name}`), h('span', { style: 'position:relative' }, [h('small', { style: 'opacity:.8' }, `${lvKh(p.cur)}/${lvKh(st.total)}  `), h('b', {}, lvKh(p.score))])])));
+    (st.board.length ? st.board.slice(0, 12) : []).forEach((p, i) => board.appendChild(h('div', { style: 'position:relative;padding:8px 12px;border-radius:10px;background:#1c3247;overflow:hidden;display:flex;justify-content:space-between;gap:10px' }, [h('div', { style: `position:absolute;left:0;top:0;bottom:0;width:${Math.round(100 * p.cur / st.total)}%;background:#2b5a3a;opacity:.7` }), h('span', { style: 'position:relative;display:inline-flex;align-items:center;gap:8px' }, [lvAv(p, 30), `${lvKh(i + 1)}. ${p.name}`]), h('span', { style: 'position:relative' }, [h('small', { style: 'opacity:.8' }, `${lvKh(p.cur)}/${lvKh(st.total)}  `), h('b', {}, lvKh(p.score)), ' ', h('button', { type: 'button', title: 'ដកចេញ', style: 'border:0;background:#c92a2a;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;padding:0;margin-left:6px', onclick: () => lvKick(p) }, '✕')])])));
     if (!st.board.length) board.appendChild(h('div', { style: 'opacity:.7' }, 'កំពុងរង់ចាំសិស្សចូល…'));
     row.appendChild(left); row.appendChild(board); main.appendChild(row);
   }
   function draw() {
-    if (st.mode === 'solo') return drawSolo();
-    const key = [st.phase, st.qi, st.players, st.answered].join('|');
-    info.textContent = `បន្ទប់ ${st.code} · ${lvKh(st.players)} នាក់` + (st.qi >= 0 && st.phase !== 'lobby' && st.phase !== 'end' ? ` · សំណួរ ${lvKh(st.qi + 1)}/${lvKh(st.total)}` : '');
+    if (st.mode === 'solo' && st.phase !== 'lobby') return drawSolo();
+    const key = [st.phase, st.qi, st.players, st.answered, st.phase === 'lobby' ? st.plist.map((p) => p.pid + p.avatar).join(',') : ''].join('|');
+    info.textContent = `បន្ទប់ ${st.code} · ${st.mode === 'solo' ? 'បែបសុខសាន្ត · ' : ''}${lvKh(st.players)} នាក់` + (st.qi >= 0 && st.phase !== 'lobby' && st.phase !== 'end' ? ` · សំណួរ ${lvKh(st.qi + 1)}/${lvKh(st.total)}` : '');
     if (key === lastKey && st.phase !== 'question') return;
     if (st.phase === 'question') {                                  // keep the question on screen; only the counters change
       if (main.dataset.q !== String(st.qi)) { lastKey = ''; }
@@ -103,9 +115,12 @@ function lvHost(code) {
       side.appendChild(h('div', { style: 'font-size:clamp(56px,11vw,130px);font-weight:900;letter-spacing:.1em;line-height:1;background:#fff;color:#10202f;border-radius:20px;padding:8px 28px' }, st.code));
       side.appendChild(h('div', { style: 'opacity:.7;font-size:16px' }, 'ឬ khmermath.org/play/live.html (ឥតគិតថ្លៃ មិនចាំបាច់ចូលគណនី)'));
       row.appendChild(side); main.appendChild(row);
-      main.appendChild(h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:1000px' }, st.names.map((n) => h('span', { style: 'padding:6px 14px;border-radius:99px;background:#1c7ed6;font-weight:700' }, n))));
+      main.appendChild(h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:1100px' }, st.plist.map((p) => lvChip(p, true))));
       main.appendChild(h('div', { style: 'font-size:22px' }, `អ្នកលេង ${lvKh(st.players)} នាក់`));
-      main.appendChild(btn('▶ ចាប់ផ្តើមហ្គេម', () => act('start'), 'background:#2f9e44;color:#fff;border:0'));
+      const brow = h('div', { style: 'display:flex;gap:12px;flex-wrap:wrap;justify-content:center' });
+      brow.appendChild(btn('▶ ចាប់ផ្តើមហ្គេម', () => act('start'), 'background:#2f9e44;color:#fff;border:0'));
+      brow.appendChild(btn('■ បិទបន្ទប់', () => { if (confirm('បិទបន្ទប់នេះ?')) act('end'); }, 'background:#e03131;color:#fff;border:0;font-size:18px;padding:14px 22px'));
+      main.appendChild(brow);
     } else if (st.phase === 'question' || st.phase === 'reveal') {
       main.dataset.q = st.phase === 'question' ? String(st.qi) : '';
       const q = st.q, rv = st.reveal;
@@ -144,7 +159,7 @@ function lvHost(code) {
       main.appendChild(h('div', { style: 'font-size:clamp(34px,6vw,64px);font-weight:900' }, '🏆 លទ្ធផលចុងក្រោយ'));
       const pod = h('div', { style: 'display:flex;align-items:flex-end;gap:14px;justify-content:center;height:34vh;min-height:200px' });
       const ord = [1, 0, 2].filter((i) => st.board[i]);
-      ord.forEach((i) => { const p = st.board[i]; pod.appendChild(h('div', { style: 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:min(26vw,220px)' }, [h('div', { style: 'font-size:22px;font-weight:800;overflow-wrap:anywhere' }, p.name), h('div', { style: 'font-size:28px' }, lvKh(p.score)), h('div', { style: `width:100%;height:${[100, 72, 52][i]}%;min-height:60px;background:${['#f08c00', '#adb5bd', '#c2763b'][i]};border-radius:12px 12px 0 0;font-size:44px;font-weight:900;color:#fff;display:grid;place-items:center` }, ['🥇', '🥈', '🥉'][i])])); });
+      ord.forEach((i) => { const p = st.board[i]; pod.appendChild(h('div', { style: 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:min(26vw,220px)' }, [lvAv(p, 64), h('div', { style: 'font-size:22px;font-weight:800;overflow-wrap:anywhere' }, p.name), h('div', { style: 'font-size:28px' }, lvKh(p.score)), h('div', { style: `width:100%;height:${[100, 72, 52][i]}%;min-height:60px;background:${['#f08c00', '#adb5bd', '#c2763b'][i]};border-radius:12px 12px 0 0;font-size:44px;font-weight:900;color:#fff;display:grid;place-items:center` }, ['🥇', '🥈', '🥉'][i])])); });
       main.appendChild(pod);
       main.appendChild(h('div', { style: 'max-width:700px;width:92vw;display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left' }, st.board.slice(3, 23).map((p, i) => h('div', { style: 'padding:6px 12px;border-radius:10px;background:#1c3247;display:flex;justify-content:space-between' }, [h('span', {}, `${lvKh(i + 4)}. ${p.name}`), h('b', {}, lvKh(p.score))]))));
       const dl = h('button', { class: 'secondary', type: 'button', onclick: () => { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ល.រ', 'ឈ្មោះ', 'ពិន្ទុ'], ...st.board.map((p, i) => [i + 1, p.name, p.score])]), 'Live'); XLSX.writeFile(wb, `ហ្គេមផ្ទាល់_${code}.xlsx`); } }, '⬇ ទាញយក Excel');
