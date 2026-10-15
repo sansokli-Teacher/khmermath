@@ -167,3 +167,21 @@
 .wh-pv .wh-x-pv { position: fixed; top: max(10px, env(safe-area-inset-top)); right: 10px; z-index: 130; width: 48px; height: 48px; background: #fff; }
 .wh-pv p { padding-right: 52px; }
 .wh-pv { padding-top: max(66px, calc(env(safe-area-inset-top) + 58px)); }
+
+/* ===== easier layout: the wheel + one big button first, the long settings folded away ===== */
+.wh-bigspin { align-self: center; margin: 4px 0; padding: 14px 44px; border: 0; border-radius: 99px; background: linear-gradient(135deg, #ff922b, #e8590c); color: #fff; font: inherit; font-weight: 800; font-size: clamp(18px, 3vw, 24px); cursor: pointer; box-shadow: 0 6px 0 #b34308, 0 14px 24px rgba(232, 89, 12, .35); transition: transform .1s, box-shadow .1s; }
+.wh-bigspin:hover:not(:disabled) { filter: brightness(1.06); }
+.wh-bigspin:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #b34308; }
+.wh-bigspin:disabled { opacity: .55; cursor: default; }
+.wh-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.wh-fold { padding: 0; gap: 0; }
+.wh-fold > summary { cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.wh-fold > summary::-webkit-details-marker { display: none; }
+.wh-fold > summary::after { content: "▾"; margin-left: auto; opacity: .55; transition: transform .15s; }
+.wh-fold[open] > summary::after { transform: rotate(180deg); }
+.wh-fold > summary small { font-weight: 400; color: var(--ink-3); font-size: 13px; }
+.wh-fold[open] > summary { border-bottom: 1px solid var(--line); }
+.wh-fold > *:not(summary) { margin: 12px 16px 0; } .wh-fold > *:last-child { margin-bottom: 14px; }
+.wh-panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; padding-right: 2px; }
+@media (max-width: 900px) { .wh-panel { position: static; max-height: none; } }
+.wh-wheel-box { width: min(100%, 560px, 62vh) !important; margin-left: auto; margin-right: auto; }

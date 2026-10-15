@@ -133,3 +133,14 @@
 .page-hero-sm h1 { font-size: clamp(24px, 3.4vw, 32px); margin: 0 0 2px; }
 .page-hero-sm .lead { font-size: 15px; margin: 0; max-width: 60em; }
 @media (max-width: 760px) { .page-hero-sm .lead { display: none; } }
+
+/* baykhom: mode choice and the new-game button first, the rest in a small menu */
+.bk-seg button { min-height: 48px; font-size: 16px; }
+.bk-acts { align-items: center; }
+.bk-set { position: relative; }
+.bk-set > summary { list-style: none; cursor: pointer; } .bk-set > summary::-webkit-details-marker { display: none; }
+.bk-set-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: flex; flex-direction: column; gap: 6px; min-width: 240px; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(16, 42, 67, .2); }
+.bk-set-pop .btn { justify-content: flex-start; width: 100%; }
+.bk-score { gap: 14px; } .bk-pl { padding: 12px 18px; border-radius: 16px; }
+.bk-pl.on { box-shadow: 0 0 0 4px var(--amber-soft); }
+.bk-msg { padding: 10px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); text-align: center; }
