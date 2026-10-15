@@ -1,0 +1,23 @@
+/* Design tokens + button classes that the shared team-game stylesheet expects (the game is also used on khmermath.org). */
+:root {
+  --surface: #fff; --surface-2: #f2f6fb; --bg: #f2f6fb;
+  --line: #e1e8f0; --line-2: #cfd9e6;
+  --ink: #16212e; --ink-2: #3b4a5c; --ink-3: #5f6f81;
+  --teal: #1f6f66; --teal-strong: #195a53; --teal-soft: #e3f3f0; --amber-soft: #fff4dc;
+  --radius: 14px; --shadow: 0 1px 2px rgba(22,33,46,.05), 0 6px 18px rgba(22,33,46,.08);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: 'Kantumruy Pro', system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+[hidden] { display: none !important; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 18px; border-radius: 12px; border: 2px solid transparent; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; line-height: 1.4; transition: transform .1s, background .15s; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--teal); color: #fff; }
+.btn-primary:hover { background: var(--teal-strong); }
+.btn-ghost { background: #fff; color: var(--ink); border-color: var(--line-2); }
+.btn-ghost:hover { background: var(--teal-soft); }
+.btn-sm { padding: 5px 12px; font-size: 14px; }
+.tgx-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px clamp(12px, 3vw, 28px); background: #fff; border-bottom: 1px solid var(--line); }
+.tgx-brand { color: var(--teal-strong); font-weight: 800; font-size: 18px; text-decoration: none; }
+.tgx-main { padding: 18px clamp(12px, 3vw, 28px) 40px; }
+.tg.tg-live { z-index: 70; }

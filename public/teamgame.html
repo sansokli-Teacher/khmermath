@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ហ្គេមក្រុម — Exam Khmer</title>
+<link rel="stylesheet" href="fonts/kantumruy-pro.css">
+<link rel="stylesheet" href="katex/katex.min.css">
+<link rel="stylesheet" href="css/tgshim.css">
+<link rel="stylesheet" href="css/teamgame.css?v=20261015a">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f6f66">
+</head>
+<body>
+<header class="tgx-top">
+  <a class="tgx-brand" href="teacher.html"><span aria-hidden="true">∑</span> KhmerMath · ហ្គេមក្រុម</a>
+  <a class="btn btn-ghost btn-sm" href="teacher.html">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a>
+</header>
+<main class="tgx-main">
+<div class="tg" id="tg">
+
+      <!-- ===== SETUP ===== -->
+      <div class="tg-setup" id="tg-setup">
+        <div class="tg-box">
+          <div class="tg-head"><b>១. ក្រុម</b>
+            <div class="tg-row">
+              <label for="tg-nteams">ចំនួនក្រុម</label>
+              <input type="number" id="tg-nteams" min="2" max="8" value="4">
+              <button type="button" class="btn btn-ghost btn-sm" id="tg-import" hidden>នាំចូលក្រុមពីកង់ចាប់ឈ្មោះ</button>
+            </div>
+          </div>
+          <div class="tg-teams" id="tg-teamlist"></div>
+          <p class="tg-hint" id="tg-importhint" hidden></p>
+        </div>
+
+        <div class="tg-box">
+          <div class="tg-head"><b>២. សំណួរ</b>
+            <div class="tg-row tg-row-wrap tg-modes" role="radiogroup" aria-label="ប្រភពសំណួរ">
+              <label class="tg-check"><input type="radio" name="tg-mode" value="lesson" checked> សំណួរតាមមេរៀន</label>
+              <label class="tg-check"><input type="radio" name="tg-mode" value="custom"> កាតផ្ទាល់ខ្លួន</label>
+            </div>
+          </div>
+          <div id="tg-lessonbox">
+            <div class="tg-opts">
+              <label>ថ្នាក់ <select id="tg-class"><option value="g7">ថ្នាក់ទី ៧</option></select></label>
+              <label>ចំនួនសំណួរក្នុងហ្គេម
+                <select id="tg-qn"><option value="5">៥ សំណួរ</option><option value="10">១០ សំណួរ</option><option value="15">១៥ សំណួរ</option><option value="20" selected>២០ សំណួរ</option><option value="0">ទាំងអស់ពីមេរៀនដែលបានជ្រើស</option></select></label>
+            </div>
+            <div class="tg-head"><small class="tg-hint">ជ្រើសមេរៀនមួយ ឬច្រើន៖</small><button type="button" class="btn btn-ghost btn-sm" id="tg-alllessons">ជ្រើសទាំងអស់</button></div>
+            <div class="tg-lessons" id="tg-lessons"></div>
+            <p class="tg-hint" id="tg-lessonhint">សំណួរត្រូវបានជ្រើសចៃដន្យពីមេរៀនដែលបានជ្រើស (មេរៀនមួយមាន ២០ សំណួរ)។ រូបមន្ត និងលេខគណិតវិទ្យាសរសេរជាអក្សរទ្រេត (italic) ។</p>
+          </div>
+        </div>
+
+        <div class="tg-box" id="tg-custom" hidden>
+          <div class="tg-head"><b>កាតផ្ទាល់ខ្លួន</b><span class="tg-count" id="tg-qcount"></span></div>
+          <p class="tg-hint">កាតនីមួយៗមាន <b>ឈ្មោះ</b> (លាក់ ចាំបង្ហាញពេលជ្រើស) និង <b>រូបភាព</b> (បង្ហាញលើមុខកាត)។ រូបភាពអាចជាសញ្ញា/emoji ឬរូបថតដែលបានផ្ទុកឡើង។ ឈ្មោះអាចជាមេរៀន ផ្លែឈើ សត្វ ឬលេខ… ចំណែក «សំណួរ» និង «ចម្លើយ» ជាជម្រើស។</p>
+          <div class="tg-row tg-row-wrap" id="tg-packs"></div>
+          <div class="tg-cards" id="tg-cards"></div>
+          <div class="tg-row tg-row-wrap">
+            <button type="button" class="btn btn-primary btn-sm" id="tg-addcard">+ បន្ថែមកាត</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-pastebtn">បិទភ្ជាប់ច្រើនកាត</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-clearcards">លុបកាតទាំងអស់</button>
+          </div>
+          <div class="tg-pastebox" id="tg-pastebox" hidden>
+            <p class="tg-hint">មួយបន្ទាត់ក្នុងមួយកាត៖ <code>ឈ្មោះ | រូបភាព | សំណួរ | ចម្លើយ | ពិន្ទុ</code> (មានតែឈ្មោះក៏បាន)។ អាចបិទភ្ជាប់ពី Excel បានដែរ។</p>
+            <textarea id="tg-questions" rows="6" spellcheck="false" placeholder="ចំនួនគត់ | ℤ | ចំនួនគត់ជាអ្វី? | ...,-២,-១,០,១,២,...&#10;√២ | √២ | តម្លៃប្រហែលនៃ √២ | ១,៤១៤&#10;ស្វាយ | 🥭"></textarea>
+            <div class="tg-row"><button type="button" class="btn btn-primary btn-sm" id="tg-pasteadd">បន្ថែមកាត</button><button type="button" class="btn btn-ghost btn-sm" id="tg-pastecancel">បោះបង់</button></div>
+          </div>
+          <div class="tg-row tg-row-wrap">
+            <select id="tg-sets" aria-label="សំណុំកាតដែលបានរក្សាទុក"><option value="">— សំណុំកាតដែលបានរក្សាទុក —</option></select>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-load">បើក</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-save">រក្សាទុកសំណុំនេះ</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-delset">លុប</button>
+          </div>
+          <input type="file" id="tg-file" accept="image/*" hidden>
+        </div>
+
+        <div class="tg-box">
+          <div class="tg-head"><b>៣. ជម្រើស</b></div>
+          <div class="tg-opts">
+            <label>ពិន្ទុក្នុងមួយកាត <input type="number" id="tg-pts" min="1" max="1000" value="10"></label>
+            <label>មុខកាត <select id="tg-face"><option value="img">បង្ហាញរូបភាព</option><option value="num">បង្ហាញលេខ</option></select></label>
+            <label>ម៉ោងឆ្លើយ (វិនាទី, ០ = មិនកំណត់)
+              <select id="tg-timer"><option value="0">មិនកំណត់</option><option value="15">១៥</option><option value="30">៣០</option><option value="60">៦០</option><option value="90">៩០</option></select></label>
+            <label class="tg-check"><input type="checkbox" id="tg-special" checked> ប្រអប់ពិសេស (💣 ✖២ 🔄 🎁 🕵 ⏭)</label>
+            <label>ចំនួនប្រអប់ពិសេស <input type="number" id="tg-nspecial" min="0" max="12" value="3"></label>
+            <label class="tg-check"><input type="checkbox" id="tg-sound" checked> សំឡេង</label>
+          </div>
+        </div>
+
+        <div class="tg-go">
+          <button type="button" class="btn btn-primary" id="tg-start">▶ ចាប់ផ្ដើមហ្គេម</button>
+          <button type="button" class="btn btn-ghost" id="tg-resume" hidden>បន្តហ្គេមចុងក្រោយ</button>
+        </div>
+      </div>
+
+      <!-- ===== PLAY ===== -->
+      <div class="tg-play" id="tg-play" hidden>
+        <div class="tg-bar">
+          <div class="tg-turn" id="tg-turn"></div>
+          <div class="tg-row tg-row-wrap">
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-undo">↶ ត្រឡប់ក្រោយ</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-sndbtn" aria-pressed="true">🔊</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-full">ពេញអេក្រង់</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-end">បញ្ចប់ហ្គេម</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tg-back">← កែសម្រួល</button>
+          </div>
+        </div>
+        <div class="tg-stage" id="tg-stage">
+          <div class="tg-score" id="tg-score"></div>
+          <div class="tg-board" id="tg-board"></div>
+
+          <canvas class="tg-fw" id="tg-fw" aria-hidden="true"></canvas>
+          <div class="tg-pop" id="tg-pop" role="dialog" aria-modal="true" hidden>
+            <div class="tg-card" id="tg-card"></div>
+          </div>
+        </div>
+      </div>
+
+    
+</main>
+<script>window.TG_DATA = 'data/teamgame_g7.json?v=20261015a';</script>
+<script src="katex/katex.min.js"></script>
+<script src="katex/contrib/auto-render.min.js"></script>
+<script src="js/teamgame.js?v=20261015a"></script>
+</body>
+</html>
