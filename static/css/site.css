@@ -844,3 +844,19 @@ a.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-co
 
 /* the closed dropdown menus near the right edge stick out of a ~1000 px window: no sideways scroll for them */
 html, body { overflow-x: clip; }
+
+/* ---- search overlay ---- */
+.srch { position: fixed; inset: 0; z-index: 2000; background: rgba(8, 20, 33, .55); display: flex; justify-content: center; align-items: flex-start; padding: 8vh 12px 12px; }
+.srch[hidden] { display: none; }
+.srch-box { width: min(640px, 100%); background: var(--surface, #fff); color: var(--ink, #16212e); border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, .35); overflow: hidden; }
+.srch-row { display: flex; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line, #e1e8f0); }
+.srch-input { flex: 1; min-height: 46px; font: inherit; font-size: 18px; padding: 6px 12px; border-radius: 10px; border: 2px solid var(--line, #cfd9e6); background: transparent; color: inherit; }
+.srch-x { border: 0; background: transparent; font-size: 20px; cursor: pointer; color: inherit; padding: 0 10px; }
+.srch-list { max-height: 60vh; overflow: auto; padding: 6px; }
+.srch-item { display: grid; gap: 1px; padding: 9px 12px; border-radius: 10px; text-decoration: none; color: inherit; }
+.srch-item:hover, .srch-item.on { background: rgba(31, 111, 102, .12); }
+.srch-item em { font-style: normal; font-size: 12px; opacity: .65; } .srch-item small { opacity: .75; font-size: 13px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srch-hint { margin: 14px; opacity: .7; text-align: center; }
+html.srch-lock { overflow: hidden; }
+/* ---- progress tick ---- */
+.km-done { display: inline-grid; place-items: center; margin-left: 6px; width: 1.25em; height: 1.25em; border-radius: 50%; background: #2f9e44; color: #fff; font-size: .75em; font-weight: 700; vertical-align: middle; }

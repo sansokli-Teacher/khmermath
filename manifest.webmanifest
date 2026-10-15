@@ -1,0 +1,23 @@
+{
+ "name": "KhmerMath — គណិតវិទ្យាខ្មែរ",
+ "short_name": "KhmerMath",
+ "lang": "km",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#102a43",
+ "theme_color": "#102a43",
+ "icons": [
+  {
+   "src": "static/img/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "static/img/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

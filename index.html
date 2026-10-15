@@ -18,9 +18,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#102a43">
 <link rel="icon" href="static/img/logo.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="static/img/icon-192.png">
 <link rel="preload" href="static/fonts/kantumruy-pro-khmer.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="static/fonts/kantumruy-pro.css?v=032855ea70">
-<link rel="stylesheet" href="static/css/site.css?v=032855ea70">
+<link rel="stylesheet" href="static/fonts/kantumruy-pro.css?v=938fc10aea">
+<link rel="stylesheet" href="static/css/site.css?v=938fc10aea">
 <script>try{var t=localStorage.getItem('km-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 </head>
 <body>
@@ -47,6 +49,7 @@
       </div>
     </nav>
     <div class="header-actions">
+      <button class="icon-btn search-toggle" type="button" aria-label="ស្វែងរក" title="ស្វែងរក (/)"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></button>
       <button class="icon-btn theme-toggle" type="button" aria-label="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត" title="ប្ដូរផ្ទៃភ្លឺ ឬងងឹត"><svg class="ic i-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic i-moon" aria-hidden="true"><use href="#i-moon"/></svg></button>
       <a class="btn btn-primary btn-sm" href="https://cba.khmermath.org/" target="_blank" rel="noopener">ធ្វើតេស្ត CBA</a>
       <button class="icon-btn menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="ម៉ឺនុយ"><svg class="ic i-menu" aria-hidden="true"><use href="#i-menu"/></svg><svg class="ic i-close" aria-hidden="true"><use href="#i-close"/></svg></button>
@@ -61,7 +64,9 @@
       <span class="eyebrow"><span class="dot"></span>ត្រៀមខ្លួនសម្រាប់ PISA ២០២៩</span>
       <h1>រៀនគណិតវិទ្យា <span class="hl">ឱ្យយល់</span> និងយកទៅប្រើបាន</h1>
       <p class="lead">ធនធានគណិតវិទ្យាជាភាសាខ្មែរ សម្រាប់សិស្ស និងគ្រូ ថ្នាក់ទី ៧ ដល់ទី ១២ — លំហាត់តាមបែប PISA តេស្តលើកុំព្យូទ័រ និងសៀវភៅណែនាំគ្រូ នៅកន្លែងតែមួយ។</p>
+      <p id="km-count" class="lead" style="margin:0 0 8px"></p>
       <div class="hero-actions">
+        <span id="km-continue" hidden></span>
         <a class="btn btn-primary" href="#grades">ជ្រើសរើសថ្នាក់រៀន <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         <a class="btn btn-ghost" href="https://cba.khmermath.org/" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-monitor"/></svg> សាកល្បងតេស្ត CBA</a>
       </div>
@@ -337,7 +342,9 @@
     </div>
   </div>
 </footer>
-<script src="static/js/site.js?v=032855ea70" defer></script>
-<script src="static/js/visits.js?v=032855ea70" data-site="main" defer></script>
+<script src="static/js/site.js?v=938fc10aea" defer></script>
+<script src="static/js/visits.js?v=938fc10aea" data-site="main" defer></script>
+<script src="static/js/search.js?v=938fc10aea" defer></script>
+<script src="static/js/progress.js?v=938fc10aea" defer></script>
 </body>
 </html>
