@@ -165,6 +165,21 @@ function render() {
   }
   sheet.append(answers ? answerDoc(o) : examDoc(o));
   restyleDiagrams(sheet);
+  fitOptions(sheet);
+}
+
+// ក ខ គ ឃ always share one line: if a row is too wide at 13pt, shrink it a little (down to 10.5pt);
+// only when it still cannot fit does it fall back to two columns.
+function fitOptions(root) {
+  if (window.innerWidth < 801) return;
+  const run = () => root.querySelectorAll('.p-opts').forEach((row) => {
+    row.style.fontSize = ''; row.classList.remove('fit2');
+    let pt = 13;
+    while (row.scrollWidth > row.clientWidth + 1 && pt > 10.5) { pt -= 0.5; row.style.fontSize = `${pt}pt`; }
+    if (row.scrollWidth > row.clientWidth + 1) { row.style.fontSize = ''; row.classList.add('fit2'); }
+  });
+  run();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
 }
 
 // Diagram labels (points, vertices, variables) are set in Mathcad UniMath italic like the maths in the text;

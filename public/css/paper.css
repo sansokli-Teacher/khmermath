@@ -39,12 +39,14 @@
 .p-part small { font-weight: 400; font-size: 11pt; }
 
 /* ---- multiple choice (our own style) ---- */
-.p-q { break-inside: avoid; page-break-inside: avoid; margin: 0 0 8px; display: grid; grid-template-columns: 9mm 1fr; }
+.p-q { break-inside: avoid; page-break-inside: avoid; margin: 0 0 8px; display: grid; grid-template-columns: 9mm minmax(0, 1fr); }
 .p-q .n { font-weight: 700; }
 .p-stem { white-space: pre-line; text-align: justify; }
 .p-q img { max-width: 70mm; max-height: 45mm; display: block; margin: 3mm auto; }
-.p-opts { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 0 5mm; margin-top: 1.5mm; padding-right: 2mm; }
-.p-opt { display: flex; align-items: baseline; gap: 2mm; min-width: 0; overflow-wrap: anywhere; }
+.p-opts { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 0 4mm; margin-top: 1.5mm; padding-right: 2mm; }
+.p-opt { display: flex; align-items: baseline; gap: 2mm; white-space: nowrap; flex: none; }
+.p-opts.fit2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 6mm; }
+.p-opts.fit2 .p-opt { white-space: normal; flex: initial; }
 .p-opt b { flex: none; }
 
 /* ---- writing questions (template style): I.  (១០ពិន្ទុ)  question ----- */
@@ -188,4 +190,4 @@
 
 /* maths: Mathcad UniMath italic for variables; digits, ° and ∠ and other symbols stay in KaTeX's own Times-like font */
 .sheet .katex .mathnormal, .sheet .katex .mathit { font-family: 'PaperMath', 'Times New Roman', serif; font-style: italic; }
-@media (max-width: 800px) { .p-opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 5mm; } .sheet { padding: 14px 12px 24px; } .p-student { flex-wrap: wrap; gap: 2mm 6mm; } .p-student .f.wide { flex-basis: 100%; } .etitle .t1 { font-size: 15pt; } .etitle .t2, .etitle .t3 { font-size: 13pt; } .p-q, .sq { margin-left: 0; } .sq { margin-left: 0; } .p-space { margin-left: 0; } .sect .rn { width: 9mm; } .sect .sc { width: auto; margin-right: 6px; } }
+@media (max-width: 800px) { .p-opts { flex-wrap: wrap; } .p-opts.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1mm 5mm; } .p-opt { white-space: normal; } .sheet { padding: 14px 12px 24px; } .p-student { flex-wrap: wrap; gap: 2mm 6mm; } .p-student .f.wide { flex-basis: 100%; } .etitle .t1 { font-size: 15pt; } .etitle .t2, .etitle .t3 { font-size: 13pt; } .p-q, .sq { margin-left: 0; } .sq { margin-left: 0; } .p-space { margin-left: 0; } .sect .rn { width: 9mm; } .sect .sc { width: auto; margin-right: 6px; } }
