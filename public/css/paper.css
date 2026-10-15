@@ -257,5 +257,11 @@
 .omr-bit.on { background: #000; }
 .omr-note { font-size: 9pt; line-height: 1.45; border: .3mm solid #777; padding: 1.5mm 2mm; text-align: justify; }
 .omr-ex { margin-top: 1.5mm; font-size: 9pt; }
-.omr-ex-b { width: 3.6mm; height: 3.6mm; vertical-align: middle; margin-right: 1mm; }
+.omr-ex-b { position: static !important; display: inline-block; width: 3.6mm; height: 3.6mm; flex: none; }
+.omr-fill { background: #000; }
+.omr-half { background: radial-gradient(circle, #000 0 22%, transparent 24%); }
+.omr-exrow { display: flex; align-items: center; gap: 1.6mm; margin-top: 1mm; font-size: 8.5pt; line-height: 1; }
+.omr-exl { width: 34mm; flex: none; }
+.omr-exh { width: 3.6mm; text-align: center; font-weight: 700; font-size: 8pt; }
+.omr-exhead { margin-top: .5mm; }
 .omr-x { background: linear-gradient(45deg, transparent 46%, #000 46% 54%, transparent 54%), linear-gradient(-45deg, transparent 46%, #000 46% 54%, transparent 54%); }

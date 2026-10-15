@@ -77,7 +77,10 @@
     if (ix < 150) {
       kids.push(abs('omr-note', ix, 30, 172 - ix, 62, '', [
         h('b', {}, 'របៀបគូស'), h('div', {}, note || 'ប្រើប៊ិចខ្មៅ ឬខ្មៅដៃ 2B។ គូសរង្វង់ឱ្យខ្មៅពេញ ១ ចម្លើយក្នុងមួយសំណួរ។ បើកែ សូមលុបឱ្យស្អាត។ កុំគូសក្រៅរង្វង់ កុំបត់សន្លឹក។'),
-        h('div', { class: 'omr-ex' }, [h('span', { class: 'omr-bub omr-ex-b', style: 'position:static;display:inline-block;background:#000;' }), ' ត្រូវ  ', h('span', { class: 'omr-bub omr-ex-b', style: 'position:static;display:inline-block;' }), ' មិនទាន់គូស  ', h('span', { class: 'omr-bub omr-ex-b omr-x', style: 'position:static;display:inline-block;' }), ' ខុស']),
+        h('div', { class: 'omr-ex' }, 'ឧទាហរណ៍៖ សំណួរមួយមានចម្លើយ ក ខ គ ឃ'),
+        h('div', { class: 'omr-exrow omr-exhead' }, [h('span', { class: 'omr-exl' }), ...lets.slice(0, 4).map((t) => h('span', { class: 'omr-exh' }, t))]),
+        ...[['✔ ត្រូវ (ចម្លើយ ខ)', [0, 1, 0, 0], ''], ['មិនទាន់គូស', [0, 0, 0, 0], ''], ['✗ ខុស៖ គូសមិនពេញ', [0, 0, 0, 0], 'half'], ['✗ ខុស៖ គូសជា X', [0, 0, 0, 0], 'x'], ['✗ ខុស៖ គូស ២ ចម្លើយ', [1, 1, 0, 0], '']].map(([lab, fills, kind], r) =>
+          h('div', { class: 'omr-exrow' }, [h('span', { class: 'omr-exl' }, lab), ...fills.map((f, k) => h('span', { class: `omr-bub omr-ex-b${f ? ' omr-fill' : ''}${kind === 'half' && k === 2 ? ' omr-half' : ''}${kind === 'x' && k === 2 ? ' omr-x' : ''}` }))])),
       ]));
     }
     // answers
