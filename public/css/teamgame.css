@@ -240,7 +240,7 @@
 .tg-o b { flex: none; width: 1.7em; height: 1.7em; display: grid; place-items: center; border-radius: 50%; background: var(--c, var(--teal)); color: #fff; font-size: .8em; }
 .tg-sol { margin-top: 8px; font-size: .62em; font-weight: 500; color: var(--ink-2); line-height: 1.7; }
 .tg-card.lq .tg-name { margin: 12px 56px 0; font-size: clamp(15px, 2.4vh + .4vw, 22px); font-weight: 700; color: var(--ink-3); animation: none; }
-.tg-card.lq .tg-q { margin: 10px 22px 6px; font-size: clamp(22px, 5vh + .8vw, 46px); font-weight: 700; color: var(--ink); line-height: 1.55; }
+.tg-card.lq .tg-q { margin: 10px 22px 6px; font-size: clamp(18px, 3.7vh + .6vw, 34px); font-weight: 700; color: var(--ink); line-height: 1.55; }
 .tg-card.lq { width: min(100%, 1150px); }
 
 /* play mode = a full screen of its own; the page never scrolls */
@@ -290,7 +290,7 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .tg-split .tg-fig { margin: 0; }
 .tg-split .tg-fig svg { height: clamp(150px, 42vh, 380px); max-width: 100%; }
 .tg-rc { min-width: 0; text-align: left; }
-.tg-rc .tg-q { margin: 4px 0 8px; text-align: left; font-size: clamp(18px, 3.6vh + .5vw, 34px); }
+.tg-rc .tg-q { margin: 4px 0 8px; text-align: left; font-size: clamp(16px, 2.9vh + .4vw, 27px); }
 .tg-rc .tg-opt { margin: 8px 0 0; grid-template-columns: 1fr 1fr; }
 .tg-rc .tg-o { font-size: clamp(15px, 2.6vh + .4vw, 26px); padding: 6px 10px; }
 .tg-rc .tg-a { margin: 8px 0 0; }
@@ -317,7 +317,7 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 /* ===== phones: smaller type in the question card, answer buttons always reachable, bigger touch targets ===== */
 .tg-card .tg-acts { position: sticky; bottom: 0; z-index: 2; background: var(--surface); padding: 8px 0 4px; }
 @media (max-width: 640px) {
-  .tg-card.lq .tg-q, .tg-rc .tg-q { font-size: clamp(16px, 4.8vw, 22px); line-height: 1.6; margin: 6px 12px 6px; }
+  .tg-card.lq .tg-q, .tg-rc .tg-q { font-size: clamp(15px, 4.1vw, 19px); line-height: 1.6; margin: 6px 12px 6px; }
   .tg-rc .tg-q { margin: 4px 0 6px; }
   .tg-card.lq .tg-name { font-size: 13px; margin: 8px 48px 0; }
   .tg-split { padding: 0 12px; gap: 4px; }

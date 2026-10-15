@@ -258,7 +258,7 @@ function lvHost(code) {
       main.dataset.q = st.phase === 'question' ? String(st.qi) : '';
       const q = st.q, rv = st.reveal;
       lastSec = -1; KmSound.loop('question', 1); if (st.phase === 'reveal') KmSound.sfx('reveal');
-      const qd = h('div', { style: 'font-size:clamp(24px,4.2vw,50px);font-weight:700;line-height:1.55;max-width:1100px' }); qd.textContent = q.q; main.appendChild(qd);
+      const qd = h('div', { style: 'font-size:clamp(20px,3.3vw,38px);font-weight:700;line-height:1.55;max-width:1100px' }); qd.textContent = q.q; main.appendChild(qd);
       if (q.f) { const f = h('div', {}); f.innerHTML = q.f; const sv = f.querySelector('svg'); if (sv) sv.style.cssText = 'height:30vh;max-width:90vw;background:#fff;border-radius:14px;padding:4px'; main.appendChild(f); }
       if (q.k === 'mcq' || q.k === 'tf') {
         const opts = q.k === 'mcq' ? q.o.map((o, i) => [String(i), o]) : [['T', 'ពិត'], ['F', 'មិនពិត']];
