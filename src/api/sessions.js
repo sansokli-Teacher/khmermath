@@ -434,3 +434,17 @@ export async function saveOmr(req, env, params) {
   await audit(env, g.t, 'session.omr', `session ${g.ses.id}: student ${stu.id} ${r.score}/${r.max} (${n} answers)`);
   return json({ ok: true, score: r.score, max: r.max, answered: n });
 }
+
+// Undo a scan saved against the wrong student: removes the answers and the result, but only for results that came from a scan.
+export async function undoOmr(req, env, params) {
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
+  const sid = String(params.studentId);
+  const row = await env.DB.prepare('SELECT submit_type FROM results WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, sid).first();
+  if (!row || row.submit_type !== 'paper') return err('លទ្ធផលនេះមិនមែនមកពីការស្កេនក្រដាសទេ មិនអាចដកចេញបានទេ។', 400);
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM responses WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, sid),
+    env.DB.prepare('DELETE FROM results WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, sid),
+  ]);
+  await audit(env, g.t, 'session.omr.undo', `session ${g.ses.id}: student ${sid}`);
+  return json({ ok: true });
+}

@@ -22,12 +22,36 @@ async function init() {
   const list = sessions.filter((s) => (!onlyTest || s.test_id === onlyTest));
   const pick = $('ses-pick');
   pick.innerHTML = '';
-  if (!list.length) { $('ses-empty').hidden = false; pick.hidden = true; return; }
+  if (onlyTest) await setupMake(onlyTest);
+  if (!list.length) { $('ses-empty').hidden = !!onlyTest; if (onlyTest) $('ses-empty').hidden = true; pick.hidden = true; return; }
   pick.append(h('option', { value: '' }, '— ជ្រើសរើស —'));
   list.forEach((s) => pick.append(h('option', { value: s.id }, `${s.test_title} — ${s.class_name} (${Exam.fmtDateTime(s.scheduled_start)})`)));
   const want = params.get('session') || (list.length === 1 ? String(list[0].id) : '');
   if (want) { pick.value = want; loadSession(want); }
   pick.addEventListener('change', () => loadSession(pick.value));
+}
+
+let makeTest = null;
+async function setupMake(testId) {
+  makeTest = testId;
+  let cl = [];
+  try { cl = (await api('/api/classes')).classes.filter((c) => c.my_role !== 'view'); } catch {}
+  if (!cl.length) return;
+  const sel = $('mk-class'); sel.innerHTML = '';
+  cl.forEach((c) => sel.append(h('option', { value: c.id }, `${c.name} (${c.student_count} នាក់)`)));
+  $('mk').hidden = false;
+  $('mk-btn').onclick = async () => {
+    try {
+      const start = new Date(Date.now() - 10 * 60000).toISOString();     // already over: students cannot start it online
+      const r = await api('/api/sessions', { method: 'POST', body: { test_id: testId, class_id: Number(sel.value), scheduled_start: start, duration_minutes: 5 } });
+      const lst = (await api('/api/sessions')).sessions;
+      sessions = lst;
+      const pick = $('ses-pick'); pick.hidden = false; $('ses-empty').hidden = true;
+      pick.innerHTML = ''; pick.append(h('option', { value: '' }, '— ជ្រើសរើស —'));
+      lst.filter((s) => s.test_id === testId).forEach((s) => pick.append(h('option', { value: s.id }, `${s.test_title} — ${s.class_name} (${Exam.fmtDateTime(s.scheduled_start)})`)));
+      pick.value = String(r.id); loadSession(r.id);
+    } catch (e) { Exam.notify(e.message); }
+  };
 }
 
 async function loadSession(id) {
@@ -143,6 +167,8 @@ function card(it) {
       already ? h('div', { class: 'sc-flags' }, 'សិស្សនេះមានលទ្ធផលរួចហើយ — ការរក្សាទុកនឹងជំនួសលទ្ធផលចាស់។') : null,
       h('div', { class: 'sc-row' }, [
         it.status === 'saved' ? null : h('button', { onclick: () => save(it, false) }, '💾 រក្សាទុក'),
+        it.status === 'saved' && (ses.writing_max_default || 0) > 0 ? h('button', { class: 'secondary btn-sm', onclick: () => writingMarks(it) }, '✎ ពិន្ទុសរសេរ') : null,
+        it.status === 'saved' ? h('button', { class: 'secondary btn-sm', onclick: () => undo(it) }, '↩ ដកចេញ') : null,
         h('button', { class: 'secondary btn-sm', onclick: () => { scans.splice(scans.indexOf(it), 1); renderList(); } }, 'លុប'),
       ]),
     ]),
@@ -179,12 +205,56 @@ async function save(it, quiet) {
     const r = await api(`/api/sessions/${ses.id}/omr`, { method: 'POST', body: { student_id: it.student, answers } });
     it.status = 'saved'; it.saved = r;
     const rec = roster.get(it.student); if (rec) { rec.submitted_at = rec.submitted_at || 'now'; }
+    const real = ses.roster.find((r) => String(r.id) === String(it.student)); if (real) real.submitted_at = real.submitted_at || 'now';
     if (!quiet && navigator.vibrate) navigator.vibrate(60);
   } catch (e) { if (!quiet) Exam.notify(e.message); else it.error = e.message; }
   renderList();
 }
 
+function updateMissing() {
+  const el = $('missing');
+  if (!ses) { el.hidden = true; return; }
+  const doneIds = new Set(scans.filter((s) => s.status === 'saved').map((s) => s.student));
+  const miss = ses.roster.filter((r) => !r.submitted_at && !doneIds.has(String(r.id)));
+  const all = ses.roster.length;
+  el.hidden = !scans.length;
+  el.innerHTML = '';
+  el.append(h('summary', {}, `មិនទាន់ស្កេន ${miss.length} / ${all} នាក់`),
+    miss.length ? h('div', { class: 'scan-info', style: 'margin-top:8px;' }, miss.map((r) => `${r.surname} ${r.first_name} (${r.id})`).join(' · ')) : h('div', { class: 'sc-status ok', style: 'margin-top:8px;' }, '✓ សិស្សទាំងអស់មានលទ្ធផលរួចហើយ'));
+}
+
+async function writingMarks(it) {
+  let data;
+  try { data = await api(`/api/sessions/${ses.id}/writing-marks`); } catch (e) { return Exam.notify(e.message); }
+  if (!data.questions.length) return Exam.notify('វិញ្ញាសានេះគ្មានសំណួរសរសេរទេ។');
+  const mine = Object.fromEntries(data.marks.filter((m) => String(m.student_id) === String(it.student)).map((m) => [m.question_id, m.score]));
+  const inputs = data.questions.map((q, i) => h('input', { type: 'number', min: 0, max: q.points, step: 0.5, value: mine[q.id] ?? '', style: 'width:80px;' }));
+  const stu = roster.get(it.student);
+  const ov = h('div', { class: 'zoom-ov', style: 'align-items:flex-start;' });
+  const box = h('div', { class: 'scan-card', style: 'max-width:520px;width:100%;margin:20px auto;max-height:92vh;overflow:auto;' }, [
+    h('div', { class: 'scan-lbl' }, `✎ ពិន្ទុសរសេរ — ${stu ? `${stu.surname} ${stu.first_name}` : it.student}`),
+    ...data.questions.map((q, i) => h('div', { class: 'sc-row' }, [h('span', { style: 'flex:1;' }, `សំណួរទី ${i + 1} (អតិបរមា ${q.points})`), inputs[i]])),
+    h('div', { class: 'sc-row', style: 'position:sticky;bottom:0;background:#fff;padding:8px 0;' }, [
+      h('button', { onclick: async () => {
+        const marks = {}; data.questions.forEach((q, i) => { marks[q.id] = inputs[i].value === '' ? '' : Number(inputs[i].value); });
+        try { await api(`/api/sessions/${ses.id}/writing-marks`, { method: 'POST', body: { student_id: it.student, marks } }); ov.remove(); } catch (e) { Exam.notify(e.message); }
+      } }, '💾 រក្សាទុកពិន្ទុ'),
+      h('button', { class: 'secondary', onclick: () => ov.remove() }, 'បិទ'),
+    ]),
+  ]);
+  ov.append(box); document.body.append(ov); inputs[0].focus();
+}
+
+async function undo(it) {
+  if (!(await Exam.confirm('ដកលទ្ធផលស្កេនរបស់សិស្សនេះចេញពីប្រព័ន្ធ?'))) return;
+  try { await api(`/api/sessions/${ses.id}/omr/${encodeURIComponent(it.student)}`, { method: 'DELETE' }); } catch (e) { return Exam.notify(e.message); }
+  const rec = roster.get(it.student); if (rec) rec.submitted_at = null;
+  const real = ses.roster.find((r) => String(r.id) === String(it.student)); if (real) real.submitted_at = null;
+  it.status = 'check'; renderList();
+}
+
 function updateSummary() {
+  updateMissing();
   const el = $('summary'); el.innerHTML = '';
   if (!scans.length) { el.hidden = true; return; }
   el.hidden = false;
