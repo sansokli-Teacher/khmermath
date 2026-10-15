@@ -68,9 +68,10 @@
     if (key === lastKey) { tick(); return; }                 // nothing visible changed: keep the screen (and the typed answer) as it is
     lastKey = key; tick.asked = false; body.innerHTML = ''; clearInterval(timerId);
     $('lv-timer').classList.toggle('off', st.phase !== 'question'); lastSec = -1;
-    if (st.phase === 'lobby') { if (st.mode === 'solo') KmSound.loop('lobby', 0.6); else KmSound.stop(); }
-    else if (st.phase === 'question') { if (st.mode === 'solo') KmSound.loop('question', 0.5); else KmSound.stop(); }
-    else if (st.phase === 'reveal') { KmSound.stop(); KmSound.sfx(st.reveal.right ? 'correct' : (st.reveal.timeout || !st.reveal.mine ? 'timeup' : 'wrong')); }
+    var mv = st.mode === 'solo' ? 0.5 : 0.4;                       // the music keeps playing from the lobby until the game ends
+    if (st.phase === 'lobby') KmSound.loop('lobby', mv);
+    else if (st.phase === 'question') KmSound.loop('question', mv);
+    else if (st.phase === 'reveal') { KmSound.loop('question', mv); KmSound.sfx(st.reveal.right ? 'correct' : (st.reveal.timeout || !st.reveal.mine ? 'timeup' : 'wrong')); }
     else if (st.phase === 'end') { KmSound.stop(); KmSound.sfx('fanfare'); }
     $('lv-bar').style.width = '100%'; $('lv-bar').classList.remove('hot');
     var stage = el('div', 'lv-stage'), ans = el('div', 'lv-answers');

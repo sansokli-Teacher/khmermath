@@ -95,7 +95,8 @@ function lvHost(code) {
   }
   function drawSolo() {
     topButtons();
-    if (!soloStarted) { soloStarted = true; KmSound.stop(); KmSound.sfx('start'); }
+    if (!soloStarted) { soloStarted = true; KmSound.sfx('start'); }
+    if (st.phase !== 'end') KmSound.loop('question', 0.7);
     info.textContent = `បន្ទប់ ${st.code} · បែបសុខសាន្ត · ${lvKh(st.players)} នាក់ · ចប់ ${lvKh(st.finished)}`;
     main.dataset.q = ''; main.innerHTML = '';
     if (st.phase === 'end') { st.board = st.board; return drawEnd(); }
@@ -140,7 +141,7 @@ function lvHost(code) {
     } else if (st.phase === 'question' || st.phase === 'reveal') {
       main.dataset.q = st.phase === 'question' ? String(st.qi) : '';
       const q = st.q, rv = st.reveal;
-      if (st.phase === 'question') { lastSec = -1; KmSound.loop('question', 1); } else { KmSound.stop(); KmSound.sfx('reveal'); }
+      lastSec = -1; KmSound.loop('question', 1); if (st.phase === 'reveal') KmSound.sfx('reveal');
       const qd = h('div', { style: 'font-size:clamp(24px,4.2vw,50px);font-weight:700;line-height:1.55;max-width:1100px' }); qd.textContent = q.q; main.appendChild(qd);
       if (q.f) { const f = h('div', {}); f.innerHTML = q.f; const sv = f.querySelector('svg'); if (sv) sv.style.cssText = 'height:30vh;max-width:90vw;background:#fff;border-radius:14px;padding:4px'; main.appendChild(f); }
       if (q.k === 'mcq' || q.k === 'tf') {
