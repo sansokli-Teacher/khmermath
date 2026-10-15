@@ -1,0 +1,27 @@
+/* Loading shimmer: an empty container shows grey placeholder cards that sweep with light until its content arrives.
+   Works with the existing code: the pages clear a container, fetch, then fill it — while it is empty the shimmer shows. */
+.shimmer-host:empty { min-height: 300px; position: relative; overflow: hidden; border-radius: 16px; background: #fff; border: 1px solid var(--line, #e1e8f0); --sk: #e8eef6; }
+.shimmer-host:empty::before {          /* the grey shapes (a title, a sub-title and three rows) */
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(var(--sk), var(--sk)) 16px 18px / 38% 22px no-repeat,
+    linear-gradient(var(--sk), var(--sk)) 16px 52px / 62% 14px no-repeat,
+    linear-gradient(var(--sk), var(--sk)) 16px 96px / calc(100% - 32px) 54px no-repeat,
+    linear-gradient(var(--sk), var(--sk)) 16px 164px / calc(100% - 32px) 54px no-repeat,
+    linear-gradient(var(--sk), var(--sk)) 16px 232px / calc(100% - 32px) 54px no-repeat;
+}
+.shimmer-host:empty::after {           /* the light that sweeps across them */
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .85) 50%, transparent 70%);
+  animation: km-sweep 1.3s linear infinite;
+}
+/* a row of small chips (lesson pickers) */
+.shimmer-host.shimmer-chips:empty { min-height: 84px; }
+.shimmer-host.shimmer-chips:empty::before { background:
+    repeating-linear-gradient(90deg, var(--sk) 0 110px, transparent 110px 122px) 0 8px / 100% 28px no-repeat,
+    repeating-linear-gradient(90deg, var(--sk) 0 110px, transparent 110px 122px) 0 46px / 100% 28px no-repeat; }
+/* any element can opt in while it is being filled by script */
+.skeleton { position: relative; overflow: hidden; color: transparent !important; background: #e8eef6; border-radius: 10px; min-height: 1em; }
+.skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.8) 50%, transparent 70%); animation: km-sweep 1.3s linear infinite; }
+@keyframes km-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .shimmer-host:empty::after, .skeleton::after { animation: none; } }
