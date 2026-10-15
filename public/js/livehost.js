@@ -24,12 +24,13 @@ render.live = async function () {
   });
   const count = h('select', {}, [10, 15, 20, 30].map((n) => h('option', { value: n }, `${lvKh(n)} សំណួរ`))); count.value = '15';
   const secs = h('select', {}, [15, 20, 30, 45, 60, 90].map((n) => h('option', { value: n }, `${lvKh(n)} វិនាទី/សំណួរ`))); secs.value = '30';
+  const mode = h('select', {}, [h('option', { value: 'classic' }, '👩‍🏫 បែបថ្នាក់ (គ្រូគ្រប់គ្រង)'), h('option', { value: 'solo' }, '🧘 បែបសុខសាន្ត (សិស្សលេងដោយខ្លួនឯង)')]);
   const go = h('button', { type: 'button' }, '▶ បង្កើតបន្ទប់');
   go.disabled = !!closed;
   go.onclick = async () => {
     if (!lvLessons.length) return Exam.notify('សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១។');
     go.disabled = true;
-    try { const r = await api('/api/live/create', { method: 'POST', body: { lessons: lvLessons, count: Number(count.value), secs: Number(secs.value) } }); lvLast = r.code; lvHost(r.code); }
+    try { const r = await api('/api/live/create', { method: 'POST', body: { lessons: lvLessons, count: Number(count.value), secs: Number(secs.value), mode: mode.value } }); lvLast = r.code; lvHost(r.code); }
     catch (e) { Exam.notify(e.message); } finally { go.disabled = !!closed; }
   };
   const all = h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => boxes.forEach((b) => { b.cb.checked = true; lvLessons = lessons.map((x) => x.n); }) }, 'ជ្រើសទាំងអស់');
@@ -37,10 +38,20 @@ render.live = async function () {
   root.appendChild(h('div', { class: 'card' }, [
     h('b', {}, 'ជ្រើសមេរៀន'),
     h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:10px 0' }, boxes.map((b) => b.lab)),
-    h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center' }, [count, secs, go, all, none]),
+    h('div', { class: 'row', style: 'gap:10px;flex-wrap:wrap;align-items:center' }, [mode, count, secs, go, all, none]),
+    h('p', { class: 'muted', style: 'margin:8px 0 0' }, 'បែបថ្នាក់៖ លោកគ្រូអ្នកគ្រូចេញសំណួរម្តងមួយៗលើអេក្រង់ធំ សិស្សទាំងអស់ឆ្លើយព្រមគ្នា។ បែបសុខសាន្ត៖ សិស្សម្នាក់ៗលេងតាមល្បឿនខ្លួន ដោយមិនចាំបាច់មានគ្រូគ្រប់គ្រង (សមស្របជាកិច្ចការផ្ទះ ឬពេលសិស្សរៀនដោយខ្លួនឯង)។'),
     lvLast ? h('p', { class: 'muted', style: 'margin-bottom:0' }, ['បន្ទប់ចុងក្រោយ៖ ', h('b', {}, lvLast), ' ', h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => lvHost(lvLast) }, 'បើកវិញ')]) : null,
   ]));
 };
+
+function lvQr(code, size) {
+  const url = `${location.origin}/live?c=${code}`;
+  const q = qrcode(0, 'M'); q.addData(url); q.make();
+  const box = h('div', { style: `background:#fff;padding:10px;border-radius:14px;width:${size}px;height:${size}px;box-sizing:border-box;line-height:0` });
+  box.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  const sv = box.querySelector('svg'); if (sv) { sv.style.width = '100%'; sv.style.height = '100%'; }
+  return box;
+}
 
 function lvHost(code) {
   document.querySelectorAll('.lvh').forEach((e) => e.remove());
@@ -58,7 +69,23 @@ function lvHost(code) {
 
   const btn = (label, fn, extra = '') => h('button', { type: 'button', style: `font-size:22px;padding:14px 34px;border-radius:16px;${extra}`, onclick: fn }, label);
 
+  function drawSolo() {
+    info.textContent = `បន្ទប់ ${st.code} · បែបសុខសាន្ត · ${lvKh(st.players)} នាក់ · ចប់ ${lvKh(st.finished)}`;
+    main.dataset.q = ''; main.innerHTML = '';
+    if (st.phase === 'end') { st.board = st.board; return drawEnd(); }
+    const row = h('div', { style: 'display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:min(1100px,96vw)' });
+    const left = h('div', { style: 'display:flex;flex-direction:column;gap:10px;align-items:center' });
+    left.appendChild(lvQr(st.code, 200)); left.appendChild(h('div', { style: 'font-size:46px;font-weight:900;letter-spacing:.1em;background:#fff;color:#10202f;border-radius:14px;padding:2px 18px' }, st.code));
+    left.appendChild(h('div', { style: 'opacity:.8;font-size:15px;max-width:240px' }, 'សិស្សស្កែន QR ឬវាយលេខកូដ ហើយលេងបានតាមល្បឿនខ្លួន'));
+    left.appendChild(btn('■ បញ្ចប់ហ្គេម', () => { if (confirm('បញ្ចប់ហ្គេមសម្រាប់សិស្សទាំងអស់?')) act('end'); }, 'background:#e03131;color:#fff;border:0;font-size:18px;padding:10px 22px'));
+    const board = h('div', { style: 'flex:1;min-width:300px;display:flex;flex-direction:column;gap:6px;text-align:left' });
+    board.appendChild(h('div', { style: 'font-size:22px;font-weight:800' }, '🏆 ចំណាត់ថ្នាក់ផ្ទាល់'));
+    (st.board.length ? st.board.slice(0, 12) : []).forEach((p, i) => board.appendChild(h('div', { style: 'position:relative;padding:8px 12px;border-radius:10px;background:#1c3247;overflow:hidden;display:flex;justify-content:space-between;gap:10px' }, [h('div', { style: `position:absolute;left:0;top:0;bottom:0;width:${Math.round(100 * p.cur / st.total)}%;background:#2b5a3a;opacity:.7` }), h('span', { style: 'position:relative' }, `${lvKh(i + 1)}. ${p.name}`), h('span', { style: 'position:relative' }, [h('small', { style: 'opacity:.8' }, `${lvKh(p.cur)}/${lvKh(st.total)}  `), h('b', {}, lvKh(p.score))])])));
+    if (!st.board.length) board.appendChild(h('div', { style: 'opacity:.7' }, 'កំពុងរង់ចាំសិស្សចូល…'));
+    row.appendChild(left); row.appendChild(board); main.appendChild(row);
+  }
   function draw() {
+    if (st.mode === 'solo') return drawSolo();
     const key = [st.phase, st.qi, st.players, st.answered].join('|');
     info.textContent = `បន្ទប់ ${st.code} · ${lvKh(st.players)} នាក់` + (st.qi >= 0 && st.phase !== 'lobby' && st.phase !== 'end' ? ` · សំណួរ ${lvKh(st.qi + 1)}/${lvKh(st.total)}` : '');
     if (key === lastKey && st.phase !== 'question') return;
@@ -69,8 +96,13 @@ function lvHost(code) {
     lastKey = key; main.innerHTML = ''; main.dataset.q = '';
     setTimeout(() => { if (window.renderMathInElement) try { renderMathInElement(main, { delimiters: [{ left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {} }, 0);
     if (st.phase === 'lobby') {
-      main.appendChild(h('div', { style: 'opacity:.8;font-size:22px' }, 'ចូលហ្គេមនៅ exam.khmermath.org/live ឬ khmermath.org/play/live.html'));
-      main.appendChild(h('div', { style: 'font-size:clamp(70px,16vw,190px);font-weight:900;letter-spacing:.12em;line-height:1;background:#fff;color:#10202f;border-radius:24px;padding:10px 40px' }, st.code));
+      const row = h('div', { style: 'display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap' });
+      row.appendChild(lvQr(st.code, Math.min(300, Math.round(innerHeight * 0.4))));
+      const side = h('div', { style: 'display:flex;flex-direction:column;gap:10px;align-items:center' });
+      side.appendChild(h('div', { style: 'opacity:.85;font-size:20px' }, 'ស្កែន QR ឬចូលទៅ exam.khmermath.org/live'));
+      side.appendChild(h('div', { style: 'font-size:clamp(56px,11vw,130px);font-weight:900;letter-spacing:.1em;line-height:1;background:#fff;color:#10202f;border-radius:20px;padding:8px 28px' }, st.code));
+      side.appendChild(h('div', { style: 'opacity:.7;font-size:16px' }, 'ឬ khmermath.org/play/live.html (ឥតគិតថ្លៃ មិនចាំបាច់ចូលគណនី)'));
+      row.appendChild(side); main.appendChild(row);
       main.appendChild(h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:1000px' }, st.names.map((n) => h('span', { style: 'padding:6px 14px;border-radius:99px;background:#1c7ed6;font-weight:700' }, n))));
       main.appendChild(h('div', { style: 'font-size:22px' }, `អ្នកលេង ${lvKh(st.players)} នាក់`));
       main.appendChild(btn('▶ ចាប់ផ្តើមហ្គេម', () => act('start'), 'background:#2f9e44;color:#fff;border:0'));
@@ -104,6 +136,11 @@ function lvHost(code) {
         main.appendChild(btn(st.qi + 1 >= st.total ? '🏆 លទ្ធផលចុងក្រោយ' : 'សំណួរបន្ទាប់ ▶', () => act('next'), 'background:#2f9e44;color:#fff;border:0'));
       }
     } else if (st.phase === 'end') {
+      drawEnd();
+    }
+  }
+  function drawEnd() {
+    main.innerHTML = '';
       main.appendChild(h('div', { style: 'font-size:clamp(34px,6vw,64px);font-weight:900' }, '🏆 លទ្ធផលចុងក្រោយ'));
       const pod = h('div', { style: 'display:flex;align-items:flex-end;gap:14px;justify-content:center;height:34vh;min-height:200px' });
       const ord = [1, 0, 2].filter((i) => st.board[i]);
@@ -112,7 +149,6 @@ function lvHost(code) {
       main.appendChild(h('div', { style: 'max-width:700px;width:92vw;display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left' }, st.board.slice(3, 23).map((p, i) => h('div', { style: 'padding:6px 12px;border-radius:10px;background:#1c3247;display:flex;justify-content:space-between' }, [h('span', {}, `${lvKh(i + 4)}. ${p.name}`), h('b', {}, lvKh(p.score))]))));
       const dl = h('button', { class: 'secondary', type: 'button', onclick: () => { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['ល.រ', 'ឈ្មោះ', 'ពិន្ទុ'], ...st.board.map((p, i) => [i + 1, p.name, p.score])]), 'Live'); XLSX.writeFile(wb, `ហ្គេមផ្ទាល់_${code}.xlsx`); } }, '⬇ ទាញយក Excel');
       main.appendChild(dl);
-    }
   }
   function lvTick() {
     const c = main.querySelector('.lv-clock'); if (!c || st.phase !== 'question') return;

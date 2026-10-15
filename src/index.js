@@ -168,6 +168,7 @@ const ROUTES = [
   ['POST', '/api/live/join', live.join],
   ['GET', '/api/live/state', live.state],
   ['POST', '/api/live/answer', live.answer],
+  ['POST', '/api/live/next', live.next],
 ].map(([method, pattern, handler]) => ({ method, handler, ...compile(pattern) }));
 
 export default {

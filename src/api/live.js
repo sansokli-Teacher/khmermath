@@ -19,6 +19,9 @@ async function ensureTables(env) {
     env.DB.prepare('CREATE TABLE IF NOT EXISTS live_players (code TEXT NOT NULL, pid INTEGER NOT NULL, name TEXT NOT NULL, token TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (code, pid))'),
     env.DB.prepare('CREATE TABLE IF NOT EXISTS live_answers (code TEXT NOT NULL, qi INTEGER NOT NULL, pid INTEGER NOT NULL, choice TEXT NOT NULL, ms INTEGER NOT NULL, pts INTEGER, PRIMARY KEY (code, qi, pid))'),
   ]);
+  for (const sql of ["ALTER TABLE live_rooms ADD COLUMN mode TEXT NOT NULL DEFAULT 'classic'", 'ALTER TABLE live_players ADD COLUMN cur INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE live_players ADD COLUMN qstart INTEGER']) {
+    try { await env.DB.prepare(sql).run(); } catch { /* column already there */ }
+  }
   ready = true;
 }
 export function _resetLiveForTests() { ready = false; }
@@ -43,6 +46,7 @@ export async function create(req, env) {
   if (cfg.games.live === false) return err('ហ្គេមនេះត្រូវបានបិទ។ សូមបើកវាក្នុង «សំណួរហ្គេម» ជាមុនសិន។', 403);
   const b = await req.json();
   const lessons = Array.isArray(b.lessons) ? b.lessons.map(Number) : [];
+  const mode = b.mode === 'solo' ? 'solo' : 'classic';
   const want = Math.max(3, Math.min(40, Number(b.count) || 15)), secs = [15, 20, 30, 45, 60, 90].includes(Number(b.secs)) ? Number(b.secs) : 30;
   const [base, edits] = await Promise.all([loadBase(req, env), loadEdits(env)]);
   const bank = mergeBank(base, edits, { enabled: true, lessons: lessons.length ? lessons : null });
@@ -58,11 +62,11 @@ export async function create(req, env) {
   let code = newCode();
   for (let k = 0; k < 8 && (await room(env, code)); k++) code = newCode();
   await env.DB.batch([
-    env.DB.prepare('INSERT INTO live_rooms (code, owner_id, title, secs, total, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)').bind(code, t.id, String(b.title || '').slice(0, 80), secs, picked.length, Date.now()),
+    env.DB.prepare('INSERT INTO live_rooms (code, owner_id, title, secs, total, created_at, mode, phase, qi) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)').bind(code, t.id, String(b.title || '').slice(0, 80), secs, picked.length, Date.now(), mode, mode === 'solo' ? 'open' : 'lobby', mode === 'solo' ? 0 : -1),
     ...picked.map((c, i) => env.DB.prepare('INSERT INTO live_qs (code, qi, pub, key) VALUES (?1, ?2, ?3, ?4)').bind(code, i, JSON.stringify(c.pub), JSON.stringify(c.key))),
   ]);
   await audit(env, t, 'live.create', `room ${code}, ${picked.length} questions`);
-  return json({ code, total: picked.length, secs, available: pool.length });
+  return json({ code, total: picked.length, secs, available: pool.length, mode });
 }
 
 async function mine(req, env, code) {
@@ -78,7 +82,11 @@ export async function hostState(req, env, params) {
   const g = await mine(req, env, params.code); if (g.resp) return g.resp;
   const r = g.r;
   const players = (await env.DB.prepare('SELECT name, score FROM live_players WHERE code = ?1 ORDER BY pid').bind(r.code).all()).results;
-  const out = { code: r.code, phase: r.phase, qi: r.qi, total: r.total, secs: r.secs, left: left(r), players: players.length, names: players.map((p) => p.name), top: await top(env, r.code, 10) };
+  if (r.mode === 'solo') {
+    const { results } = await env.DB.prepare('SELECT name, score, cur FROM live_players WHERE code = ?1 ORDER BY score DESC, pid ASC').bind(r.code).all();
+    return json({ code: r.code, mode: 'solo', phase: r.phase, total: r.total, secs: r.secs, players: results.length, finished: results.filter((p) => p.cur >= r.total).length, board: results.slice(0, 200) });
+  }
+  const out = { code: r.code, mode: 'classic', phase: r.phase, qi: r.qi, total: r.total, secs: r.secs, left: left(r), players: players.length, names: players.map((p) => p.name), top: await top(env, r.code, 10) };
   if (r.phase === 'end') out.board = await top(env, r.code, 200);
   if (r.qi >= 0 && r.phase !== 'lobby' && r.phase !== 'end') {
     const q = await env.DB.prepare('SELECT pub, key FROM live_qs WHERE code = ?1 AND qi = ?2').bind(r.code, r.qi).first();
@@ -97,6 +105,7 @@ export async function hostState(req, env, params) {
 export async function hostAction(req, env, params) {
   const g = await mine(req, env, params.code); if (g.resp) return g.resp;
   const r = g.r, { a } = await req.json(), now = Date.now();
+  if (r.mode === 'solo' && a !== 'end') return err('សកម្មភាពនេះមិនអាចធ្វើបានក្នុងរបៀបលេងដោយខ្លួនឯងទេ។', 409);
   if (a === 'start' && r.phase === 'lobby') {
     await env.DB.prepare("UPDATE live_rooms SET phase = 'question', qi = 0, qstart = ?2 WHERE code = ?1").bind(r.code, now).run();
   } else if (a === 'reveal' && r.phase === 'question') {
@@ -138,13 +147,47 @@ export async function join(req, env) {
   const taken = new Set(ps.map((p) => p.name));
   if (taken.has(name)) { let k = 2; while (taken.has(`${name} ${k}`)) k++; name = `${name} ${k}`; }
   const pid = ps.reduce((m, p) => Math.max(m, p.pid), 0) + 1, token = rid();
-  await env.DB.prepare('INSERT INTO live_players (code, pid, name, token) VALUES (?1, ?2, ?3, ?4)').bind(code, pid, name, token).run();
-  return pubJson({ pid, token, name }, req);
+  await env.DB.prepare('INSERT INTO live_players (code, pid, name, token, cur, qstart) VALUES (?1, ?2, ?3, ?4, 0, ?5)').bind(code, pid, name, token, Date.now()).run();
+  return pubJson({ pid, token, name, mode: r.mode }, req);
 }
 
 async function player(env, code, pid, token) {
-  const p = await env.DB.prepare('SELECT pid, name, score, token FROM live_players WHERE code = ?1 AND pid = ?2').bind(code, Number(pid)).first();
+  const p = await env.DB.prepare('SELECT pid, name, score, token, cur, qstart FROM live_players WHERE code = ?1 AND pid = ?2').bind(code, Number(pid)).first();
   return p && p.token === token ? p : null;
+}
+
+
+async function soloState(req, env, r, p) {
+  const code = r.code, over = r.phase === 'end' || p.cur >= r.total;
+  const out = { mode: 'solo', phase: over ? 'end' : 'question', qi: p.cur, total: r.total, secs: r.secs, name: p.name, score: p.score };
+  const better = await env.DB.prepare('SELECT COUNT(*) n FROM live_players WHERE code = ?1 AND score > ?2').bind(code, p.score).first();
+  out.rank = better.n + 1; out.players = (await env.DB.prepare('SELECT COUNT(*) n FROM live_players WHERE code = ?1').bind(code).first()).n;
+  if (over) { out.top = await top(env, code, 5); return pubJson(out, req); }
+  const q = await env.DB.prepare('SELECT pub, key FROM live_qs WHERE code = ?1 AND qi = ?2').bind(code, p.cur).first();
+  out.q = JSON.parse(q.pub);
+  let a = await env.DB.prepare('SELECT choice, pts FROM live_answers WHERE code = ?1 AND qi = ?2 AND pid = ?3').bind(code, p.cur, p.pid).first();
+  const used = Date.now() - (p.qstart || Date.now());
+  if (!a && used > r.secs * 1000 + 1500) {          // the time ran out without an answer
+    await env.DB.prepare("INSERT OR IGNORE INTO live_answers (code, qi, pid, choice, ms, pts) VALUES (?1, ?2, ?3, '', ?4, 0)").bind(code, p.cur, p.pid, used).run();
+    a = { choice: '', pts: 0 };
+  }
+  out.left = Math.max(0, (p.qstart || 0) + r.secs * 1000 - Date.now());
+  if (a) {
+    const key = JSON.parse(q.key);
+    out.phase = 'reveal'; out.answered = true;
+    out.reveal = { show: key.show, sol: key.sol, mine: a.choice, pts: a.pts || 0, right: (a.pts || 0) > 0, correct: key.correct, k: key.k, timeout: a.choice === '' };
+  }
+  return pubJson(out, req);
+}
+
+export async function next(req, env) {
+  await ensureTables(env);
+  const b = await req.json().catch(() => ({}));
+  const code = String(b.code || ''), r = await room(env, code), p = r && (await player(env, code, b.pid, b.token));
+  if (!r || !p || r.mode !== 'solo') return pubJson({ error: 'gone' }, req, 404);
+  const a = await env.DB.prepare('SELECT 1 x FROM live_answers WHERE code = ?1 AND qi = ?2 AND pid = ?3').bind(code, p.cur, p.pid).first();
+  if (a && p.cur < r.total) await env.DB.prepare('UPDATE live_players SET cur = ?3, qstart = ?4 WHERE code = ?1 AND pid = ?2 AND cur = ?5').bind(code, p.pid, p.cur + 1, Date.now(), p.cur).run();
+  return pubJson({ ok: true }, req);
 }
 
 export async function state(req, env) {
@@ -152,7 +195,8 @@ export async function state(req, env) {
   const u = new URL(req.url), code = u.searchParams.get('code') || '';
   const r = await room(env, code), p = r && (await player(env, code, u.searchParams.get('pid'), u.searchParams.get('token')));
   if (!r || !p) return pubJson({ error: 'gone' }, req, 404);
-  const out = { phase: r.phase, qi: r.qi, total: r.total, secs: r.secs, left: left(r), name: p.name, score: p.score };
+  if (r.mode === 'solo') return soloState(req, env, r, p);
+  const out = { mode: 'classic', phase: r.phase, qi: r.qi, total: r.total, secs: r.secs, left: left(r), name: p.name, score: p.score };
   const better = await env.DB.prepare('SELECT COUNT(*) n FROM live_players WHERE code = ?1 AND score > ?2').bind(code, p.score).first();
   out.rank = better.n + 1; out.players = (await env.DB.prepare('SELECT COUNT(*) n FROM live_players WHERE code = ?1').bind(code).first()).n;
   if (r.phase === 'question' || r.phase === 'reveal') {
@@ -174,6 +218,20 @@ export async function answer(req, env) {
   const b = await req.json().catch(() => ({}));
   const code = String(b.code || ''), r = await room(env, code), p = r && (await player(env, code, b.pid, b.token));
   if (!r || !p) return pubJson({ error: 'gone' }, req, 404);
+  if (r.mode === 'solo') {
+    if (r.phase === 'end' || Number(b.qi) !== p.cur || p.cur >= r.total) return pubJson({ error: 'late' }, req, 409);
+    const ms = Date.now() - (p.qstart || Date.now());
+    const choice = String(b.choice ?? '').slice(0, 40);
+    if (!choice) return pubJson({ error: 'empty' }, req, 400);
+    const have = await env.DB.prepare('SELECT 1 x FROM live_answers WHERE code = ?1 AND qi = ?2 AND pid = ?3').bind(code, p.cur, p.pid).first();
+    if (have) return pubJson({ ok: true }, req);
+    const key = JSON.parse((await env.DB.prepare('SELECT key FROM live_qs WHERE code = ?1 AND qi = ?2').bind(code, p.cur).first()).key);
+    const pts = ms > r.secs * 1000 + 1500 ? 0 : points(isCorrect(key, choice), Math.max(0, ms), r.secs);
+    const stmts = [env.DB.prepare('INSERT OR IGNORE INTO live_answers (code, qi, pid, choice, ms, pts) VALUES (?1, ?2, ?3, ?4, ?5, ?6)').bind(code, p.cur, p.pid, choice, Math.max(0, ms), pts)];
+    if (pts) stmts.push(env.DB.prepare('UPDATE live_players SET score = score + ?3 WHERE code = ?1 AND pid = ?2').bind(code, p.pid, pts));
+    await env.DB.batch(stmts);
+    return pubJson({ ok: true }, req);
+  }
   if (r.phase !== 'question' || Number(b.qi) !== r.qi) return pubJson({ error: 'late' }, req, 409);
   const ms = Date.now() - r.qstart;
   if (ms > r.secs * 1000 + 1500) return pubJson({ error: 'late' }, req, 409);

@@ -151,6 +151,23 @@ async function logoutStudent() {
 document.getElementById('home-logout').onclick = logoutStudent;
 
 // ---------- Home ----------
+// Join the live quiz with the code from the teacher (the student's own name is filled in, nothing is put in the address)
+function gameCard(studentName) {
+  const code = h('input', { type: 'text', inputmode: 'numeric', maxlength: 6, placeholder: 'លេខកូដ ៦ ខ្ទង់', style: 'max-width:180px;text-align:center;letter-spacing:.2em;font-weight:700' });
+  const go = () => {
+    const c = code.value.replace(/\D/g, '');
+    if (c.length !== 6) return code.focus();
+    try { sessionStorage.setItem('km_live_name', studentName); } catch {}
+    location.href = `/live?c=${c}`;
+  };
+  code.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  return h('div', { class: 'card', style: 'margin:12px 0' }, [
+    h('div', { style: 'font-weight:700;margin-bottom:6px' }, '📱 ចូលហ្គេមសំណួរផ្ទាល់'),
+    h('div', { class: 'muted', style: 'margin-bottom:8px' }, 'បើលោកគ្រូអ្នកគ្រូឱ្យលេខកូដ ឬ QR សូមវាយលេខកូដនៅទីនេះ។'),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [code, h('button', { type: 'button', onclick: go }, 'ចូលលេង')]),
+  ]);
+}
+
 function renderHome(data) {
   clearInterval(timerInterval);
   clearInterval(waitInterval);
@@ -165,6 +182,7 @@ function renderHome(data) {
   body.append(progressHolder);
   fillProgress(progressHolder);
   body.append(installCard());
+  body.append(gameCard(data.student_name));
 
   // --- upcoming / open tests
   body.append(h('h2', { class: 'section-title' }, 'ការប្រឡងខាងមុខ'));
