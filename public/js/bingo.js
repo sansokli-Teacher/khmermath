@@ -146,10 +146,22 @@
     var msg = d.res.full ? '🏆 ពេញតារាង!' : d.res.lines ? '🎉 ប៊ីងហ្គោ! (' + khNum(d.res.lines) + ' ជួរ)' : 'មិនទាន់ជា ប៊ីងហ្គោទេ';
     var t = el('div', 'bg-verdict ' + (d.res.lines ? 'ok' : 'no'), msg); out.appendChild(t); out.appendChild(d.node);
   }
+  // Sound for the caller screen: music while calling, a "reveal" sting on each question, fanfare at the end (sfx.js, original tracks).
+  var bgSnd = true; try { bgSnd = localStorage.getItem('bg_snd') !== '0'; } catch (e) {}
+  function bgAudio(fn) { try { if (window.KmSound && bgSnd) fn(); } catch (e) {} }
   function next() {
     if (S.called.length >= S.order.length) return;
     S.called.push(S.order[S.called.length]); put(KEY, S); renderCall();
+    bgAudio(function () { KmSound.unlock(); if (S.called.length >= S.order.length) { KmSound.stop(); KmSound.sfx('fanfare'); } else { KmSound.loop('lobby', 0.28); KmSound.sfx('reveal'); } });
   }
+  (function () {
+    var ctl = document.getElementById('bg-ctl') || (document.getElementById('bg-next') && document.getElementById('bg-next').parentNode);
+    if (!ctl || !window.KmSound) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost'; b.title = 'សំឡេង / តន្ត្រី';
+    var paint = function () { b.textContent = bgSnd ? '🔊' : '🔇'; };
+    b.addEventListener('click', function () { bgSnd = !bgSnd; try { localStorage.setItem('bg_snd', bgSnd ? '1' : '0'); } catch (e) {} if (!bgSnd) KmSound.stop(); else { KmSound.unlock(); KmSound.sfx('tick'); } paint(); });
+    paint(); ctl.appendChild(b);
+  })();
 
   /* ---------- wiring ---------- */
   $('bg-size').addEventListener('change', function () { $('bg-calls').value = ''; updateInfo(); });
@@ -158,7 +170,7 @@
   $('bg-print').addEventListener('click', function () { window.print(); });
   $('bg-tocall').addEventListener('click', function () { show('call'); });
   $('bg-toprint').addEventListener('click', function () { show('print'); });
-  $('bg-newgame').addEventListener('click', function () { show('setup'); });
+  $('bg-newgame').addEventListener('click', function () { try { if (window.KmSound) KmSound.stop(); } catch (e) {} show('setup'); });
   $('bg-next').addEventListener('click', next);
   $('bg-show').addEventListener('click', function () { $('bg-ans').hidden = !$('bg-ans').hidden; });
   $('bg-undo').addEventListener('click', function () { if (S.called.length) { S.called.pop(); put(KEY, S); renderCall(); } });
