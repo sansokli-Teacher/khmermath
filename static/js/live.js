@@ -24,8 +24,12 @@
     if (!on) { try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} fsTried = false; }
   }
 
+  var snd = $('lv-snd'); snd.addEventListener('click', function () { var m = KmSound.toggle(); snd.textContent = m ? '🔇' : '🔊'; if (!m) KmSound.sfx('tick'); }); snd.textContent = KmSound.muted() ? '🔇' : '🔊';
+  var lastSec = -1;
+
   /* ---------- join ---------- */
   function join() {
+    KmSound.unlock();
     var code = $('lv-code').value.replace(/\D/g, ''), name = $('lv-name').value.trim(), msg = $('lv-msg');
     msg.textContent = '';
     if (code.length !== 6) { msg.textContent = 'សូមបញ្ចូលលេខកូដ ៦ ខ្ទង់។'; return; }
@@ -37,7 +41,7 @@
   }
   $('lv-go').addEventListener('click', join);
   $('lv-name').addEventListener('keydown', function (e) { if (e.key === 'Enter') join(); });
-  $('lv-leave').addEventListener('click', function () { if (!confirm('ចាកចេញពីហ្គេម?')) return; try { sessionStorage.removeItem(SK); } catch (e) {} me = null; clearTimeout(pollId); clearInterval(timerId); setFull(false); });
+  $('lv-leave').addEventListener('click', function () { if (!confirm('ចាកចេញពីហ្គេម?')) return; KmSound.stop(); try { sessionStorage.removeItem(SK); } catch (e) {} me = null; clearTimeout(pollId); clearInterval(timerId); setFull(false); });
 
   /* ---------- play ---------- */
   function start() { setFull(true); lastKey = ''; st = null; poll(); }
@@ -52,6 +56,7 @@
     if (!st || st.phase !== 'question') return;
     var r = remaining(); $('lv-time').textContent = khNum(Math.ceil(r / 1000)); $('lv-bar').style.width = (100 * r / (st.secs * 1000)) + '%';
     $('lv-bar').classList.toggle('hot', r < 6000);
+    var sec = Math.ceil(r / 1000); if (sec !== lastSec) { lastSec = sec; if (sec > 0 && sec <= 5 && !st.answered) KmSound.sfx('tick'); }
     if (r <= 0 && st.mode === 'solo' && !st.answered && !tick.asked) { tick.asked = true; setTimeout(poll, 1700); }   // let the server record the timeout
   }
   function render() {
@@ -62,7 +67,11 @@
     var body = $('lv-body'), key = st.phase + ':' + st.qi + ':' + (st.answered ? 1 : 0) + ':' + (st.reveal ? 1 : 0);
     if (key === lastKey) { tick(); return; }                 // nothing visible changed: keep the screen (and the typed answer) as it is
     lastKey = key; tick.asked = false; body.innerHTML = ''; clearInterval(timerId);
-    $('lv-timer').classList.toggle('off', st.phase !== 'question');
+    $('lv-timer').classList.toggle('off', st.phase !== 'question'); lastSec = -1;
+    if (st.phase === 'lobby') { if (st.mode === 'solo') KmSound.loop('lobby', 0.6); else KmSound.stop(); }
+    else if (st.phase === 'question') { if (st.mode === 'solo') KmSound.loop('question', 0.5); else KmSound.stop(); }
+    else if (st.phase === 'reveal') { KmSound.stop(); KmSound.sfx(st.reveal.right ? 'correct' : (st.reveal.timeout || !st.reveal.mine ? 'timeup' : 'wrong')); }
+    else if (st.phase === 'end') { KmSound.stop(); KmSound.sfx('fanfare'); }
     $('lv-bar').style.width = '100%'; $('lv-bar').classList.remove('hot');
     var stage = el('div', 'lv-stage'), ans = el('div', 'lv-answers');
     body.appendChild(stage); body.appendChild(ans);
