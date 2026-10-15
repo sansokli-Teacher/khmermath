@@ -2,18 +2,19 @@
 // works offline). KmSound.loop('lobby'|'question', vol), KmSound.stop(), KmSound.sfx(name), KmSound.toggle().
 (function (g) {
   'use strict';
-  var ctx = null, master = null, muted = false, cur = null, timer = 0, nextT = 0, step = 0, vol = 1;
+  var ctx = null, master = null, fx = null, muted = false, cur = null, timer = 0, nextT = 0, step = 0, vol = 1;
   try { muted = localStorage.getItem('km_snd_muted') === '1'; } catch (e) {}
   var hz = function (m) { return 440 * Math.pow(2, (m - 69) / 12); };
   function ensure() {
-    if (!ctx) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); master = ctx.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ctx.destination); }
+    if (!ctx) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); master = ctx.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ctx.destination); var dl = ctx.createDelay(1), fb = ctx.createGain(), wet = ctx.createGain(); dl.delayTime.value = 0.32; fb.gain.value = 0.3; wet.gain.value = 0.35; fx = ctx.createGain(); fx.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(master); }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
-  function tone(f, t, d, type, v, f2) {
-    var o = ctx.createOscillator(), gn = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  function tone(f, t, d, type, v, f2, echo, lp) {
+    var o = ctx.createOscillator(), gn = ctx.createGain(), out = gn; o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
     gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(v, t + 0.012); gn.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(gn); gn.connect(master); o.start(t); o.stop(t + d + 0.03);
+    if (lp) { var fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; gn.connect(fl); out = fl; }
+    o.connect(gn); out.connect(master); if (echo && fx) out.connect(fx); o.start(t); o.stop(t + d + 0.03);
   }
   var noiseBuf = null;
   function noise(t, d, v, hp) {
@@ -23,20 +24,28 @@
   }
   function kick(t, v) { tone(150, t, 0.16, 'sine', v, 45); }
 
-  // 16-step patterns: lobby = happy pentatonic bounce, question = driving minor arpeggio
+  // Original quiz-show style tracks (written for this site, not a copy of any existing song): four bars of 16 steps,
+  // chord progression + bass + arpeggio + hook + drums + pad, with a little echo on the lead.
+  var HOOK_Q = [81,0,0,81,0,84,0,81, 0,79,0,0,76,0,79,0,  77,0,0,77,0,81,0,77, 0,76,0,0,72,0,76,0,  79,0,0,79,0,84,0,79, 0,76,0,0,72,0,76,0,  74,0,0,74,0,79,0,83, 0,86,0,0,83,0,79,0];
+  var HOOK_L = [72,0,76,0,79,0,76,0, 72,0,76,0,79,0,84,0,  74,0,79,0,83,0,79,0, 74,0,79,0,83,0,86,0,  72,0,76,0,81,0,76,0, 72,0,76,0,81,0,84,0,  72,0,77,0,81,0,77,0, 76,0,74,0,72,0,0,0];
   var LOOPS = {
-    lobby: { bpm: 112, lead: [72, 0, 76, 0, 79, 0, 76, 72, 74, 0, 79, 0, 81, 0, 79, 74], bass: [48, 0, 0, 0, 55, 0, 0, 0, 45, 0, 0, 0, 53, 0, 0, 0], kick: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], hat: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], wave: 'triangle' },
-    question: { bpm: 132, lead: [69, 72, 76, 72, 69, 72, 76, 81, 67, 71, 74, 71, 67, 71, 74, 79], bass: [45, 0, 45, 0, 45, 0, 45, 0, 43, 0, 43, 0, 43, 0, 43, 0], kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], hat: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1], wave: 'square' },
+    question: { bpm: 140, root: [45, 41, 48, 43], tri: [[57, 60, 64], [57, 60, 65], [60, 64, 67], [59, 62, 67]], hook: HOOK_Q, hookWave: 'sawtooth', hookVol: 0.075, arp: true, kick: 'four', bassStyle: 'pump' },
+    lobby: { bpm: 114, root: [48, 43, 45, 41], tri: [[60, 64, 67], [59, 62, 67], [57, 60, 64], [57, 60, 65]], hook: HOOK_L, hookWave: 'triangle', hookVol: 0.11, arp: false, kick: 'half', bassStyle: 'bounce' },
   };
   function schedule() {
     if (!cur) return;
     var L = LOOPS[cur], sp = 60 / L.bpm / 4;
     while (nextT < ctx.currentTime + 0.25) {
-      var i = step % 16, t = Math.max(nextT, ctx.currentTime);
-      if (L.lead[i]) tone(hz(L.lead[i]), t, sp * 1.8, L.wave, 0.07 * vol);
-      if (L.bass[i]) tone(hz(L.bass[i]), t, sp * 3, 'sine', 0.2 * vol);
-      if (L.kick[i]) kick(t, 0.28 * vol);
-      if (L.hat[i]) noise(t, 0.04, 0.05 * vol, 7000);
+      var i = step % 64, bar = Math.floor(i / 16), k = i % 16, t = Math.max(nextT, ctx.currentTime), ch = L.tri[bar];
+      if (L.hook[i]) tone(hz(L.hook[i]), t, sp * (L.hookWave === 'sawtooth' ? 1.7 : 2.2), L.hookWave, L.hookVol * vol, 0, true, L.hookWave === 'sawtooth' ? 2600 : 0);
+      if (L.arp) tone(hz(ch[[0, 1, 2, 1][k % 4]] + 12), t, sp * 0.8, 'square', 0.035 * vol, 0, true, 3200);
+      if (k === 0) ch.forEach(function (m) { tone(hz(m), t, sp * 15, 'triangle', 0.045 * vol); });   // pad
+      if (L.bassStyle === 'pump') { if (k % 2 === 0) tone(hz(L.root[bar] + (k % 8 === 6 ? 12 : 0)), t, sp * 1.6, 'sawtooth', 0.16 * vol, 0, false, 500); }
+      else if (k % 4 === 0 || k === 6 || k === 14) tone(hz(L.root[bar] + (k === 6 ? 7 : 0)), t, sp * 2.4, 'sine', 0.24 * vol);
+      if (L.kick === 'four' ? k % 4 === 0 : (k === 0 || k === 8)) kick(t, 0.3 * vol);
+      if (k === 4 || k === 12) { noise(t, 0.12, 0.13 * vol, 1800); tone(190, t, 0.08, 'triangle', 0.1 * vol, 120); }   // clap / snare
+      if (k % 2 === 0) noise(t, 0.035, 0.035 * vol, 8000); else if (L.kick === 'four') noise(t, 0.09, 0.05 * vol, 6500);   // hats, open hat on the off-beat
+      if (i === 63 && L.kick === 'four') { for (var f = 0; f < 4; f++) noise(t - f * sp * 0.5, 0.05, 0.06 * vol, 5000); }
       nextT += sp; step++;
     }
   }
