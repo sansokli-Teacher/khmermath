@@ -6,8 +6,8 @@
   const W = 180, H = 236;
   const MARK = { tl: [4, 4, 8], tr: [176, 4, 8], bl: [4, 232, 8], br: [174.5, 230.5, 11] };   // centre x, y, size
   const R_BUB = 2.2, R_READ = 1.55;                // bubble radius drawn / radius read
-  const ROWS = 20, Q_Y0 = 111;
-  const ID_Y0 = 46, ID_PITCH = 5.0, ID_X0 = 16, ID_COL_PITCH = 6.2;
+  const ROWS = 20, Q_Y0 = 114;
+  const ID_Y0 = 48, ID_PITCH = 5.0, ID_X0 = 16, ID_COL_PITCH = 6.2;
   const CODE_X0 = 20, CODE_Y = 231, CODE_PITCH = 4.6, CODE_BITS = 20;
   const MAX_Q = ROWS * 5;
   const KH_LET = ['ក', 'ខ', 'គ', 'ឃ', 'ង'];
@@ -22,7 +22,7 @@
     const g = nb === 2 ? { pitchX: 88, width: 76, dx0: 24, bp: five ? 11.5 : 15 }
       : nb === 4 ? { pitchX: 41.3, width: 40, dx0: 12.5, bp: five ? 6.0 : 7.4 }
         : { pitchX: 33.5, width: 32, dx0: 10, bp: five ? 5.2 : 5.8 };
-    return { nb, rows, ...g, x0: (c) => 8 + c * g.pitchX, rowPitch: Math.min(8, 114 / Math.max(rows, 14)) };
+    return { nb, rows, ...g, x0: (c) => 8 + c * g.pitchX, rowPitch: Math.min(8, 105.5 / (Math.max(rows, 14) - 1)) };
   }
 
   function layout(nQ, optCount, idDigits) {
@@ -63,59 +63,64 @@
   }
 
   // ---------------- drawing ----------------
+  // Only black and light grey are used, so a photocopy of the sheet reads as well as the original.
   function sheetEl(h, o) {
     const { nQ, optCount, idDigits, testId, grouped, letters, title, subtitle, note } = o;
-    const L = layout(nQ, optCount, idDigits);
+    const L = layout(nQ, optCount, idDigits), P = L.plan;
     const lets = letters === 'latin' ? LAT_LET : KH_LET;
     const mm = (v) => `${v}mm`;
     const abs = (cls, x, y, w, hh, extra = '', kids = null, text = null) => h('div', { class: cls, style: `left:${mm(x)};top:${mm(y)};${w != null ? `width:${mm(w)};` : ''}${hh != null ? `height:${mm(hh)};` : ''}${extra}` }, text != null ? text : kids);
     const kids = [];
     for (const [cx, cy, s] of Object.values(MARK)) kids.push(abs('omr-mk', cx - s / 2, cy - s / 2, s, s));
-    kids.push(abs('omr-title', 14, 2.5, 152, 12, '', null, title || ''));
-    kids.push(abs('omr-sub', 14, 13.5, 152, 5, '', null, subtitle || ''));
-    kids.push(abs('omr-fld', 14, 20, 74, 6, '', null, 'ឈ្មោះ៖'));
-    kids.push(abs('omr-fld', 92, 20, 40, 6, '', null, 'ថ្នាក់៖'));
-    kids.push(abs('omr-fld', 136, 20, 30, 6, '', null, 'កាលបរិច្ឆេទ៖'));
-    // student id
-    kids.push(abs('omr-cap', 8, 26.2, 92, 4.5, '', null, 'អត្តលេខ (សរសេរ រួចគូសរង្វង់)'));
-    kids.push(abs('omr-hint', 8, 30.4, 90, 3.4, '', null, 'គូសរង្វង់ ១ ខ្ទង់ក្នុងមួយជួរឈរ ឱ្យត្រូវនឹងលេខដែលបានសរសេរ'));
-    for (let c = 0; c < L.idDigits; c++) kids.push(abs('omr-write', ID_X0 + c * ID_COL_PITCH - 2.7, 34.5, 5.4, 7));
+
+    // --- title and the three write-in fields ---
+    const tl = String(title || '').length;
+    kids.push(abs('omr-title', 12, 2, 156, 11, `font-size:${tl > 60 ? 10.5 : tl > 44 ? 12 : 14}pt;`, null, title || ''));
+    kids.push(abs('omr-banner', 62, 13.2, 56, 5, '', null, subtitle || 'សន្លឹកចម្លើយ OMR'));
+    [['ឈ្មោះ', 8, 84], ['ថ្នាក់', 96, 34], ['កាលបរិច្ឆេទ', 134, 38]].forEach(([lab, x, w]) => kids.push(abs('omr-fld', x, 20, w, 7, '', null, lab + ' ៖')));
+
+    // --- left panel: student id ---
+    const idRight = Math.max(58, ID_X0 + (L.idDigits - 1) * ID_COL_PITCH + 2.2 + 1.8);
+    kids.push(abs('omr-pf', 6.5, 29.5, idRight - 6.5, 96.8 - 29.5));
+    kids.push(abs('omr-ph', 6.5, 29.5, idRight - 6.5, 5.5, '', null, 'អត្តលេខ'));
+    kids.push(abs('omr-hint', 8, 35.4, idRight - 9, 3.2, '', null, 'សរសេរក្នុងប្រអប់ រួចគូស ១ ខ្ទង់ក្នុងមួយជួរឈរ'));
+    for (let c = 0; c < L.idDigits; c++) kids.push(abs('omr-write', ID_X0 + c * ID_COL_PITCH - 2.7, 39.4, 5.4, 5.6));
     for (let d = 0; d < 10; d++) kids.push(abs('omr-dl', ID_X0 - 8.5, ID_Y0 + d * ID_PITCH - 2, 5, 4, '', null, String(d)));
-    kids.push(abs('omr-qf', 6.5, 42.3, ID_X0 + (L.idDigits - 1) * ID_COL_PITCH + 2.2 + 1.5 - 6.5, 94.4 - 42.3));
-    kids.push(abs('omr-sep', 7.5, ID_Y0 + 4.5 * ID_PITCH, ID_X0 + (L.idDigits - 1) * ID_COL_PITCH + 2.2 + 0.5 - 7.5, 0));
+    kids.push(abs('omr-sep', 7.5, ID_Y0 + 4.5 * ID_PITCH, idRight - 9, 0));
     L.id.forEach((col) => col.forEach(([x, y]) => kids.push(abs('omr-bub', x - R_BUB, y - R_BUB, 2 * R_BUB, 2 * R_BUB))));
-    // marking instructions
-    const ix = Math.max(100, ID_X0 + L.idDigits * ID_COL_PITCH + 6);
-    if (ix < 150) {
-      kids.push(abs('omr-note', ix, 30, 172 - ix, 62, '', [
-        h('b', {}, 'របៀបគូស'), h('div', {}, note || 'ប្រើប៊ិចខ្មៅ ឬខ្មៅដៃ 2B។ គូសរង្វង់ឱ្យខ្មៅពេញ ១ ចម្លើយក្នុងមួយសំណួរ។ បើកែ សូមលុបឱ្យស្អាត។ កុំគូសក្រៅរង្វង់ កុំបត់សន្លឹក។'),
-        h('div', { class: 'omr-ex' }, 'ឧទាហរណ៍៖ សំណួរមួយមានចម្លើយ ក ខ គ ឃ'),
-        h('div', { class: 'omr-exrow omr-exhead' }, [h('span', { class: 'omr-exl' }), ...lets.slice(0, 4).map((t) => h('span', { class: 'omr-exh' }, t))]),
-        ...[['✔ ត្រូវ (ចម្លើយ ខ)', [0, 1, 0, 0], ''], ['មិនទាន់គូស', [0, 0, 0, 0], ''], ['✗ ខុស៖ គូសមិនពេញ', [0, 0, 0, 0], 'half'], ['✗ ខុស៖ គូសជា X', [0, 0, 0, 0], 'x'], ['✗ ខុស៖ គូស ២ ចម្លើយ', [1, 1, 0, 0], '']].map(([lab, fills, kind], r) =>
-          h('div', { class: 'omr-exrow' }, [h('span', { class: 'omr-exl' }, lab), ...fills.map((f, k) => h('span', { class: `omr-bub omr-ex-b${f ? ' omr-fill' : ''}${kind === 'half' && k === 2 ? ' omr-half' : ''}${kind === 'x' && k === 2 ? ' omr-x' : ''}` }))])),
-      ]));
-    }
-    // answers
-    kids.push(abs('omr-cap', 8, 96.3, 120, 4.5, '', null, `ចម្លើយពហុជ្រើសរើស (${nQ} សំណួរ)`));
-    const P = L.plan;
+
+    // --- right panel: how to mark ---
+    const nx = idRight + 5;
+    kids.push(abs('omr-pf', nx, 29.5, 172 - nx, 96.8 - 29.5));
+    kids.push(abs('omr-ph', nx, 29.5, 172 - nx, 5.5, '', null, 'របៀបគូស'));
+    kids.push(abs('omr-note', nx + 2.5, 36.6, 172 - nx - 5, 22, '', (note ? [note] : ['ប្រើប៊ិចខ្មៅ ឬខ្មៅដៃ 2B។', 'គូសរង្វង់ឱ្យខ្មៅពេញ ១ ចម្លើយក្នុងមួយសំណួរ។', 'បើកែ សូមលុបឱ្យស្អាត។', 'កុំគូសក្រៅរង្វង់ កុំបត់សន្លឹក។']).map((t) => h('div', { class: 'omr-li' }, (note ? '' : '• ') + t))));
+    kids.push(abs('omr-exbox', nx + 2, 58.2, 172 - nx - 4, 36.8, '', [
+      h('div', { class: 'omr-exrow omr-exhead' }, [h('span', { class: 'omr-exl' }, 'ឧទាហរណ៍ (ចម្លើយ ខ)'), ...lets.slice(0, 4).map((t) => h('span', { class: 'omr-exh' }, t))]),
+      ...[['✔ ត្រូវ', [0, 1, 0, 0], ''], ['មិនទាន់គូស', [0, 0, 0, 0], ''], ['✗ ខុស៖ គូសមិនពេញ', [0, 0, 0, 0], 'half'], ['✗ ខុស៖ គូសជា X', [0, 0, 0, 0], 'x'], ['✗ ខុស៖ គូស ២ ចម្លើយ', [1, 1, 0, 0], '']].map(([lab, fills, kind]) =>
+        h('div', { class: 'omr-exrow' }, [h('span', { class: 'omr-exl' }, lab), ...fills.map((f, k) => h('span', { class: `omr-bub omr-ex-b${f ? ' omr-fill' : ''}${kind === 'half' && k === 2 ? ' omr-half' : ''}${kind === 'x' && k === 2 ? ' omr-x' : ''}` }))])),
+    ]));
+
+    // --- answers: a section bar, then the blocks ---
+    kids.push(abs('omr-bar', 6.5, 98.6, 165.5, 5, '', [h('b', {}, `ចម្លើយពហុជ្រើសរើស · ${nQ} សំណួរ`), h('span', {}, 'គូសរង្វង់តែ ១ ចម្លើយក្នុងមួយសំណួរ')]));
     for (let c = 0; c < P.nb; c++) {
       const rowsHere = Math.min(P.rows, Math.min(nQ, MAX_Q) - c * P.rows);
       if (rowsHere <= 0) continue;
-      const x0 = P.x0(c), top = 101.8, bottom = Q_Y0 + (rowsHere - 1) * P.rowPitch + 2.2 + 1.5;
+      const x0 = P.x0(c), top = 105.4, bottom = Q_Y0 + (rowsHere - 1) * P.rowPitch + 2.2 + 1.5;
       kids.push(abs('omr-qf', x0, top, P.width, bottom - top));
-      kids.push(abs('omr-qh', x0, top, P.width, 5.6));
-      kids.push(abs('omr-qno', x0 + 1, top + 0.6, P.dx0 - 1 - 3.7, 4.4, '', null, 'ល.រ'));
-      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + P.dx0 + k * P.bp - 3, top + 0.6, 6, 4.5, '', null, lt)));
+      kids.push(abs('omr-qh', x0, top, P.width, 5.4));
+      kids.push(abs('omr-qno', x0 + 1, top + 0.5, P.dx0 - 1 - 3.7, 4.4, '', null, 'ល.រ'));
+      lets.slice(0, L.optCount).forEach((lt, k) => kids.push(abs('omr-hl', x0 + P.dx0 + k * P.bp - 3, top + 0.5, 6, 4.5, '', null, lt)));
       for (let g = 5; g < rowsHere; g += 5) kids.push(abs('omr-sep', x0 + 1, Q_Y0 + (g - 1) * P.rowPitch + P.rowPitch / 2, P.width - 2, 0));
     }
     L.q.forEach((r) => {
       kids.push(abs('omr-ql', r.labelX, r.y - 2.2, r.labelW, 4.4, '', null, String(r.i + 1)));
       r.bubbles.forEach(([x, y]) => kids.push(abs('omr-bub', x - R_BUB, y - R_BUB, 2 * R_BUB, 2 * R_BUB)));
     });
-    // header code (printed by the system — do not touch)
+
+    // --- code strip (printed by the system) ---
     const bits = codeBits(testId || 0, grouped, L.idDigits);
     L.code.forEach(([x, y], b) => kids.push(abs(`omr-bit${bits[b] ? ' on' : ''}`, x - 1.5, y - 1.5, 3, 3)));
-    kids.push(abs('omr-cap', CODE_X0 + CODE_BITS * CODE_PITCH + 1, CODE_Y - 2.5, 60, 5, 'font-size:6.5pt;', null, `កូដ #${testId || 0}${grouped ? ' · តាមកម្រិត' : ''}`));
+    kids.push(abs('omr-cap', CODE_X0 + CODE_BITS * CODE_PITCH + 1, CODE_Y - 2.6, 62, 5, 'font-size:6.5pt;font-weight:400;', null, `កូដប្រព័ន្ធ #${testId || 0}${grouped ? ' · តាមកម្រិត' : ''} — កុំគូសលើប្រអប់នេះ`));
     return h('div', { class: 'omr-sheet', style: `width:${mm(W)};height:${mm(H)};` }, kids);
   }
 
