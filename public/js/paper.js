@@ -160,9 +160,32 @@ function render() {
     const ctx = { h, mathEl, kh, test, profile, mcq, writing, splitWriting, logoSrc,
       mcqPts: mcq.reduce((a, q) => a + q.points, 0), wPts: writing.reduce((a, q) => a + q.points, 0) };
     sheet.append(answers ? window.PaperPT.keyDoc(ctx, o) : window.PaperPT.examDoc(ctx, o));
+    restyleDiagrams(sheet);
     return;
   }
   sheet.append(answers ? answerDoc(o) : examDoc(o));
+  restyleDiagrams(sheet);
+}
+
+// Diagram labels (points, vertices, variables) are set in Mathcad UniMath italic like the maths in the text;
+// numbers, units and Khmer words stay upright in Times New Roman. SVG only — PNG/JPG cannot be restyled.
+const MATH_LABEL = /^([A-Z]{1,3}|[a-z])['\u2032]?[0-9]?$/;
+async function restyleDiagrams(root) {
+  for (const img of root.querySelectorAll('img[src^="/api/images/"][src$=".svg"]')) {
+    const src = img.getAttribute('src');
+    try {
+      const doc = new DOMParser().parseFromString(await (await fetch(src)).text(), 'image/svg+xml');
+      const svg = doc.documentElement;
+      if (svg.nodeName !== 'svg') continue;
+      svg.setAttribute('font-family', "'Times New Roman', serif");
+      for (const t of svg.querySelectorAll('text')) {
+        if (MATH_LABEL.test(t.textContent.trim())) { t.setAttribute('font-family', "'Mathcad UniMath Italic','Mathcad UniMath','Times New Roman',serif"); t.setAttribute('font-style', 'italic'); t.removeAttribute('font-weight'); }
+        else t.setAttribute('font-family', "'Times New Roman', serif");
+      }
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
+      img.src = url;
+    } catch { /* keep the original picture */ }
+  }
 }
 
 // ---------- header / footer details (per teacher) ----------
