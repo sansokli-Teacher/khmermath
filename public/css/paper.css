@@ -195,12 +195,14 @@
 .ptk-note { text-align: center; background: #fde4e4; padding: 2mm 4mm; margin: 0 auto 6mm; width: 82%; font-family: 'PaperHead', 'PaperBody', serif; }
 .ptk-h { font-size: 15pt; margin: 6mm 0 2mm; }
 .ptk-table { width: 100%; border-collapse: collapse; }
-.ptk-table th, .ptk-table td { border: .7pt solid #000; text-align: center; padding: 2.2mm 1mm; background: none; color: #000; position: static; }
+.ptk-table th, .ptk-table td { border: .7pt solid #000; text-align: center; padding: 1.2mm 1mm; background: none; color: #000; position: static; }
 .ptk-table th { font-weight: 400; }
 .ptk-table td.k { color: #b00; font-weight: 700; font-size: 13pt; }
 .ptk-table td.n { font-weight: 700; font-family: 'Times New Roman', serif; }
-.ptk-cols { column-count: 2; column-gap: 10mm; column-rule: .4pt solid #000; font-size: 11.5pt; line-height: 1.5; }
-.ptk-item { break-inside: avoid; margin-bottom: 7mm; }
+.ptk-cols { column-count: 1; font-size: 11.5pt; line-height: 1.55; }
+.ptk-item { break-inside: avoid; margin-bottom: 5mm; padding-bottom: 3mm; border-bottom: .3mm solid #999; }
+.ptk-item img { display: block; max-width: 70mm; max-height: 45mm; margin: 2mm auto; }
+.ptk-item > div:not(.tt):not(.ans):not(.sc) { padding: .3mm 0; }
 .ptk-item .tt { font-weight: 700; }
 .ptk-item .ans { color: #1a4fb4; font-size: 13pt; font-weight: 700; margin: 2mm 0; }
 .ptk-item .sc { color: #b00; font-weight: 700; margin-top: 2mm; }

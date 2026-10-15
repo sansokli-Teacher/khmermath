@@ -170,6 +170,7 @@
         title.innerHTML = `${i + 1}. ${Exam.mathHtml((q.stem_text.split('\n')[0] || '').trim())}`;
         return h('div', { class: 'ptk-item' }, [
           title,
+          q.image_key ? h('img', { src: `/api/images/${q.image_key}`, alt: '' }) : null,
           ...body,
           h('div', { class: 'sc' }, `របាយពិន្ទុ (${kh(q.points)} ពិន្ទុ)៖`),
           bullets.length ? h('ul', {}, bullets.map((b) => h('li', {}, b))) : null,
@@ -191,7 +192,7 @@
         return list.length ? h('li', {}, [h('b', {}, `${label}៖ `), `${kh(list.length)} សំណួរ — ${num(list)}`]) : null;
       })));
     }
-    return h('div', { class: 'sheet ptkey-doc' }, kids);
+    return h('div', { class: 'sheet pt-doc pt-key' }, [header(ctx), page(ctx, kids), screenFooter(ctx)]);
   }
 
   window.PaperPT = { examDoc, keyDoc, pageStyle };

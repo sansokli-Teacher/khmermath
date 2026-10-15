@@ -19,7 +19,6 @@
   function spec(sheet) {
     const c = sheet.classList;
     if (c.contains('answers-doc')) return { cls: 'answers-doc', top: 20, bottom: 15, side: 15, num: 'khmer' };
-    if (c.contains('ptkey-doc')) return { cls: 'ptkey-doc', top: 20, bottom: 15, side: 15, num: 'latin' };
     if (c.contains('pt-doc')) return { cls: 'pt-doc', top: 26, bottom: 15, side: 15, header: '.pt-ph', footer: '.pt-pf-screen' };
     return { cls: '', top: 32, bottom: 20, side: 15, header: '.ph', footer: '.pf' };
   }
