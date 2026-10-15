@@ -189,6 +189,30 @@ export default {
   },
 
   async fetch(req, env, ctx) {
+    return withSecurityHeaders(await handle(req, env, ctx));
+  },
+};
+
+// Security headers on every response (pages, files and API). The policy matches what the pages really load: their own scripts and
+// styles (several pages have small inline scripts and styles), their own images/fonts, and calls to this site only.
+const CSP = [
+  "default-src 'self'", "script-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:",
+  "font-src 'self' data:", "connect-src 'self'", "media-src 'self' blob: data:", "object-src 'none'", "base-uri 'self'",
+  "form-action 'self'", "frame-ancestors 'self'",
+].join('; ');
+function withSecurityHeaders(res) {
+  const h = new Headers(res.headers);
+  h.set('X-Content-Type-Options', 'nosniff');
+  h.set('X-Frame-Options', 'SAMEORIGIN');
+  h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  h.set('Strict-Transport-Security', 'max-age=31536000');
+  h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  if ((h.get('Content-Type') || '').includes('text/html')) h.set('Content-Security-Policy', CSP);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
+
+async function handle(req, env, ctx) {
+  {
     const url = new URL(req.url);
 
     if (req.method === 'OPTIONS' && (url.pathname.startsWith('/api/live/') || url.pathname === '/api/game/bank')) {
@@ -213,5 +237,5 @@ export default {
     }
 
     return env.ASSETS.fetch(req);
-  },
-};
+  }
+}

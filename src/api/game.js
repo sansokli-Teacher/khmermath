@@ -10,7 +10,7 @@ import { audit } from '../lib/audit.js';
 import { mergeBank, cleanEdit, baseKey } from '../lib/gamebank.js';
 
 let tableReady = false;
-async function ensureTable(env) {
+export async function ensureTable(env) {
   if (tableReady) return;
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_edits (

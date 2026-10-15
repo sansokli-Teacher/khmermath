@@ -6,6 +6,8 @@
 // For rolling the *whole* database back in time, see RESTORE.md (D1 Time Travel).
 import { ensureColumns } from './schema.js';
 import { runBackup } from './backup.js';
+import { ensureTables as ensureLiveTables } from '../api/live.js';
+import { ensureTable as ensureGameTable } from '../api/game.js';
 
 // [table, primary key columns, [[fk column, parent table, parent column]]] — parents first.
 const PLAN = [
@@ -24,6 +26,11 @@ const PLAN = [
   ['exam_events', ['id'], []],
   ['session_notes', ['id'], []],
   ['shares', ['id'], []],
+  ['game_edits', ['lesson', 'idx'], []],
+  ['live_rooms', ['code'], []],
+  ['live_qs', ['code', 'qi'], [['code', 'live_rooms', 'code']]],
+  ['live_players', ['code', 'pid'], [['code', 'live_rooms', 'code']]],
+  ['live_answers', ['code', 'qi', 'pid'], [['code', 'live_rooms', 'code']]],
 ];
 
 export async function gunzipJson(bytes) {
@@ -56,7 +63,7 @@ async function livePks(env, name, pk) {
 
 // What would a restore do? Nothing is written.
 export async function planRestore(env, backup) {
-  await ensureColumns(env);
+  await ensureColumns(env); await ensureGameTable(env); await ensureLiveTables(env);
   const ids = {};                                        // parent id sets: live ∪ backup
   for (const [name, pk] of PLAN) {
     ids[name] = await livePks(env, name, pk);
@@ -78,7 +85,7 @@ export async function planRestore(env, backup) {
 }
 
 export async function applyRestore(env, backup, { backupFirst = true } = {}) {
-  await ensureColumns(env);
+  await ensureColumns(env); await ensureGameTable(env); await ensureLiveTables(env);
   if (backupFirst) await runBackup(env, { reason: 'before-restore' });
   const ids = {};
   for (const [name, pk] of PLAN) {

@@ -12,7 +12,7 @@ import { allow, clientIp } from '../lib/limits.js';
 import { classify, isCorrect, points, newCode } from '../lib/livequiz.js';
 
 let ready = false;
-async function ensureTables(env) {
+export async function ensureTables(env) {
   if (ready) return;
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS live_rooms (code TEXT PRIMARY KEY, owner_id INTEGER, title TEXT, secs INTEGER NOT NULL, phase TEXT NOT NULL DEFAULT 'lobby',

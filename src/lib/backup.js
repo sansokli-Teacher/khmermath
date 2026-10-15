@@ -10,6 +10,10 @@ const TABLES = [
   ['results', '*'], ['responses', '*'], ['writing_marks', '*'], ['assessments', '*'], ['manual_scores', '*'],
   ['session_questions', '*'], ['exam_events', '*'], ['session_notes', '*'], ['shares', '*'], ['question_notes', '*'], ['license_codes', '*'],
 ];
+// Added later: question fixes (small, always kept) and the live-quiz history + homework scores (only in the full file: the
+// slim copy kept in the database must stay under D1's row limit).
+const GAME_TABLES = [['game_edits', '*']];
+const LIVE_TABLES = [['live_rooms', '*'], ['live_qs', '*'], ['live_players', '*'], ['live_answers', '*']];
 const SECRET_SETTINGS = ['telegram_token', 'student_pin_hash'];
 
 async function gzip(text) {
@@ -25,7 +29,7 @@ function toBase64(bytes) {
 export async function buildBackup(env, { withImages }) {
   await ensureColumns(env);
   const out = { exported_at: new Date().toISOString(), app: 'exam.khmermath.org', tables: {} };
-  for (const [name, cols] of TABLES) {
+  for (const [name, cols] of [...TABLES, ...GAME_TABLES, ...(withImages ? LIVE_TABLES : [])]) {
     try { out.tables[name] = (await env.DB.prepare(`SELECT ${cols} FROM ${name}`).all()).results; } catch { out.tables[name] = []; }
   }
   const settings = (await env.DB.prepare('SELECT key, value FROM settings').all()).results;

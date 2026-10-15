@@ -124,3 +124,24 @@ test('a classroom shares one IP, but guessing room codes is limited', async () =
   for (let i = 0; i < 45; i++) calls.push((await join(env, '000000')).status);
   assert.ok(calls.includes(429)); assert.equal(calls[0], 404);
 });
+
+test('backup + restore bring back live-quiz history and question fixes', async () => {
+  const { buildBackup } = await import('../src/lib/backup.js');
+  const { planRestore, applyRestore } = await import('../src/lib/restore.js');
+  const env = await setup();
+  const { d: room } = await create(env, { mode: 'solo' });
+  await join(env, room.code, 'Ann');
+  env.raw.exec(`INSERT INTO game_edits (lesson, idx, bq, data, off) VALUES (1, 0, 'x', '{"q":"fixed"}', 0)`);
+  const full = await buildBackup(env, { withImages: true }), slim = await buildBackup(env, { withImages: false });
+  assert.equal(full.tables.live_rooms.length, 1); assert.equal(full.tables.live_players.length, 1); assert.equal(full.tables.live_qs.length, 5);
+  assert.equal(full.tables.game_edits.length, 1);
+  assert.equal(slim.tables.live_rooms, undefined);                       // the slim copy stays small
+  assert.equal(slim.tables.game_edits.length, 1);
+  env.raw.exec('DELETE FROM live_players; DELETE FROM live_qs; DELETE FROM live_rooms; DELETE FROM game_edits');
+  const plan = await planRestore(env, full);
+  assert.equal(plan.tables.find((t) => t.table === 'live_rooms').missing, 1);
+  await applyRestore(env, full, { backupFirst: false });
+  assert.equal(env.raw.prepare('SELECT COUNT(*) n FROM live_rooms').get().n, 1);
+  assert.equal(env.raw.prepare('SELECT COUNT(*) n FROM live_players').get().n, 1);
+  assert.equal(env.raw.prepare('SELECT COUNT(*) n FROM game_edits').get().n, 1);
+});
