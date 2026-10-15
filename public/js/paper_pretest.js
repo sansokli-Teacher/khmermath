@@ -119,7 +119,7 @@
       if (mcq.length) {
         kids.push(h('div', { class: 'pt-break' }));
         const optCount = Math.min(5, Math.max(4, ...mcq.map((q) => q.options.length)));
-        kids.push(window.OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped: !!(o.group && mcq.some((q) => q.level)), letters: 'latin', title: test.title, subtitle: `សន្លឹកចម្លើយ OMR${profile.school ? ' · ' + profile.school : ''}` }));
+        kids.push(window.OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped: !!(o.group && mcq.some((q) => q.level)), letters: 'latin', title: test.title, subtitle: 'សន្លឹកចម្លើយ OMR' }));
       }
       if (writing.length) {
         kids.push(h('div', { class: 'pt-break' }));

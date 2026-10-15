@@ -68,7 +68,7 @@
     kids.push(abs('omr-fld', 92, 20, 40, 6, '', null, 'ថ្នាក់៖'));
     kids.push(abs('omr-fld', 136, 20, 30, 6, '', null, 'កាលបរិច្ឆេទ៖'));
     // student id
-    kids.push(abs('omr-cap', 8, 28.5, 90, 5, '', null, 'លេខសម្គាល់សិស្ស (សរសេរ រួចគូសរង្វង់)'));
+    kids.push(abs('omr-cap', 8, 28.5, 90, 5, '', null, 'អត្តលេខ (សរសេរ រួចគូសរង្វង់)'));
     for (let c = 0; c < L.idDigits; c++) kids.push(abs('omr-write', ID_X0 + c * ID_COL_PITCH - 2.7, 34.5, 5.4, 7));
     for (let d = 0; d < 10; d++) kids.push(abs('omr-dl', ID_X0 - 8.5, ID_Y0 + d * ID_PITCH - 2, 5, 4, '', null, String(d)));
     L.id.forEach((col) => col.forEach(([x, y]) => kids.push(abs('omr-bub', x - R_BUB, y - R_BUB, 2 * R_BUB, 2 * R_BUB))));

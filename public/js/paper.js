@@ -109,7 +109,7 @@ function examDoc(o) {
   }
   if (o.omr && mcq.length) {
     kids.push(h('div', { class: 'pt-break' }));
-    kids.push(OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped, letters: 'khmer', title: test.title, subtitle: `សន្លឹកចម្លើយ OMR${profile.school ? ' · ' + profile.school : ''}` }));
+    kids.push(OMR.sheetEl(h, { nQ: mcq.length, optCount, idDigits: o.idDigits, testId: test.id, grouped, letters: 'khmer', title: test.title, subtitle: 'សន្លឹកចម្លើយ OMR' }));
   }
   if (o.omr && writing.length) {
     kids.push(h('div', { class: 'pt-break' }));
