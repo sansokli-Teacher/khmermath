@@ -56,7 +56,7 @@ let clockSkew = 0;
 const now = () => Date.now() + clockSkew;
 const syncClock = (serverNow) => { if (serverNow) clockSkew = serverNow - Date.now(); };
 
-const views = ['login', 'home', 'wait', 'offline', 'test', 'reader'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
+const views = ['login', 'home', 'wait', 'offline', 'test', 'reader', 'construct'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
 function showView(name) {
   for (const [n, el] of Object.entries(views)) el.hidden = n !== name;
   window.scrollTo(0, 0);
@@ -191,8 +191,9 @@ function gameCard(studentName) {
 }
 
 // ---------- in-page reader: lessons, formulas and PISA practice stay inside this page ----------
-let readerUrl = null, readerTimer = null;
+let readerUrl = null, readerTimer = null, readerFrom = 'home', ignorePop = false;
 function openReader(url, title) {
+  readerFrom = views.construct.hidden ? 'home' : 'construct';
   const frame = document.getElementById('rd-frame'), loading = document.getElementById('rd-loading');
   readerUrl = url;
   document.getElementById('rd-title').textContent = title;
@@ -208,12 +209,54 @@ function closeReader(fromPop) {
   if (views.reader.hidden) return;
   clearTimeout(readerTimer);
   document.getElementById('rd-frame').src = 'about:blank';
+  showView(readerFrom);
+  if (!fromPop) { try { if (history.state && history.state.reader) { ignorePop = true; history.back(); } } catch { /* ignore */ } }
+}
+function closeConstruct(fromPop) {
+  if (views.construct.hidden) return;
   showView('home');
-  if (!fromPop) { try { if (history.state && history.state.reader) history.back(); } catch { /* ignore */ } }
+  if (!fromPop) { try { if (history.state && history.state.ctor) { ignorePop = true; history.back(); } } catch { /* ignore */ } }
 }
 document.getElementById('rd-close').addEventListener('click', () => closeReader(false));
 document.getElementById('rd-reload').addEventListener('click', () => { if (readerUrl) { const l = document.getElementById('rd-loading'); l.hidden = false; l.textContent = 'កំពុងបើក…'; document.getElementById('rd-frame').src = readerUrl; } });
-window.addEventListener('popstate', () => closeReader(true));
+window.addEventListener('popstate', () => {
+  if (ignorePop) { ignorePop = false; return; }
+  if (!views.reader.hidden) closeReader(true); else if (!views.construct.hidden) closeConstruct(true);
+});
+document.getElementById('ct-close').addEventListener('click', () => closeConstruct(false));
+
+// ---------- geometric constructions by class lesson ----------
+let ctorIndex = null;
+async function openConstruct(grade) {
+  const body = document.getElementById('ct-body');
+  document.getElementById('ct-title').textContent = `សំណង់ធរណីមាត្រ ថ្នាក់ទី ${khd(grade)}`;
+  body.innerHTML = '';
+  body.append(h('div', { class: 'ct-wait' }, 'កំពុងផ្ទុក…'));
+  showView('construct');
+  try { history.pushState({ ctor: 1 }, ''); } catch { /* ignore */ }
+  try { if (!ctorIndex) ctorIndex = await (await fetch('data/construct_index.json')).json(); } catch { body.innerHTML = ''; body.append(h('div', { class: 'empty-card' }, 'មិនអាចផ្ទុកបញ្ជីសំណង់បានទេ — សូមពិនិត្យអ៊ីនធឺណិត។')); return; }
+  const bank = await loadGameBank();
+  const titleOf = (l) => { const L = bank && bank.lessons ? bank.lessons.find((x) => (x.g || 7) === grade && (x.d || (x.n % 100)) === l) : null; return L && L.title ? L.title : ''; };
+  const open = (it) => openReader(ctorIndex.base + it.f, it.t);
+  const row = (it) => h('button', { type: 'button', class: 'ct-item', onclick: () => open(it) }, [h('span', { class: 'ct-t' }, it.t), h('span', { class: 'ct-go', 'aria-hidden': 'true' }, '→')]);
+  const lessons = (ctorIndex.lessons || {})[String(grade)] || {};
+  body.innerHTML = '';
+  body.append(h('p', { class: 'muted', style: 'margin:0 0 14px;' }, 'ជ្រើសមេរៀន រួចចុចលើរូបដែលចង់មើល — មានរូបចលនាបង្ហាញជំហាននីមួយៗនៃការគូរដោយឧបករណ៍។'));
+  const keys = Object.keys(lessons);
+  if (!keys.length) body.append(h('div', { class: 'empty-card' }, 'មិនទាន់មានសំណង់សម្រាប់មេរៀនថ្នាក់នេះទេ។'));
+  keys.forEach((k, i) => {
+    const list = lessons[k], t = titleOf(Number(k));
+    body.append(h('details', { class: 'ct-lesson', open: keys.length <= 2 || i === 0 ? 'open' : null }, [
+      h('summary', {}, [h('b', {}, `មេរៀនទី ${khd(k)}`), t ? h('span', { class: 'ct-lt' }, ` · ${t}`) : null, h('span', { class: 'ct-n' }, `${khd(list.length)} រូប`)]),
+      h('div', { class: 'ct-list' }, list.map(row)),
+    ]));
+  });
+  const gen = ctorIndex.general || [];
+  if (gen.length) body.append(h('details', { class: 'ct-lesson ct-gen' }, [
+    h('summary', {}, [h('b', {}, 'ឧបករណ៍ និងសំណង់ទូទៅ'), h('span', { class: 'ct-n' }, `${khd(gen.length)} រូប`)]),
+    h('div', { class: 'ct-list' }, gen.map(row)),
+  ]));
+}
 
 // ---------- learning + games hub (by the student's grade) ----------
 const SITE = 'https://khmermath.org';
@@ -305,6 +348,7 @@ function hubSection(data) {
       ? tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'មេរៀនគ្រប់ជំពូក មានឧទាហរណ៍ លំហាត់គំរូ និងលំហាត់ប្រតិបត្តិ។', [link(`${SITE}/lesson/g${g}/`, 'បើកមេរៀន →', `មេរៀនថ្នាក់ទី ${khd(g)}`)], 'blue')
       : tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'កំពុងរៀបចំ — នឹងមកដល់ឆាប់ៗ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'blue soon'),
     tile('📐', `រូបមន្តថ្នាក់ទី ${khd(g)}`, 'សៀវភៅរូបមន្តសង្ខេប ងាយស្រួលរកមើល និងចងចាំ។', [link(`${SITE}/formular/g${g}/`, 'បើករូបមន្ត →', `រូបមន្តថ្នាក់ទី ${khd(g)}`)], 'teal'),
+    hasGames ? tile('📏', `សំណង់ធរណីមាត្រ ថ្នាក់ទី ${khd(g)}`, 'មើលរូបចលនាបង្ហាញរបៀបគូស តាមមេរៀននីមួយៗ ដោយប្រើបន្ទាត់ ដែកឈាន និងរ៉ាប័រទ័រ។', [h('button', { type: 'button', class: 'btn', onclick: () => openConstruct(g) }, 'មើលសំណង់ →')], 'rose') : null,
     tile('🌏', 'PISA TEST (MoEYS)', 'ប្រធានបទតេស្តគំរូ PISA ៣៨ ពីក្រសួងអប់រំ — សម្រាប់គ្រប់ថ្នាក់។', [link(`${CBA}/?nocert=1#moeys`, 'ចាប់ផ្ដើមហាត់ →', 'PISA TEST (MoEYS)')], 'amber'),
     tile('🧠', `PISA ថ្នាក់ទី ${khd(g)}`, 'លំហាត់ PISA តាមថ្នាក់របស់អ្នក — កំពុងរៀបចំ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'violet soon'),
   ]));
