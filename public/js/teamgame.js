@@ -676,6 +676,8 @@
       var ls = ((BANK && BANK.lessons) || []).filter(function (L) { return (L.g || 7) === grade; });
       if (!ls.length) { load.textContent = 'មិនទាន់មានសំណួរហ្គេមសម្រាប់ថ្នាក់ទី ' + khNum(grade) + ' ទេ — សូមសួរលោកគ្រូអ្នកគ្រូ។'; return; }
       mode = 'lesson'; applyMode(); curClass = grade; $('tg-class').value = String(grade); selLessons = ls.map(function (L) { return L.n; });
+      var want = (q.get('l') || '').split(',').map(function (x) { return parseInt(x, 10); }).filter(function (x) { return x > 0; });
+      if (want.length) { var chosen = selLessons.filter(function (n) { return want.indexOf(n) >= 0; }); if (chosen.length) selLessons = chosen; }   // the lessons the student ticked
       setQn(qn); $('tg-style').value = style; $('tg-nteams').value = String(players.length); teamNames = players.slice(); teamMembers = [];
       if ($('tg-noteam')) $('tg-noteam').checked = false;
       $('tg-special').checked = players.length > 1;

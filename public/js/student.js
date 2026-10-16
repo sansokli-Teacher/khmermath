@@ -200,9 +200,20 @@ const GAMES = [
 ];
 const khd = (n) => String(n).replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
 
+let gameBank = null;                       // lessons of the game question bank, loaded once
+async function loadGameBank() {
+  if (gameBank) return gameBank;
+  try { const r = await fetch('/api/game/bank', { cache: 'no-cache' }); if (r.ok) gameBank = await r.json(); } catch { /* the chooser just stays hidden */ }
+  if (!gameBank || !gameBank.lessons) { try { const r = await fetch('data/teamgame_g7.json'); if (r.ok) gameBank = await r.json(); } catch { /* ignore */ } }
+  return gameBank;
+}
+
 function openGame(g, grade, myName) {
   document.querySelectorAll('.gm-back').forEach((e) => e.remove());
   let who = 'solo', count = 2, qn = 10;
+  let lessons = [];                          // lessons of this grade, filled in when the bank arrives
+  const picked = new Set();                  // empty = every lesson
+  const lessonBox = h('div', { class: 'gm-lessons', hidden: true });
   const names = ['ខ្ញុំ', 'មិត្តទី ១', 'មិត្តទី ២', 'មិត្តទី ៣'];
   const body = h('div', { class: 'gm-body' });
   const draw = () => {
@@ -220,12 +231,29 @@ function openGame(g, grade, myName) {
         h('p', { class: 'muted', style: 'margin:6px 0 0;font-size:13px;' }, 'ប្តូរវេនគ្នាឆ្លើយ — ប្រើទូរស័ព្ទ ឬកុំព្យូទ័រតែមួយជាមួយគ្នា។'),
       );
     }
+    body.append(lessonBox);
     body.append(h('div', { class: 'gm-row' }, [h('span', {}, 'ចំនួនសំណួរ'), h('div', { class: 'gm-chips' }, [5, 10, 20].map((n) => h('button', { type: 'button', class: qn === n ? 'on' : '', onclick: () => { qn = n; draw(); } }, khd(n))))]));
   };
   draw();
+  const drawLessons = () => {
+    lessonBox.innerHTML = '';
+    if (!lessons.length) { lessonBox.hidden = true; return; }
+    lessonBox.hidden = false;
+    const all = picked.size === 0;
+    const total = lessons.filter((L) => all || picked.has(L.n)).reduce((t, L) => t + (L.qs ? L.qs.length : 0), 0);
+    lessonBox.append(
+      h('div', { class: 'gm-row', style: 'margin-bottom:4px;' }, [h('span', {}, 'មេរៀនដែលចង់លេង'), h('span', { class: 'muted', style: 'font-size:13px;font-weight:500;' }, `${all ? 'គ្រប់មេរៀន' : `បានជ្រើស ${khd(picked.size)} មេរៀន`} · ${khd(total)} សំណួរ`)]),
+      h('div', { class: 'gm-chips wrap' }, [
+        h('button', { type: 'button', class: all ? 'on' : '', onclick: () => { picked.clear(); drawLessons(); } }, 'ទាំងអស់'),
+        ...lessons.map((L) => h('button', { type: 'button', class: picked.has(L.n) ? 'on' : '', title: L.title || '', onclick: () => { if (picked.has(L.n)) picked.delete(L.n); else picked.add(L.n); drawLessons(); } }, [`មេរៀនទី ${khd(L.d || L.n)}`, L.title ? h('small', {}, L.title) : null])),
+      ]),
+    );
+  };
+  loadGameBank().then((bank) => { if (!bank || !bank.lessons) return; lessons = bank.lessons.filter((L) => (L.g || 7) === grade && L.qs && L.qs.length); drawLessons(); });
   const go = () => {
     const players = who === 'solo' ? [myName || 'ខ្ញុំ'] : names.slice(0, count).map((x, i) => (x || '').trim() || (i ? `មិត្តទី ${khd(i)}` : 'ខ្ញុំ'));
-    location.href = `teamgame.html?student=1&style=${g.style}&grade=${grade}&n=${qn}&p=${encodeURIComponent(players.join('|'))}`;
+    const l = picked.size && picked.size < lessons.length ? `&l=${[...picked].join(',')}` : '';
+    location.href = `teamgame.html?student=1&style=${g.style}&grade=${grade}&n=${qn}${l}&p=${encodeURIComponent(players.join('|'))}`;
   };
   const back = h('div', { class: 'modal-back gm-back', onclick: (e) => { if (e.target === back) back.remove(); } }, [
     h('div', { class: 'modal-box gm-box', role: 'dialog', 'aria-modal': 'true' }, [
