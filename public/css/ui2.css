@@ -454,4 +454,24 @@
   .ct-t { flex: 1; min-width: 0; }
   .ct-go { color: var(--brand); font-weight: 800; }
   .ct-gen { border-style: dashed; }
+
+  /* exercise-book download panel (question bank) */
+  .ex-lhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .ex-lhead .on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .ex-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; max-height: 260px; overflow: auto; padding: 4px; margin-top: 6px; border: 1px solid var(--line); border-radius: 14px; background: #faf7f0; }
+  .ex-l { display: flex; align-items: center; gap: 8px; text-align: left; min-height: 44px; padding: 6px 10px; border-radius: 12px; background: #fff; color: var(--ink); border: 1.5px solid var(--line); box-shadow: none; font-weight: 500; font-size: 13.5px; line-height: 1.35; }
+  .ex-l b { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: #efeae0; font-size: 13px; }
+  .ex-l .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .ex-l small { flex: none; color: var(--muted); font-size: 11.5px; }
+  .ex-l.on { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-dark); }
+  .ex-l.on b { background: var(--brand); color: #fff; }
+  .ex-l.empty { opacity: .45; }
+  .ex-l:hover { box-shadow: none; border-color: #b2c3ee; }
+  .ex-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ex-chips button { box-shadow: none; background: #fff; color: #4a5872; border: 1.5px solid var(--line); min-height: 40px; border-radius: 99px; padding: 6px 16px; font-size: 14px; }
+  .ex-chips button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .ex-chk { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--ink); }
+  .ex-sum { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--brand-soft); color: var(--brand-dark); line-height: 1.7; }
+  .ex-sum.none { background: #fdeceb; color: #8f1d1d; }
+  .ex-actions { justify-content: flex-end; margin-top: 16px; gap: 8px; }
 }

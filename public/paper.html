@@ -18,7 +18,7 @@
 <aside class="paper-side no-print" id="toolbar">
   <div class="side-head">
     <a href="teacher.html" class="side-back">← ត្រឡប់</a>
-    <div class="side-title">ចេញវិញ្ញាសា</div>
+    <div class="side-title" id="side-title">ចេញវិញ្ញាសា</div>
   </div>
   <div class="side-actions">
     <button id="pdf-btn" class="act-main">⬇ ទាញយក PDF</button>
@@ -27,7 +27,7 @@
   </div>
   <details class="side-opts" id="side-opts" open>
     <summary>⚙ ជម្រើសវិញ្ញាសា</summary>
-    <section>
+    <section id="sec-format">
       <h3>ទម្រង់</h3>
       <select id="opt-tpl">
         <option value="exam">ទម្រង់ ១ — ប្រឡងសញ្ញាបត្រ (NGS)</option>
@@ -35,7 +35,7 @@
       </select>
       <input type="text" id="opt-sub" placeholder="ចំណងជើងរង (ទម្រង់ ២)">
     </section>
-    <section>
+    <section id="sec-time">
       <h3>ពេលវេលា</h3>
       <div class="two-col">
         <label class="fld"><span>រយៈពេល (នាទី)</span><input type="number" id="opt-min" value="70"></label>
@@ -46,6 +46,7 @@
       <h3>មាតិកា</h3>
       <label class="sw"><input type="checkbox" id="opt-key"><span>បង្ហាញជាសន្លឹកចម្លើយ <small>អត្រាកំណែ — សម្រាប់គ្រូ</small></span></label>
       <label class="sw"><input type="checkbox" id="opt-space" checked><span>ទុកចន្លោះសរសេរចម្លើយ</span></label>
+      <label class="sw" id="lbl-newpage" hidden><input type="checkbox" id="opt-newpage"><span>ចាប់ផ្តើមមេរៀននីមួយៗលើទំព័រថ្មី</span></label>
       <label class="sw" id="lbl-omr"><input type="checkbox" id="opt-omr" checked><span>សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</span></label>
       <label class="fld" id="lbl-iddigits"><span>ចំនួនខ្ទង់លេខសម្គាល់សិស្ស (សម្រាប់ស្កេន OMR)</span><input type="number" id="opt-iddigits" value="7" min="1" max="12"></label>
       <label class="sw" id="lbl-group"><input type="checkbox" id="opt-group"><span>ដាក់ជាក្រុមតាមកម្រិត</span></label>

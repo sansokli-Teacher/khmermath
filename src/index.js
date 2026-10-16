@@ -98,6 +98,7 @@ const ROUTES = [
   ['POST', '/api/tests/:testId/questions/copy', tests.copyQuestions],
   ['POST', '/api/tests/:testId/questions/bulk', tests.bulkAdd],
   ['GET', '/api/bank', tests.listBank],
+  ['GET', '/api/bank/export', tests.exportBank],
   ['POST', '/api/bank/generate', tests.generateTest],
   ['GET', '/api/bank/home', tests.bankHome],
   ['GET', '/api/curriculum', tests.getCurriculum],

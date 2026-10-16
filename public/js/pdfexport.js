@@ -3,7 +3,7 @@
    browser, so it uses the fonts installed on this computer (Khmer OS Battambang, Khmer M1, Mathcad UniMath). */
 (function () {
   const MM = 96 / 25.4;
-  const KEEP_NEXT = /(^|\s)(p-part|p-lvl|pt-sec|pt-lvl|pt-note|ptk-h|ptk-banner|pt-title|ans-title|ptk-title)(\s|$)/;
+  const KEEP_NEXT = /(^|\s)(p-part|p-lvl|p-lesson|p-sub|pt-sec|pt-lvl|pt-note|ptk-h|ptk-banner|pt-title|ans-title|ptk-title)(\s|$)/;
   const SPLIT = /(^|\s)(ans-cols|ptk-cols)(\s|$)/;
   const KH = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
   const kh = (n) => String(n).replace(/\d/g, (d) => KH[d]);
@@ -93,12 +93,14 @@
       await new Promise((r) => setTimeout(r, 150));   // let images / fonts settle
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      const big = pages.length > 60;                               // a whole book: lighter pages so the file and the memory stay reasonable
       for (let i = 0; i < pages.length; i++) {
         if (onProgress) onProgress(i + 1, pages.length);
-        const canvas = await window.html2canvas(pages[i], { scale: 2.2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: Math.ceil(210 * MM) + 20 });
+        const canvas = await window.html2canvas(pages[i], { scale: big ? 1.7 : 2.2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: Math.ceil(210 * MM) + 20 });
         if (i) pdf.addPage('a4', 'portrait');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+        pdf.addImage(canvas.toDataURL('image/jpeg', big ? 0.82 : 0.92), 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
         canvas.width = canvas.height = 0;
+        pages[i].remove();                                         // free the page we just drew
         await new Promise((r) => setTimeout(r, 0));
       }
       const name = String(title || 'វិញ្ញាសា').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 80) || 'exam';

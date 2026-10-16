@@ -128,6 +128,35 @@
 
     if (!answers) {
       // ----- exam paper -----
+      if (test.bank) {
+        // ----- exercise book from the question bank: lesson by lesson, numbering restarts in each lesson -----
+        body.push(P(test.title, { b: 1, sz: 34 }, { align: 'center', before: 80, after: 20 }).replace(`w:cs="${FONT_KH}"`, `w:cs="${FT.title}"`));
+        if (test.subtitle) body.push(P(test.subtitle, { sz: 24 }, { align: 'center', after: 120 }));
+        test.groups.forEach((gr, gi) => {
+          const gm = gr.questions.filter((q) => q.kind !== 'writing'), gw = gr.questions.filter((q) => q.kind === 'writing');
+          body.push(para(run(`${gr.idx ? `មេរៀនទី ${kh(gr.idx)}` : 'មេរៀន'}  ·  ${gr.name}`, { b: 1, sz: 28 }) + run(`   (${kh(gr.questions.length)} សំណួរ)`, { sz: 22 }), { shade: 'E4E4E4', box: 0, before: gi && opts.newpage ? 0 : 240, after: 100, keep: 1, pageBreak: gi && opts.newpage }));
+          if (gm.length) {
+            body.push(para(run(`ក · ពហុជ្រើសរើស (${kh(gm.length)} សំណួរ)`, { b: 1, sz: 24 }), { underline: true, before: 60, after: 80, keep: 1 }));
+            gm.forEach((q, i) => {
+              body.push(para(run(`${kh(i + 1)}.\t`, { b: 1 }) + run(q.stem_text), { left: 567, hanging: 567, tabs: [567], before: 60, after: 40, keep: 1 }));
+              if (q.image_key) body.push(pic(q.image_key));
+              const short = q.options.every((o) => o.length <= 14);
+              if (short) body.push(para(q.options.map((o, j) => (j ? tab() : '') + run(`${LET[j]}. `, { b: 1 }) + run(o)).join(''), { left: 567, tabs: [2400, 4200, 6000, 7800], after: 100 }));
+              else { q.options.forEach((o, j) => body.push(para(run(`${LET[j]}. `, { b: 1 }) + run(o), { left: 1134, hanging: 567, after: 20 }))); body.push(P('', {}, { after: 60 })); }
+            });
+          }
+          if (gw.length) {
+            body.push(para(run(`ខ · សរសេរ (${kh(gw.length)} សំណួរ)`, { b: 1, sz: 24 }), { underline: true, before: 120, after: 80, keep: 1 }));
+            gw.forEach((q, i) => {
+              const { intro, subs } = splitWriting(q.stem_text);
+              body.push(para(run(`${ROMAN[i] || i + 1}.`, { b: 1 }) + tab() + run(`(${kh(q.points)}ពិន្ទុ)`, { b: 1 }) + tab() + run(intro || (subs.length ? '' : q.stem_text)), { left: 1871, hanging: 1871, tabs: [680, 1871], before: 100, after: 30, keep: 1 }));
+              subs.forEach((sq) => body.push(para(run(`${sq.l}.`) + tab() + run(sq.t), { left: 2381, hanging: 510, tabs: [2381], after: 20 })));
+              if (q.image_key) body.push(pic(q.image_key));
+              if (opts.space) for (let n = 0; n < Math.min(12, Math.max(3, Math.round(q.points / 1.5))); n++) body.push(P('', {}, { after: 160 }));
+            });
+          }
+        });
+      } else {
       body.push(P(test.title, { b: 1, sz: 34 }, { align: 'center', before: 80, after: 20 }).replace(`w:cs="${FONT_KH}"`, `w:cs="${FT.title}"`));
       if (opts.date) body.push(para(runF(FT.title, `សម័យប្រឡង ${opts.date}`, { b: 1, sz: 30 }), { align: 'center', after: 20 }));
       body.push(para(runF(FT.title, `វិញ្ញាសា ${prof.subject || 'គណិតវិទ្យា'}`, { b: 1, sz: 30 }), { align: 'center', after: 60 }));
@@ -156,6 +185,7 @@
           if (opts.space !== false) for (let n = 0; n < Math.min(12, Math.max(3, Math.round(q.points / 1.5))); n++) body.push(P('', {}, { after: 160 }));
         });
       }
+      }
       // header (logo + school | website, facebook) and footer (teacher | email | telegram | tel), as in the template
       const hRight = [prof.website && `Website: ${prof.website}`, prof.facebook && `Facebook: ${prof.facebook}`].filter(Boolean);
       const leftCell = (logo ? para(image(logo.rid, 468000, 468000, 900) + runF(FT.head, `  ${prof.school || ''}`, { sz: 25 }), { after: 0 }) : para(runF(FT.head, prof.school || '', { sz: 25 }), { after: 0 }));
@@ -173,21 +203,43 @@
       body.push(para(runF(FT.title, `វិញ្ញាសា៖ ${prof.subject || 'គណិតវិទ្យា'}`, { b: 1, sz: 30 }), { align: 'center', after: 0 }));
       // the last paragraph of the one-column part carries the section break (the rest of the sheet is two columns)
       body.push(P(test.title, { sz: 22 }, { align: 'center', after: 120 }).replace('</w:pPr>', `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/>${PAGE}<w:pgMar w:top="1020" w:right="794" w:bottom="1000" w:left="794" w:header="454" w:footer="400" w:gutter="0"/></w:sectPr></w:pPr>`));
-      if (mcq.length) {
-        body.push(para(run(`ផ្នែក ក · ពហុជ្រើសរើស (${kh(mcqPts)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 60, after: 40, keep: 1 }));
-        const rows = []; const per = 5;
-        for (let i = 0; i < mcq.length; i += per) rows.push(mcq.slice(i, i + per).map((q, k) => cell(P(`${kh(i + k + 1)}. ${LET[q.correct_index]}${q.alt_correct_index != null ? `/${LET[q.alt_correct_index]}` : ''}`, { b: 1, sz: 22 }, { align: 'center', after: 0 }), 950, { border: 1 })).join(''));
-        body.push(table(rows, { border: 1, width: 4750, grid: Array(per).fill(950) }));
-        body.push(P('', {}, { after: 80 }));
-      }
-      writing.forEach((q, i) => {
-        body.push(para(run(`លំហាត់ទី${kh(i + 1)} (${kh(q.points)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 100, after: 30, keep: 1 }));
-        String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').forEach((ln) => {
-          if (/^\s*ដូចនេះ/.test(ln)) { body.push(para(run(ln.trim(), { sz: 22 }), { box: 1, align: 'center', before: 40, after: 80 })); return; }
-          const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
-          body.push(para((m ? run(`${m[1]}. `, { b: 1, sz: 22 }) : '') + run(m ? m[2] : ln, { sz: 22 }), { after: 40 }));
+      if (test.bank) {
+        test.groups.forEach((gr, gi) => {
+          const gm = gr.questions.filter((q) => q.kind !== 'writing'), gw = gr.questions.filter((q) => q.kind === 'writing');
+          body.push(para(run(`${gr.idx ? `មេរៀនទី ${kh(gr.idx)}` : 'មេរៀន'}  ·  ${gr.name}`, { b: 1, sz: 26 }), { shade: 'E4E4E4', before: 160, after: 80, keep: 1, pageBreak: gi && opts.newpage }));
+          if (gm.length) {
+            body.push(para(run(`ក · ចម្លើយពហុជ្រើសរើស (${kh(gm.length)} សំណួរ)`, { b: 1, sz: 24 }), { before: 40, after: 40, keep: 1 }));
+            const rows = []; const per = 5;
+            for (let i2 = 0; i2 < gm.length; i2 += per) rows.push(gm.slice(i2, i2 + per).map((q, k) => cell(P(`${kh(i2 + k + 1)}. ${q.correct_index != null ? LET[q.correct_index] : '—'}${q.alt_correct_index != null ? `/${LET[q.alt_correct_index]}` : ''}`, { b: 1, sz: 22 }, { align: 'center', after: 20 }), 950)).join(''));
+            body.push(table(rows, { border: 1, width: 4750, grid: Array(per).fill(950) }));
+            body.push(P('', {}, { after: 60 }));
+          }
+          gw.forEach((q, i2) => {
+            body.push(para(run(`លំហាត់ទី${kh(i2 + 1)} (${kh(q.points)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 100, after: 30, keep: 1 }));
+            String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').forEach((ln) => {
+              if (/^\s*ដូចនេះ/.test(ln)) { body.push(para(run(ln.trim(), { sz: 22 }), { box: 1, align: 'center', before: 40, after: 80 })); return; }
+              const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+              body.push(para((m ? run(`${m[1]}. `, { b: 1, sz: 22 }) : '') + run(m ? m[2] : ln, { sz: 22 }), { after: 40 }));
+            });
+          });
         });
-      });
+      } else {
+      if (mcq.length) {
+          body.push(para(run(`ផ្នែក ក · ពហុជ្រើសរើស (${kh(mcqPts)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 60, after: 40, keep: 1 }));
+          const rows = []; const per = 5;
+          for (let i = 0; i < mcq.length; i += per) rows.push(mcq.slice(i, i + per).map((q, k) => cell(P(`${kh(i + k + 1)}. ${LET[q.correct_index]}${q.alt_correct_index != null ? `/${LET[q.alt_correct_index]}` : ''}`, { b: 1, sz: 22 }, { align: 'center', after: 0 }), 950, { border: 1 })).join(''));
+          body.push(table(rows, { border: 1, width: 4750, grid: Array(per).fill(950) }));
+          body.push(P('', {}, { after: 80 }));
+        }
+        writing.forEach((q, i) => {
+          body.push(para(run(`លំហាត់ទី${kh(i + 1)} (${kh(q.points)}ពិន្ទុ)`, { b: 1, sz: 24 }), { before: 100, after: 30, keep: 1 }));
+          String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').forEach((ln) => {
+            if (/^\s*ដូចនេះ/.test(ln)) { body.push(para(run(ln.trim(), { sz: 22 }), { box: 1, align: 'center', before: 40, after: 80 })); return; }
+            const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+            body.push(para((m ? run(`${m[1]}. `, { b: 1, sz: 22 }) : '') + run(m ? m[2] : ln, { sz: 22 }), { after: 40 }));
+          });
+        });
+      }
       const ftr = `${XML}<w:ftr ${NS}><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rpr({ sz: 22 })}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rpr({ sz: 22 })}<w:t>1</w:t></w:r><w:r>${rpr({ sz: 22 })}<w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`;
       extra.push({ name: 'word/footer1.xml', data: ftr });
       sect = `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/><w:type w:val="continuous"/>${PAGE}<w:pgMar w:top="1020" w:right="794" w:bottom="1000" w:left="794" w:header="454" w:footer="400" w:gutter="0"/><w:cols w:num="2" w:space="510"/></w:sectPr>`;

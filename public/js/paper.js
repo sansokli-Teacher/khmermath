@@ -1,6 +1,7 @@
 const { h, api } = Exam;
 const params = new URLSearchParams(location.search);
 const TEST_ID = params.get('test');
+const BANK = params.get('bank') === '1';          // an «exercise book» made from the question bank: one grade, chosen lessons or the whole book
 const LETTERS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
 const LEVEL_LABELS = [['easy', 'កម្រិត ១៖ ចំណេះដឹងមូលដ្ឋាន'], ['medium', 'កម្រិត ២៖ ការគណនា និងអនុវត្ត'], ['hard', 'កម្រិត ៣៖ ការវិភាគ និងដោះស្រាយបញ្ហា'], ['pisa', 'កម្រិត ៤៖ បែប PISA']];
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
@@ -189,6 +190,98 @@ function answerDoc(o) {
   return h('div', { class: 'sheet key-doc' }, [headerEl(), flow, footerEl()]);
 }
 
+// ---------- exercise book from the question bank: lesson by lesson ----------
+const lessonBar = (gr) => h('div', { class: 'p-lesson' }, [
+  h('span', { class: 'no' }, gr.idx ? `មេរៀនទី ${kh(gr.idx)}` : 'មេរៀន'), h('span', { class: 'nm' }, gr.name), h('span', { class: 'ct' }, `${kh(gr.questions.length)} សំណួរ`),
+]);
+const mcqNode = (q, no) => {
+  const long = q.options.some((x) => x.length > 22);
+  return h('div', { class: 'p-q' }, [
+    h('div', { class: 'n' }, `${kh(no)}.`),
+    h('div', {}, [
+      mathEl('div', { class: 'p-stem' }, q.stem_text),
+      q.image_key ? h('img', { src: `/api/images/${q.image_key}`, alt: '' }) : null,
+      h('div', { class: `p-opts${long ? ' two' : ''}` }, q.options.map((x, j) => h('div', { class: 'p-opt' }, [h('b', {}, `${LETTERS[j]}.`), mathEl('span', {}, x)]))),
+    ]),
+  ]);
+};
+const writingNode = (q, i, space) => {
+  const { intro, subs } = splitWriting(q.stem_text);
+  return h('div', { class: 'wblock' }, [
+    h('div', { class: 'sect' }, [h('span', { class: 'rn' }, `${ROMAN[i] || i + 1}.`), h('span', { class: 'sc' }, `(${kh(q.points)}ពិន្ទុ)`), mathEl('span', { class: 'st' }, intro || (subs.length ? '' : q.stem_text))]),
+    ...subs.map((sq) => h('div', { class: 'sq' }, [h('span', { class: 'n' }, `${sq.l}.`), mathEl('span', { class: 't' }, sq.t)])),
+    q.image_key ? h('img', { src: `/api/images/${q.image_key}`, alt: '' }) : null,
+    space ? h('div', { class: 'p-space', style: `height:${Math.max(24, q.points * 4.5)}mm;` }) : null,
+  ]);
+};
+const splitGroup = (gr) => ({ ...gr, mcq: gr.questions.filter((q) => q.kind !== 'writing'), writing: gr.questions.filter((q) => q.kind === 'writing') });
+
+function bookDoc(o) {
+  const kids = [];
+  kids.push(h('div', { class: 'etitle' }, [h('div', { class: 't1' }, test.title), test.subtitle ? h('div', { class: 't3' }, test.subtitle) : null]));
+  const all = test.groups.flatMap((g) => g.questions);
+  kids.push(h('div', { class: 'p-meta' }, [
+    h('span', {}, ['មេរៀន៖ ', h('b', {}, kh(test.groups.length))]),
+    h('span', {}, ['ពហុជ្រើសរើស៖ ', h('b', {}, kh(all.filter((q) => q.kind !== 'writing').length))]),
+    h('span', {}, ['សរសេរ៖ ', h('b', {}, kh(all.filter((q) => q.kind === 'writing').length))]),
+  ]));
+  test.groups.forEach((g0, gi) => {
+    const gr = splitGroup(g0);
+    if (gi && o.newpage) kids.push(h('div', { class: 'pt-break' }));
+    kids.push(lessonBar(gr));
+    if (gr.mcq.length) {
+      kids.push(h('div', { class: 'p-sub' }, `ក · ពហុជ្រើសរើស (${kh(gr.mcq.length)} សំណួរ)`));
+      gr.mcq.forEach((q, i) => kids.push(mcqNode(q, i + 1)));
+    }
+    if (gr.writing.length) {
+      kids.push(h('div', { class: 'p-sub' }, `ខ · សរសេរ (${kh(gr.writing.length)} សំណួរ)`));
+      gr.writing.forEach((q, i) => kids.push(writingNode(q, i, o.space)));
+    }
+  });
+  const spacer = () => h('tr', {}, h('td', {}));
+  const flow = h('table', { class: 'flow' }, [h('thead', {}, spacer()), h('tfoot', {}, spacer()), h('tbody', {}, h('tr', {}, h('td', {}, kids)))]);
+  return h('div', { class: 'sheet' }, [headerEl(), flow, footerEl()]);
+}
+
+function bookKey(o) {
+  const kids = [];
+  kids.push(h('div', { class: 'etitle' }, [h('div', { class: 't1' }, 'អត្រាកំណែ'), h('div', { class: 't3' }, test.title), test.subtitle ? h('div', { class: 't3' }, test.subtitle) : null]));
+  test.groups.forEach((g0, gi) => {
+    const gr = splitGroup(g0);
+    if (gi && o.newpage) kids.push(h('div', { class: 'pt-break' }));
+    kids.push(lessonBar(gr));
+    if (gr.mcq.length) {
+      kids.push(h('div', { class: 'p-sub' }, `ក · ចម្លើយពហុជ្រើសរើស (${kh(gr.mcq.length)} សំណួរ)`));
+      kids.push(h('div', { class: 'ak-grid' }, gr.mcq.map((q, i) => h('div', { class: `ak-cell${i % 5 === 4 ? ' g5' : ''}` }, [
+        h('span', { class: 'n' }, kh(i + 1)),
+        h('span', { class: 'a' }, (q.correct_index != null ? LETTERS[q.correct_index] : '—') + (q.alt_correct_index != null ? `/${LETTERS[q.alt_correct_index]}` : '')),
+      ]))));
+    }
+    if (gr.writing.length) {
+      kids.push(h('div', { class: 'p-sub' }, `ខ · ចម្លើយសរសេរ (${kh(gr.writing.length)} សំណួរ)`));
+      gr.writing.forEach((q, i) => {
+        const lines = String(q.solution_text || '(មិនទាន់មានចម្លើយគំរូ)').split('\n').filter((ln) => ln.trim());
+        const stem = h('div', { class: 'ak-stem' }); stem.innerHTML = Exam.mathHtml(String(q.stem_text || '').trim());
+        kids.push(h('div', { class: 'ak-item' }, [
+          h('div', { class: 'ak-h' }, [h('b', {}, `${ROMAN[i] || i + 1}.`), `  លំហាត់ទី${kh(i + 1)}`, h('span', { class: 'pts' }, `${kh(q.points)} ពិន្ទុ`)]),
+          stem,
+          q.image_key ? h('img', { class: 'ak-img', src: `/api/images/${q.image_key}`, alt: '' }) : null,
+          h('div', { class: 'ak-sol' }, [h('div', { class: 'ak-sol-t' }, 'ចម្លើយគំរូ'), ...lines.map((ln) => {
+            if (/^\s*ដូចនេះ/.test(ln)) return mathEl('div', { class: 'ans-box' }, ln.trim());
+            const m = ln.match(/^\s*([ក-ឃង-ច])\s*[\)\.]\s*(.*)$/);
+            const el = h('div', { class: `ans-line${m ? ' sub' : ''}` });
+            el.innerHTML = (m ? `<span class="lbl">${m[1]}.</span> ` : '') + Exam.mathHtml(m ? m[2] : ln);
+            return el;
+          })]),
+        ]));
+      });
+    }
+  });
+  const spacer = () => h('tr', {}, h('td', {}));
+  const flow = h('table', { class: 'flow' }, [h('thead', {}, spacer()), h('tfoot', {}, spacer()), h('tbody', {}, h('tr', {}, h('td', {}, kids)))]);
+  return h('div', { class: 'sheet key-doc' }, [headerEl(), flow, footerEl()]);
+}
+
 const tplValue = () => document.getElementById('opt-tpl').value;
 const pageOptions = () => ({
   minutes: Number(document.getElementById('opt-min').value) || 70,
@@ -198,12 +291,19 @@ const pageOptions = () => ({
   omr: document.getElementById('opt-omr').checked,
   group: document.getElementById('opt-group').checked,
   idDigits: Math.min(12, Math.max(1, Number(document.getElementById('opt-iddigits').value) || 7)),
+  newpage: !!(document.getElementById('opt-newpage') && document.getElementById('opt-newpage').checked),
 });
 
 function render() {
   const o = pageOptions();
-  const tpl = tplValue();
+  const tpl = BANK ? 'exam' : tplValue();
   document.getElementById('opt-sub').hidden = tpl !== 'pretest';
+  if (BANK) {
+    const sheetB = document.getElementById('sheet'); sheetB.innerHTML = '';
+    sheetB.append(document.getElementById('opt-key').checked ? bookKey(o) : bookDoc(o));
+    window.__diagramsReady = restyleDiagrams(sheetB); fitOptions(sheetB); fitPreview();
+    return;
+  }
   document.getElementById('lbl-iddigits').hidden = !document.getElementById('opt-omr').checked;
   const answers = document.getElementById('opt-key').checked;
   const sheet = document.getElementById('sheet');
@@ -313,10 +413,23 @@ function openProfile() {
 }
 
 async function init() {
-  if (!TEST_ID) { document.getElementById('sheet').textContent = 'រកមិនឃើញតេស្តទេ។'; return; }
+  if (!TEST_ID && !BANK) { document.getElementById('sheet').textContent = 'រកមិនឃើញតេស្តទេ។'; return; }
   try {
-    test = await api(`/api/tests/${TEST_ID}`);
-    test.questions = test.questions.map(Exam.withSample);
+    if (BANK) {
+      const qs = new URLSearchParams();
+      for (const k of ['grade', 'lessons', 'levels', 'kind']) if (params.get(k)) qs.set(k, params.get(k));
+      const ex = await api(`/api/bank/export?${qs}`);
+      const groups = ex.groups.map((g) => ({ ...g, questions: g.questions.map(Exam.withSample) }));
+      if (!groups.length) { await Exam.notify('មិនមានសំណួរសម្រាប់ជម្រើសនេះទេ។'); window.close(); location.href = 'teacher.html'; return; }
+      const nQ = groups.reduce((t, g) => t + g.questions.length, 0);
+      const idxs = groups.map((g) => g.idx).filter(Boolean);
+      const auto = `លំហាត់គណិតវិទ្យា ថ្នាក់ទី ${kh(ex.grade)}${ex.whole_book ? ' — សៀវភៅទាំងមូល' : idxs.length ? ` — មេរៀនទី ${idxs.map(kh).join(', ')}` : ''}`;
+      test = { id: 0, bank: true, title: params.get('title') || auto, groups, questions: groups.flatMap((g) => g.questions),
+        subtitle: `ថ្នាក់ទី ${kh(ex.grade)} · ${kh(groups.length)} មេរៀន · ${kh(nQ)} សំណួរ${ex.trial_limited ? ` (គណនីសាកល្បង៖ បង្ហាញតែ ${kh(ex.given)} សំណួរដំបូង)` : ''}` };
+    } else {
+      test = await api(`/api/tests/${TEST_ID}`);
+      test.questions = test.questions.map(Exam.withSample);
+    }
     profile = (await api('/api/profile/paper')).profile;
   } catch {
     await Exam.notify('សូមចូលជាគ្រូសិន ទើបអាចមើលវិញ្ញាសាបាន។');
@@ -324,11 +437,17 @@ async function init() {
     return;
   }
   document.title = test.title;
+  if (BANK) {
+    document.body.classList.add('bank-mode');
+    document.getElementById('opt-space').checked = false; document.getElementById('opt-tpl').value = 'exam';
+    const bt = document.getElementById('side-title'); if (bt) bt.textContent = 'ទាញយកលំហាត់';
+  }
   if (params.get('min')) document.getElementById('opt-min').value = params.get('min');
   if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
+  if (params.get('newpage') === '1') document.getElementById('opt-newpage').checked = true;
   try { const t = params.get('tpl') || localStorage.getItem('paper_tpl'); if (t === 'pretest' || t === 'exam') document.getElementById('opt-tpl').value = t; } catch {}
   document.getElementById('opt-tpl').addEventListener('change', () => { try { localStorage.setItem('paper_tpl', tplValue()); } catch {} });
-  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date', 'opt-iddigits']) document.getElementById(id).addEventListener('input', render);
+  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date', 'opt-iddigits', 'opt-newpage']) document.getElementById(id).addEventListener('input', render);
   if (window.innerWidth <= 860) document.getElementById('side-opts').open = false;   // phone: keep the page itself in view
   document.getElementById('print-btn').onclick = () => window.print();
   const pdfBtn = document.getElementById('pdf-btn');
@@ -343,6 +462,7 @@ async function init() {
     pdfBtn.disabled = false; pdfBtn.textContent = label;
   };
   document.getElementById('scan-link').href = `scan.html?test=${test.id}`;
+  if (BANK) document.getElementById('scan-link').hidden = true;
   document.getElementById('profile-btn').onclick = openProfile;
   const toWord = async (btn) => {
     const label = btn ? btn.textContent : '';
@@ -358,5 +478,6 @@ async function init() {
   if (!test.questions.every((q) => q.kind === 'writing' || q.correct_index != null)) document.getElementById('opt-key').closest('label').hidden = true;
   render();
   if (params.get('docx') === '1') toWord(document.getElementById('docx-btn'));   // opened from the ⋯ menu
+  if (params.get('autopdf') === '1') setTimeout(() => document.getElementById('pdf-btn').click(), 600);   // opened from the question bank's download panel
 }
 init();

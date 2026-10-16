@@ -26,6 +26,73 @@ function bankModal(title, body, wide) {
   return back;
 }
 
+// ---------- download an exercise book: chosen lessons or the whole book of a grade, as PDF or Word ----------
+function openExport(questions, curr, S) {
+  let grade = S.grade && S.grade !== '-' ? S.grade : (curr.grades.find((g) => questions.some((q) => q.grade === g)) || curr.grades[0]);
+  const picked = new Set();                    // 1-based lesson numbers
+  const levels = new Set(['easy', 'medium', 'hard', 'pisa']);
+  let kind = 'all', keyMode = false, newpage = false, title = '';
+  const body = h('div', { class: 'ex-body' });
+  const box = h('div', {}, [body]);
+  const lessonList = () => (curr.lessons[grade] || []);
+  const countOf = (name) => questions.filter((q) => q.grade === grade && q.lesson === name && (kind === 'all' || (kind === 'mcq' ? q.kind !== 'writing' : q.kind === 'writing')) && levels.has(q.level || '') ).length;
+  const url = (extra = '') => {
+    const p = new URLSearchParams({ bank: '1', grade });
+    if (picked.size) p.set('lessons', [...picked].sort((a, b) => a - b).join(','));
+    if (levels.size < 4) p.set('levels', [...levels].join(','));
+    if (kind !== 'all') p.set('kind', kind);
+    if (title.trim()) p.set('title', title.trim());
+    if (keyMode) p.set('key', '1');
+    if (newpage) p.set('newpage', '1');
+    return `paper.html?${p}${extra}`;
+  };
+  const draw = () => {
+    body.innerHTML = '';
+    const ls = lessonList();
+    const sel = picked.size ? [...picked] : ls.map((_, i) => i + 1);
+    const total = sel.reduce((t, i) => t + countOf(ls[i - 1]), 0);
+    const pages = Math.max(1, Math.ceil(total / 5.5));
+    const chips = (items, on, set) => h('div', { class: 'ex-chips' }, items.map(([v, l]) => h('button', { type: 'button', class: on(v) ? 'on' : '', onclick: () => { set(v); draw(); } }, l)));
+    body.append(
+      h('label', {}, 'ថ្នាក់'),
+      h('select', { onchange: (e) => { grade = e.target.value; picked.clear(); draw(); } }, curr.grades.map((g) => h('option', { value: g, selected: g === grade ? 'selected' : null }, `${GRADE_KH(g)} (${questions.filter((q) => q.grade === g).length} សំណួរ)`))),
+      h('div', { class: 'ex-lhead' }, [
+        h('label', { style: 'margin:0;' }, 'មេរៀនដែលចង់បាន'),
+        h('div', { class: 'row', style: 'gap:6px;' }, [
+          h('button', { type: 'button', class: `secondary btn-sm${picked.size === 0 ? ' on' : ''}`, onclick: () => { picked.clear(); draw(); } }, '📚 សៀវភៅទាំងមូល'),
+          h('button', { type: 'button', class: 'secondary btn-sm', onclick: () => { ls.forEach((_, i) => { if (countOf(ls[i])) picked.add(i + 1); }); draw(); } }, 'ជ្រើសទាំងអស់'),
+        ]),
+      ]),
+      h('div', { class: 'ex-lessons' }, ls.length ? ls.map((name, i) => {
+        const n = countOf(name), on = picked.size === 0 ? false : picked.has(i + 1);
+        return h('button', { type: 'button', class: `ex-l${on ? ' on' : ''}${n ? '' : ' empty'}`, disabled: n ? null : 'disabled', onclick: () => { if (picked.has(i + 1)) picked.delete(i + 1); else picked.add(i + 1); draw(); } }, [
+          h('b', {}, khNum(i + 1)), h('span', { class: 'nm' }, name), h('small', {}, n ? `${khNum(n)} សំណួរ` : 'គ្មាន'),
+        ]);
+      }) : [h('p', { class: 'muted' }, 'ថ្នាក់នេះមិនទាន់មានមេរៀនទេ។')]),
+      h('label', {}, 'កម្រិត'),
+      chips([['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']], (v) => levels.has(v), (v) => { if (levels.has(v)) { if (levels.size > 1) levels.delete(v); } else levels.add(v); }),
+      h('label', {}, 'ប្រភេទសំណួរ'),
+      chips([['all', 'ទាំងអស់'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']], (v) => kind === v, (v) => { kind = v; }),
+      h('label', {}, 'ឯកសារ'),
+      chips([['q', '📄 លំហាត់សម្រាប់សិស្ស'], ['k', '✅ អត្រាកំណែសម្រាប់គ្រូ']], (v) => (v === 'k') === keyMode, (v) => { keyMode = v === 'k'; }),
+      h('label', { class: 'ex-chk' }, [h('input', { type: 'checkbox', checked: newpage ? 'checked' : null, onchange: (e) => { newpage = e.target.checked; } }), 'ចាប់ផ្តើមមេរៀននីមួយៗលើទំព័រថ្មី']),
+      h('label', {}, 'ចំណងជើង (មិនចាំបាច់)'),
+      h('input', { type: 'text', placeholder: `លំហាត់គណិតវិទ្យា ${GRADE_KH(grade)}…`, value: title, oninput: (e) => { title = e.target.value; } }),
+      h('div', { class: `ex-sum${total ? '' : ' none'}` }, total
+        ? [h('b', {}, `${khNum(sel.filter((i) => countOf(ls[i - 1])).length)} មេរៀន · ${khNum(total)} សំណួរ`), ` · ប្រហែល ${khNum(pages)} ទំព័រ A4`, pages > 80 ? h('div', { class: 'muted' }, '⏳ សៀវភៅធំ — PDF ប្រើពេលយូរ (ប្រហែលមួយនាទី ឬច្រើនជាងនេះ)។ Word លឿនជាង។') : null]
+        : 'គ្មានសំណួរតាមជម្រើសនេះទេ។'),
+      h('div', { class: 'row ex-actions' }, [
+        h('button', { class: 'secondary', onclick: () => m.remove() }, 'បិទ'),
+        h('button', { class: 'secondary', disabled: total ? null : 'disabled', onclick: () => window.open(url(), '_blank') }, '👁 មើលជាមុន'),
+        h('button', { class: 'secondary', disabled: total ? null : 'disabled', onclick: () => window.open(url('&docx=1'), '_blank') }, '📝 Word'),
+        h('button', { disabled: total ? null : 'disabled', onclick: () => window.open(url('&autopdf=1'), '_blank') }, '⬇ PDF'),
+      ]),
+    );
+  };
+  const m = bankModal('📥 ទាញយកលំហាត់', box, true);
+  draw();
+}
+
 render.bank = async function () {
   const container = document.getElementById('tab-bank');
   container.innerHTML = '';
@@ -63,7 +130,10 @@ render.bank = async function () {
     h('button', { class: 'secondary', onclick: () => { try { localStorage.setItem('bank_seen_max', String(maxShared)); } catch {} render.bank(); } }, '✓ បានមើលហើយ'),
   ]));
   container.append(h('div', { class: 'card' }, [
-    h('h2', {}, `🗂 ធនាគារសំណួរ (${questions.length})`),
+    h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:10px;' }, [
+      h('h2', { style: 'margin:0;' }, `🗂 ធនាគារសំណួរ (${questions.length})`),
+      h('button', { onclick: () => openExport(questions, curr, S) }, '📥 ទាញយកលំហាត់ជា PDF / Word'),
+    ]),
     h('p', { class: 'muted' }, 'រៀបតាមថ្នាក់ → មេរៀន។ បន្ថែមសំណួរចូលមេរៀន រួចពេលបង្កើតតេស្ត គ្រាន់តែជ្រើសរើសពីមេរៀន ឬផ្នែកដែលចង់បាន។ សំណួរចាស់ៗពីតេស្តរបស់លោកគ្រូក៏នៅទីនេះដែរ — ជ្រើសរើសពួកវា រួចចុច «🏷 ដាក់ក្នុងមេរៀន»។'),
     pills,
   ]));

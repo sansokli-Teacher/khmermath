@@ -310,6 +310,46 @@ async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
   return [...byKey.values()];
 }
 
+// The questions of one grade (whole book) or of chosen lessons, in lesson order, for the PDF / Word «exercise book».
+// GET /api/bank/export?grade=7&lessons=1,2,5&levels=easy,medium&kind=all|mcq|writing&title=…
+export async function exportBank(req, env) {
+  const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
+  await ensureColumns(env);
+  const u = new URL(req.url);
+  const grade = u.searchParams.get('grade') || '';
+  if (!/^(7|8|9|10|11|12)$/.test(grade)) return err('សូមជ្រើសថ្នាក់។', 400);
+  const curr = (await loadCurriculum(env, g0.t.id)).lessons[grade] || [];
+  const wantIdx = new Set((u.searchParams.get('lessons') || '').split(',').map((x) => Number(x)).filter((x) => x >= 1));
+  const levels = new Set((u.searchParams.get('levels') || '').split(',').filter(Boolean));
+  const kind = u.searchParams.get('kind') || 'all';
+  const rows = (await bankRows(env, g0.t, { includeShared: true })).filter((q) => q.grade === grade)
+    .filter((q) => (kind === 'mcq' ? q.kind !== 'writing' : kind === 'writing' ? q.kind === 'writing' : true))
+    .filter((q) => !levels.size || levels.has(q.level || ''));
+  const idxOf = (name) => { const i = curr.indexOf(name); return i >= 0 ? i + 1 : 0; };
+  const groups = new Map();
+  for (const q of rows) {
+    const idx = idxOf(q.lesson);
+    if (wantIdx.size && !wantIdx.has(idx)) continue;
+    const key = idx || `x:${q.lesson || ''}`;
+    if (!groups.has(key)) groups.set(key, { idx, name: q.lesson || 'មិនទាន់កំណត់មេរៀន', questions: [] });
+    groups.get(key).questions.push(q);
+  }
+  let list = [...groups.values()].sort((a, b) => (a.idx || 999) - (b.idx || 999));
+  let total = list.reduce((t, g) => t + g.questions.length, 0);
+  const trialCap = g0.t.status === 'trial' ? 20 : null;       // a free trial shows a sample of the book
+  let left = trialCap;
+  list = list.map((g) => {
+    const qs = g.questions.sort((a, b) => a.id - b.id).filter(() => (left === null ? true : left-- > 0));
+    return { ...g, questions: qs.map((q) => ({
+      id: q.id, stem_text: q.stem_text, image_key: q.image_key, options: JSON.parse(q.options_json), correct_index: q.correct_index, alt_correct_index: q.alt_correct_index,
+      points: q.points, kind: q.kind, solution_text: q.solution_text, level: q.level, lesson: q.lesson, grade: q.grade, cancelled: q.cancelled,
+      sample: hasVariants(q) ? sampleFor(q, `bank:${q.id}`) : undefined,
+    })) };
+  }).filter((g) => g.questions.length);
+  const given = list.reduce((t, g) => t + g.questions.length, 0);
+  return json({ grade, groups: list, total, given, trial_limited: !!trialCap && total > given, whole_book: !wantIdx.size });
+}
+
 export async function listBank(req, env) {
   const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   await ensureColumns(env);
