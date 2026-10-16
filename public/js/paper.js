@@ -283,6 +283,9 @@ function bookKey(o) {
 }
 
 const tplValue = () => document.getElementById('opt-tpl').value;
+// ចម្លើយ: 'none' = questions only, 'both' = questions then the answer key in the same file, 'key' = answer key only
+const ansMode = () => document.getElementById('opt-ans').value;
+const syncKey = () => { document.getElementById('opt-key').checked = ansMode() === 'key'; };
 const pageOptions = () => ({
   minutes: Number(document.getElementById('opt-min').value) || 70,
   date: document.getElementById('opt-date').value.trim(),
@@ -300,12 +303,14 @@ function render() {
   document.getElementById('opt-sub').hidden = tpl !== 'pretest';
   if (BANK) {
     const sheetB = document.getElementById('sheet'); sheetB.innerHTML = '';
-    sheetB.append(document.getElementById('opt-key').checked ? bookKey(o) : bookDoc(o));
+    syncKey(); const mB = ansMode();
+    if (mB === 'key') sheetB.append(bookKey(o));
+    else { sheetB.append(bookDoc(o)); if (mB === 'both') sheetB.append(bookKey(o)); }
     window.__diagramsReady = restyleDiagrams(sheetB); fitOptions(sheetB); fitPreview();
     return;
   }
   document.getElementById('lbl-iddigits').hidden = !document.getElementById('opt-omr').checked;
-  const answers = document.getElementById('opt-key').checked;
+  syncKey(); const mode = ansMode(); const answers = mode === 'key';
   const sheet = document.getElementById('sheet');
   sheet.innerHTML = '';
   // template 2 puts its footer into @page margin boxes, built from this teacher's details
@@ -316,12 +321,14 @@ function render() {
     const mcq = test.questions.filter((q) => q.kind !== 'writing'), writing = test.questions.filter((q) => q.kind === 'writing');
     const ctx = { h, mathEl, kh, test, profile, mcq, writing, splitWriting, logoSrc,
       mcqPts: mcq.reduce((a, q) => a + q.points, 0), wPts: writing.reduce((a, q) => a + q.points, 0) };
-    sheet.append(answers ? window.PaperPT.keyDoc(ctx, o) : window.PaperPT.examDoc(ctx, o));
+    if (answers) sheet.append(window.PaperPT.keyDoc(ctx, o));
+    else { sheet.append(window.PaperPT.examDoc(ctx, o)); if (mode === 'both') sheet.append(window.PaperPT.keyDoc(ctx, o)); }
     window.__diagramsReady = restyleDiagrams(sheet);
     fitPreview();
     return;
   }
-  sheet.append(answers ? answerDoc(o) : examDoc(o));
+  if (answers) sheet.append(answerDoc(o));
+  else { sheet.append(examDoc(o)); if (mode === 'both') sheet.append(answerDoc(o)); }
   window.__diagramsReady = restyleDiagrams(sheet);
   fitOptions(sheet);
   fitPreview();
@@ -443,19 +450,20 @@ async function init() {
     const bt = document.getElementById('side-title'); if (bt) bt.textContent = 'ទាញយកលំហាត់';
   }
   if (params.get('min')) document.getElementById('opt-min').value = params.get('min');
-  if (params.get('key') === '1') document.getElementById('opt-key').checked = true;
+  if (params.get('key') === '1') document.getElementById('opt-ans').value = 'key';
+  if (params.get('ans') === 'both' || params.get('both') === '1') document.getElementById('opt-ans').value = 'both';
   if (params.get('newpage') === '1') document.getElementById('opt-newpage').checked = true;
   try { const t = params.get('tpl') || localStorage.getItem('paper_tpl'); if (t === 'pretest' || t === 'exam') document.getElementById('opt-tpl').value = t; } catch {}
   document.getElementById('opt-tpl').addEventListener('change', () => { try { localStorage.setItem('paper_tpl', tplValue()); } catch {} });
-  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-key', 'opt-space', 'opt-min', 'opt-date', 'opt-iddigits', 'opt-newpage']) document.getElementById(id).addEventListener('input', render);
+  for (const id of ['opt-tpl', 'opt-sub', 'opt-omr', 'opt-group', 'opt-ans', 'opt-space', 'opt-min', 'opt-date', 'opt-iddigits', 'opt-newpage']) document.getElementById(id).addEventListener('input', render);
   if (window.innerWidth <= 860) document.getElementById('side-opts').open = false;   // phone: keep the page itself in view
-  document.getElementById('print-btn').onclick = () => window.print();
+  document.getElementById('print-btn').onclick = () => { if (ansMode() === 'both') document.getElementById('pdf-btn').click(); else window.print(); };   // two papers in one file print cleanly only through the PDF
   const pdfBtn = document.getElementById('pdf-btn');
   pdfBtn.onclick = async () => {
     const label = pdfBtn.textContent; pdfBtn.disabled = true; pdfBtn.textContent = '⏳ កំពុងរៀបចំ…';
     try {
       await window.PdfExport.download({
-        sheet: document.querySelector('#sheet > .sheet'), title: test.title, ready: window.__diagramsReady,
+        sheets: [...document.querySelectorAll('#sheet > .sheet')], title: test.title + (ansMode() === 'both' ? ' (មានចម្លើយ)' : ansMode() === 'key' ? ' (អត្រាកំណែ)' : ''), ready: window.__diagramsReady,
         onProgress: (i, n) => { pdfBtn.textContent = `⏳ ទំព័រ ${i}/${n}`; },
       });
     } catch (e) { Exam.notify(`មិនអាចបង្កើត PDF បានទេ៖ ${e.message}`); }
@@ -469,13 +477,13 @@ async function init() {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ កំពុងបង្កើត Word…'; }
     try {
       await window.ExamDocx.download(test, {
-        ...pageOptions(), tpl: tplValue(), answers: document.getElementById('opt-key').checked, profile,
+        ...pageOptions(), tpl: tplValue(), answers: ansMode() === 'key', both: ansMode() === 'both', profile,
       });
     } catch (e) { Exam.notify(`មិនអាចបង្កើតឯកសារ Word បានទេ៖ ${e.message}`); }
     if (btn) { btn.disabled = false; btn.textContent = label; }
   };
   document.getElementById('docx-btn').onclick = (e) => toWord(e.currentTarget);
-  if (!test.questions.every((q) => q.kind === 'writing' || q.correct_index != null)) document.getElementById('opt-key').closest('label').hidden = true;
+  if (!test.questions.every((q) => q.kind === 'writing' || q.correct_index != null)) document.getElementById('lbl-ans').hidden = true;
   render();
   if (params.get('docx') === '1') toWord(document.getElementById('docx-btn'));   // opened from the ⋯ menu
   if (params.get('autopdf') === '1') setTimeout(() => document.getElementById('pdf-btn').click(), 600);   // opened from the question bank's download panel

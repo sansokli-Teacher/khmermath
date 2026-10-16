@@ -321,3 +321,6 @@ body.bank-mode #lbl-newpage { display: flex !important; }
 .p-lesson .nm { flex: 1; font-weight: 700; }
 .p-lesson .ct { font-size: 10.5pt; font-weight: 400; white-space: nowrap; }
 .p-sub { font-size: 12pt; font-weight: 700; margin: 3mm 0 2mm; padding-bottom: .6mm; border-bottom: .5pt solid #000; break-after: avoid; }
+
+/* questions + answer key in one file: the key starts on its own page */
+.sheet + .sheet { break-before: page; page-break-before: always; }

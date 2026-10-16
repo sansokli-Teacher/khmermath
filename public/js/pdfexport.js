@@ -83,13 +83,13 @@
     return pages.map((p) => p.page);
   }
 
-  async function download({ sheet, title, onProgress, ready }) {
+  async function download({ sheet, sheets, title, onProgress, ready }) {
     if (ready) await ready;
     await Promise.all([loadScript('js/html2canvas.min.js'), loadScript('js/jspdf.umd.min.js')]);
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
     const host = document.createElement('div'); host.className = 'pdf-host'; document.body.append(host);
     try {
-      const pages = paginate(sheet, host);
+      const pages = (sheets && sheets.length ? sheets : [sheet]).flatMap((sh) => paginate(sh, host));
       await new Promise((r) => setTimeout(r, 150));   // let images / fonts settle
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });

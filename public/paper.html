@@ -44,7 +44,14 @@
     </section>
     <section>
       <h3>មាតិកា</h3>
-      <label class="sw"><input type="checkbox" id="opt-key"><span>បង្ហាញជាសន្លឹកចម្លើយ <small>អត្រាកំណែ — សម្រាប់គ្រូ</small></span></label>
+      <label class="fld" id="lbl-ans"><span>ចម្លើយ (អត្រាកំណែ)</span>
+        <select id="opt-ans">
+          <option value="none">📄 សំណួរតែប៉ុណ្ណោះ — មិនដាក់ចម្លើយ</option>
+          <option value="both">📘 សំណួរ + ចម្លើយ — ក្នុងឯកសារតែមួយ</option>
+          <option value="key">✅ ចម្លើយតែប៉ុណ្ណោះ — សម្រាប់គ្រូ</option>
+        </select>
+      </label>
+      <input type="checkbox" id="opt-key" hidden>
       <label class="sw"><input type="checkbox" id="opt-space" checked><span>ទុកចន្លោះសរសេរចម្លើយ</span></label>
       <label class="sw" id="lbl-newpage" hidden><input type="checkbox" id="opt-newpage"><span>ចាប់ផ្តើមមេរៀននីមួយៗលើទំព័រថ្មី</span></label>
       <label class="sw" id="lbl-omr"><input type="checkbox" id="opt-omr" checked><span>សន្លឹកចម្លើយ OMR + សន្លឹកសរសេរ</span></label>

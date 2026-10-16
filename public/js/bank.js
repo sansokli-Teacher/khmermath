@@ -31,7 +31,7 @@ function openExport(questions, curr, S) {
   let grade = S.grade && S.grade !== '-' ? S.grade : (curr.grades.find((g) => questions.some((q) => q.grade === g)) || curr.grades[0]);
   const picked = new Set();                    // 1-based lesson numbers
   const levels = new Set(['easy', 'medium', 'hard', 'pisa']);
-  let kind = 'all', keyMode = false, newpage = false, title = '';
+  let kind = 'all', ans = 'none', newpage = false, title = '';
   const body = h('div', { class: 'ex-body' });
   const box = h('div', {}, [body]);
   const lessonList = () => (curr.lessons[grade] || []);
@@ -42,7 +42,8 @@ function openExport(questions, curr, S) {
     if (levels.size < 4) p.set('levels', [...levels].join(','));
     if (kind !== 'all') p.set('kind', kind);
     if (title.trim()) p.set('title', title.trim());
-    if (keyMode) p.set('key', '1');
+    if (ans === 'key') p.set('key', '1');
+    if (ans === 'both') p.set('ans', 'both');
     if (newpage) p.set('newpage', '1');
     return `paper.html?${p}${extra}`;
   };
@@ -74,7 +75,7 @@ function openExport(questions, curr, S) {
       h('label', {}, 'ប្រភេទសំណួរ'),
       chips([['all', 'ទាំងអស់'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']], (v) => kind === v, (v) => { kind = v; }),
       h('label', {}, 'ឯកសារ'),
-      chips([['q', '📄 លំហាត់សម្រាប់សិស្ស'], ['k', '✅ អត្រាកំណែសម្រាប់គ្រូ']], (v) => (v === 'k') === keyMode, (v) => { keyMode = v === 'k'; }),
+      chips([['none', '📄 សំណួរតែប៉ុណ្ណោះ (សម្រាប់សិស្ស)'], ['both', '📘 សំណួរ + ចម្លើយ ក្នុងឯកសារតែមួយ'], ['key', '✅ ចម្លើយតែប៉ុណ្ណោះ (សម្រាប់គ្រូ)']], (v) => ans === v, (v) => { ans = v; }),
       h('label', { class: 'ex-chk' }, [h('input', { type: 'checkbox', checked: newpage ? 'checked' : null, onchange: (e) => { newpage = e.target.checked; } }), 'ចាប់ផ្តើមមេរៀននីមួយៗលើទំព័រថ្មី']),
       h('label', {}, 'ចំណងជើង (មិនចាំបាច់)'),
       h('input', { type: 'text', placeholder: `លំហាត់គណិតវិទ្យា ${GRADE_KH(grade)}…`, value: title, oninput: (e) => { title = e.target.value; } }),

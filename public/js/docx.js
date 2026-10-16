@@ -261,7 +261,7 @@
       ...(logo ? [{ name: 'word/_rels/header1.xml.rels', data: enc.encode(`${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imgRel(logo)}</Relationships>`) }] : []),
       ...media,
     ];
-    return zip(files);
+    return opts._parts ? files : zip(files);
   }
 
 
@@ -440,7 +440,7 @@
     const imgRel = (im) => `<Relationship Id="${im.rid}" Type="${REL}/image" Target="media/image${im.n}.png"/>`;
     const docRels = `${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="${REL}/styles" Target="styles.xml"/>${hdrXml ? `<Relationship Id="rIdHdr" Type="${REL}/header" Target="header1.xml"/>` : ''}<Relationship Id="rIdFtr" Type="${REL}/footer" Target="footer1.xml"/>${Object.entries(images).filter(([k]) => !logo || k !== prof.logo).map(([, im]) => imgRel(im)).join('')}</Relationships>`;
     const enc = new TextEncoder();
-    return zip([
+    const _files = [
       { name: '[Content_Types].xml', data: enc.encode(`${XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>${hdrXml ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : ''}<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`) },
       { name: '_rels/.rels', data: enc.encode(`${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/officeDocument" Target="word/document.xml"/></Relationships>`) },
       { name: 'word/document.xml', data: enc.encode(documentXml) },
@@ -450,17 +450,65 @@
       { name: 'word/footer1.xml', data: enc.encode(ftrXml) },
       ...(logo ? [{ name: 'word/_rels/header1.xml.rels', data: enc.encode(`${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imgRel(logo)}</Relationships>`) }] : []),
       ...media,
-    ]);
+    ];
+    return opts._parts ? _files : zip(_files);
   }
 
+  // Questions and the answer key in ONE .docx: build both documents, then join them. The key starts on a new page,
+  // keeps its own footer (footer2) and its page numbers restart at 1.
+  function mergeParts(A, B) {
+    const dec = new TextDecoder(), enc = new TextEncoder();
+    const text = (P, n) => { const f = P.find((x) => x.name === n); return f ? dec.decode(f.data) : ''; };
+    const split = (d) => {
+      const s0 = d.indexOf('<w:body>') + 8, e0 = d.lastIndexOf('</w:body>');
+      const body = d.slice(s0, e0), k = body.lastIndexOf('<w:sectPr');
+      return { head: d.slice(0, s0), inner: body.slice(0, k), sect: body.slice(k), tail: d.slice(e0) };
+    };
+    const a = split(text(A, 'word/document.xml')), b = split(text(B, 'word/document.xml'));
+    let bb = b.inner + b.sect;
+    const f0 = bb.indexOf('<w:sectPr'), f1 = bb.indexOf('</w:sectPr>', f0) + 11;
+    let first = bb.slice(f0, f1).replace('<w:type w:val="continuous"/>', '');
+    first = first.includes('<w:cols') ? first.replace('<w:cols', '<w:pgNumType w:start="1"/><w:cols') : first.replace('</w:sectPr>', '<w:pgNumType w:start="1"/></w:sectPr>');
+    bb = (bb.slice(0, f0) + first + bb.slice(f1)).replace(/r:id="rIdFtr"/g, 'r:id="rIdFtrB"').replace(/r:id="rIdHdr"/g, 'r:id="rIdHdrB"');
+    const doc = a.head + a.inner + `<w:p><w:pPr>${a.sect}</w:pPr></w:p>` + bb + b.tail;
+    const relB = text(B, 'word/_rels/document.xml.rels');
+    const pick = (id, fromName, toName) => {
+      const m = relB.match(new RegExp(`<Relationship Id="${id}"[^>]*/>`));
+      return m ? m[0].replace(`Id="${id}"`, `Id="${id}B"`).replace(fromName, toName) : '';
+    };
+    const relsA = text(A, 'word/_rels/document.xml.rels').replace('</Relationships>', pick('rIdFtr', 'footer1.xml', 'footer2.xml') + pick('rIdHdr', 'header1.xml', 'header2.xml') + '</Relationships>');
+    let ct = text(A, '[Content_Types].xml');
+    const ov = (n, t) => `<Override PartName="/word/${n}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${t}+xml"/>`;
+    const hasHdrB = B.some((f) => f.name === 'word/header1.xml');
+    ct = ct.replace('</Types>', ov('footer2.xml', 'footer') + (hasHdrB ? ov('header2.xml', 'header') : '') + '</Types>');
+    const out = A.filter((f) => !['word/document.xml', 'word/_rels/document.xml.rels', '[Content_Types].xml'].includes(f.name));
+    out.push({ name: 'word/document.xml', data: enc.encode(doc) }, { name: 'word/_rels/document.xml.rels', data: enc.encode(relsA) }, { name: '[Content_Types].xml', data: enc.encode(ct) });
+    for (const f of B) {
+      if (f.name === 'word/footer1.xml') out.push({ name: 'word/footer2.xml', data: f.data });
+      else if (f.name === 'word/header1.xml') out.push({ name: 'word/header2.xml', data: f.data });
+      else if (f.name === 'word/_rels/header1.xml.rels') out.push({ name: 'word/_rels/header2.xml.rels', data: f.data });
+      else if (f.name.startsWith('word/media/') && !out.some((x) => x.name === f.name)) out.push(f);
+    }
+    return out;
+  }
+
+  const one = (t, o) => (o.tpl === 'pretest' ? buildPretest(t, o) : build(t, o));
   const api = {
-    build: (t, o = {}) => (o.tpl === 'pretest' ? buildPretest(t, o) : build(t, o)),
+    async build(t, o = {}) {
+      const hasKey = t.questions.filter((q) => q.kind !== 'writing').every((q) => q.correct_index != null);
+      if (o.both && !o.answers && hasKey) {
+        const A = await one(t, { ...o, answers: false, both: false, _parts: true });
+        const B = await one(t, { ...o, answers: true, both: false, _parts: true });
+        return zip(mergeParts(A, B));
+      }
+      return one(t, o);
+    },
     async download(test, opts = {}) {
       const bytes = await api.build(test, opts);
       const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `${String(test.title).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)}${opts.answers ? ' (អត្រាកំណែ)' : ''}.docx`;
+      a.download = `${String(test.title).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)}${opts.answers ? ' (អត្រាកំណែ)' : opts.both ? ' (មានចម្លើយ)' : ''}.docx`;
       document.body.append(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     },
