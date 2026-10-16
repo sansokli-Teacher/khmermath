@@ -14,7 +14,7 @@ def cells(lesson):
 
 def main(names):
     order = BASE_ORDER
-    sql = []; report = []
+    sql = []; report = []; made = set()
     for nm in names:
         mod = importlib.import_module('gen8.' + nm)
         order = BASE_ORDER + int(nm[3:]) * 100
@@ -44,13 +44,21 @@ def main(names):
             c['stem'] = sepnum(c['stem']); c['sol'] = sepnum(c['sol'] or '')
             if c['kind'] == 'mcq': c['options'] = [sepnum(o) for o in c['options']]
             order += 1
+            ikey = 'NULL'
+            if c.get('img'):
+                import base64, hashlib as _h
+                k = 'g8-' + _h.md5(c['img'].encode()).hexdigest()[:10] + '.svg'
+                if k not in made:
+                    made.add(k)
+                    sql.append("INSERT OR REPLACE INTO images (key, content_type, data_base64, created_at) VALUES ('%s', 'image/svg+xml', '%s', datetime('now'));" % (k, base64.b64encode(c['img'].encode()).decode()))
+                ikey = "'" + k + "'"
             if c['kind'] == 'mcq':
                 opts, ci = place(c['options'], c['stem'])
                 oj = json.dumps(opts, ensure_ascii=False)
             else:
                 opts, ci, oj = [], 0, '[]'
-            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params, cancelled) VALUES (10, %d, %s, NULL, %s, %d, NULL, %s, %s, %s, %s, %s, %d, '8', %s, NULL, 0);" % (
-                order, sqlq(c['stem']), sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(lesson)))
+            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params, cancelled) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, '8', %s, NULL, 0);" % (
+                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(lesson)))
         report.append(f'{nm} {lesson}: had {total_have}, adding {len(picked)} -> {total_have + len(picked)}')
         have2 = have + collections.Counter((c['kind'], c['level']) for c in picked)
         report.append('   final cells: ' + ', '.join(f'{k[0][0]}/{k[1][0]}={v}' for k, v in sorted(have2.items())))
