@@ -56,7 +56,7 @@ let clockSkew = 0;
 const now = () => Date.now() + clockSkew;
 const syncClock = (serverNow) => { if (serverNow) clockSkew = serverNow - Date.now(); };
 
-const views = ['login', 'home', 'wait', 'offline', 'test'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
+const views = ['login', 'home', 'wait', 'offline', 'test', 'reader'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
 function showView(name) {
   for (const [n, el] of Object.entries(views)) el.hidden = n !== name;
   window.scrollTo(0, 0);
@@ -190,6 +190,31 @@ function gameCard(studentName) {
   ]);
 }
 
+// ---------- in-page reader: lessons, formulas and PISA practice stay inside this page ----------
+let readerUrl = null, readerTimer = null;
+function openReader(url, title) {
+  const frame = document.getElementById('rd-frame'), loading = document.getElementById('rd-loading');
+  readerUrl = url;
+  document.getElementById('rd-title').textContent = title;
+  loading.hidden = false; loading.textContent = 'កំពុងបើក…';
+  frame.onload = () => { clearTimeout(readerTimer); loading.hidden = true; };
+  frame.src = url;
+  clearTimeout(readerTimer);
+  readerTimer = setTimeout(() => { if (!loading.hidden) { loading.textContent = 'ការផ្ទុកយឺត — សូមពិនិត្យអ៊ីនធឺណិត ឬចុច ⟲ ដើម្បីព្យាយាមម្តងទៀត។'; setTimeout(() => { loading.hidden = true; }, 6000); } }, 9000);
+  showView('reader');
+  try { history.pushState({ reader: 1 }, ''); } catch { /* ignore */ }
+}
+function closeReader(fromPop) {
+  if (views.reader.hidden) return;
+  clearTimeout(readerTimer);
+  document.getElementById('rd-frame').src = 'about:blank';
+  showView('home');
+  if (!fromPop) { try { if (history.state && history.state.reader) history.back(); } catch { /* ignore */ } }
+}
+document.getElementById('rd-close').addEventListener('click', () => closeReader(false));
+document.getElementById('rd-reload').addEventListener('click', () => { if (readerUrl) { const l = document.getElementById('rd-loading'); l.hidden = false; l.textContent = 'កំពុងបើក…'; document.getElementById('rd-frame').src = readerUrl; } });
+window.addEventListener('popstate', () => closeReader(true));
+
 // ---------- learning + games hub (by the student's grade) ----------
 const SITE = 'https://khmermath.org';
 const CBA = 'https://cba.khmermath.org';
@@ -271,16 +296,16 @@ function hubSection(data) {
   if (!g) return wrap;
   const hasLessons = g >= 7 && g <= 9;
   const hasGames = g >= 7 && g <= 9;
-  const link = (href, label, cls = '') => h('a', { class: `btn ${cls}`, href, target: '_blank', rel: 'noopener' }, label);
+  const link = (href, label, title) => h('button', { type: 'button', class: 'btn', onclick: () => openReader(href, title || label) }, label);
   const tile = (icon, title, desc, actions, tone) => h('div', { class: `hub-tile${tone ? ' ' + tone : ''}` }, [h('div', { class: 'hub-ico', 'aria-hidden': 'true' }, icon), h('div', { class: 'hub-t' }, title), h('div', { class: 'hub-d' }, desc), h('div', { class: 'hub-a' }, actions)]);
 
   wrap.append(h('h2', { class: 'section-title' }, `រៀន និងហ្វឹកហាត់ — ថ្នាក់ទី ${khd(g)}`));
   wrap.append(h('div', { class: 'hub-grid' }, [
     hasLessons
-      ? tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'មេរៀនគ្រប់ជំពូក មានឧទាហរណ៍ លំហាត់គំរូ និងលំហាត់ប្រតិបត្តិ។', [link(`${SITE}/lesson/g${g}/`, 'បើកមេរៀន →')], 'blue')
+      ? tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'មេរៀនគ្រប់ជំពូក មានឧទាហរណ៍ លំហាត់គំរូ និងលំហាត់ប្រតិបត្តិ។', [link(`${SITE}/lesson/g${g}/`, 'បើកមេរៀន →', `មេរៀនថ្នាក់ទី ${khd(g)}`)], 'blue')
       : tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'កំពុងរៀបចំ — នឹងមកដល់ឆាប់ៗ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'blue soon'),
-    tile('📐', `រូបមន្តថ្នាក់ទី ${khd(g)}`, 'សៀវភៅរូបមន្តសង្ខេប ងាយស្រួលរកមើល និងចងចាំ។', [link(`${SITE}/formular/g${g}/`, 'បើករូបមន្ត →')], 'teal'),
-    tile('🌏', 'PISA TEST (MoEYS)', 'ប្រធានបទតេស្តគំរូ PISA ៣៨ ពីក្រសួងអប់រំ — សម្រាប់គ្រប់ថ្នាក់។', [link(`${CBA}/?nocert=1#moeys`, 'ចាប់ផ្ដើមហាត់ →')], 'amber'),
+    tile('📐', `រូបមន្តថ្នាក់ទី ${khd(g)}`, 'សៀវភៅរូបមន្តសង្ខេប ងាយស្រួលរកមើល និងចងចាំ។', [link(`${SITE}/formular/g${g}/`, 'បើករូបមន្ត →', `រូបមន្តថ្នាក់ទី ${khd(g)}`)], 'teal'),
+    tile('🌏', 'PISA TEST (MoEYS)', 'ប្រធានបទតេស្តគំរូ PISA ៣៨ ពីក្រសួងអប់រំ — សម្រាប់គ្រប់ថ្នាក់។', [link(`${CBA}/?nocert=1#moeys`, 'ចាប់ផ្ដើមហាត់ →', 'PISA TEST (MoEYS)')], 'amber'),
     tile('🧠', `PISA ថ្នាក់ទី ${khd(g)}`, 'លំហាត់ PISA តាមថ្នាក់របស់អ្នក — កំពុងរៀបចំ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'violet soon'),
   ]));
 

@@ -51,6 +51,19 @@
   <main class="wrap" id="home-body"></main>
 </div>
 
+<!-- lessons, formulas and PISA practice open here, inside the student's page -->
+<div id="view-reader" hidden>
+  <div class="rd-bar">
+    <button type="button" class="rd-back" id="rd-close" aria-label="ត្រឡប់ទៅទំព័រសិស្ស">← ត្រឡប់</button>
+    <div class="rd-title" id="rd-title"></div>
+    <button type="button" class="rd-home secondary" id="rd-reload" aria-label="បើកទំព័រដំបូងវិញ" title="ទំព័រដំបូង">⟲</button>
+  </div>
+  <div class="rd-wrap">
+    <div class="rd-loading" id="rd-loading">កំពុងបើក…</div>
+    <iframe id="rd-frame" title="មេរៀន" allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</div>
+
 <!-- 3. Waiting for the start time -->
 <div id="view-wait" class="auth-screen" hidden>
   <div class="auth-card">
