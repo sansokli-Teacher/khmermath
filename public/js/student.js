@@ -59,6 +59,9 @@ const syncClock = (serverNow) => { if (serverNow) clockSkew = serverNow - Date.n
 const views = ['login', 'home', 'wait', 'offline', 'test', 'reader', 'construct'].reduce((o, n) => ({ ...o, [n]: document.getElementById(`view-${n}`) }), {});
 function showView(name) {
   for (const [n, el] of Object.entries(views)) el.hidden = n !== name;
+  const fab = document.getElementById('exam-scratchpad-fab');
+  if (fab) fab.hidden = (name !== 'test');
+  if (name !== 'test' && window.Scratchpad) window.Scratchpad.hide();
   window.scrollTo(0, 0);
 }
 
@@ -647,6 +650,8 @@ function applyReader() {
 document.getElementById('rd-smaller').onclick = () => { reader.size = Math.max(0, reader.size - 1); applyReader(); };
 document.getElementById('rd-bigger').onclick = () => { reader.size = Math.min(3, reader.size + 1); applyReader(); };
 document.getElementById('rd-focus').onclick = () => { reader.focus = !reader.focus; reader.nav = false; applyReader(); };
+const spBtn = document.getElementById('rd-scratchpad');
+if (spBtn) spBtn.onclick = () => window.Scratchpad && window.Scratchpad.toggle();
 document.getElementById('rd-nav').onclick = () => { reader.nav = !reader.nav; applyReader(); };
 applyReader();
 
