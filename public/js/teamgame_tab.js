@@ -20,7 +20,7 @@ render.teamgame = async function () {
 
   const intro = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'ហ្គេមក្រុមសម្រាប់ថ្នាក់រៀន'),
-    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ មេរៀនទី ១–២២ (ក្នុងមួយមេរៀនមាន ២០ សំណួរ មានរូបធរណីមាត្រ)។ មានបីស្ទីលដែលប្រើសំណួរដូចគ្នា៖ «កាតបើក» (ជ្រើសប្រអប់លេខ) «កង់វិល» (បង្វិលកង់ជ្រើសសំណួរ) និង «ប្រណាំងទូកង» (ឆ្លើយត្រូវ ទូកទៅមុខ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
+    h('p', { class: 'muted' }, 'ជ្រើសថ្នាក់ ចែកសិស្សជាក្រុម រួចលេងហ្គេមសំណួរគណិតវិទ្យាថ្នាក់ទី ៧ (មេរៀនទី ១–២២) ឬ ថ្នាក់ទី ៨ (មេរៀនទី ១–១៩)។ ក្នុងមួយមេរៀនមាន ២០ សំណួរ ព្រមទាំងរូបធរណីមាត្រច្បាស់ៗ។ មានបីស្ទីលដែលប្រើសំណួរដូចគ្នា៖ «កាតបើក» (ជ្រើសប្រអប់លេខ) «កង់វិល» (បង្វិលកង់ជ្រើសសំណួរ) និង «ប្រណាំងទូកង» (ឆ្លើយត្រូវ ទូកទៅមុខ)។ ហ្គេមបង្ហាញពេញអេក្រង់ ដោយមិនចាំបាច់រមូរ។'),
   ]);
   root.appendChild(intro);
 
@@ -47,8 +47,18 @@ render.teamgame = async function () {
   const card = h('div', { class: 'card' });
   root.appendChild(card);
 
+  let tgGrade = (classes.find((c) => c.id === tgClassId) || {}).grade || 7;
   const sel = h('select', { 'aria-label': 'ថ្នាក់' }, classes.map((c) => h('option', { value: c.id }, c.name)));
   sel.value = tgClassId;
+  const gradeSel = h('select', { 'aria-label': 'កម្រិតថ្នាក់សំណួរ' }, [
+    h('option', { value: '7' }, 'ថ្នាក់ទី ៧ (មេរៀន ១–២២)'),
+    h('option', { value: '8' }, 'ថ្នាក់ទី ៨ (មេរៀន ១–១៩)'),
+    h('option', { value: '9' }, 'ថ្នាក់ទី ៩ (មេរៀន ១–១៩)'),
+    h('option', { value: '10' }, 'ថ្នាក់ទី ១០ (មេរៀន ១–៤)'),
+  ]);
+  gradeSel.value = String(tgGrade);
+  gradeSel.onchange = () => { tgGrade = parseInt(gradeSel.value, 10) || 7; };
+
   const num = h('input', { type: 'number', min: '2', max: '8', value: String(tgTeams), 'aria-label': 'ចំនួនក្រុម', style: 'width:90px' });
   const absent = h('input', { type: 'checkbox', id: 'tg-skip' }); absent.checked = tgSkipAbsent;
   const preview = h('div', { class: 'tg-prev', style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:14px' });
@@ -76,7 +86,12 @@ render.teamgame = async function () {
     draw();
   }
 
-  sel.onchange = () => { tgClassId = Number(sel.value) || sel.value; loadClass(); };
+  sel.onchange = () => {
+    tgClassId = Number(sel.value) || sel.value;
+    const curC = classes.find((c) => c.id === tgClassId);
+    if (curC && curC.grade) { tgGrade = curC.grade; gradeSel.value = String(tgGrade); }
+    loadClass();
+  };
   num.onchange = draw;
   absent.onchange = () => { tgSkipAbsent = absent.checked; draw(); };
 
@@ -86,7 +101,7 @@ render.teamgame = async function () {
     if (!teams.length || !teams.some((t) => t.length)) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
     const cls = (classes.find((c) => c.id === tgClassId) || {}).name || '';
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls, groups: teams })); } catch {}
-    location.href = `teamgame.html?import=1&style=${style}`;
+    location.href = `teamgame.html?import=1&style=${style}&grade=${tgGrade}`;
   };
   const play = h('button', { type: 'button' }, '▶ កាតបើក'); play.onclick = launch('cards');
   const spin = h('button', { type: 'button', style: 'background:#e8590c' }, '🎡 កង់វិល'); spin.onclick = launch('wheel');
@@ -94,6 +109,7 @@ render.teamgame = async function () {
 
   card.appendChild(h('div', { class: 'row', style: 'gap:12px;align-items:end;flex-wrap:wrap' }, [
     h('label', {}, ['ថ្នាក់', h('br'), sel]),
+    h('label', {}, ['កម្រិតសំណួរ', h('br'), gradeSel]),
     h('label', {}, ['ចំនួនក្រុម', h('br'), num]),
     h('label', { style: 'display:flex;gap:6px;align-items:center' }, [absent, 'មិនរួមសិស្សអវត្តមាន']),
     again, play, spin, boat,

@@ -340,8 +340,9 @@ function hubSection(data) {
   const g = Number(data.grade) || 0;
   const wrap = h('div', { class: 'hub' });
   if (!g) return wrap;
-  const hasLessons = g >= 7 && g <= 9;
-  const hasGames = g >= 7 && g <= 9;
+  const hasLessons = g >= 7 && g <= 10;
+  const hasGames = g >= 7 && g <= 10;
+  const hasConstruct = g >= 7 && g <= 9;
   const link = (href, label, title) => h('button', { type: 'button', class: 'btn', onclick: () => openReader(href, title || label) }, label);
   const tile = (icon, title, desc, actions, tone) => h('div', { class: `hub-tile${tone ? ' ' + tone : ''}` }, [h('div', { class: 'hub-ico', 'aria-hidden': 'true' }, icon), h('div', { class: 'hub-t' }, title), h('div', { class: 'hub-d' }, desc), h('div', { class: 'hub-a' }, actions)]);
 
@@ -351,7 +352,7 @@ function hubSection(data) {
       ? tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'មេរៀនគ្រប់ជំពូក មានឧទាហរណ៍ លំហាត់គំរូ និងលំហាត់ប្រតិបត្តិ។', [link(`${SITE}/lesson/g${g}/`, 'បើកមេរៀន →', `មេរៀនថ្នាក់ទី ${khd(g)}`)], 'blue')
       : tile('📘', `មេរៀនថ្នាក់ទី ${khd(g)}`, 'កំពុងរៀបចំ — នឹងមកដល់ឆាប់ៗ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'blue soon'),
     tile('📐', `រូបមន្តថ្នាក់ទី ${khd(g)}`, 'សៀវភៅរូបមន្តសង្ខេប ងាយស្រួលរកមើល និងចងចាំ។', [link(`${SITE}/formular/g${g}/`, 'បើករូបមន្ត →', `រូបមន្តថ្នាក់ទី ${khd(g)}`)], 'teal'),
-    hasGames ? tile('📏', `សំណង់ធរណីមាត្រ ថ្នាក់ទី ${khd(g)}`, 'មើលរូបចលនាបង្ហាញរបៀបគូស តាមមេរៀននីមួយៗ ដោយប្រើបន្ទាត់ ដែកឈាន និងរ៉ាប័រទ័រ។', [h('button', { type: 'button', class: 'btn', onclick: () => openConstruct(g) }, 'មើលសំណង់ →')], 'rose') : null,
+    hasConstruct ? tile('📏', `សំណង់ធរណីមាត្រ ថ្នាក់ទី ${khd(g)}`, 'មើលរូបចលនាបង្ហាញរបៀបគូស តាមមេរៀននីមួយៗ ដោយប្រើបន្ទាត់ ដែកឈាន និងរ៉ាប័រទ័រ។', [h('button', { type: 'button', class: 'btn', onclick: () => openConstruct(g) }, 'មើលសំណង់ →')], 'rose') : null,
     tile('🌏', 'PISA TEST (MoEYS)', 'ប្រធានបទតេស្តគំរូ PISA ៣៨ ពីក្រសួងអប់រំ — សម្រាប់គ្រប់ថ្នាក់។', [link(`${CBA}/?nocert=1#moeys`, 'ចាប់ផ្ដើមហាត់ →', 'PISA TEST (MoEYS)')], 'amber'),
     tile('🧠', `PISA ថ្នាក់ទី ${khd(g)}`, 'លំហាត់ PISA តាមថ្នាក់របស់អ្នក — កំពុងរៀបចំ។', [h('span', { class: 'chip chip-soon' }, 'ឆាប់ៗនេះ')], 'violet soon'),
   ]));
