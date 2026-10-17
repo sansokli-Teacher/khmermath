@@ -102,120 +102,127 @@ function openQuestionViewer(q, onEdit) {
   const hasImg = Boolean(q.image_key);
   const opts = Array.isArray(q.options) ? q.options : (typeof q.options_json === 'string' ? JSON.parse(q.options_json || '[]') : []);
 
-  const titleRow = h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;width:100%;flex-wrap:wrap;gap:8px;' }, [
-    h('div', { style: 'display:flex;align-items:center;gap:8px;' }, [
-      h('span', { style: 'font-size:18px;font-weight:700;' }, '👁 មើលសំណួរ'),
-      h('span', { class: 'chip chip-plain', style: 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;font-size:14px;' }, `#${q.id}`),
+  let m;
+  const copyId = () => {
+    navigator.clipboard?.writeText(String(q.id));
+    Exam.notify(`បានចម្លង ID: ${q.id}`);
+  };
+
+  // Compact Header: Title + Tap-to-Copy #ID Badge on left, and a circular Close button (✕) on right
+  const titleRow = h('div', { class: 'qv-header' }, [
+    h('div', { class: 'qv-title-left' }, [
+      h('span', { class: 'qv-title-text' }, '👁 មើលសំណួរ'),
+      h('button', {
+        type: 'button',
+        class: 'qv-id-badge',
+        title: 'ចុចដើម្បីចម្លង ID',
+        onclick: (e) => { e.stopPropagation(); copyId(); }
+      }, [`#${q.id}`, h('span', { style: 'font-size:11px;opacity:0.85;' }, '📋')])
     ]),
     h('button', {
       type: 'button',
-      class: 'secondary btn-sm',
-      style: 'font-size:12px;padding:3px 10px;',
-      onclick: () => {
-        navigator.clipboard?.writeText(String(q.id));
-        Exam.notify(`បានចម្លង ID: ${q.id}`);
-      }
-    }, '📋 ចម្លង ID')
+      class: 'qv-close-btn',
+      title: 'បិទ',
+      onclick: () => m && m.remove()
+    }, '✕')
   ]);
 
-  const body = h('div', { class: 'question-viewer', style: 'display:flex;flex-direction:column;gap:14px;text-align:left;' }, [
-    // Top metadata chips
-    h('div', { class: 'test-chips', style: 'align-items:center;flex-wrap:wrap;gap:6px;' }, [
-      h('span', { class: 'chip', style: 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;' }, `ID: ${q.id}`),
+  const body = h('div', { class: 'question-viewer' }, [
+    // Top metadata chips (Deduplicated: no duplicate ID chip, no duplicate topic if identical to lesson)
+    h('div', { class: 'test-chips qv-chips' }, [
       isWriting ? h('span', { class: 'chip chip-soon' }, '✎ សរសេរ') : h('span', { class: 'chip chip-plain' }, 'ពហុជ្រើសរើស'),
       q.grade ? h('span', { class: 'chip chip-plain' }, GRADE_KH(q.grade)) : null,
       q.lesson ? h('span', { class: 'chip chip-plain' }, q.lesson) : null,
+      (q.topic && q.topic !== q.lesson) ? h('span', { class: 'chip chip-plain' }, q.topic) : null,
       q.level ? h('span', { class: `chip ${q.level === 'hard' ? 'chip-closed' : q.level === 'pisa' ? 'chip-soon' : 'chip-open'}` }, LEVEL_KH[q.level] || q.level) : null,
       h('span', { class: 'chip chip-plain' }, `${q.points} ពិន្ទុ`),
-      q.topic ? h('span', { class: 'chip chip-plain' }, q.topic) : null,
       hasImg ? h('span', { class: 'chip', style: 'background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;' }, `🖼 ${q.image_key}`) : null,
       q.test_title ? h('span', { class: 'muted', style: 'font-size:12px;' }, q.test_title) : null,
     ]),
 
     // Stem text
-    mathEl('div', { class: 'q-stem-box', style: 'font-size:16px;line-height:1.7;font-weight:600;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:var(--ink,#0f172a);' }, q.stem_text),
+    mathEl('div', { class: 'q-stem-box qv-stem' }, q.stem_text),
 
     // Image if present
-    hasImg ? h('div', { style: 'text-align:center;padding:12px;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;' }, [
+    hasImg ? h('div', { class: 'qv-img-box' }, [
       h('img', {
         src: '/api/images/' + encodeURIComponent(q.image_key),
         alt: q.image_key,
-        style: 'max-height:280px;max-width:100%;object-fit:contain;display:inline-block;border-radius:6px;'
+        class: 'qv-img'
       }),
-      h('div', { style: 'margin-top:10px;font-size:12px;display:flex;justify-content:center;gap:12px;align-items:center;flex-wrap:wrap;' }, [
-        h('span', { style: 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#64748b;font-weight:600;' }, q.image_key),
+      h('div', { class: 'qv-img-tools' }, [
+        h('span', { class: 'qv-img-name' }, q.image_key),
         h('button', {
           type: 'button',
           class: 'secondary btn-sm',
-          style: 'padding:2px 8px;font-size:11px;',
+          style: 'padding:3px 10px;font-size:11.5px;',
           onclick: () => {
             navigator.clipboard?.writeText(q.image_key);
             Exam.notify(`បានចម្លងឈ្មោះរូបភាព៖ ${q.image_key}`);
           }
-        }, '📋 ចម្លងឈ្មោះរូបភាព'),
+        }, '📋 ចម្លងឈ្មោះ'),
         h('a', {
           href: '/api/images/' + encodeURIComponent(q.image_key),
           target: '_blank',
-          style: 'color:#2563eb;text-decoration:none;font-weight:600;'
-        }, '↗ មើលរូបភាពទំហំពេញ')
+          style: 'color:#2563eb;text-decoration:none;font-weight:600;font-size:12px;'
+        }, '↗ មើលទំហំពេញ')
       ])
     ]) : null,
 
     // Real Options (MCQ)
-    !isWriting ? h('div', { style: 'display:flex;flex-direction:column;gap:8px;' }, [
-      h('div', { style: 'font-weight:700;font-size:14px;color:#475569;margin-bottom:2px;' }, 'ជម្រើសចម្លើយ ៖'),
+    !isWriting ? h('div', { class: 'qv-options-box' }, [
+      h('div', { class: 'qv-options-lbl' }, 'ជម្រើសចម្លើយ ៖'),
       ...opts.map((opt, idx) => {
         const isCorrect = idx === q.correct_index;
         const isAlt = idx === q.alt_correct_index;
-        const cardStyle = isCorrect
-          ? 'padding:10px 14px;border-radius:8px;border:1.5px solid #22c55e;background:#f0fdf4;display:flex;align-items:center;gap:10px;'
-          : isAlt
-            ? 'padding:10px 14px;border-radius:8px;border:1.5px solid #38bdf8;background:#f0f9ff;display:flex;align-items:center;gap:10px;'
-            : 'padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#ffffff;display:flex;align-items:center;gap:10px;';
+        const cardClass = isCorrect ? 'qv-opt qv-opt-correct' : isAlt ? 'qv-opt qv-opt-alt' : 'qv-opt';
         const icon = isCorrect
-          ? h('span', { style: 'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-weight:700;font-size:12px;flex:none;' }, '✓')
+          ? h('span', { class: 'qv-opt-icon qv-icon-correct' }, '✓')
           : isAlt
-            ? h('span', { style: 'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#0284c7;color:#fff;font-weight:700;font-size:12px;flex:none;' }, '✓')
-            : h('span', { style: 'display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid #cbd5e1;color:#94a3b8;font-size:11px;flex:none;' }, '○');
+            ? h('span', { class: 'qv-opt-icon qv-icon-alt' }, '✓')
+            : h('span', { class: 'qv-opt-icon qv-icon-default' }, '○');
 
-        return h('div', { style: cardStyle }, [
+        return h('div', { class: cardClass }, [
           icon,
-          h('b', { style: `color:${isCorrect ? '#166534' : isAlt ? '#0369a1' : '#334155'};min-width:20px;` }, `${letters[idx] || idx + 1}.`),
-          mathEl('div', { style: `flex:1;font-weight:${isCorrect || isAlt ? '600' : 'normal'};color:${isCorrect ? '#166534' : isAlt ? '#0369a1' : 'inherit'};` }, opt),
-          isCorrect ? h('span', { class: 'chip chip-open', style: 'margin-left:auto;font-size:11px;flex:none;' }, 'ចម្លើយត្រឹមត្រូវ') : null,
-          isAlt ? h('span', { class: 'chip chip-soon', style: 'margin-left:auto;font-size:11px;flex:none;' }, 'ទទួលយកបាន') : null,
+          h('b', { class: 'qv-opt-let' }, `${letters[idx] || idx + 1}.`),
+          mathEl('div', { class: 'qv-opt-text' }, opt),
+          isCorrect ? h('span', { class: 'chip chip-open qv-opt-badge' }, 'ចម្លើយត្រឹមត្រូវ') : null,
+          isAlt ? h('span', { class: 'chip chip-soon qv-opt-badge' }, 'ទទួលយកបាន') : null,
         ]);
       })
     ]) : null,
 
     // Writing or MCQ Solution
     q.solution_text ? h('div', {
-      style: `padding:12px 14px;border-radius:8px;border-left:4px solid ${isWriting ? '#3b82f6' : '#eab308'};background:${isWriting ? '#eff6ff' : '#fefce8'};`
+      class: isWriting ? 'qv-sol qv-sol-writing' : 'qv-sol qv-sol-mcq'
     }, [
-      h('b', { style: `display:block;margin-bottom:6px;color:${isWriting ? '#1d4ed8' : '#854d0e'};` },
+      h('b', { class: 'qv-sol-title' },
         isWriting ? '📝 ដំណោះស្រាយ និងរបៀបដាក់ពិន្ទុ (Rubric) ៖' : '💡 ការពន្យល់ / ដំណោះស្រាយ (Explanation) ៖'
       ),
-      mathEl('div', { style: 'white-space:pre-line;line-height:1.6;font-size:14px;' }, q.solution_text)
+      mathEl('div', { class: 'qv-sol-body' }, q.solution_text)
     ]) : null,
 
-    // Action buttons row (Edit button + Copy ID + Close)
-    h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;margin-top:10px;padding-top:14px;border-top:1px solid #e2e8f0;flex-wrap:wrap;gap:8px;' }, [
-      h('div', { class: 'row', style: 'gap:8px;' }, [
-        onEdit ? h('button', { type: 'button', onclick: () => { m.remove(); onEdit(); } }, '✏️ កែសំណួរនេះ') : null,
-        h('button', {
-          type: 'button',
-          class: 'secondary',
-          onclick: () => {
-            navigator.clipboard?.writeText(String(q.id));
-            Exam.notify(`បានចម្លង ID: ${q.id}`);
-          }
-        }, '📋 ចម្លង ID'),
-      ]),
-      h('button', { type: 'button', class: 'secondary', onclick: () => m.remove() }, 'បិទ')
+    // Sticky Bottom Action Bar with Safe-Area clearance for mobile
+    h('div', { class: 'qv-actions' }, [
+      onEdit ? h('button', {
+        type: 'button',
+        class: 'qv-btn-edit',
+        onclick: () => { m && m.remove(); onEdit(); }
+      }, '✏️ កែសំណួរនេះ') : null,
+      h('button', {
+        type: 'button',
+        class: 'secondary qv-btn-copy',
+        onclick: copyId
+      }, '📋 ចម្លង ID'),
+      h('button', {
+        type: 'button',
+        class: 'secondary qv-btn-close',
+        onclick: () => m && m.remove()
+      }, 'បិទ')
     ])
   ]);
 
-  const m = bankModal(titleRow, body, true);
+  m = bankModal(titleRow, body, true);
   return m;
 }
 
