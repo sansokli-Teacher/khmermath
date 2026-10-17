@@ -60,6 +60,21 @@ render.wheel = async function () {
   let noRepeat = true, sound = true, spinning = false, angle = 0, frozen = null, current = null, audio = null, lastText = '', gFilter = '', ord = null, pendingReveal = false, tally = false, voiceKm = null;
   const isOff = (p) => mem.off.includes(p.id);
   const eligible = () => {
+    if (wheelMode === 'group') {
+      if (!currentGroups || !currentGroups.length) {
+        initDefaultGroups(Math.max(1, parseInt(gNum.value, 10) || 6));
+      }
+      const grps = currentGroups.map((g, i) => ({
+        id: 'grp_' + i,
+        n: g.title,
+        people: g.people,
+        isGroup: true
+      }));
+      if (noRepeat) {
+        return grps.filter((g) => !doneGroups.includes(g.id));
+      }
+      return grps;
+    }
     const l = people.filter((p) => !isOff(p) && !(noRepeat && mem.done.includes(p.id)) && (!gFilter || p.g === gFilter));
     return ord ? l.sort((a, b) => (ord[a.id] || 0) - (ord[b.id] || 0)) : l;
   };
@@ -166,17 +181,28 @@ render.wheel = async function () {
   const say = () => { if (!voiceKm || !current) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(current.n); u.voice = voiceKm; u.lang = voiceKm.lang; speechSynthesis.speak(u); } catch {} };
   const celebrate = () => { if (wheelSettings.fw) { beep([523, 659, 784, 1047], 0.08, 0.3); fireworks(); } if (wheelSettings.speak) say(); };
   const openPop = () => {
-    winner.textContent = pendingReveal ? '?' : current.n; popSmall.textContent = `សិស្សដែលត្រូវបានជ្រើស · លើកទី ${whKh(mem.hist.length)}`;
-    revealBtn.hidden = !pendingReveal; againBtn.hidden = pendingReveal; absentBtn.hidden = pendingReveal; sayBtn.hidden = pendingReveal || !voiceKm;
+    winner.textContent = pendingReveal ? '?' : current.n;
+    popSmall.textContent = current && current.isGroup
+      ? `ក្រុមដែលត្រូវបានជ្រើស · លើកទី ${whKh(mem.hist.length)}`
+      : `សិស្សដែលត្រូវបានជ្រើស · លើកទី ${whKh(mem.hist.length)}`;
+    revealBtn.hidden = !pendingReveal; againBtn.hidden = pendingReveal;
+    absentBtn.hidden = pendingReveal || (current && current.isGroup);
+    sayBtn.hidden = pendingReveal || !voiceKm;
     pop.hidden = false; (pendingReveal ? revealBtn : againBtn).focus({ preventScroll: true });
   };
   const reveal = () => { pendingReveal = false; showLast(true); winner.textContent = current.n; revealBtn.hidden = true; againBtn.hidden = false; absentBtn.hidden = false; sayBtn.hidden = !voiceKm; celebrate(); };
-  const finish = (student) => {
-    current = student;
+  const finish = (item) => {
+    current = item;
     try {
-      if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id);
-      mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
-      renderHist(); refresh();
+      if (wheelMode === 'group') {
+        if (noRepeat && !doneGroups.includes(current.id)) doneGroups.push(current.id);
+        mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
+        renderHist(); refresh();
+      } else {
+        if (noRepeat && !mem.done.includes(current.id)) mem.done.push(current.id);
+        mem.hist.push({ n: current.n, t: Date.now() }); if (mem.hist.length > 300) mem.hist.shift(); save();
+        renderHist(); refresh();
+      }
     } catch {}
     pendingReveal = !!wheelSettings.mystery; showLast(!pendingReveal); openPop();      // the name is shown first, effects after
     try { if (!pendingReveal) celebrate(); } catch {}
@@ -208,7 +234,6 @@ render.wheel = async function () {
     const pr = present(), m = pr.filter((p) => p.g === 'm').length, f = pr.filter((p) => p.g === 'f').length;
     count.textContent = people.length ? `(${pr.length}/${people.length})` : '';
     gsum.textContent = people.length ? `ប្រុស ${m} · ស្រី ${f}${pr.length - m - f ? ` · មិនទាន់កំណត់ភេទ ${pr.length - m - f}` : ''}` : '';
-    if (typeof renderGroupManager === 'function') renderGroupManager();
   }
   function spin() {
     if (spinning) return;
@@ -384,7 +409,9 @@ render.wheel = async function () {
   gAgain.onclick = () => gRedo && gRedo(); gClose.onclick = closeGroupPop; xBtn2.onclick = closeGroupPop; gCopy.onclick = () => { copyBtn.click(); gCopy.textContent = 'បានចម្លង ✓'; setTimeout(() => { gCopy.textContent = 'ចម្លង'; }, 1600); };
   gPop.addEventListener('click', (e) => { if (e.target === gPop) closeGroupPop(); });
   gPop.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGroupPop(); });
-  // ---- Interactive Manual Group Management ----
+  // ---- Groups & Wheel Mode (Spin Mode vs Group Mode) ----
+  let wheelMode = 'spin'; // 'spin' (students) or 'group' (groups)
+  let doneGroups = [];
   let currentGroups = [];
   try {
     const saved = JSON.parse(localStorage.getItem(`exam_wheel_${wheelClassId}_groups`));
@@ -403,32 +430,10 @@ render.wheel = async function () {
     } catch {}
   };
 
-  const getUnassigned = () => {
-    const pr = present();
-    const assignedIds = new Set(currentGroups.flatMap((g) => g.people.map((p) => p.id)));
-    return pr.filter((p) => !assignedIds.has(p.id));
-  };
-
-  const groupMgmtCard = h('div', { class: 'wheel-group-mgmt card' });
-
   const initDefaultGroups = (count = 6) => {
-    const cnt = Math.max(1, count);
-    currentGroups = Array.from({ length: cnt }, (_, i) => ({
-      title: `ក្រុមទី ${whKh(i + 1)}`,
-      people: []
-    }));
-    saveGroups();
-    renderGroupManager();
-  };
-
-  const autoSplitGroups = (openPopAnimation = false) => {
     const pr = present();
-    if (!pr.length) {
-      if (openPopAnimation) Exam.notify('មិនទាន់មានសិស្សទេ។');
-      return;
-    }
-    const num = Math.max(1, Math.floor(+gNum.value) || 1);
-    const cnt = gMode.value === 'k' ? Math.max(1, Math.ceil(pr.length / num)) : Math.min(num, pr.length);
+    if (!pr.length) return;
+    const cnt = Math.max(1, count);
     const grps = Array.from({ length: cnt }, () => []);
     const order = gBal.checked && pr.some((p) => p.g)
       ? [...whShuffle(pr.filter((p) => p.g === 'f')), ...whShuffle(pr.filter((p) => p.g === 'm')), ...whShuffle(pr.filter((p) => !p.g))]
@@ -439,14 +444,25 @@ render.wheel = async function () {
       people: g
     }));
     saveGroups();
-    renderGroupManager();
     const blocks = currentGroups.map((g) => ({ title: `${g.title} · ${whKh(g.people.length)} នាក់`, people: g.people }));
-    if (openPopAnimation) {
-      groupPop(blocks, () => autoSplitGroups(true));
-    }
+    showBlocks(blocks);
   };
 
-  const makeGroups = () => autoSplitGroups(true);
+  const makeGroups = () => {
+    const pr = present();
+    if (!pr.length) { groupsBox.hidden = false; groupsBox.textContent = 'មិនទាន់មានសិស្សទេ។'; return; }
+    const num = Math.max(1, Math.floor(+gNum.value) || 1), cnt = gMode.value === 'k' ? Math.ceil(pr.length / num) : Math.min(num, pr.length);
+    const groups = Array.from({ length: cnt }, () => []);
+    const order = gBal.checked && pr.some((p) => p.g)
+      ? [...whShuffle(pr.filter((p) => p.g === 'f')), ...whShuffle(pr.filter((p) => p.g === 'm')), ...whShuffle(pr.filter((p) => !p.g))] : whShuffle(pr);
+    order.forEach((p, i) => groups[i % cnt].push(p));   // round-robin: sizes differ by at most 1 and each gender is spread out
+    const blocks = groups.map((g, i) => ({ title: `ក្រុមទី ${whKh(i + 1)} · ${whKh(g.length)} នាក់`, people: g }));
+    currentGroups = groups.map((g, i) => ({ title: `ក្រុមទី ${whKh(i + 1)}`, people: g }));
+    saveGroups();
+    showBlocks(blocks);
+    groupPop(blocks, makeGroups);
+    if (wheelMode === 'group') redraw();
+  };
 
   const makeOrder = () => {
     const pr = whShuffle(present());
@@ -454,8 +470,9 @@ render.wheel = async function () {
     const blocks = [{ title: `លំដាប់ចៃដន្យ · ${whKh(pr.length)} នាក់`, people: pr }];
     currentGroups = [{ title: 'លំដាប់ចៃដន្យ', people: pr }];
     saveGroups();
-    renderGroupManager();
+    showBlocks(blocks);
     groupPop(blocks, makeOrder);
+    if (wheelMode === 'group') redraw();
   };
 
   copyBtn.onclick = async () => {
@@ -465,355 +482,71 @@ render.wheel = async function () {
     setTimeout(() => { copyBtn.textContent = 'ចម្លងលទ្ធផល'; }, 1600);
   };
 
-  function renderGroupManager() {
-    groupMgmtCard.innerHTML = '';
-    const pr = present();
-    const unassigned = getUnassigned();
-    const pal = (WHEEL_PALETTES[wheelSettings.theme] || WHEEL_PALETTES.a)[1];
+  // Mode buttons (Spin Mode vs Group Mode)
+  const updateModeStyles = () => {
+    const isSpin = wheelMode === 'spin';
+    btnSpinMode.style.background = isSpin ? 'var(--brand)' : '#f1f5f9';
+    btnSpinMode.style.color = isSpin ? '#fff' : '#334155';
+    btnGroupMode.style.background = !isSpin ? 'var(--brand)' : '#f1f5f9';
+    btnGroupMode.style.color = !isSpin ? '#fff' : '#334155';
+  };
 
-    // Header
-    const head = h('div', { class: 'wh-mgmt-head' }, [
-      h('div', {}, [
-        h('h3', { class: 'wh-mgmt-title' }, [
-          '👥 បែងចែក និងគ្រប់គ្រងក្រុម (Group Management)',
-          h('span', { class: 'wh-mgmt-badge' }, `${className() || 'ថ្នាក់'} · សិស្ស ${whKh(pr.length)} នាក់ · ${whKh(currentGroups.length)} ក្រុម`)
-        ]),
-        h('p', { class: 'wh-mgmt-sub' }, 'រៀបចំសិស្សជាក្រុមដោយស្វ័យប្រវត្តិ ឬដោយផ្ទាល់ (អូសទម្លាក់ ឬប្តូរក្រុមតាមចិត្ត)')
-      ]),
-      h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center;' }, [
-        h('button', {
-          type: 'button',
-          class: 'btn-sm',
-          onclick: () => autoSplitGroups(true)
-        }, '🎲 ចែកចៃដន្យ'),
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          onclick: makeOrder
-        }, 'លំដាប់ចៃដន្យ'),
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          title: 'បន្ថែមក្រុមថ្មីមួយទៀត',
-          onclick: () => {
-            currentGroups.push({ title: `ក្រុមទី ${whKh(currentGroups.length + 1)}`, people: [] });
-            gNum.value = String(currentGroups.length);
-            saveGroups();
-            renderGroupManager();
-          }
-        }, '➕ បន្ថែមក្រុម'),
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          title: 'កំណត់ក្រុមទទេ ៦ ក្រុម ដើម្បីរៀបចំដោយខ្លួនឯង',
-          onclick: async () => {
-            if (currentGroups.some((g) => g.people.length) && !(await Exam.confirm('តើអ្នកចង់សម្អាតក្រុមទាំងអស់ ដើម្បីរៀបចំដោយផ្ទាល់ឡើងវិញទេ?'))) return;
-            initDefaultGroups(Math.max(1, parseInt(gNum.value, 10) || 6));
-          }
-        }, '✋ ក្រុមទទេ')
-      ])
-    ]);
-
-    // Setup / Options row
-    const controls = h('div', { class: 'wh-mgmt-controls' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:6px;' }, [
-        gMode,
-        gNum,
-      ]),
-      h('label', { style: 'display:flex;gap:6px;align-items:center;font-weight:400;font-size:14px;cursor:pointer;' }, [
-        gBal,
-        'លាយប្រុស-ស្រីឱ្យស្មើគ្នា'
-      ]),
-      h('button', {
-        type: 'button',
-        class: 'btn-sm',
-        style: 'margin-left:auto;',
-        onclick: () => autoSplitGroups(false)
-      }, '⚡ បែងចែកជាថ្មី')
-    ]);
-
-    // Unassigned students pool (if any)
-    let unassignedBox = null;
-    if (unassigned.length > 0) {
-      unassignedBox = h('div', {
-        class: 'wh-unassigned-box',
-        ondragover: (e) => { e.preventDefault(); },
-        ondrop: (e) => {
-          e.preventDefault();
-          try {
-            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            if (data && data.studentId !== undefined && data.fromGroup >= 0) {
-              const fromG = currentGroups[data.fromGroup];
-              if (fromG) {
-                fromG.people = fromG.people.filter((p) => p.id !== data.studentId);
-                saveGroups();
-                renderGroupManager();
-              }
-            }
-          } catch {}
-        }
-      }, [
-        h('div', { style: 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;' }, [
-          h('b', { style: 'color:#b45309;font-size:14px;' }, `⚠️ សិស្សមិនទាន់មានក្រុម (${whKh(unassigned.length)} នាក់) ៖`),
-          h('button', {
-            type: 'button',
-            class: 'secondary btn-sm',
-            style: 'padding:3px 8px;font-size:12px;background:#fff;',
-            onclick: () => {
-              if (!currentGroups.length) initDefaultGroups(6);
-              const un = [...unassigned];
-              un.forEach((st) => {
-                let minG = currentGroups[0];
-                for (const g of currentGroups) {
-                  if (g.people.length < minG.people.length) minG = g;
-                }
-                minG.people.push(st);
-              });
-              saveGroups();
-              renderGroupManager();
-            }
-          }, '⚡ ចែកអ្នកនៅសល់ស្មើៗគ្នា')
-        ]),
-        h('div', { class: 'wh-unassigned-chips' }, unassigned.map((st) => {
-          return h('div', {
-            class: 'wh-unassigned-chip',
-            title: 'ចុចដើម្បីជ្រើសក្រុមដាក់ចូល ឬអូសចូលក្រុម',
-            draggable: 'true',
-            ondragstart: (e) => {
-              e.dataTransfer.setData('text/plain', JSON.stringify({ studentId: st.id, fromGroup: -1 }));
-            }
-          }, [
-            h('span', { class: `wh-gender-icon ${st.g || ''}` }, mark(st)),
-            h('span', {}, st.n),
-            h('select', {
-              class: 'wh-move-select',
-              style: 'border-color:#fde68a;',
-              onchange: (e) => {
-                const targetIdx = Number(e.target.value);
-                if (targetIdx >= 0 && currentGroups[targetIdx]) {
-                  currentGroups[targetIdx].people.push(st);
-                  saveGroups();
-                  renderGroupManager();
-                }
-              }
-            }, [
-              h('option', { value: '', disabled: 'disabled', selected: 'selected' }, '➕ ដាក់ចូល...'),
-              ...currentGroups.map((g, gi) => h('option', { value: gi }, `→ ${g.title}`))
-            ])
-          ]);
-        }))
-      ]);
+  const setWheelMode = (m) => {
+    wheelMode = m;
+    updateModeStyles();
+    if (wheelMode === 'group' && (!currentGroups || !currentGroups.length)) {
+      initDefaultGroups(Math.max(1, parseInt(gNum.value, 10) || 6));
     }
+    refresh();
+    redraw();
+  };
 
-    // Groups Grid
-    const grid = h('div', { class: 'wh-groups-grid' });
-    currentGroups.forEach((g, gIdx) => {
-      const gColor = pal[gIdx % pal.length];
-      const mCount = g.people.filter((p) => p.g === 'm').length;
-      const fCount = g.people.filter((p) => p.g === 'f').length;
+  const btnSpinMode = h('button', {
+    type: 'button',
+    class: 'btn-sm',
+    style: 'border-radius:8px;padding:6px 12px;font-weight:600;transition:all .15s;border:none;cursor:pointer;',
+    onclick: () => setWheelMode('spin')
+  }, '🎡 របៀបចាប់ឈ្មោះ (Spin Mode)');
 
-      const card = h('div', {
-        class: 'wh-group-card',
-        style: `--gc: ${gColor};`,
-        ondragover: (e) => { e.preventDefault(); card.classList.add('drag-over'); },
-        ondragleave: () => card.classList.remove('drag-over'),
-        ondrop: (e) => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          try {
-            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            if (!data || data.studentId === undefined) return;
-            if (data.fromGroup === gIdx) return;
-            let student = null;
-            if (data.fromGroup >= 0 && currentGroups[data.fromGroup]) {
-              student = currentGroups[data.fromGroup].people.find((p) => p.id === data.studentId);
-              currentGroups[data.fromGroup].people = currentGroups[data.fromGroup].people.filter((p) => p.id !== data.studentId);
-            } else {
-              student = pr.find((p) => p.id === data.studentId);
-            }
-            if (student) {
-              g.people.push(student);
-              saveGroups();
-              renderGroupManager();
-            }
-          } catch {}
-        }
-      });
+  const btnGroupMode = h('button', {
+    type: 'button',
+    class: 'btn-sm',
+    style: 'border-radius:8px;padding:6px 12px;font-weight:600;transition:all .15s;border:none;cursor:pointer;',
+    onclick: () => setWheelMode('group')
+  }, '👥 របៀបចាប់ក្រុម (Group Mode)');
+  updateModeStyles();
 
-      // Card Header
-      const cardHeader = h('div', { class: 'wh-group-card-header' }, [
-        h('div', { style: 'display:flex;align-items:center;gap:6px;' }, [
-          h('span', { class: 'wh-group-card-title' }, g.title),
-          h('span', { class: 'muted', style: 'font-size:12px;' }, `(${whKh(g.people.length)})`)
-        ]),
-        h('div', { style: 'display:flex;align-items:center;gap:4px;' }, [
-          (mCount > 0 || fCount > 0) ? h('span', { style: 'font-size:11px;color:#64748b;font-weight:600;' },
-            `${mCount > 0 ? `♂${whKh(mCount)} ` : ''}${fCount > 0 ? `♀${whKh(fCount)}` : ''}`) : null,
-          currentGroups.length > 1 ? h('button', {
-            type: 'button',
-            class: 'wh-remove-btn',
-            title: 'លុបក្រុមនេះ (សិស្សនឹងត្រូវដកចេញទៅបញ្ជីមិនទាន់មានក្រុម)',
-            onclick: () => {
-              currentGroups.splice(gIdx, 1);
-              currentGroups.forEach((grp, i) => {
-                if (/^ក្រុមទី \d+/.test(grp.title) || /^ក្រុមទី [០-៩]+/.test(grp.title)) {
-                  grp.title = `ក្រុមទី ${whKh(i + 1)}`;
-                }
-              });
-              gNum.value = String(currentGroups.length);
-              saveGroups();
-              renderGroupManager();
-            }
-          }, '✕') : null
-        ])
-      ]);
+  const modeSwitch = h('div', {
+    style: 'display:inline-flex;align-items:center;gap:4px;background:#f8fafc;padding:3px;border-radius:10px;border:1px solid #e2e8f0;'
+  }, [btnSpinMode, btnGroupMode]);
 
-      // Student list
-      const studentList = h('div', { class: 'wh-student-list' });
-      if (!g.people.length) {
-        studentList.append(h('div', { class: 'wh-empty-group' }, 'ទទេ (អូសសិស្សចូលទីនេះ)'));
-      } else {
-        g.people.forEach((p) => {
-          const item = h('div', {
-            class: 'wh-student-item',
-            draggable: 'true',
-            ondragstart: (e) => {
-              e.dataTransfer.setData('text/plain', JSON.stringify({ studentId: p.id, fromGroup: gIdx }));
-            }
-          }, [
-            h('div', { class: 'wh-student-left' }, [
-              h('span', { class: `wh-gender-icon ${p.g || ''}` }, mark(p)),
-              h('span', { class: 'wh-student-name' }, p.n)
-            ]),
-            h('div', { class: 'wh-student-actions' }, [
-              h('select', {
-                class: 'wh-move-select',
-                title: 'ប្តូរទៅក្រុមផ្សេង',
-                onchange: (e) => {
-                  const target = Number(e.target.value);
-                  if (target === -1) {
-                    g.people = g.people.filter((x) => x.id !== p.id);
-                    saveGroups();
-                    renderGroupManager();
-                  } else if (target >= 0 && target !== gIdx && currentGroups[target]) {
-                    g.people = g.people.filter((x) => x.id !== p.id);
-                    currentGroups[target].people.push(p);
-                    saveGroups();
-                    renderGroupManager();
-                  }
-                }
-              }, [
-                h('option', { value: '', disabled: 'disabled', selected: 'selected' }, '⇄'),
-                ...currentGroups.map((grp, gi) => gi !== gIdx ? h('option', { value: gi }, `→ ${grp.title}`) : null).filter(Boolean),
-                h('option', { value: -1 }, '✕ ដកចេញ')
-              ]),
-              h('button', {
-                type: 'button',
-                class: 'wh-remove-btn',
-                title: 'ដកចេញទៅបញ្ជីមិនទាន់មានក្រុម',
-                onclick: () => {
-                  g.people = g.people.filter((x) => x.id !== p.id);
-                  saveGroups();
-                  renderGroupManager();
-                }
-              }, '✕')
-            ])
-          ]);
-          studentList.append(item);
-        });
-      }
+  // Old-style group card below the spin wheel
+  const groupCard = h('div', { class: 'card wheel-group-card', style: 'width:100%;box-sizing:border-box;margin-top:14px;text-align:left;' }, [
+    h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;' }, [
+      h('h3', { style: 'margin:0;' }, 'បែងចែកក្រុម'),
+      h('div', { style: 'display:flex;align-items:center;gap:6px;' }, [
+        h('span', { class: 'muted', style: 'font-size:13px;' }, 'របៀបកង់ ៖'),
+        modeSwitch
+      ])
+    ]),
+    h('div', { class: 'row', style: 'margin-top:10px;' }, [gMode, gNum]),
+    h('label', { style: 'display:flex;gap:8px;align-items:flex-start;margin:10px 0;font-weight:400' }, [gBal, 'លាយប្រុស និងស្រីឱ្យស្មើគ្នាក្នុងក្រុម']),
+    h('div', { class: 'row' }, [
+      h('button', { class: 'btn-sm', onclick: makeGroups }, 'បែងចែកក្រុម'),
+      h('button', { class: 'secondary btn-sm', onclick: makeOrder }, 'លំដាប់ចៃដន្យ')
+    ]),
+    groupsBox, copyBtn,
+  ]);
 
-      card.append(cardHeader, studentList);
-      grid.append(card);
-    });
-
-    // Bottom Action Bar
-    const footer = h('div', { style: 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;' }, [
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;' }, [
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          onclick: async (e) => {
-            let txt = `លទ្ធផលបែងចែកក្រុម៖ ${className()} (${whKh(pr.length)} នាក់)\n\n`;
-            currentGroups.forEach((g) => {
-              txt += `${g.title} (${whKh(g.people.length)} នាក់)៖\n`;
-              g.people.forEach((p, i) => {
-                txt += `${i + 1}. ${p.n}${p.g === 'f' ? ' (ស្រី)' : p.g === 'm' ? ' (ប្រុស)' : ''}\n`;
-              });
-              txt += '\n';
-            });
-            let ok = false;
-            try { await navigator.clipboard.writeText(txt); ok = true; } catch {}
-            e.target.textContent = ok ? 'បានចម្លង ✓' : 'ចម្លងមិនបាន';
-            setTimeout(() => { e.target.textContent = '📋 ចម្លងលទ្ធផល'; }, 1600);
-          }
-        }, '📋 ចម្លងលទ្ធផល'),
-
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          onclick: () => {
-            lastBlocks = currentGroups.map((g) => ({ title: `${g.title} · ${whKh(g.people.length)} នាក់`, people: g.people }));
-            gPng.click();
-          }
-        }, '🖼 ទាញយក PNG'),
-
-        h('button', {
-          type: 'button',
-          class: 'secondary btn-sm',
-          onclick: () => {
-            if (!window.XLSX) return Exam.notify('មិនអាចបើកកម្មវិធី Excel បានទេ។');
-            const wb = XLSX.utils.book_new();
-            const maxLen = Math.max(...currentGroups.map((g) => g.people.length), 0);
-            const rows = [];
-            for (let r = 0; r < maxLen; r++) {
-              const row = {};
-              currentGroups.forEach((g) => {
-                row[g.title] = g.people[r] ? g.people[r].n : '';
-              });
-              rows.push(row);
-            }
-            const ws = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, 'ក្រុម');
-            XLSX.writeFile(wb, `ក្រុម-${className()}-${new Date().toISOString().slice(0, 10)}.xlsx`);
-          }
-        }, '📥 Excel')
-      ]),
-
-      h('button', {
-        type: 'button',
-        class: 'btn-sm',
-        style: 'background:linear-gradient(135deg, #1e40af, #3b82f6);color:#fff;',
-        onclick: () => {
-          saveGroups();
-          window.open('teamgame.html?import=1&style=wheel', '_blank');
-        }
-      }, '🎮 ផ្ញើទៅលេងហ្គេមក្រុម →')
-    ]);
-
-    groupMgmtCard.append(head, controls);
-    if (unassignedBox) groupMgmtCard.append(unassignedBox);
-    groupMgmtCard.append(grid, footer);
-  }
-
-  // Initial setup: load or auto-split into 6 groups
+  // Initial group display
   if (!currentGroups.length && present().length) {
-    autoSplitGroups(false);
-  } else if (!currentGroups.length) {
     initDefaultGroups(6);
-  } else {
-    renderGroupManager();
+  } else if (currentGroups.length) {
+    const blocks = currentGroups.map((g) => ({ title: `${g.title} · ${whKh(g.people.length)} នាក់`, people: g.people }));
+    showBlocks(blocks);
   }
 
-  const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
-  gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
-
-  const teacherIn = h('input', { type: 'text', maxlength: '60', autocomplete: 'off', placeholder: 'ឧ. លោកគ្រូ សាន សុខលី', style: 'margin-bottom:10px' });
-  teacherIn.value = wheelSettings.teacher || ''; teacherIn.oninput = () => { wheelSettings.teacher = teacherIn.value; wheelSaveSettings(); };
-  const durV = h('b', {}, whKh(wheelSettings.dur));
-  const durIn = h('input', { type: 'range', min: '2', max: '15', step: '1', value: String(wheelSettings.dur), style: 'padding:0;border:0;accent-color:var(--brand)' });
-  durIn.oninput = () => { wheelSettings.dur = +durIn.value; durV.textContent = whKh(durIn.value); wheelSaveSettings(); };
-  const themeSel = h('select', {}, Object.keys(WHEEL_PALETTES).map((k) => h('option', { value: k }, WHEEL_PALETTES[k][0])));
+    const themeSel = h('select', {}, Object.keys(WHEEL_PALETTES).map((k) => h('option', { value: k }, WHEEL_PALETTES[k][0])));
   themeSel.value = wheelSettings.theme; themeSel.onchange = () => { wheelSettings.theme = themeSel.value; wheelSaveSettings(); draw(); };
   const chk = (key, label, wrap) => { const i = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none' }); i.checked = !!wheelSettings[key]; i.onchange = () => { wheelSettings[key] = i.checked; wheelSaveSettings(); }; (wrap || h('label', { class: 'wheel-chk' })).append(i, label); return wrap || i.parentElement; };
   speakRow.append(); chk('speak', ' អានឈ្មោះឱ្យលឺ', speakRow);
@@ -833,11 +566,11 @@ render.wheel = async function () {
       h('button', { class: 'secondary btn-sm', onclick: () => { if (document.fullscreenElement) document.exitFullscreen(); else if (stage.requestFullscreen) stage.requestFullscreen(); } }, 'ពេញអេក្រង់'),
       h('button', { class: 'secondary btn-sm', onclick: (e) => { sound = !sound; e.target.textContent = `សំឡេង៖ ${sound ? 'បើក' : 'បិទ'}`; } }, 'សំឡេង៖ បើក'),
       h('button', { class: 'secondary btn-sm', onclick: (e) => { noRepeat = !noRepeat; e.target.textContent = `មិនជ្រើសម្ដងទៀត៖ ${noRepeat ? 'បើក' : 'បិទ'}`; refresh(); redraw(); } }, 'មិនជ្រើសម្ដងទៀត៖ បើក'),
-      h('button', { class: 'secondary btn-sm', onclick: () => { mem.done = []; save(); current = null; closePop(); refresh(); redraw(); } }, 'ចាប់ផ្ដើមជុំថ្មី'),
+      h('button', { class: 'secondary btn-sm', onclick: () => { mem.done = []; doneGroups = []; save(); current = null; closePop(); refresh(); redraw(); } }, 'ចាប់ផ្ដើមជុំថ្មី'),
       h('button', { class: 'secondary btn-sm', onclick: () => { ord = {}; people.forEach((p) => { ord[p.id] = Math.random(); }); redraw(); } }, 'លាយលំដាប់កង់'),
     ]),
     h('div', { class: 'row wheel-tools', style: 'align-items:center' }, [h('span', {}, 'កង់ជ្រើសពី៖'), gSel]),
-    groupMgmtCard,
+    groupCard,
     fw, pop, gPop,
   ]);
   const side = h('div', {}, [
