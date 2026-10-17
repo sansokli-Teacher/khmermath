@@ -95,8 +95,15 @@ function openExport(questions, curr, S) {
 }
 
 
+let activeViewerModal = null;
+
 // ---------- View modal to see the "real question" (full stem, image, choices with correct answer, solution/rubric) ----------
-function openQuestionViewer(q, onEdit) {
+function openQuestionViewer(q, onEdit, nav = null) {
+  if (activeViewerModal) {
+    try { activeViewerModal.remove(); } catch {}
+    activeViewerModal = null;
+  }
+
   const letters = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
   const isWriting = q.kind === 'writing';
   const hasImg = Boolean(q.image_key);
@@ -105,10 +112,29 @@ function openQuestionViewer(q, onEdit) {
   let m;
   const copyId = () => {
     navigator.clipboard?.writeText(String(q.id));
-    Exam.notify(`បានចម្លង ID: ${q.id}`);
+    Exam.notify(`✓ បានចម្លង ID #${q.id}`);
   };
 
-  // Compact Header: Title + Tap-to-Copy #ID Badge on left, and a circular Close button (✕) on right
+  const copyFullQuestion = () => {
+    let text = `[ID #${q.id}] ${q.stem_text}
+`;
+    if (!isWriting && opts.length) {
+      opts.forEach((o, i) => {
+        text += `${letters[i] || i + 1}. ${o}${i === q.correct_index ? ' (✓)' : ''}
+`;
+      });
+    }
+    if (q.solution_text) {
+      text += `
+💡 ដំណោះស្រាយ៖
+${q.solution_text}
+`;
+    }
+    navigator.clipboard?.writeText(text);
+    Exam.notify(`✓ បានចម្លងសំណួរ និងចម្លើយ!`);
+  };
+
+  // Fixed Header: Title + Tap-to-Copy #ID Badge + Navigation (❮ 12/50 ❯) + Close (✕)
   const titleRow = h('div', { class: 'qv-header' }, [
     h('div', { class: 'qv-title-left' }, [
       h('span', { class: 'qv-title-text' }, '👁 មើលសំណួរ'),
@@ -117,45 +143,83 @@ function openQuestionViewer(q, onEdit) {
         class: 'qv-id-badge',
         title: 'ចុចដើម្បីចម្លង ID',
         onclick: (e) => { e.stopPropagation(); copyId(); }
-      }, [`#${q.id}`, h('span', { style: 'font-size:11px;opacity:0.85;' }, '📋')])
+      }, [`#${q.id}`, h('span', { class: 'qv-copy-icon' }, '📋')])
     ]),
+
+    // Carousel Navigation
+    nav ? h('div', { class: 'qv-nav' }, [
+      h('button', {
+        type: 'button',
+        class: 'qv-nav-arrow',
+        disabled: !nav.hasPrev,
+        title: 'សំណួរមុន (Arrow Left)',
+        onclick: (e) => { e.stopPropagation(); nav.prev(); }
+      }, '❮'),
+      h('span', { class: 'qv-nav-counter' }, `${kh(nav.current)}/${kh(nav.total)}`),
+      h('button', {
+        type: 'button',
+        class: 'qv-nav-arrow',
+        disabled: !nav.hasNext,
+        title: 'សំណួរបន្ទាប់ (Arrow Right)',
+        onclick: (e) => { e.stopPropagation(); nav.next(); }
+      }, '❯'),
+    ]) : null,
+
+    // Close button
     h('button', {
       type: 'button',
       class: 'qv-close-btn',
-      title: 'បិទ',
+      title: 'បិទ (Esc)',
       onclick: () => m && m.remove()
     }, '✕')
   ]);
 
-  const body = h('div', { class: 'question-viewer' }, [
-    // Top metadata chips (Deduplicated: no duplicate ID chip, no duplicate topic if identical to lesson)
-    h('div', { class: 'test-chips qv-chips' }, [
+  // Independently scrollable body
+  const scrollBody = h('div', { class: 'qv-scroll-body' }, [
+    // Subtitle breadcrumb
+    (q.grade || q.lesson) ? h('div', { class: 'qv-breadcrumb' }, [
+      q.grade ? h('span', { class: 'qv-crumb-grade' }, `ថ្នាក់ទី ${kh(q.grade)}`) : null,
+      (q.grade && q.lesson) ? h('span', { class: 'qv-crumb-sep' }, '·') : null,
+      q.lesson ? h('span', { class: 'qv-crumb-lesson' }, `មេរៀន ៖ ${q.lesson}`) : null,
+    ]) : null,
+
+    // Chips tags
+    h('div', { class: 'qv-tags' }, [
       isWriting ? h('span', { class: 'chip chip-soon' }, '✎ សរសេរ') : h('span', { class: 'chip chip-plain' }, 'ពហុជ្រើសរើស'),
-      q.grade ? h('span', { class: 'chip chip-plain' }, GRADE_KH(q.grade)) : null,
-      q.lesson ? h('span', { class: 'chip chip-plain' }, q.lesson) : null,
-      (q.topic && q.topic !== q.lesson) ? h('span', { class: 'chip chip-plain' }, q.topic) : null,
-      q.level ? h('span', { class: `chip ${q.level === 'hard' ? 'chip-closed' : q.level === 'pisa' ? 'chip-soon' : 'chip-open'}` }, LEVEL_KH[q.level] || q.level) : null,
-      h('span', { class: 'chip chip-plain' }, `${q.points} ពិន្ទុ`),
-      hasImg ? h('span', { class: 'chip', style: 'background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;' }, `🖼 ${q.image_key}`) : null,
+      q.level ? h('span', { class: `chip ${q.level === 'hard' ? 'chip-closed' : q.level === 'pisa' ? 'chip-soon' : 'chip-open'}` }, `កម្រិត ៖ ${LEVEL_KH[q.level] || q.level}`) : null,
+      h('span', { class: 'chip chip-plain' }, `${kh(q.points)} ពិន្ទុ`),
+      (q.topic && q.topic !== q.lesson) ? h('span', { class: 'chip chip-plain' }, `ប្រធានបទ ៖ ${q.topic}`) : null,
+      hasImg ? h('span', { class: 'chip', style: 'background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-family:ui-monospace,monospace;' }, `🖼 ${q.image_key}`) : null,
       q.test_title ? h('span', { class: 'muted', style: 'font-size:12px;' }, q.test_title) : null,
     ]),
 
-    // Stem text
-    mathEl('div', { class: 'q-stem-box qv-stem' }, q.stem_text),
+    // Stem Box
+    h('div', { class: 'qv-stem-card' }, [
+      h('div', { class: 'qv-stem-top' }, [
+        h('span', { class: 'qv-stem-lbl' }, '📖 តួសំណួរ ៖'),
+        h('button', {
+          type: 'button',
+          class: 'qv-copy-stem-btn',
+          title: 'ចម្លងសំណួរ និងចម្លើយទាំងអស់',
+          onclick: copyFullQuestion
+        }, '📋 ចម្លងសំណួរ')
+      ]),
+      mathEl('div', { class: 'qv-stem-text' }, q.stem_text)
+    ]),
 
     // Image if present
-    hasImg ? h('div', { class: 'qv-img-box' }, [
+    hasImg ? h('div', { class: 'qv-img-card' }, [
       h('img', {
         src: '/api/images/' + encodeURIComponent(q.image_key),
         alt: q.image_key,
         class: 'qv-img'
       }),
-      h('div', { class: 'qv-img-tools' }, [
-        h('span', { class: 'qv-img-name' }, q.image_key),
+      h('div', { class: 'qv-img-toolbar' }, [
+        h('span', { class: 'qv-img-key' }, q.image_key),
         h('button', {
           type: 'button',
           class: 'secondary btn-sm',
-          style: 'padding:3px 10px;font-size:11.5px;',
+          style: 'padding:3px 8px;font-size:11px;',
           onclick: () => {
             navigator.clipboard?.writeText(q.image_key);
             Exam.notify(`បានចម្លងឈ្មោះរូបភាព៖ ${q.image_key}`);
@@ -164,65 +228,80 @@ function openQuestionViewer(q, onEdit) {
         h('a', {
           href: '/api/images/' + encodeURIComponent(q.image_key),
           target: '_blank',
-          style: 'color:#2563eb;text-decoration:none;font-weight:600;font-size:12px;'
+          class: 'qv-img-zoom-link'
         }, '↗ មើលទំហំពេញ')
       ])
     ]) : null,
 
     // Real Options (MCQ)
-    !isWriting ? h('div', { class: 'qv-options-box' }, [
-      h('div', { class: 'qv-options-lbl' }, 'ជម្រើសចម្លើយ ៖'),
+    !isWriting ? h('div', { class: 'qv-choices-card' }, [
+      h('div', { class: 'qv-choices-title' }, 'ជម្រើសចម្លើយ ៖'),
       ...opts.map((opt, idx) => {
         const isCorrect = idx === q.correct_index;
         const isAlt = idx === q.alt_correct_index;
-        const cardClass = isCorrect ? 'qv-opt qv-opt-correct' : isAlt ? 'qv-opt qv-opt-alt' : 'qv-opt';
-        const icon = isCorrect
-          ? h('span', { class: 'qv-opt-icon qv-icon-correct' }, '✓')
-          : isAlt
-            ? h('span', { class: 'qv-opt-icon qv-icon-alt' }, '✓')
-            : h('span', { class: 'qv-opt-icon qv-icon-default' }, '○');
+        const cardClass = isCorrect ? 'qv-choice is-correct' : isAlt ? 'qv-choice is-alt' : 'qv-choice';
+        const letterClass = isCorrect ? 'qv-letter is-correct' : isAlt ? 'qv-letter is-alt' : 'qv-letter';
 
         return h('div', { class: cardClass }, [
-          icon,
-          h('b', { class: 'qv-opt-let' }, `${letters[idx] || idx + 1}.`),
-          mathEl('div', { class: 'qv-opt-text' }, opt),
-          isCorrect ? h('span', { class: 'chip chip-open qv-opt-badge' }, 'ចម្លើយត្រឹមត្រូវ') : null,
-          isAlt ? h('span', { class: 'chip chip-soon qv-opt-badge' }, 'ទទួលយកបាន') : null,
+          h('div', { class: letterClass }, isCorrect ? '✓' : isAlt ? '✓' : letters[idx] || String(idx + 1)),
+          mathEl('div', { class: 'qv-choice-text' }, opt),
+          isCorrect ? h('span', { class: 'qv-choice-tag correct' }, 'ចម្លើយត្រឹមត្រូវ ✓') : null,
+          isAlt ? h('span', { class: 'qv-choice-tag alt' }, 'ទទួលយកបាន ✓') : null,
         ]);
       })
     ]) : null,
 
-    // Writing or MCQ Solution
-    q.solution_text ? h('div', {
-      class: isWriting ? 'qv-sol qv-sol-writing' : 'qv-sol qv-sol-mcq'
-    }, [
-      h('b', { class: 'qv-sol-title' },
-        isWriting ? '📝 ដំណោះស្រាយ និងរបៀបដាក់ពិន្ទុ (Rubric) ៖' : '💡 ការពន្យល់ / ដំណោះស្រាយ (Explanation) ៖'
-      ),
-      mathEl('div', { class: 'qv-sol-body' }, q.solution_text)
+    // Solution / Explanation
+    q.solution_text ? h('div', { class: isWriting ? 'qv-sol-card writing' : 'qv-sol-card mcq' }, [
+      h('div', { class: 'qv-sol-head' }, [
+        h('span', { class: 'qv-sol-icon' }, isWriting ? '📝' : '💡'),
+        h('b', { class: 'qv-sol-title' }, isWriting ? 'ដំណោះស្រាយ និងរបៀបដាក់ពិន្ទុ (Rubric) ៖' : 'ការពន្យល់ និងដំណោះស្រាយ (Explanation) ៖')
+      ]),
+      mathEl('div', { class: 'qv-sol-content' }, q.solution_text)
     ]) : null,
+  ]);
 
-    // Sticky Bottom Action Bar with Safe-Area clearance for mobile
-    h('div', { class: 'qv-actions' }, [
-      onEdit ? h('button', {
-        type: 'button',
-        class: 'qv-btn-edit',
-        onclick: () => { m && m.remove(); onEdit(); }
-      }, '✏️ កែសំណួរនេះ') : null,
-      h('button', {
-        type: 'button',
-        class: 'secondary qv-btn-copy',
-        onclick: copyId
-      }, '📋 ចម្លង ID'),
-      h('button', {
-        type: 'button',
-        class: 'secondary qv-btn-close',
-        onclick: () => m && m.remove()
-      }, 'បិទ')
-    ])
+  // Fixed Bottom Action Bar
+  const footerActions = h('div', { class: 'qv-footer-actions' }, [
+    onEdit ? h('button', {
+      type: 'button',
+      class: 'qv-btn-edit',
+      onclick: () => { m && m.remove(); onEdit(); }
+    }, '✏️ កែសំណួរនេះ') : null,
+    h('button', {
+      type: 'button',
+      class: 'secondary qv-btn-copy',
+      onclick: copyId
+    }, '📋 ចម្លង ID'),
+    h('button', {
+      type: 'button',
+      class: 'secondary qv-btn-close',
+      onclick: () => m && m.remove()
+    }, 'បិទ')
+  ]);
+
+  const body = h('div', { class: 'question-viewer' }, [
+    scrollBody,
+    footerActions
   ]);
 
   m = bankModal(titleRow, body, true);
+  activeViewerModal = m;
+
+  // Keyboard navigation support
+  const onKey = (e) => {
+    if (e.key === 'Escape') { m.remove(); }
+    else if (e.key === 'ArrowLeft' && nav && nav.hasPrev) { nav.prev(); }
+    else if (e.key === 'ArrowRight' && nav && nav.hasNext) { nav.next(); }
+  };
+  window.addEventListener('keydown', onKey);
+  const origRemove = m.remove.bind(m);
+  m.remove = () => {
+    window.removeEventListener('keydown', onKey);
+    if (activeViewerModal === m) activeViewerModal = null;
+    origRemove();
+  };
+
   return m;
 }
 
@@ -356,13 +435,27 @@ render.bank = async function () {
       const cb = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none;cursor:pointer;margin-top:3px;', checked: selected.has(x.id) ? 'checked' : null, onchange: (e) => { e.target.checked ? selected.add(x.id) : selected.delete(x.id); upd(); } });
       const canEdit = !x.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
       const onEdit = canEdit ? () => openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload) : null;
-      const openViewer = () => openQuestionViewer(x, onEdit);
+      const openViewer = (targetIdx = idx) => {
+        const targetQ = rows[targetIdx];
+        if (!targetQ) return;
+        const nav = {
+          current: targetIdx + 1,
+          total: rows.length,
+          hasPrev: targetIdx > 0,
+          hasNext: targetIdx < rows.length - 1,
+          prev: () => openViewer(targetIdx - 1),
+          next: () => openViewer(targetIdx + 1)
+        };
+        const canEditTarget = !targetQ.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
+        const onEditTarget = canEditTarget ? () => openQuestionEditor(targetQ, { id: targetQ.test_id, submissions: 0 }, null, reload) : null;
+        return openQuestionViewer(targetQ, onEditTarget, nav);
+      };
 
       const viewBtn = h('button', {
         type: 'button',
         class: 'secondary btn-sm',
         title: 'មើលសំណួរពេញលេញ និងចម្លើយ',
-        onclick: (e) => { e.preventDefault(); e.stopPropagation(); openViewer(); }
+        onclick: (e) => { e.preventDefault(); e.stopPropagation(); openViewer(idx); }
       }, '👁 មើល');
 
       const editBtn = canEdit
