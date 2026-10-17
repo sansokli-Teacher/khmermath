@@ -279,32 +279,100 @@ $('file-in').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 
+
+let audioCtx = null;
+function playSuccessChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.28);
+  } catch {}
+}
+
+let toastTimer = null;
+function showScanToast(name, sub) {
+  const t = $('cam-toast');
+  if (!t) return;
+  $('cam-toast-name').textContent = name;
+  $('cam-toast-sub').textContent = sub;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
+}
+
 // ---------------- live camera (auto-scan) ----------------
 let stream = null, timer = null, last = null, cool = 0, recent = new Map();
+function updateCamCounter() {
+  const c = $('cam-counter');
+  if (!c || !ses) return;
+  const done = ses.roster.filter((r) => r.submitted_at).length;
+  c.textContent = `បានស្កេន ${kh(done)} / ${kh(ses.roster.length)} នាក់`;
+}
+
 async function openCam() {
   try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
   catch { return Exam.notify('មិនអាចបើកកាមេរ៉ាបានទេ។ សូមអនុញ្ញាតកាមេរ៉ា ឬប្រើប៊ូតុង «ជ្រើសរូប» ជំនួស។'); }
   const v = $('cam-v'); v.srcObject = stream; $('cam').hidden = false; last = null;
-  timer = setInterval(tick, 650);
+  updateCamCounter();
+  timer = setInterval(tick, 320);
 }
-function closeCam() { clearInterval(timer); if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; $('cam').hidden = true; }
+function closeCam() {
+  clearInterval(timer);
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  stream = null;
+  $('cam').hidden = true;
+  const g = $('cam-guide'); if (g) g.classList.remove('detected');
+}
 function tick() {
   const v = $('cam-v');
   if (!v.videoWidth || Date.now() < cool) return;
   let res;
   try { res = OMR.scan(v, { nQ: Math.min(mcq.length, OMR.MAX_Q), optCount }); } catch { return; }
-  const msg = $('cam-msg');
-  if (!res.ok) { msg.className = 'cam-msg'; msg.textContent = res.reason === 'markers' ? 'ដាក់សន្លឹកឱ្យឃើញការ៉េខ្មៅទាំង ៤ ជ្រុង' : 'កំពុងអាន… ថតឱ្យច្បាស់ជាងមុន'; last = null; return; }
-  if (res.testId !== ses.test_id) { msg.className = 'cam-msg'; msg.textContent = `សន្លឹកនេះជារបស់វិញ្ញាសា #${res.testId}`; return; }
+  const msg = $('cam-msg'), guide = $('cam-guide');
+  if (!res.ok) {
+    if (guide) guide.classList.remove('detected');
+    msg.className = 'cam-msg';
+    msg.textContent = res.reason === 'markers' ? 'ដាក់សន្លឹកឱ្យឃើញការ៉េខ្មៅទាំង ៤ ជ្រុង' : 'កំពុងអាន… ថតឱ្យច្បាស់ជាងមុន';
+    last = null;
+    return;
+  }
+  if (guide) guide.classList.add('detected');
+  if (res.testId !== ses.test_id) {
+    msg.className = 'cam-msg';
+    msg.textContent = `សន្លឹកនេះជារបស់វិញ្ញាសា #${res.testId}`;
+    return;
+  }
   const sig = res.studentId + '|' + res.answers.map((a) => (a.sel == null ? '-' : a.sel)).join('');
-  msg.className = 'cam-msg good'; msg.textContent = 'បានឃើញសន្លឹក — សូមកាន់ឱ្យនឹង…';
+  msg.className = 'cam-msg good';
+  msg.textContent = '✓ បានឃើញសន្លឹក — កំពុងផ្ទៀងផ្ទាត់…';
   if (last === sig && !res.studentId.includes('?')) {
-    if (recent.has(res.studentId) && Date.now() - recent.get(res.studentId) < 8000) return;
-    recent.set(res.studentId, Date.now()); cool = Date.now() + 1800; last = null;
-    const cv = document.createElement('canvas'); cv.width = v.videoWidth; cv.height = v.videoHeight; cv.getContext('2d').drawImage(v, 0, 0);
-    if (navigator.vibrate) navigator.vibrate(80);
-    msg.textContent = `✓ បានស្កេនសិស្សលេខ ${res.studentId}`;
+    if (recent.has(res.studentId) && Date.now() - recent.get(res.studentId) < 6000) return;
+    recent.set(res.studentId, Date.now());
+    cool = Date.now() + 1400;
+    last = null;
+    const cv = document.createElement('canvas'); cv.width = v.videoWidth; cv.height = v.videoHeight;
+    cv.getContext('2d').drawImage(v, 0, 0);
+    playSuccessChime();
+    if (navigator.vibrate) navigator.vibrate([40, 30, 70]);
+    const stu = roster.get(res.studentId);
+    const stuName = stu ? `${stu.surname} ${stu.first_name}` : `សិស្សលេខ ${res.studentId}`;
+    msg.textContent = `✓ ស្កេនបានជោគជ័យ៖ ${stuName}`;
+    showScanToast(stuName, `អត្តលេខ ${res.studentId} · បានរក្សាទុក`);
     processImage(cv, `ស្កេន ${res.studentId}`);
+    updateCamCounter();
   } else last = sig;
 }
 $('cam-btn').addEventListener('click', openCam);

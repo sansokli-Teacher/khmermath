@@ -51,8 +51,24 @@
 
 <div id="cam" class="cam" hidden>
   <video id="cam-v" playsinline muted autoplay></video>
-  <div class="cam-guide"></div>
-  <div class="cam-msg" id="cam-msg">ដាក់សន្លឹកឱ្យឃើញការ៉េខ្មៅទាំង ៤</div>
+  <div class="cam-guide" id="cam-guide">
+    <div class="cam-corner tl"></div>
+    <div class="cam-corner tr"></div>
+    <div class="cam-corner bl"></div>
+    <div class="cam-corner br"></div>
+    <div class="cam-scanline"></div>
+  </div>
+  <div class="cam-hud-top">
+    <div class="cam-msg" id="cam-msg">ដាក់សន្លឹកឱ្យឃើញការ៉េខ្មៅទាំង ៤</div>
+    <div class="cam-counter" id="cam-counter"></div>
+  </div>
+  <div class="cam-toast" id="cam-toast" hidden>
+    <div class="cam-toast-icon">✓</div>
+    <div class="cam-toast-body">
+      <div class="cam-toast-title" id="cam-toast-name"></div>
+      <div class="cam-toast-sub" id="cam-toast-sub"></div>
+    </div>
+  </div>
   <div class="cam-bar">
     <button id="cam-close" class="secondary">✕ បិទ</button>
     <button id="cam-snap">📸 ថតឥឡូវ</button>

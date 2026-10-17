@@ -252,7 +252,7 @@ export async function sessionAnalysis(req, env, params) {
       const v = a[q.id];
       if (v != null && counts[v] != null) { counts[v]++; answered++; }
     }
-    return { id: q.id, order_no: q.order_no, stem_text: q.stem_text, options, correct_index: q.correct_index, alt_correct_index: q.alt_correct_index, cancelled: q.cancelled, points: q.points, topic: q.topic, level: q.level, counts, answered };
+    return { id: q.id, order_no: q.order_no, stem_text: q.stem_text, options, correct_index: q.correct_index, alt_correct_index: q.alt_correct_index, cancelled: q.cancelled, points: q.points, topic: q.topic, level: q.level, lesson: q.lesson, grade: q.grade, counts, answered };
   });
   return json({ questions, answers, student_count: Object.keys(answers).length });
 }

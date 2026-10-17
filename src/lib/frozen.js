@@ -30,10 +30,15 @@ async function hasAttempts(env, sessionId) {
 export async function sessionQuestions(env, sessionId, testId) {
   if (!(await isFrozen(env, sessionId)) && (await hasAttempts(env, sessionId))) await ensureFrozen(env, sessionId);
   if (await isFrozen(env, sessionId)) {
-    const { results } = await env.DB.prepare(`SELECT question_id AS id, ${COLS} FROM session_questions WHERE session_id = ?1 ORDER BY order_no, question_id`).bind(sessionId).all();
+    const { results } = await env.DB.prepare(
+      `SELECT sq.question_id AS id, ${COLS.split(', ').map((c) => 'sq.' + c).join(', ')}, tq.lesson, tq.grade
+       FROM session_questions sq
+       LEFT JOIN test_questions tq ON tq.id = sq.question_id
+       WHERE sq.session_id = ?1 ORDER BY sq.order_no, sq.question_id`,
+    ).bind(sessionId).all();
     return results;
   }
-  const { results } = await env.DB.prepare(`SELECT id, ${COLS} FROM test_questions WHERE test_id = ?1 ORDER BY order_no, id`).bind(testId).all();
+  const { results } = await env.DB.prepare(`SELECT id, ${COLS}, lesson, grade FROM test_questions WHERE test_id = ?1 ORDER BY order_no, id`).bind(testId).all();
   return results;
 }
 
