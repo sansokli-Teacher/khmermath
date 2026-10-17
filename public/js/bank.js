@@ -2,9 +2,17 @@
 const LEVEL_KH = { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'បែប PISA' };
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
 const khNum = (n) => String(n ?? '').replace(/\d/g, (d) => KH_DIGITS[d]);
-const kh = khNum;
-const mathEl = (tag, attrs, text) => { const el = h(tag, attrs); el.innerHTML = Exam.mathHtml(text); return el; };
-const GRADE_KH = (g) => `ថ្នាក់ទី ${kh(g)}`;
+if (typeof globalThis !== 'undefined') {
+  if (!globalThis.kh) globalThis.kh = khNum;
+  if (!globalThis.mathEl) {
+    globalThis.mathEl = function (tag, attrs, text) {
+      const el = h(tag, attrs);
+      el.innerHTML = typeof Exam !== 'undefined' && Exam.mathHtml ? Exam.mathHtml(text) : String(text ?? '');
+      return el;
+    };
+  }
+}
+const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
 let bankState = { grade: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
 
@@ -434,7 +442,7 @@ render.bank = async function () {
     const rows = visible();
     list.innerHTML = '';
     if (!rows.length) list.append(h('div', { class: 'empty-card' }, h('div', { class: 'muted' }, questions.length ? 'មិនមានសំណួរក្នុងផ្នែកនេះទេ — ចុច «➕ សំណួរថ្មី» ឬ «📥 នាំចូល Excel»។' : 'មិនទាន់មានសំណួរទេ — ចុច «➕ សំណួរថ្មី» ឬបង្កើតតេស្តជាមុនសិន។')));
-        rows.slice(0, 200).forEach((x) => {
+        rows.slice(0, 200).forEach((x, idx) => {
       const cb = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none;cursor:pointer;margin-top:3px;', checked: selected.has(x.id) ? 'checked' : null, onchange: (e) => { e.target.checked ? selected.add(x.id) : selected.delete(x.id); upd(); } });
       const canEdit = !x.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
       const onEdit = canEdit ? () => openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload) : null;
