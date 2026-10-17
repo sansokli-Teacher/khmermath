@@ -546,7 +546,15 @@ render.wheel = async function () {
     showBlocks(blocks);
   }
 
-    const themeSel = h('select', {}, Object.keys(WHEEL_PALETTES).map((k) => h('option', { value: k }, WHEEL_PALETTES[k][0])));
+  const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
+  gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
+
+  const teacherIn = h('input', { type: 'text', maxlength: '60', autocomplete: 'off', placeholder: 'ឧ. លោកគ្រូ សាន សុខលី', style: 'margin-bottom:10px' });
+  teacherIn.value = wheelSettings.teacher || ''; teacherIn.oninput = () => { wheelSettings.teacher = teacherIn.value; wheelSaveSettings(); };
+  const durV = h('b', {}, whKh(wheelSettings.dur));
+  const durIn = h('input', { type: 'range', min: '2', max: '15', step: '1', value: String(wheelSettings.dur), style: 'padding:0;border:0;accent-color:var(--brand)' });
+  durIn.oninput = () => { wheelSettings.dur = +durIn.value; durV.textContent = whKh(durIn.value); wheelSaveSettings(); };
+  const themeSel = h('select', {}, Object.keys(WHEEL_PALETTES).map((k) => h('option', { value: k }, WHEEL_PALETTES[k][0])));
   themeSel.value = wheelSettings.theme; themeSel.onchange = () => { wheelSettings.theme = themeSel.value; wheelSaveSettings(); draw(); };
   const chk = (key, label, wrap) => { const i = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none' }); i.checked = !!wheelSettings[key]; i.onchange = () => { wheelSettings[key] = i.checked; wheelSaveSettings(); }; (wrap || h('label', { class: 'wheel-chk' })).append(i, label); return wrap || i.parentElement; };
   speakRow.append(); chk('speak', ' អានឈ្មោះឱ្យលឺ', speakRow);
