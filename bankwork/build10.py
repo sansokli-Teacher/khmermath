@@ -7,6 +7,35 @@ TARGET = {('mcq', 'easy'): 10, ('mcq', 'medium'): 14, ('mcq', 'hard'): 7, ('mcq'
           ('writing', 'easy'): 1, ('writing', 'medium'): 4, ('writing', 'hard'): 4, ('writing', 'pisa'): 5}
 BASE_ORDER = 10000
 
+CHAPTER_MAP = {
+    'ពហុធា': 'ជំពូកទី 1 : ពហុធា',
+    'ប្រមាណវិធីចែកពហុធា': 'ជំពូកទី 1 : ពហុធា',
+    'តក្កវិទ្យា': 'ជំពូកទី 2 : តក្កវិទ្យា សំណុំ និងចំនួន',
+    'សំណុំ': 'ជំពូកទី 2 : តក្កវិទ្យា សំណុំ និងចំនួន',
+    'ចំនួន': 'ជំពូកទី 2 : តក្កវិទ្យា សំណុំ និងចំនួន',
+    'សមីការដឺក្រេទី 2 មានមួយអញ្ញាត': 'ជំពូកទី 3 : សមីការនិងវិសមីការ',
+    'សមីការអសនិទាននិងសមីការដឺក្រេលំដាប់ខ្ពស់': 'ជំពូកទី 3 : សមីការនិងវិសមីការ',
+    'ប្រព័ន្ធសមីការ': 'ជំពូកទី 3 : សមីការនិងវិសមីការ',
+    'វិសមីការនិងប្រព័ន្ធវិសមីការ': 'ជំពូកទី 3 : សមីការនិងវិសមីការ',
+    'កូអរដោនេនៃចំណុច': 'ជំពូកទី 4 : ធរណីមាត្រក្នុងប្លង់',
+    'សមីការបន្ទាត់': 'ជំពូកទី 4 : ធរណីមាត្រក្នុងប្លង់',
+    'សមីការរង្វង់': 'ជំពូកទី 4 : ធរណីមាត្រក្នុងប្លង់',
+    'ការដោះស្រាយវិសមីការតាមក្រាប': 'ជំពូកទី 4 : ធរណីមាត្រក្នុងប្លង់',
+    'ផលធៀបត្រីកោណមាត្រ': 'ជំពូកទី 5 : ផលធៀបត្រីកោណមាត្រ',
+    'ការអនុវត្តផលធៀបត្រីកោណ': 'ជំពូកទី 5 : ផលធៀបត្រីកោណមាត្រ',
+    'អនុគមន៍និងក្រាបអនុគមន៍': 'ជំពូកទី 6 : អនុគមន៍',
+    'អនុគមន៍ដឺក្រេទី 2': 'ជំពូកទី 6 : អនុគមន៍',
+    'អនុគមន៍សនិទាននិងអសនិទាន': 'ជំពូកទី 6 : អនុគមន៍',
+    'បំណែងចែកប្រេកង់និងតារាងក្រាប': 'ជំពូកទី 7 : ស្ថិតិ',
+    'រង្វាស់ទីតាំង': 'ជំពូកទី 7 : ស្ថិតិ',
+    'វ៉ិចទ័រនិងប្រមាណវិធីលើវ៉ិចទ័រ': 'ជំពូកទី 8 : វ៉ិចទ័រក្នុងប្លង់',
+    'ការអនុវត្តវ៉ិចទ័រ': 'ជំពូកទី 8 : វ៉ិចទ័រក្នុងប្លង់',
+    'ការបំប្លែងកិល': 'ជំពូកទី 9 : ការបំប្លែងរូបក្នុងប្លង់',
+    'ការបំប្លែងឆ្លុះ': 'ជំពូកទី 9 : ការបំប្លែងរូបក្នុងប្លង់',
+    'ការបំប្លែងវិល': 'ជំពូកទី 9 : ការបំប្លែងរូបក្នុងប្លង់',
+    'ការបំប្លែងចាំង': 'ជំពូកទី 9 : ការបំប្លែងរូបក្នុងប្លង់',
+}
+
 existing = []
 
 def cells(lesson):
@@ -70,8 +99,9 @@ def main(names):
                 oj = json.dumps(opts, ensure_ascii=False)
             else:
                 opts, ci, oj = [], 0, '[]'
-            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params, cancelled) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, '10', %s, NULL, 0);" % (
-                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(lesson)))
+            chapter = getattr(mod, 'CHAPTER', None) or CHAPTER_MAP.get(lesson)
+            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params, cancelled) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, '10', %s, %s, NULL, 0);" % (
+                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(lesson), sqlq(chapter)))
         report.append(f'{nm} {lesson}: had {total_have}, adding {len(picked)} -> {total_have + len(picked)}')
         have2 = have + collections.Counter((c['kind'], c['level']) for c in picked)
         report.append('   final cells: ' + ', '.join(f'{k[0][0]}/{k[1][0]}={v}' for k, v in sorted(have2.items())))

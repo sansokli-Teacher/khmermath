@@ -41,6 +41,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE test_questions ADD COLUMN level TEXT',
     'ALTER TABLE test_questions ADD COLUMN grade TEXT',
     'ALTER TABLE test_questions ADD COLUMN lesson TEXT',
+    'ALTER TABLE test_questions ADD COLUMN chapter TEXT',
+    'ALTER TABLE session_questions ADD COLUMN chapter TEXT',
     // exam-day controls
     'ALTER TABLE results ADD COLUMN extra_minutes INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE results ADD COLUMN device_id TEXT',

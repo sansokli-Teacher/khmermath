@@ -19,10 +19,34 @@ export const DEFAULT_LESSONS = {
   11: [], 12: [],
 };
 
+export const CHAPTERS = {
+  10: [
+    { ch: 1, title: 'ពហុធា', name: 'ជំពូកទី 1 : ពហុធា', lessons: ['ពហុធា', 'ប្រមាណវិធីចែកពហុធា'] },
+    { ch: 2, title: 'តក្កវិទ្យា សំណុំ និងចំនួន', name: 'ជំពូកទី 2 : តក្កវិទ្យា សំណុំ និងចំនួន', lessons: ['តក្កវិទ្យា', 'សំណុំ', 'ចំនួន'] },
+    { ch: 3, title: 'សមីការនិងវិសមីការ', name: 'ជំពូកទី 3 : សមីការនិងវិសមីការ', lessons: ['សមីការដឺក្រេទី 2 មានមួយអញ្ញាត', 'សមីការអសនិទាននិងសមីការដឺក្រេលំដាប់ខ្ពស់', 'ប្រព័ន្ធសមីការ', 'វិសមីការនិងប្រព័ន្ធវិសមីការ'] },
+    { ch: 4, title: 'ធរណីមាត្រក្នុងប្លង់', name: 'ជំពូកទី 4 : ធរណីមាត្រក្នុងប្លង់', lessons: ['កូអរដោនេនៃចំណុច', 'សមីការបន្ទាត់', 'សមីការរង្វង់', 'ការដោះស្រាយវិសមីការតាមក្រាប'] },
+    { ch: 5, title: 'ផលធៀបត្រីកោណមាត្រ', name: 'ជំពូកទី 5 : ផលធៀបត្រីកោណមាត្រ', lessons: ['ផលធៀបត្រីកោណមាត្រ', 'ការអនុវត្តផលធៀបត្រីកោណ'] },
+    { ch: 6, title: 'អនុគមន៍', name: 'ជំពូកទី 6 : អនុគមន៍', lessons: ['អនុគមន៍និងក្រាបអនុគមន៍', 'អនុគមន៍ដឺក្រេទី 2', 'អនុគមន៍សនិទាននិងអសនិទាន'] },
+    { ch: 7, title: 'ស្ថិតិ', name: 'ជំពូកទី 7 : ស្ថិតិ', lessons: ['បំណែងចែកប្រេកង់និងតារាងក្រាប', 'រង្វាស់ទីតាំង'] },
+    { ch: 8, title: 'វ៉ិចទ័រក្នុងប្លង់', name: 'ជំពូកទី 8 : វ៉ិចទ័រក្នុងប្លង់', lessons: ['វ៉ិចទ័រនិងប្រមាណវិធីលើវ៉ិចទ័រ', 'ការអនុវត្តវ៉ិចទ័រ'] },
+    { ch: 9, title: 'ការបំប្លែងរូបក្នុងប្លង់', name: 'ជំពូកទី 9 : ការបំប្លែងរូបក្នុងប្លង់', lessons: ['ការបំប្លែងកិល', 'ការបំប្លែងឆ្លុះ', 'ការបំប្លែងវិល', 'ការបំប្លែងចាំង'] },
+  ],
+};
+
+export function chapterOf(grade, lesson) {
+  if (!grade || !lesson) return null;
+  const list = CHAPTERS[grade] || CHAPTERS[String(grade)] || [];
+  for (const c of list) {
+    if (c.lessons.includes(lesson)) return c.name;
+  }
+  return null;
+}
+
 export async function loadCurriculum(env, teacherId) {
   let extra = {};
   try { const r = await env.DB.prepare('SELECT value FROM settings WHERE key = ?1').bind(`curriculum_${teacherId}`).first(); if (r) extra = JSON.parse(r.value); } catch {}
   const out = {};
   for (const g of GRADES) out[g] = [...DEFAULT_LESSONS[g], ...((extra[g] || []).filter((x) => !DEFAULT_LESSONS[g].includes(x)))];
-  return { lessons: out, extra };
+  return { lessons: out, chapters: CHAPTERS, extra };
 }
+

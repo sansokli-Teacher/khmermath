@@ -13,20 +13,34 @@ if (typeof globalThis !== 'undefined') {
   }
 }
 const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
-let bankState = { grade: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
+let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
 
 async function loadCurr(force) { if (!CURR || force) CURR = await api('/api/curriculum'); return CURR; }
 
-// grade <select> + lesson <input list> pair used by the question forms
-function gradeLessonPicker(g, l, curr) {
+// grade <select> + chapter + lesson picker used by question forms
+function gradeLessonPicker(g, l, curr, ch) {
   const id = 'lesson-dl-' + Math.random().toString(36).slice(2, 7);
+  const chId = 'chapter-dl-' + Math.random().toString(36).slice(2, 7);
   const grade = h('select', {}, [['', '— ថ្នាក់ —'], ...curr.grades.map((x) => [x, GRADE_KH(x)])].map(([v, t]) => h('option', { value: v, selected: String(g || '') === v ? 'selected' : null }, t)));
   const dl = h('datalist', { id });
+  const chDl = h('datalist', { id: chId });
+  const chapter = h('input', { type: 'text', list: chId, placeholder: 'ជំពូក (មិនចាំបាច់)', value: ch || '' });
   const lesson = h('input', { type: 'text', list: id, placeholder: 'ជ្រើស ឬវាយឈ្មោះមេរៀន', value: l || '' });
-  const fill = () => { dl.innerHTML = ''; (curr.lessons[grade.value] || []).forEach((n) => dl.append(h('option', { value: n }))); };
+  const fill = () => {
+    dl.innerHTML = ''; chDl.innerHTML = '';
+    (curr.lessons[grade.value] || []).forEach((n) => dl.append(h('option', { value: n })));
+    ((curr.chapters && curr.chapters[grade.value]) || []).forEach((c) => chDl.append(h('option', { value: c.name })));
+  };
+  lesson.addEventListener('change', () => {
+    const val = lesson.value.trim();
+    if (val && !chapter.value.trim() && curr.chapters && curr.chapters[grade.value]) {
+      const found = curr.chapters[grade.value].find((c) => c.lessons.includes(val));
+      if (found) chapter.value = found.name;
+    }
+  });
   grade.addEventListener('change', fill); fill();
-  return { grade, lesson, dl, get: () => ({ grade: grade.value || null, lesson: lesson.value.trim() || null }) };
+  return { grade, chapter, chDl, lesson, dl, get: () => ({ grade: grade.value || null, chapter: chapter.value.trim() || null, lesson: lesson.value.trim() || null }) };
 }
 
 function bankModal(title, body, wide) {
@@ -75,12 +89,27 @@ function openExport(questions, curr, S) {
           h('button', { type: 'button', class: 'secondary btn-sm', onclick: () => { ls.forEach((_, i) => { if (countOf(ls[i])) picked.add(i + 1); }); draw(); } }, 'ជ្រើសទាំងអស់'),
         ]),
       ]),
-      h('div', { class: 'ex-lessons' }, ls.length ? ls.map((name, i) => {
-        const n = countOf(name), on = picked.size === 0 ? false : picked.has(i + 1);
-        return h('button', { type: 'button', class: `ex-l${on ? ' on' : ''}${n ? '' : ' empty'}`, disabled: n ? null : 'disabled', onclick: () => { if (picked.has(i + 1)) picked.delete(i + 1); else picked.add(i + 1); draw(); } }, [
-          h('b', {}, khNum(i + 1)), h('span', { class: 'nm' }, name), h('small', {}, n ? `${khNum(n)} សំណួរ` : 'គ្មាន'),
-        ]);
-      }) : [h('p', { class: 'muted' }, 'ថ្នាក់នេះមិនទាន់មានមេរៀនទេ។')]),
+      h('div', { class: 'ex-lessons' }, ls.length ? (
+        curr.chapters && curr.chapters[grade] ? curr.chapters[grade].flatMap((c) => {
+          const chLessons = c.lessons.map((name) => {
+            const i = ls.indexOf(name);
+            if (i < 0) return null;
+            const n = countOf(name), on = picked.size === 0 ? false : picked.has(i + 1);
+            return h('button', { type: 'button', class: `ex-l${on ? ' on' : ''}${n ? '' : ' empty'}`, disabled: n ? null : 'disabled', onclick: () => { if (picked.has(i + 1)) picked.delete(i + 1); else picked.add(i + 1); draw(); } }, [
+              h('b', {}, khNum(i + 1)), h('span', { class: 'nm' }, name), h('small', {}, n ? `${khNum(n)} សំណួរ` : 'គ្មាន'),
+            ]);
+          }).filter(Boolean);
+          return [
+            h('div', { style: 'grid-column:1/-1;font-weight:700;font-size:13px;color:#047857;margin-top:10px;padding:4px 2px;border-bottom:1px solid #e2e8f0;' }, c.name),
+            ...chLessons
+          ];
+        }) : ls.map((name, i) => {
+          const n = countOf(name), on = picked.size === 0 ? false : picked.has(i + 1);
+          return h('button', { type: 'button', class: `ex-l${on ? ' on' : ''}${n ? '' : ' empty'}`, disabled: n ? null : 'disabled', onclick: () => { if (picked.has(i + 1)) picked.delete(i + 1); else picked.add(i + 1); draw(); } }, [
+            h('b', {}, khNum(i + 1)), h('span', { class: 'nm' }, name), h('small', {}, n ? `${khNum(n)} សំណួរ` : 'គ្មាន'),
+          ]);
+        })
+      ) : [h('p', { class: 'muted' }, 'ថ្នាក់នេះមិនទាន់មានមេរៀនទេ។')]),
       h('label', {}, 'កម្រិត'),
       chips([['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']], (v) => levels.has(v), (v) => { if (levels.has(v)) { if (levels.size > 1) levels.delete(v); } else levels.add(v); }),
       h('label', {}, 'ប្រភេទសំណួរ'),
@@ -188,9 +217,11 @@ ${q.solution_text}
   // Independently scrollable body
   const scrollBody = h('div', { class: 'qv-scroll-body' }, [
     // Subtitle breadcrumb
-    (q.grade || q.lesson) ? h('div', { class: 'qv-breadcrumb' }, [
+    (q.grade || q.chapter || q.lesson) ? h('div', { class: 'qv-breadcrumb' }, [
       q.grade ? h('span', { class: 'qv-crumb-grade' }, `ថ្នាក់ទី ${kh(q.grade)}`) : null,
-      (q.grade && q.lesson) ? h('span', { class: 'qv-crumb-sep' }, '·') : null,
+      (q.grade && (q.chapter || q.lesson)) ? h('span', { class: 'qv-crumb-sep' }, '·') : null,
+      q.chapter ? h('span', { class: 'qv-crumb-chapter', style: 'color:#047857;font-weight:600;' }, q.chapter) : null,
+      (q.chapter && q.lesson) ? h('span', { class: 'qv-crumb-sep' }, '·') : null,
       q.lesson ? h('span', { class: 'qv-crumb-lesson' }, `មេរៀន ៖ ${q.lesson}`) : null,
     ]) : null,
 
@@ -342,7 +373,7 @@ render.bank = async function () {
   const count = (fn) => questions.filter(fn).length;
 
   // ---------- header + grade tabs
-  const gradePill = (val, label, n) => h('button', { class: `filter-pill${S.grade === val ? ' on' : ''}`, onclick: () => { Object.assign(S, { grade: val, lesson: '' }); reload(); } }, [label, ' ', h('span', { class: 'pill-n' }, String(n))]);
+  const gradePill = (val, label, n) => h('button', { class: `filter-pill${S.grade === val ? ' on' : ''}`, onclick: () => { Object.assign(S, { grade: val, chapter: '', lesson: '' }); reload(); } }, [label, ' ', h('span', { class: 'pill-n' }, String(n))]);
   const pills = h('div', { class: 'filter-bar' }, [
     gradePill('', 'ទាំងអស់', questions.length),
     ...curr.grades.map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
@@ -357,26 +388,89 @@ render.bank = async function () {
       h('h2', { style: 'margin:0;' }, `🗂 ធនាគារសំណួរ (${questions.length})`),
       h('button', { onclick: () => openExport(questions, curr, S) }, '📥 ទាញយកលំហាត់ជា PDF / Word'),
     ]),
-    h('p', { class: 'muted' }, 'រៀបតាមថ្នាក់ → មេរៀន។ បន្ថែមសំណួរចូលមេរៀន រួចពេលបង្កើតតេស្ត គ្រាន់តែជ្រើសរើសពីមេរៀន ឬផ្នែកដែលចង់បាន។ សំណួរចាស់ៗពីតេស្តរបស់លោកគ្រូក៏នៅទីនេះដែរ — ជ្រើសរើសពួកវា រួចចុច «🏷 ដាក់ក្នុងមេរៀន»។'),
+    h('p', { class: 'muted' }, 'រៀបតាមថ្នាក់ → ជំពូក → មេរៀន។ បន្ថែមសំណួរចូលជំពូក និងមេរៀន រួចពេលបង្កើតតេស្ត គ្រាន់តែជ្រើសរើសពីមេរៀន ឬផ្នែកដែលចង់បាន។'),
     pills,
   ]));
 
-  // ---------- lesson sidebar
+  // ---------- lesson sidebar (grouped by chapter when available)
   const showLessons = S.grade && S.grade !== '-';
   const inGrade = (q) => !S.grade || (S.grade === '-' ? !q.grade : q.grade === S.grade);
   const side = h('div', { class: 'card', style: 'padding:10px;align-self:start;' });
   if (showLessons) {
+    const lv = (qs, l) => qs.filter((q) => q.level === l).length;
     const lessonBtn = (val, label, qs) => {
-      const lv = (l) => qs.filter((q) => q.level === l).length;
       return h('button', { class: `lesson-btn${S.lesson === val ? ' on' : ''}`, onclick: () => { S.lesson = val; reload(); } }, [
         h('span', { class: 'lesson-name' }, label),
-        h('span', { class: 'lesson-n' }, qs.length ? `${qs.length}` : '—'),
-        qs.length ? h('span', { class: 'lesson-lv' }, `ង ${lv('easy')} · ម ${lv('medium')} · ព ${lv('hard')} · បែប PISA ${lv('pisa')}`) : null,
+        h('span', { class: 'lesson-n' }, qs.length ? `${khNum(qs.length)}` : '—'),
+        qs.length ? h('span', { class: 'lesson-lv' }, `ង ${lv(qs, 'easy')} · ម ${lv(qs, 'medium')} · ព ${lv(qs, 'hard')} · PISA ${lv(qs, 'pisa')}`) : null,
       ]);
     };
     const gq = questions.filter(inGrade);
-    side.append(h('div', { class: 'lesson-title' }, GRADE_KH(S.grade)), lessonBtn('', 'មេរៀនទាំងអស់', gq));
-    lessonsOf(S.grade).forEach((name, i) => side.append(lessonBtn(name, `${khNum(i + 1)}. ${name}`, gq.filter((q) => q.lesson === name))));
+    const allOn = !S.chapter && !S.lesson;
+    side.append(h('div', { class: 'lesson-title' }, GRADE_KH(S.grade)), h('button', {
+      class: `lesson-btn${allOn ? ' on' : ''}`,
+      onclick: () => { S.chapter = ''; S.lesson = ''; reload(); }
+    }, [
+      h('span', { class: 'lesson-name' }, 'សំណួរទាំងអស់'),
+      h('span', { class: 'lesson-n' }, gq.length ? `${khNum(gq.length)}` : '—'),
+      gq.length ? h('span', { class: 'lesson-lv' }, `ង ${lv(gq, 'easy')} · ម ${lv(gq, 'medium')} · ព ${lv(gq, 'hard')} · PISA ${lv(gq, 'pisa')}`) : null,
+    ]));
+
+    const chList = (curr.chapters && curr.chapters[S.grade]) || null;
+    if (chList && chList.length) {
+      const placedLessons = new Set();
+      chList.forEach((c) => {
+        const cq = gq.filter((q) => (q.chapter === c.name || (!q.chapter && c.lessons.includes(q.lesson))));
+        const chActive = S.chapter === c.name && !S.lesson;
+        const chBtn = h('button', {
+          type: 'button',
+          class: `chapter-btn${chActive ? ' on' : ''}`,
+          title: `ចុចដើម្បីមើលសំណួរទាំងអស់ក្នុង ${c.name}`,
+          onclick: () => {
+            S.chapter = (S.chapter === c.name && !S.lesson) ? '' : c.name;
+            S.lesson = '';
+            reload();
+          }
+        }, [
+          h('span', { class: 'chapter-title' }, c.name),
+          h('span', { class: 'chapter-n' }, cq.length ? `${khNum(cq.length)}` : '—')
+        ]);
+
+        const lesBtns = c.lessons.map((lesName, li) => {
+          placedLessons.add(lesName);
+          const lq = cq.filter((q) => q.lesson === lesName);
+          const on = S.lesson === lesName;
+          return h('button', {
+            type: 'button',
+            class: `lesson-btn${on ? ' on' : ''}`,
+            onclick: () => {
+              S.chapter = c.name;
+              S.lesson = lesName;
+              reload();
+            }
+          }, [
+            h('span', { class: 'lesson-name' }, `${khNum(li + 1)}. ${lesName}`),
+            h('span', { class: 'lesson-n' }, lq.length ? `${khNum(lq.length)}` : '—'),
+            lq.length ? h('span', { class: 'lesson-lv' }, `ង ${lv(lq, 'easy')} · ម ${lv(lq, 'medium')} · ព ${lv(lq, 'hard')} · PISA ${lv(lq, 'pisa')}`) : null,
+          ]);
+        });
+
+        const chGroup = h('div', { class: 'chapter-group' }, [
+          chBtn,
+          h('div', { class: 'chapter-lessons' }, lesBtns)
+        ]);
+        side.append(chGroup);
+      });
+
+      const otherLessons = lessonsOf(S.grade).filter((n) => !placedLessons.has(n));
+      if (otherLessons.length) {
+        side.append(h('div', { class: 'muted', style: 'font-size:12px;margin:10px 0 4px 8px;font-weight:700;' }, 'មេរៀនផ្សេងៗ'));
+        otherLessons.forEach((name, i) => side.append(lessonBtn(name, `${khNum(i + 1)}. ${name}`, gq.filter((q) => q.lesson === name))));
+      }
+    } else {
+      lessonsOf(S.grade).forEach((name, i) => side.append(lessonBtn(name, `${khNum(i + 1)}. ${name}`, gq.filter((q) => q.lesson === name))));
+    }
+
     side.append(lessonBtn('-', 'មិនទាន់កំណត់មេរៀន', gq.filter((q) => !q.lesson)));
     side.append(h('button', { class: 'secondary btn-sm', style: 'margin-top:8px;width:100%;', onclick: () => {
       const inp = h('input', { type: 'text', placeholder: 'ឈ្មោះមេរៀនថ្មី' });
@@ -399,8 +493,11 @@ render.bank = async function () {
     try { const r = await api(`/api/tests/${targetSel.value}/questions/copy`, { method: 'POST', body: { question_ids: [...selected] } }); await Exam.notify(`✅ បានថែម ${r.copied} សំណួរទៅតេស្ត។`); selected.clear(); draw(); } catch (e) { Exam.notify(e.message); }
   } }, '➕ ថែមទៅតេស្ត');
   const tagBtn = h('button', { class: 'secondary', disabled: 'disabled', onclick: () => {
-    const gl = gradeLessonPicker(S.grade && S.grade !== '-' ? S.grade : '', showLessons && S.lesson && S.lesson !== '-' ? S.lesson : '', curr);
-    const box = h('div', {}, [h('p', { class: 'muted' }, `ដាក់ ${selected.size} សំណួរក្នុង៖`), h('label', {}, 'ថ្នាក់'), gl.grade, h('label', {}, 'មេរៀន'), gl.lesson, gl.dl,
+    const gl = gradeLessonPicker(S.grade && S.grade !== '-' ? S.grade : '', showLessons && S.lesson && S.lesson !== '-' ? S.lesson : '', curr, showLessons && S.chapter ? S.chapter : '');
+    const box = h('div', {}, [h('p', { class: 'muted' }, `ដាក់ ${selected.size} សំណួរក្នុង៖`),
+      h('label', {}, 'ថ្នាក់'), gl.grade,
+      h('label', {}, 'ជំពូក'), gl.chapter, gl.chDl,
+      h('label', {}, 'មេរៀន'), gl.lesson, gl.dl,
       h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px;' }, [
         h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'),
         h('button', { onclick: async () => {
@@ -408,7 +505,59 @@ render.bank = async function () {
         } }, 'រក្សាទុក')])]);
     const m = bankModal('🏷 ដាក់ក្នុងមេរៀន', box);
   } }, '🏷 ដាក់ក្នុងមេរៀន');
-  const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), tagBtn, targetSel, addBtn]);
+  const paperBtn = h('button', {
+    class: 'btn-sm',
+    disabled: !selected.size,
+    style: 'background:#16a34a;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 12px;border-radius:8px;',
+    onclick: () => {
+      if (!selected.size) return;
+      const selArr = [...selected];
+      const pickedQs = questions.filter((q) => selected.has(q.id));
+      const mcqCount = pickedQs.filter((q) => q.kind !== 'writing').length;
+      const wCount = pickedQs.filter((q) => q.kind === 'writing').length;
+      const totalPts = pickedQs.reduce((a, q) => a + (q.points || 1), 0);
+
+      const gradeText = S.grade && S.grade !== '-' ? `ថ្នាក់ទី ${khNum(S.grade)}` : '';
+      const chText = S.chapter ? `${S.chapter}` : '';
+      const lessonText = S.lesson && S.lesson !== '-' ? `មេរៀន ${S.lesson}` : '';
+      const partText = lessonText ? (chText ? `${chText} · ${lessonText}` : lessonText) : chText;
+      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${partText ? ' ' + partText : ''} (${khNum(selArr.length)} សំណួរ)`;
+
+      const titleInp = h('input', { type: 'text', value: defaultTitle, style: 'width:100%;margin-top:4px;' });
+      const minInp = h('input', { type: 'number', value: '60', min: '10', max: '240', style: 'width:100px;' });
+
+      const box = h('div', { style: 'text-align:left;' }, [
+        h('p', { class: 'muted', style: 'margin-top:0;' }, `បង្កើតវិញ្ញាសាភ្លាមៗចេញពីសំណួរដែលបានជ្រើស ${khNum(selArr.length)} សំណួរ (ពហុជ្រើសរើស ${khNum(mcqCount)} + សរសេរ ${khNum(wCount)} · សរុប ${khNum(totalPts)} ពិន្ទុ)។`),
+        h('label', { style: 'font-weight:600;display:block;margin-top:8px;' }, 'ចំណងជើងវិញ្ញាសា'),
+        titleInp,
+        h('div', { class: 'row', style: 'gap:12px;margin-top:12px;align-items:center;' }, [
+          h('label', { style: 'font-weight:600;' }, 'រយៈពេលប្រឡង (នាទី)'),
+          minInp,
+        ]),
+        h('p', { class: 'muted', style: 'font-size:12px;margin-top:10px;' }, 'វិញ្ញាសានឹងបើកភ្លាមៗជាមួយទម្រង់ផ្លូវការ (មានរូបធរណីមាត្រ រូបមន្ត KaTeX សន្លឹកចម្លើយ OMR និងអត្រាកំណែ)។ អ្នកអាចទាញយក PDF, Word ឬបោះពុម្ពបានភ្លាម។'),
+        h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px;margin-top:18px;' }, [
+          h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'),
+          h('button', {
+            style: 'background:#16a34a;color:#fff;font-weight:600;',
+            onclick: async () => {
+              const ttl = titleInp.value.trim() || defaultTitle;
+              try {
+                const newTest = await api('/api/tests', { method: 'POST', body: { title: ttl } });
+                const r = await api(`/api/tests/${newTest.id}/questions/copy`, { method: 'POST', body: { question_ids: selArr } });
+                m.remove();
+                await Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» ដោយជោគជ័យ!`);
+                window.open(`paper.html?test=${newTest.id}`, '_blank');
+              } catch (e) {
+                Exam.notify(e.message);
+              }
+            }
+          }, '📄 បង្កើត និងបើកវិញ្ញាសា →')
+        ])
+      ]);
+      const m = bankModal('📄 បង្កើតវិញ្ញាសាភ្លាមៗ', box);
+    }
+  }, [h('span', {}, '📄'), ' បង្កើតវិញ្ញាសាភ្លាមៗ']);
+  const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), paperBtn, tagBtn, targetSel, addBtn]);
 
   const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
   const fKind = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v, selected: S.kind === v ? 'selected' : null }, l)));
@@ -421,7 +570,7 @@ render.bank = async function () {
   const newBtn = h('button', { onclick: async () => {
     const id = await bankId(); const holder = h('div', {});
     const m = bankModal('➕ សំណួរថ្មីក្នុងធនាគារ', holder, true);
-    holder.append(await buildQuestionForm({ id }, holder, { grade: presetGrade(), lesson: presetLesson(), onDone: () => { m.remove(); reload(); } }));
+    holder.append(await buildQuestionForm({ id }, holder, { grade: presetGrade(), chapter: (showLessons && S.chapter ? S.chapter : ''), lesson: presetLesson(), onDone: () => { m.remove(); reload(); } }));
   } }, '➕ សំណួរថ្មី');
   const importBtn = h('button', { class: 'secondary', onclick: async () => {
     const id = await bankId(); const holder = h('div', {});
@@ -432,7 +581,14 @@ render.bank = async function () {
 
   const visible = () => {
     const q = fQ.value.trim().toLowerCase();
+    const inChapter = (x) => {
+      if (!S.chapter) return true;
+      if (x.chapter) return x.chapter === S.chapter;
+      const chObj = (curr.chapters && curr.chapters[S.grade] || []).find((c) => c.name === S.chapter);
+      return chObj ? chObj.lessons.includes(x.lesson) : false;
+    };
     return questions.filter((x) => inGrade(x)
+      && (!showLessons || inChapter(x))
       && (!showLessons || !S.lesson || (S.lesson === '-' ? !x.lesson : x.lesson === S.lesson))
       && (!fLevel.value || x.level === fLevel.value) && (!fKind.value || x.kind === fKind.value) && (!fTopic || !fTopic.value || x.topic === fTopic.value)
       && (!q || x.stem_text.toLowerCase().includes(q)));
@@ -508,6 +664,7 @@ render.bank = async function () {
             h('span', { class: 'chip chip-plain', style: 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;' }, `#${x.id}`),
             x.kind === 'writing' ? h('span', { class: 'chip chip-soon' }, '✎ សរសេរ') : h('span', { class: 'chip chip-plain' }, 'ពហុជ្រើសរើស'),
             x.grade && S.grade === '' ? h('span', { class: 'chip chip-plain' }, GRADE_KH(x.grade)) : null,
+            x.chapter && !(showLessons && S.chapter === x.chapter) ? h('span', { class: 'chip chip-plain', style: 'color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;font-weight:600;' }, x.chapter) : null,
             x.lesson && !(showLessons && S.lesson === x.lesson) ? h('span', { class: 'chip chip-plain' }, x.lesson) : null,
             x.topic ? h('span', { class: 'chip chip-plain' }, x.topic) : null,
             x.level ? h('span', { class: `chip ${x.level === 'hard' ? 'chip-closed' : x.level === 'pisa' ? 'chip-soon' : 'chip-open'}` }, LEVEL_KH[x.level]) : null,
@@ -525,7 +682,7 @@ render.bank = async function () {
     if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
     upd();
   }
-  function upd() { countLbl.textContent = String(selected.size); addBtn.disabled = !selected.size; tagBtn.disabled = !selected.size; }
+  function upd() { countLbl.textContent = String(selected.size); addBtn.disabled = !selected.size; tagBtn.disabled = !selected.size; paperBtn.disabled = !selected.size; }
   [fLevel, fKind, fTopic].forEach((el) => el && el.addEventListener('change', draw));
   fQ.addEventListener('input', draw);
 
@@ -558,7 +715,7 @@ render.bank = async function () {
   })();
 
   const main = h('div', { style: 'min-width:0;' }, [
-    h('div', { class: 'card' }, [h('div', { class: 'row' }, [h('h2', { style: 'margin:0;margin-right:auto;' }, showLessons ? (S.lesson && S.lesson !== '-' ? S.lesson : GRADE_KH(S.grade)) : 'សំណួរ'), newBtn, importBtn]),
+    h('div', { class: 'card' }, [h('div', { class: 'row' }, [h('h2', { style: 'margin:0;margin-right:auto;' }, showLessons ? (S.lesson && S.lesson !== '-' ? S.lesson : (S.chapter ? S.chapter : GRADE_KH(S.grade))) : 'សំណួរ'), newBtn, importBtn]),
       h('div', { class: 'row', style: 'margin-top:10px;' }, [fLevel, fKind, fTopic, fQ, selAll])]),
     gen, bar, list,
   ]);
@@ -581,7 +738,7 @@ function importQuestionsCard(test, container, onDone) {
     const c = String(pick(r, 'correct', 'answer', 'ចម្លើយ')).trim();
     if (/^[a-fA-F]$/.test(c)) ci = c.toLowerCase().charCodeAt(0) - 97; else if (c in KH_LETTERS) ci = KH_LETTERS[c]; else if (/^[1-6]$/.test(c)) ci = Number(c) - 1;
     return { kind: writing ? 'writing' : 'mcq', stem_text: stem, options: writing ? [] : opts, correct_index: ci, points: Number(pick(r, 'points', 'point', 'ពិន្ទុ')) || undefined,
-      topic: String(pick(r, 'topic', 'ប្រធានបទ')).trim(), grade: String(pick(r, 'grade', 'ថ្នាក់')).replace(/\D/g, ''), lesson: String(pick(r, 'lesson', 'មេរៀន')).trim(), level: levelOf(pick(r, 'level', 'កម្រិត')), solution_text: String(pick(r, 'solution', 'ចម្លើយគំរូ')).trim() };
+      topic: String(pick(r, 'topic', 'ប្រធានបទ')).trim(), grade: String(pick(r, 'grade', 'ថ្នាក់')).replace(/\D/g, ''), chapter: String(pick(r, 'chapter', 'ជំពូក')).trim(), lesson: String(pick(r, 'lesson', 'មេរៀន')).trim(), level: levelOf(pick(r, 'level', 'កម្រិត')), solution_text: String(pick(r, 'solution', 'ចម្លើយគំរូ')).trim() };
   }
   file.addEventListener('change', async () => {
     if (!file.files[0]) return;

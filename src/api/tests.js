@@ -1,4 +1,4 @@
-import { GRADES, loadCurriculum } from '../lib/curriculum.js';
+import { GRADES, CHAPTERS, chapterOf, loadCurriculum } from '../lib/curriculum.js';
 import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
 import { rescoreSession } from '../lib/scoring.js';
@@ -83,7 +83,7 @@ export async function addQuestion(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
   if ((await questionRoom(env, g.t, params.testId)) <= 0) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
-  const { stem_text, options, correct_index, points, image_key, kind, solution_text, topic, level, shuffle, grade, lesson, params: tplParams } = await req.json();
+  const { stem_text, options, correct_index, points, image_key, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params: tplParams } = await req.json();
   const isWriting = kind === 'writing';
   if (!stem_text) return err('stem_text is required.', 400);
   if (!isWriting) {
@@ -97,9 +97,12 @@ export async function addQuestion(req, env, params) {
   const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1')
     .bind(params.testId).all();
   const orderNo = results[0].m + 1;
+  const gr = cleanGrade(grade);
+  const ls = cleanLesson(lesson);
+  const ch = cleanChapter(chapter) || chapterOf(gr, ls);
   const { meta } = await env.DB.prepare(
-    'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)',
-  ).bind(params.testId, orderNo, stem_text, image_key || null, JSON.stringify(isWriting ? [] : options), isWriting ? 0 : correct_index, points || 1, isWriting ? 'writing' : 'mcq', solution_text || null, topic || null, level || null, shuffle ? 1 : 0, cleanGrade(grade), cleanLesson(lesson), tpl).run();
+    'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)',
+  ).bind(params.testId, orderNo, stem_text, image_key || null, JSON.stringify(isWriting ? [] : options), isWriting ? 0 : correct_index, points || 1, isWriting ? 'writing' : 'mcq', solution_text || null, topic || null, level || null, shuffle ? 1 : 0, gr, ls, ch, tpl).run();
   return json({ id: meta.last_row_id, order_no: orderNo });
 }
 
@@ -118,6 +121,13 @@ export async function updateQuestion(req, env, params) {
   if (b.topic !== undefined) put('topic', b.topic ? String(b.topic).trim().slice(0, 60) : null);
   if (b.grade !== undefined) put('grade', cleanGrade(b.grade));
   if (b.lesson !== undefined) put('lesson', cleanLesson(b.lesson));
+  if (b.chapter !== undefined) put('chapter', cleanChapter(b.chapter));
+  else if (b.lesson !== undefined || b.grade !== undefined) {
+    const gVal = b.grade !== undefined ? cleanGrade(b.grade) : cur.grade;
+    const lVal = b.lesson !== undefined ? cleanLesson(b.lesson) : cur.lesson;
+    const autoCh = chapterOf(gVal, lVal);
+    if (autoCh) put('chapter', autoCh);
+  }
   if (b.level !== undefined) put('level', ['easy', 'medium', 'hard', 'pisa'].includes(b.level) ? b.level : null);
   if (!isWriting) {
     const options = b.options !== undefined ? b.options : JSON.parse(cur.options_json);
@@ -293,7 +303,7 @@ async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
   const sharedIds = new Set(ids.filter((id) => !mine.has(id) || !['owner', 'editor'].includes(mine.get(id))));
   const { results: raw } = await env.DB.prepare(
     `SELECT q.id, q.test_id, x.title AS test_title, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind,
-            q.topic, q.level, q.grade, q.lesson, q.shuffle, q.solution_text, q.cancelled, q.params
+            q.topic, q.level, q.grade, q.lesson, q.chapter, q.shuffle, q.solution_text, q.cancelled, q.params
      FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ids.map(() => '?').join(',')}) ORDER BY q.test_id DESC, q.order_no`,
   ).bind(...ids).all();
   const results = raw.map((q) => (sharedIds.has(q.test_id) ? { ...q, shared: 1, test_title: 'ឃ្លាំងសំណួររួម' } : q));
@@ -304,7 +314,7 @@ async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
     if (q.cancelled) continue;
     const k = `${q.kind}|${q.stem_text}|${q.options_json}`;
     const cur = byKey.get(k);
-    const sc = (x) => (x.topic ? 1 : 0) + (x.level ? 1 : 0) + (x.grade ? 2 : 0) + (x.lesson ? 2 : 0);
+    const sc = (x) => (x.topic ? 1 : 0) + (x.level ? 1 : 0) + (x.grade ? 2 : 0) + (x.lesson ? 2 : 0) + (x.chapter ? 2 : 0);
     if (!cur || sc(q) > sc(cur)) byKey.set(k, q);
   }
   return [...byKey.values()];
@@ -342,7 +352,7 @@ export async function exportBank(req, env) {
     const qs = g.questions.sort((a, b) => a.id - b.id).filter(() => (left === null ? true : left-- > 0));
     return { ...g, questions: qs.map((q) => ({
       id: q.id, stem_text: q.stem_text, image_key: q.image_key, options: JSON.parse(q.options_json), correct_index: q.correct_index, alt_correct_index: q.alt_correct_index,
-      points: q.points, kind: q.kind, solution_text: q.solution_text, level: q.level, lesson: q.lesson, grade: q.grade, cancelled: q.cancelled,
+      points: q.points, kind: q.kind, solution_text: q.solution_text, level: q.level, lesson: q.lesson, chapter: q.chapter, grade: q.grade, cancelled: q.cancelled,
       sample: hasVariants(q) ? sampleFor(q, `bank:${q.id}`) : undefined,
     })) };
   }).filter((g) => g.questions.length);
@@ -360,9 +370,9 @@ export async function listBank(req, env) {
 async function copyInto(env, testId, q) {
   const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(testId).all();
   await env.DB.prepare(
-    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
-  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null, q.params ?? null).run();
+    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)`,
+  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null, q.chapter || null, q.params ?? null).run();
 }
 
 // copy chosen questions into a test
@@ -425,12 +435,15 @@ export async function bulkAdd(req, env, params) {
     const opts = Array.isArray(q.options) ? q.options.map((o) => String(o).trim()).filter(Boolean) : [];
     if (!stem || (!writing && (opts.length < 2 || !Number.isInteger(q.correct_index) || q.correct_index < 0 || q.correct_index >= opts.length))) { bad.push(i + 1); return; }
     order += 1;
+    const gr = cleanGrade(q.grade);
+    const ls = cleanLesson(q.lesson);
+    const ch = cleanChapter(q.chapter) || chapterOf(gr, ls);
     stmts.push(env.DB.prepare(
-      `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
+      `INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
     ).bind(params.testId, order, stem, JSON.stringify(writing ? [] : opts), writing ? 0 : q.correct_index, Math.max(0.25, Math.round((Number(q.points) || (writing ? 5 : 1)) * 100) / 100),
       writing ? 'writing' : 'mcq', q.solution_text ? String(q.solution_text) : null, q.topic ? String(q.topic).slice(0, 60) : null,
-      ['easy', 'medium', 'hard', 'pisa'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0), cleanGrade(q.grade), cleanLesson(q.lesson)));
+      ['easy', 'medium', 'hard', 'pisa'].includes(q.level) ? q.level : null, writing ? 0 : (q.shuffle ? 1 : 0), gr, ls, ch));
   });
   if (stmts.length) await env.DB.batch(stmts);
   await audit(env, g.t, 'questions.import', `test ${params.testId}: ${stmts.length} added, ${bad.length} skipped`);
@@ -439,12 +452,13 @@ export async function bulkAdd(req, env, params) {
 
 const cleanGrade = (g) => (GRADES.includes(String(g || '').trim()) ? String(g).trim() : null);
 const cleanLesson = (l) => (l ? String(l).trim().slice(0, 120) || null : null);
+const cleanChapter = (c) => (c ? String(c).trim().slice(0, 120) || null : null);
 
 // lesson list per grade (defaults + this teacher's own additions)
 export async function getCurriculum(req, env) {
   const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
-  const { lessons } = await loadCurriculum(env, g0.t.id);
-  return json({ grades: GRADES, lessons });
+  const { lessons, chapters } = await loadCurriculum(env, g0.t.id);
+  return json({ grades: GRADES, lessons, chapters });
 }
 
 export async function addLesson(req, env) {
@@ -470,12 +484,14 @@ export async function tagQuestions(req, env) {
   const wanted = new Set(b.question_ids.slice(0, 500).map(Number).filter((id) => byId.has(id)).map((id) => keyOf(byId.get(id))));
   const gr = b.grade === undefined ? undefined : cleanGrade(b.grade);
   const ls = b.lesson === undefined ? undefined : cleanLesson(b.lesson);
+  const ch = b.chapter === undefined ? (ls && gr ? chapterOf(gr, ls) : undefined) : cleanChapter(b.chapter);
   const stmts = [];
   for (const q of bank) {
     if (!wanted.has(keyOf(q))) continue;
     const sets = []; const vals = [];
     if (gr !== undefined) { sets.push(`grade = ?${sets.length + 1}`); vals.push(gr); }
     if (ls !== undefined) { sets.push(`lesson = ?${sets.length + 1}`); vals.push(ls); }
+    if (ch !== undefined) { sets.push(`chapter = ?${sets.length + 1}`); vals.push(ch); }
     if (b.level !== undefined) { sets.push(`level = ?${sets.length + 1}`); vals.push(['easy', 'medium', 'hard', 'pisa'].includes(b.level) ? b.level : null); }
     if (!sets.length) continue;
     stmts.push(env.DB.prepare(`UPDATE test_questions SET ${sets.join(', ')} WHERE id = ?${sets.length + 1}`).bind(...vals, q.id));

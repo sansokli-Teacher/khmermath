@@ -934,7 +934,7 @@ async function drawTestBuilder(container) {
 async function buildQuestionForm(test, container, opts = {}) {
   const done = opts.onDone || (() => renderTestBuilder(container));
   const curr = await loadCurr();
-  const gl = gradeLessonPicker(opts.grade, opts.lesson, curr);
+  const gl = gradeLessonPicker(opts.grade, opts.lesson, curr, opts.chapter);
   const optionInputs = [0, 1, 2, 3].map((i) => h('input', { type: 'text', placeholder: `ជម្រើស ${i + 1}`, 'data-opt': i }));
   const correctSelect = h('select', { id: 'q-correct' }, optionInputs.map((_, i) => h('option', { value: i }, `ជម្រើស ${i + 1} ត្រឹមត្រូវ`)));
   const stemInput = h('textarea', { id: 'q-stem', placeholder: 'ឧ. បើ x + 3 = 7 តម្លៃ x គឺ? (សរសេរធម្មតា ដូចជា x^2, 3/4, √20 ឬបិទភ្ជាប់ LaTeX ក្នុង \\( \\))' });
@@ -990,7 +990,11 @@ async function buildQuestionForm(test, container, opts = {}) {
       h('div', {}, [h('label', {}, 'កម្រិត'), levelInput]),
       h('label', { style: 'display:flex;gap:8px;align-items:center;color:var(--ink);' }, [shuffleInput, 'លាយជម្រើសចម្លើយ']),
     ]),
-    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]), h('div', { style: 'flex:1;min-width:200px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])]),
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [
+      h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]),
+      h('div', { style: 'flex:1;min-width:180px;' }, [h('label', {}, 'ជំពូក'), gl.chapter, gl.chDl]),
+      h('div', { style: 'flex:1;min-width:180px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])
+    ]),
     h('div', { class: 'row', style: 'margin-top:12px' }, [
       h('button', { onclick: async () => {
         const isWriting = kindSelect.value === 'writing';
@@ -2035,7 +2039,7 @@ async function openWritingMarks(session, student, done) {
 async function openQuestionEditor(q, test, container, onDone) {
   const done = onDone || (() => renderTestBuilder(container));
   const curr = await loadCurr();
-  const gl = gradeLessonPicker(q.grade, q.lesson, curr);
+  const gl = gradeLessonPicker(q.grade, q.lesson, curr, q.chapter);
   const isWriting = q.kind === 'writing';
   const stem = h('textarea', { style: 'min-height:90px;' }); stem.value = q.stem_text;
   const optInputs = (q.options || []).map((o) => { const i = h('input', { type: 'text' }); i.value = o; return i; });
@@ -2076,7 +2080,11 @@ async function openQuestionEditor(q, test, container, onDone) {
       h('div', { style: 'flex:1;min-width:140px;' }, [h('label', {}, 'មុខវិជ្ជា / ប្រធានបទ'), topic]),
       h('div', {}, [h('label', {}, 'កម្រិត'), level]),
     ]),
-    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]), h('div', { style: 'flex:1;min-width:200px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])]),
+    h('div', { class: 'row', style: 'gap:14px;align-items:flex-end;' }, [
+      h('div', {}, [h('label', {}, 'ថ្នាក់'), gl.grade]),
+      h('div', { style: 'flex:1;min-width:180px;' }, [h('label', {}, 'ជំពូក'), gl.chapter, gl.chDl]),
+      h('div', { style: 'flex:1;min-width:180px;' }, [h('label', {}, 'មេរៀន'), gl.lesson, gl.dl])
+    ]),
     !isWriting ? h('label', { style: 'display:flex;gap:8px;align-items:center;margin-top:12px;color:#a52a2a;' }, [cancelled, 'បោះបង់សំណួរនេះ — ឱ្យពិន្ទុដល់សិស្សទាំងអស់']) : null,
     test.frozen_sessions ? h('div', { class: 'callout', style: 'margin-top:12px;' }, `🔒 មានការប្រឡង ${test.frozen_sessions} ដែលបានចាប់ផ្តើមរួច ហើយបានរក្សាសំណួរដើមទុក។ ការកែអត្ថបទ ឬជម្រើស នឹងមិនប៉ះពាល់ការប្រឡងទាំងនោះទេ។ ការកែចម្លើយត្រឹមត្រូវ ឬបោះបង់សំណួរ (ដោយមិនប្តូរជម្រើស) នឹងអនុវត្តលើការប្រឡងទាំងនោះដែរ។`) : null,
     test.submissions ? h('div', { class: 'callout warn', style: 'margin-top:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ។ បើប្តូរចម្លើយត្រឹមត្រូវ ប្រព័ន្ធនឹងសួរឱ្យរាប់ពិន្ទុឡើងវិញ។`) : null,
@@ -2084,7 +2092,7 @@ async function openQuestionEditor(q, test, container, onDone) {
       h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់'),
       h('button', { onclick: async () => {
         try {
-          const body = { stem_text: stem.value, points: Number(points.value), topic: topic.value, level: level.value, grade: gl.grade.value || null, lesson: gl.lesson.value.trim() || null };
+          const body = { stem_text: stem.value, points: Number(points.value), topic: topic.value, level: level.value, ...gl.get() };
           body.solution_text = solution.value;
           if (!isWriting) {
             const options = optInputs.map((i) => i.value.trim());
