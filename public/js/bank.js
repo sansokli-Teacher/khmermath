@@ -1,8 +1,10 @@
 // Question bank: grade → lesson → questions. Reuse, tag, add new, import, or build a random test from a lesson.
 const LEVEL_KH = { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'បែប PISA' };
 const KH_DIGITS = '០១២៣៤៥៦៧៨៩';
-const khNum = (n) => String(n).replace(/\d/g, (d) => KH_DIGITS[d]);
-const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
+const khNum = (n) => String(n ?? '').replace(/\d/g, (d) => KH_DIGITS[d]);
+const kh = khNum;
+const mathEl = (tag, attrs, text) => { const el = h(tag, attrs); el.innerHTML = Exam.mathHtml(text); return el; };
+const GRADE_KH = (g) => `ថ្នាក់ទី ${kh(g)}`;
 let bankState = { grade: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
 
@@ -21,7 +23,8 @@ function gradeLessonPicker(g, l, curr) {
 
 function bankModal(title, body, wide) {
   const back = h('div', { class: 'modal-back', style: 'align-items:flex-start;overflow:auto;', onclick: (e) => { if (e.target === back) back.remove(); } });
-  back.append(h('div', { class: 'modal-box', style: `text-align:left;max-width:${wide ? 720 : 520}px;margin:20px auto;` }, [h('h2', {}, title), body]));
+  const headerEl = typeof title === 'string' ? h('h2', {}, title) : title;
+  back.append(h('div', { class: 'modal-box', style: `text-align:left;max-width:${wide ? 720 : 520}px;margin:20px auto;` }, [headerEl, body]));
   document.body.append(back);
   return back;
 }
@@ -470,14 +473,14 @@ render.bank = async function () {
       list.append(h('div', { class: 'bank-item', style: 'display:flex;gap:12px;align-items:flex-start;' }, [
         h('label', { style: 'display:flex;align-items:center;cursor:pointer;flex:none;' }, cb),
         h('div', { style: 'min-width:0;flex:1;' }, [
-          mathEl('div', { class: 'bank-stem', style: 'cursor:pointer;line-height:1.6;', title: 'ចុចដើម្បីមើលសំណួរ និងចម្លើយ', onclick: () => openViewer() }, x.stem_text),
+          mathEl('div', { class: 'bank-stem', style: 'cursor:pointer;line-height:1.6;', title: 'ចុចដើម្បីមើលសំណួរ និងចម្លើយ', onclick: () => openViewer(idx) }, x.stem_text),
           x.image_key ? h('div', { style: 'margin:8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;' }, [
             h('img', {
               src: '/api/images/' + encodeURIComponent(x.image_key),
               alt: x.image_key,
               loading: 'lazy',
               style: 'max-height:160px;max-width:260px;display:block;border-radius:6px;border:1px solid var(--line,#e2e8f0);background:#ffffff;padding:4px;object-fit:contain;cursor:pointer;',
-              onclick: (e) => { e.preventDefault(); e.stopPropagation(); openViewer(); }
+              onclick: (e) => { e.preventDefault(); e.stopPropagation(); openViewer(idx); }
             }),
             h('div', { style: 'font-size:12px;color:#64748b;display:flex;flex-direction:column;gap:3px;' }, [
               h('span', { style: 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:600;color:#0369a1;' }, x.image_key),
