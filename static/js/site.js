@@ -108,3 +108,42 @@
     });
   });
 })();
+
+/* App Store & Google Play - Coming Soon Toast Notification */
+(function () {
+  'use strict';
+  var toastTimer = null;
+  function showAppToast() {
+    var toast = document.getElementById('km-app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'km-app-toast';
+      toast.className = 'app-toast';
+      toast.innerHTML = '<div class="app-toast-head">' +
+        '<span>📱 KhmerMath Mobile App</span>' +
+        '<button type="button" class="app-toast-close" aria-label="បិទ">&times;</button>' +
+        '</div>' +
+        '<div class="app-toast-body">' +
+        'កម្មវិធីទូរស័ព្ទដៃសម្រាប់ <b>iOS (App Store)</b> និង <b>Android (Google Play)</b> កំពុងស្ថិតក្នុងការរៀបចំចុងក្រោយ និងត្រៀមដាក់ឱ្យទាញយកដោយឥតគិតថ្លៃក្នុងពេលឆាប់ៗនេះ!' +
+        '<div style="margin-top:8px"><a href="https://t.me/pisamathAI" target="_blank" rel="noopener" style="color:var(--teal);font-weight:700">ចូលរួម Telegram @pisamathAI ដើម្បីដឹងមុនគេ ›</a></div>' +
+        '</div>';
+      document.body.appendChild(toast);
+      toast.querySelector('.app-toast-close').addEventListener('click', function () {
+        toast.hidden = true;
+      });
+    }
+    toast.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.hidden = true;
+    }, 6000);
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.js-app-coming-soon');
+    if (btn) {
+      e.preventDefault();
+      showAppToast();
+    }
+  });
+})();
