@@ -36,49 +36,49 @@ FIG_SEQUENCE_MAPPING = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5
     </marker>
   </defs>
 
-  <!-- Function Mapping Curved Arrow at Top -->
+  <!-- Function Mapping Curved Arrow at Top with Mathcad Italic 'f' -->
   <path d='M 120 38 C 210 10, 290 10, 375 36' fill='none' stroke='#4f46e5' stroke-width='2' marker-end='url(#arr-top)'/>
-  <text x='250' y='20' text-anchor='middle' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic' font-size='22' font-weight='bold' fill='#4f46e5'>f</text>
+  <text x='250' y='20' text-anchor='middle' font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic' font-size='22' font-weight='bold' fill='#4f46e5'>f</text>
 
   <!-- Left Set (Domain) -->
   <rect x='45' y='42' width='110' height='175' rx='28' fill='none' stroke='#2563eb' stroke-width='2'/>
   
   <!-- Elements in Left Set -->
   <circle cx='115' cy='68' r='3.5' fill='#2563eb'/>
-  <text x='102' y='73' text-anchor='end' font-family=\"'Times New Roman', serif\" font-size='16' font-weight='bold' fill='#1e293b'>1</text>
+  <text x='102' y='73' text-anchor='end' font-family='Times New Roman, serif' font-size='16' font-weight='bold' fill='#1e293b'>1</text>
 
   <circle cx='115' cy='100' r='3.5' fill='#2563eb'/>
-  <text x='102' y='105' text-anchor='end' font-family=\"'Times New Roman', serif\" font-size='16' font-weight='bold' fill='#1e293b'>2</text>
+  <text x='102' y='105' text-anchor='end' font-family='Times New Roman, serif' font-size='16' font-weight='bold' fill='#1e293b'>2</text>
 
   <circle cx='115' cy='132' r='3.5' fill='#2563eb'/>
-  <text x='102' y='137' text-anchor='end' font-family=\"'Times New Roman', serif\" font-size='16' font-weight='bold' fill='#1e293b'>3</text>
+  <text x='102' y='137' text-anchor='end' font-family='Times New Roman, serif' font-size='16' font-weight='bold' fill='#1e293b'>3</text>
 
-  <text x='115' y='156' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='18' fill='#64748b'>⋮</text>
+  <text x='115' y='156' text-anchor='middle' font-family='Times New Roman, serif' font-size='18' fill='#64748b'>⋮</text>
 
   <circle cx='115' cy='178' r='3.5' fill='#2563eb'/>
-  <text x='102' y='183' text-anchor='end' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic' font-size='17' fill='#1e293b'>n</text>
+  <text x='102' y='183' text-anchor='end' font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic' font-size='17' fill='#1e293b'>n</text>
 
-  <text x='115' y='204' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='18' fill='#64748b'>⋮</text>
+  <text x='115' y='204' text-anchor='middle' font-family='Times New Roman, serif' font-size='18' fill='#64748b'>⋮</text>
 
   <!-- Right Set (Codomain) -->
   <rect x='345' y='42' width='110' height='175' rx='28' fill='none' stroke='#059669' stroke-width='2'/>
 
   <!-- Elements in Right Set -->
   <circle cx='385' cy='68' r='3.5' fill='#059669'/>
-  <text x='398' y='73' text-anchor='start' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>1</tspan></text>
+  <text x='398' y='73' text-anchor='start' font-family='Mathcad UniMath, Times New Roman, serif' font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>1</tspan></text>
 
   <circle cx='385' cy='100' r='3.5' fill='#059669'/>
-  <text x='398' y='105' text-anchor='start' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>2</tspan></text>
+  <text x='398' y='105' text-anchor='start' font-family='Mathcad UniMath, Times New Roman, serif' font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>2</tspan></text>
 
   <circle cx='385' cy='132' r='3.5' fill='#059669'/>
-  <text x='398' y='137' text-anchor='start' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>3</tspan></text>
+  <text x='398' y='137' text-anchor='start' font-family='Mathcad UniMath, Times New Roman, serif' font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>3</tspan></text>
 
-  <text x='385' y='156' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='18' fill='#64748b'>⋮</text>
+  <text x='385' y='156' text-anchor='middle' font-family='Times New Roman, serif' font-size='18' fill='#64748b'>⋮</text>
 
   <circle cx='385' cy='178' r='3.5' fill='#059669'/>
-  <text x='398' y='183' text-anchor='start' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='11' dy='3'>n</tspan></text>
+  <text x='398' y='183' text-anchor='start' font-family='Mathcad UniMath, Times New Roman, serif' font-size='16' fill='#1e293b'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='11' dy='3'>n</tspan></text>
 
-  <text x='385' y='204' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='18' fill='#64748b'>⋮</text>
+  <text x='385' y='204' text-anchor='middle' font-family='Times New Roman, serif' font-size='18' fill='#64748b'>⋮</text>
 
   <!-- Mapping Arrows Between Elements -->
   <path d='M 124 68 C 200 55, 300 55, 375 68' fill='none' stroke='#6366f1' stroke-width='1.6' marker-end='url(#arr)'/>
@@ -92,59 +92,59 @@ FIG_MONOTONIC_GRAPH = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52
   <!-- Left Graph (ក): a_n = n/(n+1) -->
   <line x1='40' y1='170' x2='230' y2='170' stroke='#334155' stroke-width='1.5'/>
   <polygon points='230,170 223,166 223,174' fill='#334155'/>
-  <text x='230' y='185' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic' font-size='14' fill='#334155'>n</text>
+  <text x='230' y='185' font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic' font-size='14' fill='#334155'>n</text>
 
   <line x1='50' y1='180' x2='50' y2='30' stroke='#334155' stroke-width='1.5'/>
   <polygon points='50,30 46,37 54,37' fill='#334155'/>
-  <text x='35' y='35' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='14' fill='#334155'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='10' dy='3'>n</tspan></text>
+  <text x='35' y='35' font-family='Mathcad UniMath, Times New Roman, serif' font-size='14' fill='#334155'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='10' dy='3'>n</tspan></text>
 
-  <text x='135' y='22' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='13' font-weight='bold' fill='#2563eb'>ក្រាប (ក) ៖ <tspan font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic'>a</tspan><tspan font-size='10' dy='2'>n</tspan><tspan dy='-2'> = </tspan><tspan font-style='italic'>n</tspan>/(<tspan font-style='italic'>n</tspan> + 1)</text>
+  <text x='135' y='22' text-anchor='middle' font-family='Times New Roman, serif' font-size='13' font-weight='bold' fill='#2563eb'>ក្រាប (ក) ៖ <tspan font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic'>a</tspan><tspan font-size='10' dy='2'>n</tspan><tspan dy='-2'> = </tspan><tspan font-style='italic'>n</tspan>/(<tspan font-style='italic'>n</tspan> + 1)</text>
 
   <line x1='50' y1='60' x2='220' y2='60' stroke='#94a3b8' stroke-width='1' stroke-dasharray='3,3'/>
-  <text x='45' y='64' text-anchor='end' font-family=\"'Times New Roman', serif\" font-size='11' fill='#64748b'>1</text>
+  <text x='45' y='64' text-anchor='end' font-family='Times New Roman, serif' font-size='11' fill='#64748b'>1</text>
 
   <path d='M 75 115 Q 120 75 210 68' fill='none' stroke='#93c5fd' stroke-width='1.5' stroke-dasharray='2,2'/>
   <circle cx='75' cy='115' r='4' fill='#2563eb'/>
-  <text x='75' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>1</text>
+  <text x='75' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>1</text>
 
   <circle cx='105' cy='97' r='4' fill='#2563eb'/>
-  <text x='105' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>2</text>
+  <text x='105' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>2</text>
 
   <circle cx='135' cy='88' r='4' fill='#2563eb'/>
-  <text x='135' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>3</text>
+  <text x='135' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>3</text>
 
   <circle cx='165' cy='82' r='4' fill='#2563eb'/>
-  <text x='165' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>4</text>
+  <text x='165' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>4</text>
 
   <circle cx='195' cy='78' r='4' fill='#2563eb'/>
-  <text x='195' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>5</text>
+  <text x='195' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>5</text>
 
   <!-- Right Graph (ខ): a_n = 1/n -->
   <line x1='300' y1='170' x2='490' y2='170' stroke='#334155' stroke-width='1.5'/>
   <polygon points='490,170 483,166 483,174' fill='#334155'/>
-  <text x='490' y='185' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic' font-size='14' fill='#334155'>n</text>
+  <text x='490' y='185' font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic' font-size='14' fill='#334155'>n</text>
 
   <line x1='310' y1='180' x2='310' y2='30' stroke='#334155' stroke-width='1.5'/>
   <polygon points='310,30 306,37 314,37' fill='#334155'/>
-  <text x='295' y='35' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='14' fill='#334155'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='10' dy='3'>n</tspan></text>
+  <text x='295' y='35' font-family='Mathcad UniMath, Times New Roman, serif' font-size='14' fill='#334155'><tspan font-style='italic'>a</tspan><tspan font-style='italic' font-size='10' dy='3'>n</tspan></text>
 
-  <text x='395' y='22' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='13' font-weight='bold' fill='#dc2626'>ក្រាប (ខ) ៖ <tspan font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-style='italic'>a</tspan><tspan font-size='10' dy='2'>n</tspan><tspan dy='-2'> = 1/</tspan><tspan font-style='italic'>n</tspan></text>
+  <text x='395' y='22' text-anchor='middle' font-family='Times New Roman, serif' font-size='13' font-weight='bold' fill='#dc2626'>ក្រាប (ខ) ៖ <tspan font-family='Mathcad UniMath, Times New Roman, serif' font-style='italic'>a</tspan><tspan font-size='10' dy='2'>n</tspan><tspan dy='-2'> = 1/</tspan><tspan font-style='italic'>n</tspan></text>
 
   <path d='M 335 60 Q 370 125 470 155' fill='none' stroke='#fca5a5' stroke-width='1.5' stroke-dasharray='2,2'/>
   <circle cx='335' cy='60' r='4' fill='#dc2626'/>
-  <text x='335' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>1</text>
+  <text x='335' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>1</text>
 
   <circle cx='365' cy='115' r='4' fill='#dc2626'/>
-  <text x='365' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>2</text>
+  <text x='365' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>2</text>
 
   <circle cx='395' cy='133' r='4' fill='#dc2626'/>
-  <text x='395' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>3</text>
+  <text x='395' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>3</text>
 
   <circle cx='425' cy='142' r='4' fill='#dc2626'/>
-  <text x='425' y='183' text-anchor='middle' font-family=\"'Times New Roman', serif\" font-size='11' fill='#475569'>4</text>
+  <text x='425' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>4</text>
 
   <circle cx='455' cy='148' r='4' fill='#dc2626'/>
-  <text x='455' y='183' text-anchor='middle' font-family="'Times New Roman', serif" font-size='11' fill='#475569'>5</text>
+  <text x='455' y='183' text-anchor='middle' font-family='Times New Roman, serif' font-size='11' fill='#475569'>5</text>
 </svg>"""
 
 # 3. Bouncing Ball Motion Model (Textbook Section 2 Model 2)
@@ -152,7 +152,7 @@ FIG_BOUNCING_BALL = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 
   <!-- Ground line -->
   <line x1='30' y1='180' x2='490' y2='180' stroke='#334155' stroke-width='3'/>
   <line x1='30' y1='185' x2='490' y2='185' stroke='#94a3b8' stroke-width='1' stroke-dasharray='4,4'/>
-  <text x='490' y='175' text-anchor='end' font-family="'Times New Roman', serif" font-size='12' fill='#64748b'>ដី (Ground)</text>
+  <text x='490' y='175' text-anchor='end' font-family='Times New Roman, serif' font-size='12' fill='#64748b'>ដី (Ground)</text>
 
   <!-- Initial Drop from 6m -->
   <circle cx='60' cy='30' r='9' fill='#ef4444' stroke='#b91c1c' stroke-width='1.5'/>
@@ -160,25 +160,25 @@ FIG_BOUNCING_BALL = """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 
   <line x1='45' y1='30' x2='45' y2='180' stroke='#2563eb' stroke-width='1.5'/>
   <polygon points='45,30 42,37 48,37' fill='#2563eb'/>
   <polygon points='45,180 42,173 48,173' fill='#2563eb'/>
-  <text x='38' y='110' text-anchor='end' font-family="'Times New Roman', serif" font-size='13' font-weight='bold' fill='#2563eb'>6 m</text>
+  <text x='38' y='110' text-anchor='end' font-family='Times New Roman, serif' font-size='13' font-weight='bold' fill='#2563eb'>6 m</text>
 
   <!-- Rebound 1 -->
   <path d='M 60 180 Q 120 70 180 180' fill='none' stroke='#0891b2' stroke-width='2.5'/>
   <circle cx='120' cy='75' r='8' fill='#0891b2'/>
   <line x1='120' y1='83' x2='120' y2='180' stroke='#0891b2' stroke-width='1' stroke-dasharray='3,3'/>
-  <text x='120' y='60' text-anchor='middle' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='14' fill='#0891b2'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>1</tspan></text>
+  <text x='120' y='60' text-anchor='middle' font-family='Mathcad UniMath, Times New Roman, serif' font-size='14' fill='#0891b2'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>1</tspan></text>
 
   <!-- Rebound 2 -->
   <path d='M 180 180 Q 240 100 300 180' fill='none' stroke='#059669' stroke-width='2'/>
   <circle cx='240' cy='105' r='7' fill='#059669'/>
   <line x1='240' y1='112' x2='240' y2='180' stroke='#059669' stroke-width='1' stroke-dasharray='3,3'/>
-  <text x='240' y='92' text-anchor='middle' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='14' fill='#059669'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>2</tspan></text>
+  <text x='240' y='92' text-anchor='middle' font-family='Mathcad UniMath, Times New Roman, serif' font-size='14' fill='#059669'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>2</tspan></text>
 
   <!-- Rebound 3 -->
   <path d='M 300 180 Q 355 125 410 180' fill='none' stroke='#7c3aed' stroke-width='2'/>
   <circle cx='355' cy='130' r='6' fill='#7c3aed'/>
   <line x1='355' y1='136' x2='355' y2='180' stroke='#7c3aed' stroke-width='1' stroke-dasharray='3,3'/>
-  <text x='355' y='118' text-anchor='middle' font-family=\"'Mathcad UniMath Italic', 'Mathcad UniMath', 'Times New Roman', serif\" font-size='14' fill='#7c3aed'><tspan font-style='italic'>a</tspan><tspan font-family=\"'Times New Roman', serif\" font-style='normal' font-size='11' dy='3'>3</tspan></text>
+  <text x='355' y='118' text-anchor='middle' font-family='Mathcad UniMath, Times New Roman, serif' font-size='14' fill='#7c3aed'><tspan font-style='italic'>a</tspan><tspan font-family='Times New Roman, serif' font-style='normal' font-size='11' dy='3'>3</tspan></text>
 </svg>"""
 
 
