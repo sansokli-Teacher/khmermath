@@ -12,7 +12,13 @@ if (typeof globalThis !== 'undefined') {
     };
   }
 }
-const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
+const GRADE_KH = (g) => {
+  if (g === '11SC') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រពិត)';
+  if (g === '11SS') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)';
+  if (g === '12SC') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រពិត)';
+  if (g === '12SS') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)';
+  return `ថ្នាក់ទី ${khNum(g)}`;
+};
 let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
 
