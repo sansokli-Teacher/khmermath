@@ -1,0 +1,50 @@
+/* Scoped sharing dialog: the body scrolls while header and actions stay visible. */
+.modal-back.share-back { padding: 20px; align-items: center; }
+.modal-box.share-dialog { width: 100%; max-width: 620px; max-height: calc(100dvh - 40px); padding: 0; overflow: hidden; display: flex; flex-direction: column; text-align: left; border-radius: 20px; }
+.share-dialog .share-header { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid #e4e7ef; flex-shrink: 0; }
+.share-header > div { min-width: 0; }
+.share-dialog .share-header h2 { font-size: 22px; line-height: 1.6; margin: 0; }
+.share-dialog .share-resource { margin: 4px 0 0; color: #687089; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.share-dialog .share-close { flex: none; width: 40px; height: 40px; min-height: 40px; padding: 0; font-size: 25px; border-radius: 12px; }
+.share-body { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 20px 24px; }
+.share-dialog label { display: block; font-size: 14px; margin: 0 0 8px; font-weight: 700; }
+.share-dialog input, .share-dialog select, .share-dialog button { font-size: 14px; min-height: 42px; line-height: 1.6; }
+.share-dialog input, .share-dialog select { border-radius: 10px; width: 100%; padding: 10px 12px; margin: 0; }
+.share-dialog .share-help { color: #687089; font-size: 13px; line-height: 1.9; margin: 8px 0 0; }
+.share-permission { background: #f7f8fc; border: 1px solid #e4e7ef; border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+.share-methods { display: flex; gap: 6px; padding: 4px; border-radius: 12px; background: #f0f2f8; margin-bottom: 18px; }
+.share-dialog .share-methods button { flex: 1; background: transparent; color: #59627b; border: 1px solid transparent; padding: 8px; border-radius: 9px; box-shadow: none; }
+.share-dialog .share-methods button.active { color: #354fc4; background: #fff; border-color: #d7def5; box-shadow: 0 2px 4px #25366a0a; }
+.share-search-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: start; gap: 8px; }
+.share-search-row > input { min-width: 0; }
+.share-method[hidden] { display: none; }
+.share-dialog .share-access { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e4e7ef; }
+.share-dialog .share-access h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0 0 10px; }
+.share-count { background: #edf0f9; padding: 2px 9px; border-radius: 20px; font-family: sans-serif; font-size: 12px; }
+.share-person { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #edf0f5; }
+.share-person:last-child { border-bottom: 0; }
+.share-person-name { min-width: 0; overflow-wrap: anywhere; }
+.share-person-name strong { display: block; font-size: 14px; }
+.share-person-name small { display: block; color: #687089; font-size: 12px; margin-top: 3px; }
+.share-person-actions { display: flex; gap: 8px; align-items: center; }
+.share-dialog .share-person-actions select { width: 140px !important; }
+.share-dialog .share-remove { color: #b43e4c; border-color: #ecd3d7; padding: 8px 12px; white-space: nowrap; }
+.share-dialog .share-empty { padding: 12px; border-radius: 10px; background: #f7f8fc; color: #687089; font-size: 13px; margin: 10px 0 0; line-height: 1.8; }
+.share-link-slot:not(:empty) { margin-top: 14px; }
+.share-links { margin-top: 10px; }
+.share-dialog .share-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 12px 24px; background: #fff; border-top: 1px solid #e4e7ef; flex-shrink: 0; }
+.share-status { flex: 1; font-size: 12px; line-height: 1.7; color: #237155; margin: 0; overflow-wrap: anywhere; }
+.share-status.is-error { color: #b43e4c; }
+.share-dialog :focus-visible { outline: 3px solid #9eb0f5; outline-offset: 2px; }
+@media(max-width: 600px) {
+  .modal-back.share-back { padding: 8px; }
+  .modal-box.share-dialog { max-height: calc(100dvh - 16px); border-radius: 16px; }
+  .share-dialog .share-header { padding: 16px; }
+  .share-dialog .share-header h2 { font-size: 20px; }
+  .share-body { padding: 16px; }
+  .share-dialog .share-footer { padding: 12px 16px; }
+  .share-person { flex-wrap: wrap; }
+  .share-person-actions { width: 100%; }
+  .share-dialog .share-person-actions select { width: auto !important; flex: 1; min-width: 0; }
+  .share-dialog label { margin-top: 0; }
+}
