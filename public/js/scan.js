@@ -322,17 +322,47 @@ function updateCamCounter() {
   c.textContent = `បានស្កេន ${kh(done)} / ${kh(ses.roster.length)} នាក់`;
 }
 
+let torchOn = false;
 async function openCam() {
   try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
   catch { return Exam.notify('មិនអាចបើកកាមេរ៉ាបានទេ។ សូមអនុញ្ញាតកាមេរ៉ា ឬប្រើប៊ូតុង «ជ្រើសរូប» ជំនួស។'); }
   const v = $('cam-v'); v.srcObject = stream; $('cam').hidden = false; last = null;
   updateCamCounter();
+
+  // Torch control setup
+  torchOn = false;
+  const track = stream.getVideoTracks()[0];
+  const cap = track && track.getCapabilities ? track.getCapabilities() : {};
+  const torchBtn = $('cam-torch');
+  if (torchBtn) {
+    if (cap.torch) {
+      torchBtn.hidden = false;
+      torchBtn.classList.remove('active');
+      torchBtn.textContent = '🔦 ពិល';
+      torchBtn.onclick = async () => {
+        torchOn = !torchOn;
+        try {
+          await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+          torchBtn.textContent = torchOn ? '💡 បិទពិល' : '🔦 ពិល';
+          torchBtn.classList.toggle('active', torchOn);
+        } catch (e) {
+          console.warn('Torch constraint error:', e);
+        }
+      };
+    } else {
+      torchBtn.hidden = true;
+    }
+  }
+
   timer = setInterval(tick, 320);
 }
 function closeCam() {
   clearInterval(timer);
   if (stream) stream.getTracks().forEach((t) => t.stop());
   stream = null;
+  torchOn = false;
+  const torchBtn = $('cam-torch');
+  if (torchBtn) { torchBtn.hidden = true; torchBtn.classList.remove('active'); }
   $('cam').hidden = true;
   const g = $('cam-guide'); if (g) g.classList.remove('detected');
 }

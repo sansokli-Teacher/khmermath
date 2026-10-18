@@ -212,7 +212,7 @@ function lvHost(code) {
   function drawSolo() {
     topButtons();
     if (!soloStarted) { soloStarted = true; KmSound.sfx('start'); }
-    if (st.phase !== 'end') KmSound.loop('question', 0.7);
+    if (st.phase !== 'end') KmSound.loop('main', 0.7);
     info.textContent = `បន្ទប់ ${st.code} · បែបសុខសាន្ត · ${lvKh(st.players)} នាក់ · ចប់ ${lvKh(st.finished)}`;
     main.dataset.q = ''; main.innerHTML = '';
     if (st.phase === 'end') { st.board = st.board; return drawEnd(); }
@@ -240,7 +240,7 @@ function lvHost(code) {
     lastKey = key; main.innerHTML = ''; main.dataset.q = '';
     setTimeout(() => { if (window.renderMathInElement) try { renderMathInElement(main, { delimiters: [{ left: '\\(', right: '\\)', display: false }], throwOnError: false }); } catch (e) {} }, 0);
     if (st.phase === 'lobby') {
-      KmSound.loop('lobby', 1); if (st.players > lastPlayers) KmSound.sfx('join'); lastPlayers = st.players;
+      KmSound.loop('main', 1); if (st.players > lastPlayers) KmSound.sfx('join'); lastPlayers = st.players;
       const row = h('div', { style: 'display:flex;gap:28px;align-items:center;justify-content:center;flex-wrap:wrap' });
       row.appendChild(lvQr(st.code, Math.min(300, Math.round(innerHeight * 0.4))));
       const side = h('div', { style: 'display:flex;flex-direction:column;gap:10px;align-items:center' });
@@ -257,7 +257,7 @@ function lvHost(code) {
     } else if (st.phase === 'question' || st.phase === 'reveal') {
       main.dataset.q = st.phase === 'question' ? String(st.qi) : '';
       const q = st.q, rv = st.reveal;
-      lastSec = -1; KmSound.loop('question', 1); if (st.phase === 'reveal') KmSound.sfx('reveal');
+      lastSec = -1; KmSound.loop('main', 1); if (st.phase === 'reveal') KmSound.sfx('reveal');
       const qd = h('div', { style: 'font-size:clamp(20px,3.3vw,38px);font-weight:700;line-height:1.55;max-width:1100px' }); qd.textContent = q.q; main.appendChild(qd);
       if (q.f) { const f = h('div', {}); f.innerHTML = q.f; const sv = f.querySelector('svg'); if (sv) sv.style.cssText = 'height:30vh;max-width:90vw;background:#fff;border-radius:14px;padding:4px'; main.appendChild(f); }
       if (q.k === 'mcq' || q.k === 'tf') {

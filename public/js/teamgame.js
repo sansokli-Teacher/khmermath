@@ -89,7 +89,7 @@
 
   /* ---------- sound ---------- */
   // Background music + effects: the same original quiz-show tracks as the live quiz (sfx.js, made for this site).
-  function bgm(name, v) { try { if (!window.KmSound) return; if (sndOn()) KmSound.loop(name, v); else KmSound.stop(); } catch (e) {} }
+  function bgm(name, v) { try { if (!window.KmSound) return; if (sndOn()) KmSound.loop('main', v || 0.32); else KmSound.stop(); } catch (e) {} }
   function kmfx(name) { try { if (window.KmSound && sndOn()) { KmSound.sfx(name); return true; } } catch (e) {} return false; }
   function tone(freqs, vol, len, type) {
     if (!sndOn()) return;
@@ -103,12 +103,12 @@
     } catch (e) {}
   }
   var sfx = {
-    flip: function () { tone([523, 784, 1047], 0.07, 0.16); },
+    flip: function () { if (!kmfx('flip')) tone([523, 784, 1047], 0.07, 0.16); },
     right: function () { if (!kmfx('correct')) tone([660, 880, 1100], 0.08, 0.2); },
     wrong: function () { if (!kmfx('wrong')) tone([200, 150], 0.09, 0.28, 'square'); },
-    bomb: function () { tone([120, 90, 60], 0.14, 0.35, 'sawtooth'); },
-    special: function () { tone([523, 784, 659, 988], 0.07, 0.18); },
-    tick: function () { tone([900], 0.05, 0.05); },
+    bomb: function () { if (!kmfx('bomb')) tone([120, 90, 60], 0.14, 0.35, 'sawtooth'); },
+    special: function () { if (!kmfx('special')) tone([523, 784, 659, 988], 0.07, 0.18); },
+    tick: function () { if (!kmfx('tick')) tone([900], 0.05, 0.05); },
     end: function () { if (!kmfx('timeup')) tone([880, 880, 880], 0.1, 0.12, 'square'); },
     win: function () { try { if (window.KmSound) KmSound.stop(); } catch (e) {} if (!kmfx('fanfare')) tone([523, 659, 784, 1047, 1319], 0.08, 0.3); }
   };
@@ -253,7 +253,7 @@
   }
   function saveGame() { if (G) put(GAME, G); }
   function snapshot() { hist.push(JSON.stringify(G)); if (hist.length > 40) hist.shift(); }
-  function showPlay() { bgm('lobby', 0.3); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
+  function showPlay() { bgm('main', 0.32); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
   function showSetup() { if (window.TG_STUDENT) { location.href = 'student.html'; return; }  try { if (window.KmSound) KmSound.stop(); } catch (e) {} stopTimer(); closePop(); $('tg').classList.remove('tg-live'); document.documentElement.classList.remove('tg-noscroll'); if (document.fullscreenElement) document.exitFullscreen(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
   function refreshResume() { var g = load(GAME, null); $('tg-resume').hidden = !(g && g.tiles && !g.finished && g.tiles.some(function (t) { return !t.done; })); }
   function remaining() { return G.tiles.filter(function (t) { return !t.done; }).length; }
@@ -397,7 +397,7 @@
 
   /* ---------- card popup ---------- */
   function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; } }
-  function closePop() { stopTimer(); if (flipBtn) { flipBtn.classList.remove('flip'); flipBtn = null; } $('tg-pop').hidden = true; openTileIdx = -1; stopFw(); if (G && !G.finished && !$('tg-play').hidden) bgm('lobby', 0.3); }
+  function closePop() { stopTimer(); if (flipBtn) { flipBtn.classList.remove('flip'); flipBtn = null; } $('tg-pop').hidden = true; openTileIdx = -1; stopFw(); if (G && !G.finished && !$('tg-play').hidden) bgm('main', 0.32); }
   function teamBtns(card, label, exclude, cb) {
     var wrap = el('div', 'tg-pick'); wrap.appendChild(el('small', '', label));
     G.teams.forEach(function (t, i) { if (i === exclude) return; var b = el('button', 'tg-pickbtn', t.name); b.type = 'button'; b.style.setProperty('--c', t.color); b.addEventListener('click', function () { cb(i); }); wrap.appendChild(b); });
@@ -415,7 +415,7 @@
     var x = el('button', 'tg-x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'បិទ (ទុកកាតវិញ)'); x.addEventListener('click', closePop); card.appendChild(x);
     var head = el('div', 'tg-chead'); head.appendChild(el('span', 'tg-cn', 'កាតទី ' + khNum(i + 1))); head.appendChild(el('span', 'tg-cteam', team.name)); card.appendChild(head);
     sfx.flip(); fireworks(1800);                                        // the card pops up with fireworks
-    bgm('question', 0.42);                                              // quiz-show music while the question is open
+    bgm('main', 0.32);                                              // quiz-show music while the question is open
     if (t.k === 'q') {
       if (t.lq) card.classList.add('lq');
       else { var face = el('div', 'tg-cface'); face.appendChild(picNode(t.img, 'big')); card.appendChild(face); }
@@ -566,7 +566,7 @@
   /* ---------- wiring ---------- */
   $('tg-nteams').addEventListener('change', function () { renderTeamSetup(); saveCfg(); });
   if ($('tg-noteam')) $('tg-noteam').addEventListener('change', function () { renderTeamSetup(); saveCfg(); });
-  $('tg-sound').addEventListener('change', function () { if (!sndOn()) { try { if (window.KmSound) KmSound.stop(); } catch (e) {} } else if (G && !G.finished && !$('tg-play').hidden) bgm(openTileIdx >= 0 ? 'question' : 'lobby', openTileIdx >= 0 ? 0.42 : 0.3); });
+  $('tg-sound').addEventListener('change', function () { if (!sndOn()) { try { if (window.KmSound) KmSound.stop(); } catch (e) {} } else if (G && !G.finished && !$('tg-play').hidden) bgm('main', 0.32); });
   ['tg-noteam', 'tg-pts', 'tg-style', 'tg-finish', 'tg-timer', 'tg-face', 'tg-special', 'tg-nspecial', 'tg-sound'].forEach(function (id) { $(id).addEventListener('change', saveCfg); });
   $('tg-addcard').addEventListener('click', function () { cards.push({ n: '', img: '', q: '', a: '', p: '' }); renderCards(); saveCfg(); var rows = document.querySelectorAll('.tg-crow'); if (rows.length) { var last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center' }); var inp = last.querySelector('input'); if (inp) inp.focus(); } });
   $('tg-clearcards').addEventListener('click', function () { if (cards.length && !confirm('លុបកាតទាំងអស់?')) return; cards = []; renderCards(); saveCfg(); });
@@ -646,8 +646,20 @@
       if (i >= BANK_URLS.length) { BANK = { lessons: [] }; renderLessons(); return; }
       fetch(BANK_URLS[i++], { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
         if (!d || !d.lessons) throw 0;
-        BANK = d; if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) selLessons = d.lessons.length ? [d.lessons[0].n] : [];
-        var first = d.lessons.filter(function (L) { return selLessons.indexOf(L.n) >= 0; })[0]; curClass = first ? (first.g || 7) : 7; $('tg-class').value = String(curClass);
+        BANK = d;
+        var qGrade = parseInt((/[?&]grade=(\d+)/.exec(location.search) || [])[1], 10);
+        if (qGrade && d.lessons.some(function (L) { return (L.g || 7) === qGrade; })) {
+          curClass = qGrade;
+          var gradeLessons = d.lessons.filter(function (L) { return (L.g || 7) === curClass; });
+          if (!selLessons.length || !gradeLessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) {
+            selLessons = gradeLessons.length ? [gradeLessons[0].n] : [];
+          }
+        } else if (!selLessons.length || !d.lessons.some(function (L) { return selLessons.indexOf(L.n) >= 0; })) {
+          selLessons = d.lessons.length ? [d.lessons[0].n] : [];
+          var first = d.lessons.filter(function (L) { return selLessons.indexOf(L.n) >= 0; })[0];
+          curClass = first ? (first.g || 7) : 7;
+        }
+        $('tg-class').value = String(curClass);
         renderLessons(); applyGames(d.games);
       }).catch(next);
     })();

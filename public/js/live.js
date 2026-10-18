@@ -76,9 +76,9 @@
     lastKey = key; tick.asked = false; body.innerHTML = ''; clearInterval(timerId);
     $('lv-timer').classList.toggle('off', st.phase !== 'question'); lastSec = -1;
     var mv = st.mode === 'solo' ? 0.5 : 0.4;                       // the music keeps playing from the lobby until the game ends
-    if (st.phase === 'lobby') KmSound.loop('lobby', mv);
-    else if (st.phase === 'question') KmSound.loop('question', mv);
-    else if (st.phase === 'reveal') { KmSound.loop('question', mv); KmSound.sfx(st.reveal.right ? 'correct' : (st.reveal.timeout || !st.reveal.mine ? 'timeup' : 'wrong')); }
+    if (st.phase === 'lobby') KmSound.loop('main', mv);
+    else if (st.phase === 'question') KmSound.loop('main', mv);
+    else if (st.phase === 'reveal') { KmSound.loop('main', mv); KmSound.sfx(st.reveal.right ? 'correct' : (st.reveal.timeout || !st.reveal.mine ? 'timeup' : 'wrong')); }
     else if (st.phase === 'end') { KmSound.stop(); KmSound.sfx('fanfare'); }
     $('lv-bar').style.width = '100%'; $('lv-bar').classList.remove('hot');
     var stage = el('div', 'lv-stage'), ans = el('div', 'lv-answers');

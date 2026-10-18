@@ -152,7 +152,7 @@
   function next() {
     if (S.called.length >= S.order.length) return;
     S.called.push(S.order[S.called.length]); put(KEY, S); renderCall();
-    bgAudio(function () { KmSound.unlock(); if (S.called.length >= S.order.length) { KmSound.stop(); KmSound.sfx('fanfare'); } else { KmSound.loop('lobby', 0.28); KmSound.sfx('reveal'); } });
+    bgAudio(function () { KmSound.unlock(); if (S.called.length >= S.order.length) { KmSound.stop(); KmSound.sfx('fanfare'); } else { KmSound.loop('main', 0.28); KmSound.sfx('reveal'); } });
   }
   (function () {
     var ctl = document.getElementById('bg-ctl') || (document.getElementById('bg-next') && document.getElementById('bg-next').parentNode);
