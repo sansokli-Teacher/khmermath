@@ -724,6 +724,16 @@ async function renderRoster(container) {
 let selectedTestId = null;
 let testFilter = 'all';
 let testSearch = '';
+let testGradeFilter = '';
+let testLessonFilter = '';
+
+function matchesTestCurriculum(test, grade, lesson) {
+  if (!grade && !lesson) return true;
+  const tags = test.curriculum?.length ? test.curriculum : [{ grade: null, lesson: null }];
+  return tags.some(tag => (!grade || (grade === '-' ? !tag.grade : String(tag.grade) === grade))
+    && (!lesson || (lesson === '-' ? !tag.lesson : tag.lesson === lesson)));
+}
+
 
 render.tests = async function () {
   const container = document.getElementById('tab-tests');
@@ -782,6 +792,7 @@ render.tests = async function () {
           h('span', { class: 'chip chip-plain' }, `${mcq} ពហុជ្រើសរើស`),
           t.writing_count ? h('span', { class: 'chip chip-plain' }, `✎ ${t.writing_count} សរសេរ`) : null,
           h('span', { class: 'chip chip-plain' }, `${t.total_points} ពិន្ទុ`),
+          ...(t.curriculum || []).filter(c => c.grade || c.lesson).map(c => h('span', { class: 'chip chip-plain' }, `${c.grade ? 'ថ្នាក់ទី ' + c.grade : 'មិនទាន់កំណត់ថ្នាក់'}${c.lesson ? ' · ' + c.lesson : ''}`)),
           t.session_count ? h('span', { class: 'chip chip-plain' }, `📅 បានប្រឡង ${t.session_count} ដង`) : null,
           isSample ? h('span', { class: 'chip chip-soon' }, '⭐ តេស្តគំរូ') : null,
           shared && !isSample ? h('span', { class: `chip ${t.my_role === 'reviewer' ? 'chip-closed' : 'chip-soon'}` }, t.my_role === 'owner' ? `👤 ដោយ ${t.owner_name || ''}` : `👥 ${roleLabel(t.my_role)} · ${t.owner_name || ''}`) : null,
@@ -789,7 +800,7 @@ render.tests = async function () {
         ]),
       ]),
       h('div', { class: 'test-actions' }, [
-        h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : isSample ? '⭐ មើលតេស្តគំរូ' : t.my_role === 'owner' ? '🔍 មើល' : '🔍 ពិនិត្យ'),
+        h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែ / បន្ថែមសំណួរ' : isSample ? '⭐ មើលតេស្តគំរូ' : t.my_role === 'owner' ? '🔍 មើល' : '🔍 ពិនិត្យ'),
         mayWork && !isSample || ME.role === 'owner' ? h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង') : null,
         h('button', { class: 'icon-btn', title: 'មើលជាសិស្ស', 'aria-label': 'មើលជាសិស្ស', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁'),
         h('button', { class: 'icon-btn', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
@@ -803,20 +814,37 @@ render.tests = async function () {
   const listBox = h('div', { class: 'test-list' });
   const filters = [['all', 'ទាំងអស់'], ['ready', 'រួចរាល់'], ['draft', 'សម្រាង'], ['mine', 'របស់ខ្ញុំ'], ['shared', ME.role === 'owner' ? 'របស់គ្រូផ្សេង' : 'ចែករំលែកជាមួយខ្ញុំ']];
   const filterBar = h('div', { class: 'filter-bar' });
+  const resultCount = h('div', { class: 'muted', role: 'status', 'aria-live': 'polite' });
+  const grades = [...new Set(tests.flatMap(t => (t.curriculum || []).map(c => c.grade).filter(Boolean).map(String)))].sort((a, b) => Number(a) - Number(b));
+  if (testGradeFilter && testGradeFilter !== '-' && !grades.includes(testGradeFilter)) testGradeFilter = '';
+  const gradeSelect = h('select', { 'aria-label': 'ត្រងតេស្តតាមថ្នាក់', onchange: () => { testGradeFilter = gradeSelect.value; testLessonFilter = ''; fillLessons(); draw(); } },
+    [['', 'គ្រប់ថ្នាក់'], ...grades.map(g => [g, `ថ្នាក់ទី ${g}`]), ['-', 'មិនទាន់កំណត់ថ្នាក់']].map(([value, label]) => h('option', { value, selected: value === testGradeFilter ? 'selected' : null }, label)));
+  const lessonSelect = h('select', { 'aria-label': 'ត្រងតេស្តតាមមេរៀន', onchange: () => { testLessonFilter = lessonSelect.value; draw(); } });
+  function fillLessons() {
+    const lessons = [...new Set(tests.flatMap(t => t.curriculum || []).filter(c => !testGradeFilter || (testGradeFilter === '-' ? !c.grade : String(c.grade) === testGradeFilter)).map(c => c.lesson).filter(Boolean))];
+    if (testLessonFilter && testLessonFilter !== '-' && !lessons.includes(testLessonFilter)) testLessonFilter = '';
+    lessonSelect.replaceChildren(...[['', 'គ្រប់មេរៀន'], ...lessons.map(l => [l, l]), ['-', 'មិនទាន់កំណត់មេរៀន']].map(([value, label]) => h('option', { value, selected: value === testLessonFilter ? 'selected' : null }, label)));
+  }
+  fillLessons();
+  const curriculumFilters = h('div', { class: 'tests-curriculum-filters' }, [
+    h('label', {}, ['ថ្នាក់', gradeSelect]), h('label', {}, ['មេរៀន', lessonSelect]),
+    h('button', { class: 'secondary', onclick: () => { testGradeFilter = ''; testLessonFilter = ''; testSearch = ''; testFilter = 'all'; search.value = ''; gradeSelect.value = ''; fillLessons(); draw(); } }, 'សម្អាតតម្រង'), resultCount,
+  ]);
 
   function draw() {
     const q = testSearch.trim().toLowerCase();
-    const list = tests.filter((t) => {
-      if (q && !t.title.toLowerCase().includes(q)) return false;
+    const matching = tests.filter(t => (!q || t.title.toLowerCase().includes(q)) && matchesTestCurriculum(t, testGradeFilter, testLessonFilter));
+    const list = matching.filter((t) => {
       if (testFilter === 'ready') return t.status === 'ready';
       if (testFilter === 'draft') return t.status !== 'ready';
       if (testFilter === 'mine') return t.owner_id === ME.id;
       if (testFilter === 'shared') return t.owner_id !== ME.id;
       return true;
     });
+    resultCount.textContent = `បង្ហាញ ${list.length} ក្នុងចំណោម ${tests.length} តេស្ត`;
     filterBar.innerHTML = '';
     for (const [k, label] of filters) {
-      const n = tests.filter((t) => (k === 'all' ? true : k === 'ready' ? t.status === 'ready' : k === 'draft' ? t.status !== 'ready' : k === 'mine' ? t.owner_id === ME.id : t.owner_id !== ME.id)).length;
+      const n = matching.filter((t) => (k === 'all' ? true : k === 'ready' ? t.status === 'ready' : k === 'draft' ? t.status !== 'ready' : k === 'mine' ? t.owner_id === ME.id : t.owner_id !== ME.id)).length;
       if (k === 'shared' && !tests.some((t) => t.owner_id !== ME.id)) continue;
       if (k === 'mine' && !tests.some((t) => t.owner_id !== ME.id)) continue;
       filterBar.append(h('button', { class: `filter-pill${testFilter === k ? ' on' : ''}`, onclick: () => { testFilter = k; draw(); } }, [label, h('span', { class: 'pill-n' }, String(n))]));
@@ -832,8 +860,11 @@ render.tests = async function () {
   const newTitle = h('input', { type: 'text', placeholder: 'ចំណងជើងតេស្តថ្មី ឧ. ប្រឡងប្រចាំខែវិច្ឆិកា ថ្នាក់ទី ៧', style: 'flex:1;min-width:220px;' });
   const createNew = async () => {
     if (!newTitle.value.trim()) return newTitle.focus();
-    const t = await api('/api/tests', { method: 'POST', body: { title: newTitle.value.trim() } });
-    selectedTestId = t.id; render.tests();
+    try {
+      const t = await api('/api/tests', { method: 'POST', body: { title: newTitle.value.trim() } });
+      if (testGradeFilter && testGradeFilter !== '-') writeTestDraft(`test-${t.id}`, { grade: testGradeFilter, lesson: testLessonFilter && testLessonFilter !== '-' ? testLessonFilter : null });
+      selectedTestId = t.id; render.tests();
+    } catch (e) { Exam.notify(e.message); }
   };
   newTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') createNew(); });
   const newRow = h('div', { class: 'new-test-row', hidden: 'hidden' }, [newTitle, h('button', { onclick: createNew }, 'បង្កើត'), h('button', { class: 'secondary', onclick: () => { newRow.hidden = true; } }, 'បោះបង់')]);
@@ -844,6 +875,7 @@ render.tests = async function () {
       h('div', { class: 'row', style: 'gap:8px;' }, [search, h('button', { onclick: () => { if (!ME.licensed && ME.status !== 'trial') return Exam.notify('🔒 ត្រូវដោះសោគណនីសិន ទើបអាចបង្កើតតេស្តបាន។ សូមបញ្ចូលកូដពីម្ចាស់ប្រព័ន្ធ។'); newRow.hidden = false; newTitle.focus(); } }, (ME.licensed || ME.status === 'trial') ? '＋ តេស្តថ្មី' : '🔒 តេស្តថ្មី')]),
     ]),
     newRow,
+    curriculumFilters,
     filterBar,
   ]), listBox);
   draw();
@@ -928,7 +960,8 @@ async function drawTestBuilder(container) {
   const topics = [...new Set(test.questions.map((q) => q.topic).filter(Boolean))];
   const dl = h('datalist', { id: 'topic-list' }, topics.map((t) => h('option', { value: t })));
   const warn = test.submissions ? h('div', { class: 'callout warn', style: 'margin-bottom:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ — ការកែសំណួរ ឬចម្លើយអាចប៉ះពាល់ពិន្ទុ។`) : null;
-  container.append(warn, dl, header, list, await buildQuestionForm(test, container), importQuestionsCard(test, container));
+  const manual = h('details', { class: 'card' }, [h('summary', {}, 'សរសេរសំណួរថ្មី / នាំចូលសំណួរ'), await buildQuestionForm(test, container), importQuestionsCard(test, container)]);
+  container.append(warn, dl, header, await buildTestPicker(test, container), list, manual);
 }
 
 async function buildQuestionForm(test, container, opts = {}) {

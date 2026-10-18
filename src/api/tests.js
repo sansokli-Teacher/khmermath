@@ -17,13 +17,14 @@ export async function listTests(req, env) {
     `SELECT x.id, x.title, x.status, x.owner_id, x.is_sample, COALESCE(o.display_name, o.username) AS owner_name,
             COUNT(q.id) AS question_count, SUM(CASE WHEN q.kind = 'writing' THEN 1 ELSE 0 END) AS writing_count,
             COALESCE(SUM(q.points), 0) AS total_points,
+            json_group_array(DISTINCT json_object('grade', q.grade, 'lesson', q.lesson)) FILTER (WHERE q.id IS NOT NULL) AS curriculum_json,
             (SELECT COUNT(*) FROM test_sessions s WHERE s.test_id = x.id) AS session_count,
             (SELECT COUNT(*) FROM question_notes n JOIN test_questions nq ON nq.id = n.question_id WHERE nq.test_id = x.id AND n.resolved = 0) AS open_notes
      FROM tests x LEFT JOIN test_questions q ON q.test_id = x.id LEFT JOIN teachers o ON o.id = x.owner_id
      WHERE x.is_bank = 0
      GROUP BY x.id ORDER BY x.created_at DESC`,
   ).all();
-  return json({ tests: results.filter((x) => mine.has(x.id)).map((x) => ({ ...x, my_role: mine.get(x.id) })) });
+  return json({ tests: results.filter((x) => mine.has(x.id)).map((x) => ({ ...x, curriculum: JSON.parse(x.curriculum_json || '[]'), curriculum_json: undefined, my_role: mine.get(x.id) })) });
 }
 
 export async function createTest(req, env) {
@@ -378,15 +379,24 @@ async function copyInto(env, testId, q) {
 // copy chosen questions into a test
 export async function copyQuestions(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
-  const { question_ids } = await req.json();
+  const { question_ids, points_by_id = {} } = await req.json();
   if (!Array.isArray(question_ids) || !question_ids.length) return err('question_ids is required.', 400);
   const bank = await bankRows(env, g.t, { dedupe: false, includeShared: true });
   const byId = new Map(bank.map((q) => [q.id, q]));
-  let n = 0;
+  const ids = [...new Set(question_ids.map(Number))];
+  if (ids.length > 200) return err('Please select at most 200 questions at a time.', 400);
+  if (!points_by_id || typeof points_by_id !== 'object' || Array.isArray(points_by_id)) return err('Invalid points.', 400);
+  for (const id of ids) {
+    if (!byId.has(id)) return err('A selected question is no longer available.', 400);
+    if (Object.hasOwn(points_by_id, id) && (typeof points_by_id[id] !== 'number' || !Number.isFinite(points_by_id[id]) || points_by_id[id] <= 0)) return err('Points must be a positive number.', 400);
+  }
   const room = await questionRoom(env, g.t, params.testId);
-  if (room <= 0) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
-  for (const id of question_ids.slice(0, Math.min(200, room))) { const q = byId.get(Number(id)); if (q) { await copyInto(env, Number(params.testId), q); n++; } }
-  return json({ ok: true, copied: n });
+  if (ids.length > room) return limitResponse('សំណួរក្នុងមួយតេស្ត', TRIAL.questions);
+  for (const id of ids) {
+    const q = byId.get(id);
+    await copyInto(env, Number(params.testId), { ...q, points: points_by_id[id] ?? q.points });
+  }
+  return json({ ok: true, copied: ids.length, copied_ids: ids });
 }
 
 // build a new draft test by picking random questions per difficulty
