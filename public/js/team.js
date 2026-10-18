@@ -121,7 +121,7 @@ async function openShareDialog(type, id, title) {
   document.body.append(back);
 
   const role = h('select', {}, Object.entries(ROLE_NAMES).map(([v, l]) => h('option', { value: v }, l)));
-  const q = h('input', { type: 'text', placeholder: '🔍 វាយឈ្មោះគ្រូ ដើម្បីស្វែងរក…' });
+  const q = h('input', { type: 'text', placeholder: 'វាយឈ្មោះអ្នកប្រើប្រាស់ពេញ (username)', autocomplete: 'off', 'aria-label': 'ឈ្មោះអ្នកប្រើប្រាស់' });
   const results = h('div', {});
   const current = h('div', {});
 
@@ -140,9 +140,15 @@ async function openShareDialog(type, id, title) {
     ])));
   }
 
+  let searchVersion = 0;
   async function runSearch() {
-    const { teachers } = await api(`/api/teachers/search?q=${encodeURIComponent(q.value.trim())}`);
+    const version = ++searchVersion, username = q.value.trim();
     results.innerHTML = '';
+    if (!username) return;
+    let teachers;
+    try { ({ teachers } = await api(`/api/teachers/search?q=${encodeURIComponent(username)}`)); }
+    catch (e) { if (version === searchVersion) results.append(h('p', { role: 'alert' }, e.message)); return; }
+    if (version !== searchVersion || q.value.trim() !== username) return;
     if (!teachers.length) { results.append(h('p', { class: 'muted' }, 'រកមិនឃើញគ្រូទេ។ គ្រូត្រូវតែបានចូលប្រើប្រព័ន្ធជាមុន (ដោយតំណអញ្ជើញ)។')); return; }
     teachers.forEach((t) => results.append(h('div', { class: 'list-item' }, [
       h('div', {}, [h('strong', {}, t.name), h('span', { class: 'muted' }, ` (${t.username})`)]),
@@ -152,8 +158,32 @@ async function openShareDialog(type, id, title) {
       } }, '+ បន្ថែម'),
     ])));
   }
-  let timer = null;
-  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(runSearch, 250); });
+  q.addEventListener('input', () => { searchVersion++; results.innerHTML = ''; });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+  const links = h('div');
+  const linkSlot = h('div');
+  async function drawLinks() {
+    if (type !== 'test') return;
+    try {
+      const data = await api(`/api/share-links?test_id=${id}`);
+      links.replaceChildren(...data.links.map(link => h('div', { class: 'list-item' }, [
+        h('span', {}, `${ROLE_NAMES[link.role]} · ${fmtDateTime(link.expires_at)}`),
+        h('button', { class: 'danger btn-sm', onclick: async () => {
+          try { await api(`/api/share-links/${link.id}`, { method: 'DELETE' }); linkSlot.replaceChildren(); await drawLinks(); }
+          catch (e) { Exam.notify(e.message); }
+        } }, 'ដកតំណចេញ'),
+      ])));
+    } catch (e) { links.replaceChildren(h('p', { role: 'alert' }, e.message)); }
+  }
+  const linkButton = h('button', { class: 'secondary', onclick: async () => {
+    linkButton.disabled = true;
+    try {
+      const data = await api('/api/share-links', { method: 'POST', body: { test_id: id, role: role.value } });
+      linkSlot.replaceChildren(linkBox(`${location.origin}/teacher.html?share=${data.token}`, 'តំណប្រើបានម្ដង សម្រាប់គ្រូម្នាក់ · ផុតកំណត់ក្នុង ៧ ថ្ងៃ'));
+      await drawLinks();
+    } catch (e) { Exam.notify(e.message); }
+    finally { linkButton.disabled = false; }
+  } }, 'បង្កើតតំណអញ្ជើញ');
 
   box.append(
     h('div', { class: 'row', style: 'justify-content:space-between;' }, [h('h2', { style: 'margin:0;' }, `👥 ចែករំលែក — ${title}`), h('button', { class: 'secondary btn-sm', onclick: () => back.remove() }, '✕')]),
@@ -161,10 +191,11 @@ async function openShareDialog(type, id, title) {
       ? 'គ្រូដែលអ្នកបន្ថែមអាចមើល សាកល្បងជាសិស្ស បោះពុម្ពវិញ្ញាសា និងសរសេរចំណាំអំពីកំហុស។'
       : 'គ្រូដែលអ្នកបន្ថែមអាចមើលបញ្ជីសិស្ស លទ្ធផល និងពិន្ទុរបស់ថ្នាក់នេះ។'),
     h('label', {}, 'សិទ្ធិ'), role,
-    h('label', {}, 'ស្វែងរកគ្រូ'), q, results, current,
+    h('label', {}, 'ស្វែងរកតាម username ពេញ'), q, h('button', { class: 'secondary', onclick: runSearch }, 'ស្វែងរក'), results,
+    type === 'test' ? h('div', {}, [h('h3', {}, 'ឬចែករំលែកតាមតំណអញ្ជើញ'), h('p', { class: 'muted' }, 'ផ្ញើតំណទៅគ្រូដែលអ្នកចង់ចែករំលែក។ គាត់ត្រូវចូលគណនី ហើយទទួលការអញ្ជើញ។'), linkButton, linkSlot, links]) : null, current,
   );
-  runSearch();
-  drawCurrent();
+  drawLinks();
+  drawCurrent().catch(e => Exam.notify(e.message));
 }
 
 
@@ -448,4 +479,29 @@ function resetRow(r, reload) {
     ]) : null,
     slot,
   ]);
+}
+
+
+// A sharing link grants access only after the signed-in teacher accepts it.
+async function openTestInvitation() {
+  const token = new URLSearchParams(location.search).get('share');
+  if (!token) return;
+  const clear = () => { const url = new URL(location.href); url.searchParams.delete('share'); history.replaceState(null, '', url); };
+  try {
+    const data = await api(`/api/share-invitation/${encodeURIComponent(token)}`);
+    const back = h('div', { class: 'modal-back' });
+    const accept = h('button', { onclick: async () => {
+      accept.disabled = true;
+      try {
+        const result = await api(`/api/share-invitation/${encodeURIComponent(token)}`, { method: 'POST' });
+        clear(); back.remove(); selectedTestId = result.test_id;
+        document.querySelector('[data-tab=tests]').click();
+      } catch (e) { Exam.notify(e.message); }
+      finally { accept.disabled = false; }
+    } }, 'ទទួលការអញ្ជើញ');
+    back.append(h('div', { class: 'modal-box' }, [h('h2', {}, 'ការអញ្ជើញចែករំលែកតេស្ត'),
+      h('p', {}, data.title), h('p', {}, ROLE_NAMES[data.role]),
+      h('div', { class: 'row' }, [h('button', { class: 'secondary', onclick: () => { clear(); back.remove(); } }, 'បោះបង់'), accept])]));
+    document.body.append(back);
+  } catch (e) { clear(); Exam.notify(e.message); }
 }

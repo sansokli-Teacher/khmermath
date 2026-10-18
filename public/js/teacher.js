@@ -24,6 +24,7 @@ async function boot() {
     ME = await api('/api/teacher/me');
     viewDashboard.hidden = false;
     initDashboard();
+    if (new URLSearchParams(location.search).has('share')) openTestInvitation();
   } catch {
     viewLogin.hidden = false;
   }
@@ -754,7 +755,7 @@ render.tests = async function () {
     const mcq = t.question_count - (t.writing_count || 0);
     const shared = t.owner_id !== ME.id;
     const canEdit = (t.my_role === 'owner' || t.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
-    const isSample = t.my_role === 'sample' || t.is_sample;
+    const isSample = t.my_role === 'sample';
     const licensed = ME.licensed, mayWork = ME.licensed || ME.status === 'trial';
 
     const menuBtn = h('button', { class: 'icon-btn', title: 'ជម្រើសផ្សេងទៀត', 'aria-label': 'ជម្រើសផ្សេងទៀត' }, '⋯');
@@ -812,7 +813,7 @@ render.tests = async function () {
   // header: title, search, filter tabs, new-test button
   const search = h('input', { type: 'text', placeholder: '🔍 ស្វែងរកតេស្ត…', class: 'tests-search', value: testSearch });
   const listBox = h('div', { class: 'test-list' });
-  const filters = [['all', 'ទាំងអស់'], ['ready', 'រួចរាល់'], ['draft', 'សម្រាង'], ['mine', 'របស់ខ្ញុំ'], ['shared', ME.role === 'owner' ? 'របស់គ្រូផ្សេង' : 'ចែករំលែកជាមួយខ្ញុំ']];
+  const filters = [['all', 'ទាំងអស់'], ['ready', 'រួចរាល់'], ['draft', 'សម្រាង'], ['mine', 'របស់ខ្ញុំ'], ['shared', 'ចែករំលែកជាមួយខ្ញុំ']];
   const filterBar = h('div', { class: 'filter-bar' });
   const resultCount = h('div', { class: 'muted', role: 'status', 'aria-live': 'polite' });
   const grades = [...new Set(tests.flatMap(t => (t.curriculum || []).map(c => c.grade).filter(Boolean).map(String)))].sort((a, b) => Number(a) - Number(b));

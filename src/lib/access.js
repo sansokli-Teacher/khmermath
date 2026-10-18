@@ -1,5 +1,5 @@
 // Who may see or change what. Every teacher-facing endpoint goes through here.
-//   admin  (teachers.role = 'owner')   — everything, never locked
+//   admin (teachers.role = 'owner') — class administration; tests remain private
 //   owner  of a class/test              — everything on it, can share it
 //   editor (shared)                      — view + change
 //   reviewer (shared)                    — view only (+ can leave notes on questions)
@@ -61,7 +61,10 @@ export async function classAccess(env, t, classId) {
 export async function testAccess(env, t, testId) {
   const x = await env.DB.prepare('SELECT id, owner_id, is_sample FROM tests WHERE id = ?1').bind(testId).first();
   if (!x) return null;
-  return accessTo(env, t, 'test', x.id, x.owner_id, x.is_sample);
+  // Personal tests require ownership or an explicit share, including for admins.
+  if (x.owner_id === t.id) return 'owner';
+  const share = await env.DB.prepare("SELECT role FROM shares WHERE resource_type = 'test' AND resource_id = ?1 AND teacher_id = ?2").bind(x.id, t.id).first();
+  return share?.role || null;
 }
 
 // A free trial account may do real work on what it owns, up to the TRIAL limits (see plans.js).
@@ -177,7 +180,7 @@ export async function accessibleTests(env, t) {
   ).bind(t.id).all();
   const map = new Map();
   for (const x of results) {
-    const acc = isAdmin(t) || x.owner_id === t.id ? 'owner' : x.shared_role || (x.is_sample ? 'sample' : null);
+    const acc = x.owner_id === t.id ? 'owner' : x.shared_role;
     if (acc) map.set(x.id, acc);
   }
   return map;

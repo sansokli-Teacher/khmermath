@@ -9,6 +9,7 @@ import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
 import * as admin from './api/admin.js';
+import * as shareLinks from './api/share-links.js';
 import * as ops from './api/ops.js';
 import * as integrity from './api/integrity.js';
 import * as extras from './api/extras.js';
@@ -69,6 +70,11 @@ const ROUTES = [
   ['GET', '/api/export', admin.exportData],
   ['GET', '/api/profile/paper', profile.getPaperProfile],
   ['POST', '/api/profile/paper', profile.setPaperProfile],
+  ['POST', '/api/share-links', shareLinks.create],
+  ['GET', '/api/share-links', shareLinks.list],
+  ['DELETE', '/api/share-links/:id', shareLinks.revoke],
+  ['GET', '/api/share-invitation/:token', shareLinks.info],
+  ['POST', '/api/share-invitation/:token', shareLinks.accept],
   ['GET', '/api/shares', admin.listShares],
   ['POST', '/api/shares', admin.setShare],
   ['POST', '/api/shares/remove', admin.removeShare],

@@ -125,11 +125,12 @@ export async function searchTeachers(req, env) {
   const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
   const t = g0.t;
   const q = (new URL(req.url).searchParams.get('q') || '').trim();
-  const like = `%${q.replace(/[%_]/g, '')}%`;
+  if (!q || q.length > 100) return json({ teachers: [] });
+  if (!await allow(env, `teacher-search:${t.id}`, 30, 60)) return err('សូមរង់ចាំមួយភ្លែត មុនស្វែងរកម្ដងទៀត។', 429);
   const { results } = await env.DB.prepare(
     `SELECT id, username, COALESCE(display_name, username) AS name FROM teachers
-     WHERE active = 1 AND id <> ?1 AND (username LIKE ?2 OR display_name LIKE ?2) ORDER BY name LIMIT 10`,
-  ).bind(t.id, like).all();
+     WHERE active = 1 AND id <> ?1 AND username = ?2 COLLATE NOCASE LIMIT 1`,
+  ).bind(t.id, q).all();
   return json({ teachers: results });
 }
 
