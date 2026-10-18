@@ -123,11 +123,8 @@ def main(names):
         have2 = have + collections.Counter((c['kind'], c['level']) for c in picked)
         report.append('   final cells: ' + ', '.join(f'{k[0][0]}/{k[1][0]}={v}' for k, v in sorted(have2.items())))
     out = 'out/g11sc_new_' + '_'.join(names) + '.sql'
-    open(out, 'w', encoding='utf-8').write('
-'.join(sql) + '
-')
-    print('
-'.join(report))
+    open(out, 'w', encoding='utf-8').write('\n'.join(sql) + '\n')
+    print('\n'.join(report))
     print('wrote', out, len(sql), 'rows')
 
 if __name__ == '__main__':
