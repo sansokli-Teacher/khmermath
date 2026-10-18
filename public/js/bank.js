@@ -12,9 +12,14 @@ if (typeof globalThis !== 'undefined') {
     };
   }
 }
-const GRADE_KH = (g) => `ថ្នាក់ទី ${khNum(g)}`;
+const GRADE_KH = (g) => {
+  if (g === '11SC') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រពិត)';
+  if (g === '11SS') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)';
+  if (g === '12SC') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រពិត)';
+  if (g === '12SS') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)';
+  return `ថ្នាក់ទី ${khNum(g)}`;
+};
 let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
-const bankSelected = new Set();
 let CURR = null;
 
 async function loadCurr(force) { if (!CURR || force) CURR = await api('/api/curriculum'); return CURR; }
@@ -353,12 +358,7 @@ render.bank = async function () {
   container.innerHTML = '';
   const [{ questions }, { tests }, curr] = await Promise.all([api('/api/bank'), api('/api/tests'), loadCurr(true)]);
   const editable = tests.filter((t) => (t.my_role === 'owner' || t.my_role === 'editor') && !t.is_sample);
-  const selected = bankSelected;
-  selected.clear();
-  const savedBank = readTestDraft('bank-selection');
-  if (Array.isArray(savedBank?.ids)) savedBank.ids.forEach(id => selected.add(id));
-  const availableIds = new Set(questions.map(q => q.id));
-  for (const id of selected) if (!availableIds.has(id)) selected.delete(id);
+  const selected = new Set();
   const S = bankState;
   // What's new in the shared library since this teacher last looked (ids only grow, so "bigger than last seen" = added since).
   let seenMax = 0; try { seenMax = Number(localStorage.getItem('bank_seen_max') || 0); } catch {}
@@ -511,27 +511,59 @@ render.bank = async function () {
         } }, 'រក្សាទុក')])]);
     const m = bankModal('🏷 ដាក់ក្នុងមេរៀន', box);
   } }, '🏷 ដាក់ក្នុងមេរៀន');
-  const paperBtn = h('button', { onclick: async () => {
-    paperBtn.disabled = true;
-    try {
-      const picker = await buildTestPicker({ questions: [] }, container, {
-        grade: S.grade && S.grade !== '-' ? S.grade : undefined,
-        seed: new Set(selected),
-        onCreated: async (id, ids) => {
-          ids.forEach(qid => selected.delete(qid));
-          writeTestDraft('bank-selection', { ids: [...selected] });
-          selectedTestId = id;
-          document.querySelector('[data-tab=tests]').click();
-        },
-      });
-      // The builder now owns these selections; returning must not re-add removed items.
-      if (picker.querySelector('fieldset')) { selected.clear(); writeTestDraft('bank-selection', { ids: [] }); }
-      container.replaceChildren(h('button', { class: 'secondary', onclick: () => render.bank() }, '← ត្រឡប់ទៅធនាគារសំណួរ'), picker);
-    } finally { paperBtn.disabled = false; }
-  } }, '＋ បង្កើត / បន្តសម្រាងតេស្ត');
-  const selectionSummary = h('div', { class: 'bank-selection-summary', 'aria-live': 'polite' });
-  const clearSelection = h('button', { class: 'secondary btn-sm', onclick: () => { selected.clear(); draw(); } }, 'ដកការជ្រើសទាំងអស់');
-  const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), paperBtn, clearSelection, tagBtn, targetSel, addBtn]);
+  const paperBtn = h('button', {
+    class: 'btn-sm',
+    disabled: !selected.size,
+    style: 'background:#16a34a;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 12px;border-radius:8px;',
+    onclick: () => {
+      if (!selected.size) return;
+      const selArr = [...selected];
+      const pickedQs = questions.filter((q) => selected.has(q.id));
+      const mcqCount = pickedQs.filter((q) => q.kind !== 'writing').length;
+      const wCount = pickedQs.filter((q) => q.kind === 'writing').length;
+      const totalPts = pickedQs.reduce((a, q) => a + (q.points || 1), 0);
+
+      const gradeText = S.grade && S.grade !== '-' ? `ថ្នាក់ទី ${khNum(S.grade)}` : '';
+      const chText = S.chapter ? `${S.chapter}` : '';
+      const lessonText = S.lesson && S.lesson !== '-' ? `មេរៀន ${S.lesson}` : '';
+      const partText = lessonText ? (chText ? `${chText} · ${lessonText}` : lessonText) : chText;
+      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${partText ? ' ' + partText : ''} (${khNum(selArr.length)} សំណួរ)`;
+
+      const titleInp = h('input', { type: 'text', value: defaultTitle, style: 'width:100%;margin-top:4px;' });
+      const minInp = h('input', { type: 'number', value: '60', min: '10', max: '240', style: 'width:100px;' });
+
+      const box = h('div', { style: 'text-align:left;' }, [
+        h('p', { class: 'muted', style: 'margin-top:0;' }, `បង្កើតវិញ្ញាសាភ្លាមៗចេញពីសំណួរដែលបានជ្រើស ${khNum(selArr.length)} សំណួរ (ពហុជ្រើសរើស ${khNum(mcqCount)} + សរសេរ ${khNum(wCount)} · សរុប ${khNum(totalPts)} ពិន្ទុ)។`),
+        h('label', { style: 'font-weight:600;display:block;margin-top:8px;' }, 'ចំណងជើងវិញ្ញាសា'),
+        titleInp,
+        h('div', { class: 'row', style: 'gap:12px;margin-top:12px;align-items:center;' }, [
+          h('label', { style: 'font-weight:600;' }, 'រយៈពេលប្រឡង (នាទី)'),
+          minInp,
+        ]),
+        h('p', { class: 'muted', style: 'font-size:12px;margin-top:10px;' }, 'វិញ្ញាសានឹងបើកភ្លាមៗជាមួយទម្រង់ផ្លូវការ (មានរូបធរណីមាត្រ រូបមន្ត KaTeX សន្លឹកចម្លើយ OMR និងអត្រាកំណែ)។ អ្នកអាចទាញយក PDF, Word ឬបោះពុម្ពបានភ្លាម។'),
+        h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px;margin-top:18px;' }, [
+          h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'),
+          h('button', {
+            style: 'background:#16a34a;color:#fff;font-weight:600;',
+            onclick: async () => {
+              const ttl = titleInp.value.trim() || defaultTitle;
+              try {
+                const newTest = await api('/api/tests', { method: 'POST', body: { title: ttl } });
+                const r = await api(`/api/tests/${newTest.id}/questions/copy`, { method: 'POST', body: { question_ids: selArr } });
+                m.remove();
+                await Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» ដោយជោគជ័យ!`);
+                window.open(`paper.html?test=${newTest.id}`, '_blank');
+              } catch (e) {
+                Exam.notify(e.message);
+              }
+            }
+          }, '📄 បង្កើត និងបើកវិញ្ញាសា →')
+        ])
+      ]);
+      const m = bankModal('📄 បង្កើតវិញ្ញាសាភ្លាមៗ', box);
+    }
+  }, [h('span', {}, '📄'), ' បង្កើតវិញ្ញាសាភ្លាមៗ']);
+  const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), paperBtn, tagBtn, targetSel, addBtn]);
 
   const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
   const fKind = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v, selected: S.kind === v ? 'selected' : null }, l)));
@@ -656,7 +688,7 @@ render.bank = async function () {
     if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
     upd();
   }
-  function upd() { writeTestDraft('bank-selection', { ids: [...selected] }); selectionSummary.replaceChildren(lessonSelectionSummary(questions.filter(q => selected.has(q.id)))); countLbl.textContent = String(selected.size); addBtn.disabled = !selected.size; tagBtn.disabled = !selected.size; }
+  function upd() { countLbl.textContent = String(selected.size); addBtn.disabled = !selected.size; tagBtn.disabled = !selected.size; paperBtn.disabled = !selected.size; }
   [fLevel, fKind, fTopic].forEach((el) => el && el.addEventListener('change', draw));
   fQ.addEventListener('input', draw);
 
@@ -691,7 +723,7 @@ render.bank = async function () {
   const main = h('div', { style: 'min-width:0;' }, [
     h('div', { class: 'card' }, [h('div', { class: 'row' }, [h('h2', { style: 'margin:0;margin-right:auto;' }, showLessons ? (S.lesson && S.lesson !== '-' ? S.lesson : (S.chapter ? S.chapter : GRADE_KH(S.grade))) : 'សំណួរ'), newBtn, importBtn]),
       h('div', { class: 'row', style: 'margin-top:10px;' }, [fLevel, fKind, fTopic, fQ, selAll])]),
-    gen, bar, selectionSummary, list,
+    gen, bar, list,
   ]);
   container.append(showLessons ? h('div', { class: 'bank-layout' }, [side, main]) : main);
   draw();
