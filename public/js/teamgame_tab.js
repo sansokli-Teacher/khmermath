@@ -55,7 +55,8 @@ render.teamgame = async function () {
     h('option', { value: '8' }, 'ថ្នាក់ទី ៨ (មេរៀន ១–១៩)'),
     h('option', { value: '9' }, 'ថ្នាក់ទី ៩ (មេរៀន ១–១៩)'),
     h('option', { value: '10' }, 'ថ្នាក់ទី ១០ (មេរៀន ១–២៦)'),
-    h('option', { value: '11' }, 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រពិត)'),
+    h('option', { value: '11' }, 'ថ្នាក់ទី ១១'),
+    h('option', { value: '12' }, 'ថ្នាក់ទី ១២'),
   ]);
   gradeSel.value = String(tgGrade);
   gradeSel.onchange = () => { tgGrade = parseInt(gradeSel.value, 10) || 7; };

@@ -51,6 +51,8 @@ CHAPTER_MAP = {
     'រូបធរណីមាត្រក្នុងលំហ': 'ជំពូកទី 8 : ធរណីមាត្រក្នុងលំហ',
     'បន្ទាត់និងប្លង់ស្របក្នុងលំហ': 'ជំពូកទី 8 : ធរណីមាត្រក្នុងលំហ',
     'ភាពអរតូកូណាល់ក្នុងលំហ': 'ជំពូកទី 8 : ធរណីមាត្រក្នុងលំហ',
+    'តម្រង់ទិស': 'តម្រង់ទិសសិស្ស NGS ២០២៦-២០២៧',
+    'បទបញ្ជាផ្ទៃក្នុង': 'តម្រង់ទិសសិស្ស NGS ២០២៦-២០២៧',
 }
 
 existing = []
@@ -69,6 +71,8 @@ def main(names):
         les_idx = int(nm.split('L')[-1]) if 'L' in nm else 1
         order = BASE_ORDER + les_idx * 100
         lesson = mod.LESSON
+        target = getattr(mod, 'TARGET', TARGET)
+        grade = getattr(mod, 'GRADE', '11SC')
         have = cells(lesson); total_have = sum(have.values())
         cands = mod.cands()
         seen = {norm(q['stem_text']) for q in existing if q.get('lesson') == lesson}
@@ -81,7 +85,7 @@ def main(names):
             seen.add(k)
             pool[(c['kind'], c['level'])].append(c)
         picked = []
-        for cell, tgt in TARGET.items():
+        for cell, tgt in target.items():
             need = max(0, tgt - have.get(cell, 0))
             if total_have >= 50:
                 need = 0
@@ -117,8 +121,8 @@ def main(names):
             else:
                 opts, ci, oj = [], 0, '[]'
             chapter = getattr(mod, 'CHAPTER', None) or CHAPTER_MAP.get(lesson)
-            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params, cancelled) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, '11SC', %s, %s, NULL, 0);" % (
-                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(lesson), sqlq(chapter)))
+            sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params, cancelled) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, %s, %s, %s, NULL, 0);" % (
+                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(grade), sqlq(lesson), sqlq(chapter)))
         report.append(f'{nm} {lesson}: had {total_have}, adding {len(picked)} -> {total_have + len(picked)}')
         have2 = have + collections.Counter((c['kind'], c['level']) for c in picked)
         report.append('   final cells: ' + ', '.join(f'{k[0][0]}/{k[1][0]}={v}' for k, v in sorted(have2.items())))
