@@ -3,6 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
+  let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
   let floats = [];
@@ -217,6 +218,15 @@
   }
 
   const SHAPES = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
+  function sizeToast() {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'ts-toast'; stage.append(toastEl); }
+    toastEl.textContent = `ទំហំក្បាលប៊ិច ${kh(size)}`;
+    const d = document.createElement('i'); d.style.width = d.style.height = Math.max(2, size) + 'px'; d.style.background = color === '#ffffff' ? '#ccc' : color;
+    toastEl.append(d);
+    toastEl.classList.add('on'); clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl && toastEl.classList.remove('on'), 1100);
+  }
+
   const HAND_TOOLS = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
   function makeHand() {
     const h = document.createElement('div');
@@ -236,6 +246,7 @@
 
   function bindInk() {
     hand = makeHand();
+    ink.addEventListener('wheel', (e) => { if (sizeSetter && HAND_TOOLS.includes(tool)) { e.preventDefault(); sizeSetter(size + (e.deltaY < 0 ? 1 : -1), true); } }, { passive: false });
     ink.addEventListener('pointermove', handMove);
     ink.addEventListener('pointerenter', handMove);
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
@@ -638,7 +649,16 @@
     const dot = document.createElement('i'); dot.className = 'dot';
     const rng = document.createElement('input'); rng.type = 'range'; rng.min = 1; rng.max = 30; rng.value = size; rng.title = 'ទំហំប៊ិច';
     const showDot = () => { dot.style.width = dot.style.height = Math.max(2, size) + 'px'; dot.style.background = color === '#ffffff' ? '#ccc' : color; };
-    rng.oninput = () => { size = +rng.value; showDot(); };
+    const tip = document.createElement('input'); tip.type = 'range'; tip.min = 1; tip.max = 30; tip.value = size; tip.className = 'ts-tip'; tip.title = 'ទំហំក្បាលប៊ិច';
+    const setSize = (v, say) => {
+      size = Math.max(1, Math.min(30, Math.round(v)));
+      rng.value = tip.value = size; showDot();
+      if (say) sizeToast();
+    };
+    sizeSetter = setSize;
+    rng.oninput = () => setSize(+rng.value);
+    tip.oninput = () => setSize(+tip.value);
+    tip.onclick = (ev) => ev.stopPropagation();
     rng.onclick = (ev) => ev.stopPropagation();
     const lab = document.createElement('small'); lab.textContent = 'ទំហំក្បាលប៊ិច';
     lw.append(lab, rng, Object.assign(document.createElement('div'), { className: 'dotbox' }));
@@ -667,7 +687,8 @@
     const bUndo = mkBtn('undo', '↶', 'ត្រឡប់', undo);
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
-    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
+    const tipWrap = document.createElement('label'); tipWrap.className = 'ts-tipw'; tipWrap.title = 'ទំហំក្បាលប៊ិច'; tipWrap.append(Object.assign(document.createElement('i'), { className: 'tdot' }), tip);
+    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, tipWrap, bUndo, bRedo, bClear);
     el.append(grip, row, drawMenu, stampMenu, fmtMenu);
     header().insertBefore(el, header().querySelector('.ts-wid'));
     palette = el;
@@ -730,6 +751,7 @@
     if (root && root.hidden) return;
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
     if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    if ((e.key === '[' || e.key === ']') && sizeSetter) sizeSetter(size + (e.key === ']' ? 1 : -1), true);
     if (e.key === 'Escape') close();
   }
 
