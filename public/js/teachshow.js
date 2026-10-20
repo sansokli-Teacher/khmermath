@@ -11,15 +11,50 @@
     }
   }
 
-  function show(n) {
+  function show(n, depth) {
     i = Math.max(0, Math.min(slides.length - 1, n));
     const s = slides[i] || { html: '' };
-    slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '');
+    slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '');
     slideEl.innerHTML = s.html || '';
     math(slideEl);
+    const fits = fitText(0.72);
+    if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1);
+    if (!fits) fitText(0.4);
     const lab = root.querySelector('.ts-page');
     if (lab) lab.textContent = `${kh(i + 1)} / ${kh(slides.length)}`;
     clearInk(false);
+  }
+
+  // a slide that is too long is cut into two pages (title kept on both)
+  function splitSlide(idx) {
+    const s = slides[idx];
+    const box = document.createElement('div');
+    box.innerHTML = s.html;
+    const nodes = [...box.childNodes].filter((n) => n.nodeType === 1 || (n.textContent || '').trim());
+    const isHead = (n) => n.nodeType === 1 && (n.matches('h1,h2') || n.classList.contains('ts-kicker'));
+    const head = nodes.filter(isHead), body = nodes.filter((n) => !isHead(n));
+    if (body.length < 2) return false;
+    const cut = Math.ceil(body.length / 2);
+    const out = (arr) => head.concat(arr).map((n) => (n.nodeType === 1 ? n.outerHTML : n.textContent)).join('');
+    const a = { ...s, html: out(body.slice(0, cut)) };
+    const b = { ...s, html: out(body.slice(cut)) };
+    delete a.c; delete b.c;
+    slides.splice(idx, 1, a, b);
+    return true;
+  }
+
+  // shrink the text (down to `floor` of its size) until the slide fits; true if it fits
+  function fitText(floor) {
+    if (!slideEl) return true;
+    slideEl.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(slideEl).fontSize) || 24;
+    let px = base;
+    const over = () => slideEl.scrollHeight > slideEl.clientHeight + 2 || slideEl.scrollWidth > slideEl.clientWidth + 2;
+    for (let k = 0; k < 30 && over() && px > base * (floor || 0.72); k++) {
+      px *= 0.94;
+      slideEl.style.fontSize = px + 'px';
+    }
+    return !over();
   }
 
   function fitInk() {
@@ -258,23 +293,6 @@
     const bar = document.createElement('div');
     bar.className = 'ts-bar';
     const mk = (cls, lab, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = lab; b.onclick = fn; return b; };
-    const tools = bar.appendChild(document.createElement('div'));
-    tools.className = 'ts-tools';
-    [['pen', 'ប៊ិច'], ['hi', 'គំនូស'], ['erase', 'ជ័រលុប']].forEach(([id, lab]) => {
-      const b = mk(id === 'pen' ? 'on' : '', lab, () => {
-        tool = id;
-        tools.querySelectorAll('button').forEach((x) => x.classList.remove('on'));
-        b.classList.add('on');
-      });
-      tools.append(b);
-    });
-    ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#212529', '#ffffff'].forEach((col) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'ts-col'; b.style.background = col;
-      b.onclick = () => { color = col; tool = tool === 'erase' ? 'pen' : tool; };
-      tools.append(b);
-    });
-    tools.append(mk('', 'សម្អាត', () => clearInk(true)));
     const nav = document.createElement('div');
     nav.className = 'ts-nav';
     nav.append(
@@ -282,22 +300,62 @@
       Object.assign(document.createElement('span'), { className: 'ts-page', textContent: '' }),
       mk('', '→', () => show(i + 1)),
     );
-    const widgets = document.createElement('div');
-    widgets.className = 'ts-wid';
-    const spinF = () => root.querySelector('.ts-spin') && root.querySelector('.ts-spin').closest('.ts-float');
-    widgets.append(
-      mk('', '🎡 កង់', () => { const f = root.querySelector('.ts-float.ts-wspin'); if (f) f.hidden = !f.hidden; }),
-      mk('', '⏱ ម៉ោង', () => { const f = root.querySelector('.ts-float.ts-wtime'); if (f) f.hidden = !f.hidden; }),
-      mk('', '∑ ម៉ាស៊ីនគិត', () => { const f = root.querySelector('.ts-float.ts-wcalc'); if (f) f.hidden = !f.hidden; }),
-      mk('ts-fs', '⛶', toggleFs),
-      mk('ts-exit', '✕', close),
-    );
-    bar.append(tools, nav, widgets);
+    const end = document.createElement('div');
+    end.className = 'ts-wid';
+    end.append(mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
+    bar.append(nav, end);
     return bar;
   }
 
+  // Zoom-style annotation palette: drag it anywhere
+  function penPalette() {
+    const el = document.createElement('div');
+    el.className = 'ts-pen';
+    el.style.left = '12px'; el.style.top = '14px';
+    const grip = document.createElement('div');
+    grip.className = 'ts-pgrip'; grip.textContent = '⋮⋮ គូស';
+    const body = document.createElement('div');
+    body.className = 'ts-pbody';
+    const btn = (cls, label, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.title = title; b.onclick = fn; return b; };
+    const setTool = (id) => {
+      tool = id;
+      ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
+      body.querySelectorAll('.ts-tl').forEach((x) => x.classList.toggle('on', x.dataset.t === id));
+    };
+    [['none', '☝', 'ចុច/រំកិល'], ['pen', '✎', 'ប៊ិច'], ['hi', '🖍', 'គំនូស'], ['erase', '⌫', 'ជ័រលុប']].forEach(([id, ic, t]) => {
+      const b = btn('ts-tl' + (id === tool ? ' on' : ''), ic, t, () => setTool(id));
+      b.dataset.t = id;
+      body.append(b);
+    });
+    ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#212529', '#ffffff'].forEach((col) => {
+      const b = btn('ts-col', '', col, () => { color = col; if (tool === 'erase' || tool === 'none') setTool('pen'); });
+      b.style.background = col;
+      body.append(b);
+    });
+    body.append(btn('ts-clr', '🗑', 'សម្អាត', () => clearInk(true)));
+    el.append(grip, body);
+    stage.append(el);
+    requestAnimationFrame(() => { el.style.top = Math.max(8, stage.clientHeight - el.offsetHeight - 14) + 'px'; });
+    drag(el, grip);
+    return el;
+  }
+
+  // movable tools on the right corner
+  function dock() {
+    const d = document.createElement('div');
+    d.className = 'ts-dock';
+    const items = [['wspin', '🎡', 'កង់ចាប់ឈ្មោះ'], ['wtime', '⏱', 'ម៉ោង'], ['wcalc', '∑', 'ម៉ាស៊ីនគិតលេខ']];
+    items.forEach(([cls, ic, t]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.title = t; b.innerHTML = `<span>${ic}</span><small>${t.split(' ')[0]}</small>`;
+      b.onclick = () => { const f = root.querySelector('.ts-float.ts-' + cls); if (f) { f.hidden = !f.hidden; if (!f.hidden) stage.append(f); b.classList.toggle('on', !f.hidden); } };
+      d.append(b);
+    });
+    stage.append(d);
+  }
+
   function open(opt) {
-    slides = (window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || [];
+    slides = [...((window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || [])];
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
@@ -315,15 +373,19 @@
     stage.append(slideEl, ink);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
-    makeFloat('wspin', 'កង់ចាប់ឈ្មោះ', miniSpin(names), { x: '74%', y: '12%', w: '24%', h: '72%' }).hidden = true;
-    makeFloat('wtime', 'ម៉ោង', timerBox(), { x: '74%', y: '2%', w: '22%' }).hidden = true;
-    makeFloat('wcalc', 'ម៉ាស៊ីនគិតលេខ', calcBox(), { x: '4%', y: '58%', w: '260px' }).hidden = true;
+    makeFloat('wspin', 'កង់ចាប់ឈ្មោះ', miniSpin(names), { x: '60%', y: '4%', w: '28%', h: '78%' }).hidden = true;
+    makeFloat('wtime', 'ម៉ោង', timerBox(), { x: '62%', y: '4%', w: '24%' }).hidden = true;
+    makeFloat('wcalc', 'ម៉ាស៊ីនគិតលេខ', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     ctx = ink.getContext('2d');
     bindInk();
+    penPalette();
+    dock();
     requestAnimationFrame(() => { fitInk(); show(opt.start || 0); });
-    window.addEventListener('resize', fitInk);
+    window.addEventListener('resize', onResize);
     window.addEventListener('keydown', keys);
   }
+
+  function onResize() { fitInk(); show(i); }
 
   function keys(e) {
     if (root && root.hidden) return;
@@ -342,7 +404,7 @@
   function close() {
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }
     window.removeEventListener('keydown', keys);
-    window.removeEventListener('resize', fitInk);
+    window.removeEventListener('resize', onResize);
     document.body.classList.remove('teach-show-on');
     if (root) { root.hidden = true; root.innerHTML = ''; }
     floats = [];

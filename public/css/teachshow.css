@@ -173,3 +173,42 @@ body.teach-show-on { overflow: hidden; }
 .ts-bar .ts-fs { font-size: 20px; padding: 4px 12px; }
 .ts-bar .ts-exit { font-size: 20px; width: 40px; padding: 4px 0; }
 #teach-show:fullscreen { background: #fff; }
+
+/* Zoom-style movable pen palette + right-corner tool dock */
+.ts-bar { justify-content: space-between; }
+.ts-pen {
+  position: absolute; z-index: 9; background: rgba(15,81,115,.96); color: #fff;
+  border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35); overflow: hidden; user-select: none; touch-action: none;
+}
+.ts-pgrip { padding: 6px 12px; font-size: 13px; font-weight: 800; cursor: grab; background: rgba(255,255,255,.12); letter-spacing: .04em; }
+.ts-pbody { display: grid; grid-template-columns: repeat(4, 38px); gap: 6px; padding: 8px; }
+.ts-pbody button {
+  width: 38px; height: 38px; min-height: 0; padding: 0; border-radius: 10px; font-size: 18px;
+  background: rgba(255,255,255,.14); color: #fff; border: 2px solid transparent; box-shadow: none;
+}
+.ts-pbody button.on { background: #ee0000; }
+.ts-pbody button.ts-col { border-radius: 50%; border: 2px solid #fff; }
+.ts-pbody .ts-clr { grid-column: span 2; width: auto; }
+.ts-dock { position: absolute; z-index: 9; right: 10px; top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.ts-dock button {
+  width: 64px; min-height: 0; padding: 8px 0 6px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: #0f5173; color: #fff; border: 0; box-shadow: 0 6px 18px rgba(0,0,0,.28);
+}
+.ts-dock button span { font-size: 24px; line-height: 1; }
+.ts-dock button small { font-size: 11px; font-weight: 700; }
+.ts-dock button.on, .ts-dock button:hover { background: #ee0000; }
+.ts-slide.ts-cover { display: block; text-align: center; padding-top: 26px; padding-right: 100px; }
+.ts-cover h1 { margin-bottom: 4px; }
+.ts-cover h1::after { height: 34px !important; margin-top: 6px !important; }
+.ts-cover .ts-kicker, .ts-cover .ts-sub { margin-bottom: 4px; }
+.ts-obj { text-align: left; max-width: 900px; margin: 10px auto 0; background: #eaf1f6; border: 2.5px solid #0f5173; border-radius: 6px; padding: 10px 28px 12px; }
+.ts-obj h3 { margin: 0 0 4px; color: #ee0000; font-style: italic; font-size: 1.05em; }
+.ts-obj ol, .ts-obj ul { margin: 0; padding-left: 1.4em; }
+.ts-slide { padding-right: 90px; }
+
+/* headings scale with the slide text so shrink-to-fit works */
+.ts-slide h1 { font-size: 2.3em; line-height: 1.25; margin: .15em 0 .2em; }
+.ts-slide h2 { font-size: 1.5em; line-height: 1.3; margin: 0 0 .4em; }
+.ts-slide .ts-kicker { font-size: 1.1em; margin: 0 0 .1em; }
+.ts-slide .katex-display { margin: .3em 0; }
+.ts-slide p { margin: 0 0 .5em; }

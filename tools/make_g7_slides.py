@@ -425,6 +425,12 @@ def make_slides(n, tex):
         add({'key': 'key', 'prac': 'prac', 'sol': 'sol'}[c], head, blocks or [''], kicker_of())
     flush_ex()
     slides.append({'k': 'title', 'html': f'<p class="ts-kicker">មេរៀនទី {kh(n)}</p><h1>ចប់មេរៀន</h1><p class="ts-sub">{inline(title)}</p>'})
+    # cover slide = lesson title + objectives
+    if len(slides) > 1 and '<h2>គោលបំណង</h2>' in slides[1]['html']:
+        obj = re.sub(r'^.*?<h2>គោលបំណង</h2>', '', slides[1]['html'], flags=re.S)
+        slides[0]['html'] += '<div class="ts-obj"><h3>គោលបំណង</h3>' + obj + '</div>'
+        slides[0]['c'] = 'cover'
+        del slides[1]
     return title, slides
 
 
