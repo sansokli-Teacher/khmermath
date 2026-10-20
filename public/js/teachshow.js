@@ -1237,7 +1237,8 @@
     const end = document.createElement('div');
     end.className = 'ts-wid';
     end.append(toolsMenu(), mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
-    bar.append(nav, end);
+    bar.append(end);
+    bar._nav = nav;   // the page / arrows sit in the bottom-right corner of the slide (added to the stage in open())
     return bar;
   }
 
@@ -1711,14 +1712,15 @@
     root.hidden = false;
     root.innerHTML = '';
     document.body.classList.add('teach-show-on');
-    root.append(toolbar());
+    const tbar = toolbar();
+    root.append(tbar);
     stage = document.createElement('div');
     stage.className = 'ts-stage';
     slideEl = document.createElement('div');
     slideEl.className = 'ts-slide';
     ink = document.createElement('canvas');
     ink.className = 'ts-ink';
-    stage.append(slideEl, ink);
+    stage.append(slideEl, ink, tbar._nav);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     { // Spin starts about a quarter of the slide in size, in the top-right corner
