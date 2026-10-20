@@ -639,3 +639,9 @@ body.teach-show-on { overflow: hidden; }
 .ts-ch.x { background: #6b7a89; width: 26px; height: 26px; margin: -13px 0 0 -13px; font-size: 12px; }
 .gpen .gl { flex: 1 0 100%; font-size: 12px; font-weight: 800; color: #9fd0f5; }
 .ts-geo .gc.on { outline: 3px solid #fff; outline-offset: 1px; }
+
+/* small clock in the corner of the slide */
+.ts-clock { position: absolute; right: 12px; bottom: 12px; z-index: 7; min-height: 0; height: 34px; padding: 0 12px; border: 0; border-radius: 99px; background: rgba(15,81,115,.88); color: #fff; font-size: 17px; line-height: 1; box-shadow: 0 4px 12px rgba(0,0,0,.28); cursor: pointer; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.ts-clock b { font-weight: 800; letter-spacing: .04em; }
+.ts-clock.off { width: 34px; padding: 0; background: rgba(15,81,115,.35); font-size: 16px; }
+.ts-clock:hover { background: #ee0000; }

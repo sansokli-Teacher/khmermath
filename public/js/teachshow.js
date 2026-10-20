@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'none', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let geoColor = '#212529', geoSize = 2, colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let clockT = 0, geoColor = '#212529', geoSize = 2, colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -1680,6 +1680,15 @@
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
+    // small clock in the right corner: click to hide, click to show
+    {
+      const ck = document.createElement('button'); ck.type = 'button'; ck.className = 'ts-clock'; ck.title = 'ចុចដើម្បីលាក់ / បង្ហាញម៉ោង';
+      let shown = true; try { shown = localStorage.getItem('ts_clock') !== '0'; } catch { /* default shown */ }
+      const tick = () => { const d = new Date(), z = (n) => String(n).padStart(2, '0'); ck.innerHTML = shown ? `<b>${kh(z(d.getHours()) + ':' + z(d.getMinutes()))}</b>` : '<span>🕒</span>'; ck.classList.toggle('off', !shown); };
+      ck.onclick = () => { shown = !shown; try { localStorage.setItem('ts_clock', shown ? '1' : '0'); } catch { /* ignore */ } tick(); };
+      tick(); clearInterval(clockT); clockT = setInterval(tick, 5000);
+      stage.append(ck);
+    }
     ctx = ink.getContext('2d');
     bindInk();
     penPalette();
@@ -1706,6 +1715,7 @@
   }
 
   function close() {
+    clearInterval(clockT); clockT = 0;
     if (offTools) { offTools(); offTools = null; }
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }
     window.removeEventListener('keydown', keys);
