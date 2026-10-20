@@ -637,3 +637,5 @@ body.teach-show-on { overflow: hidden; }
 .ts-ch.q { background: #ee0000; }
 .ts-ch.h { background: #2b73a3; }
 .ts-ch.x { background: #6b7a89; width: 26px; height: 26px; margin: -13px 0 0 -13px; font-size: 12px; }
+.gpen .gl { flex: 1 0 100%; font-size: 12px; font-weight: 800; color: #9fd0f5; }
+.ts-geo .gc.on { outline: 3px solid #fff; outline-offset: 1px; }

@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'none', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let geoColor = '#212529', geoSize = 2, colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -512,8 +512,9 @@
         strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
       } else if (tool === 'point') { // a labelled point: A, B, C ...
         const n = strokes.filter((q) => q.t === 'point').length, letter = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[n % 26] + (n >= 26 ? String(Math.floor(n / 26)) : '');
-        const st = { t: 'point', c: color, w: size, p: [p], label: { text: letter, x: p.x + 20, y: p.y - 20 } };
+        const st = { t: 'point', c: geoColor, w: Math.max(2, geoSize), p: [p], label: { text: letter, x: p.x + 20, y: p.y - 20 } };
         strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
+      } else if (tool === 'gpen') { drawing = true; cur = { t: 'pen', c: geoColor, w: geoSize, k: 'ball', p: [p] };
       } else if (tool === 'erase') { drawing = true; eraseAt(p); }
       else { drawing = true; cur = { t: tool, c: color, w: size, k: penKind, p: [p] }; }
       ink.setPointerCapture && ink.setPointerCapture(e.pointerId);
@@ -1302,7 +1303,7 @@
       toolSetter = setTool;
       tool = id; spot = null; laser = []; if (!lensPin) lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'point' ? 'crosshair' : id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'point' || id === 'gpen' ? 'crosshair' : id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
       if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
@@ -1508,7 +1509,7 @@
     const edgeDist = (edge, lx, ly) => { const t = proj(edge, lx, ly), [[ax, ay], [bx2, by2]] = edge; return Math.hypot(lx - (ax + t * (bx2 - ax)), ly - (ay + t * (by2 - ay))); };
     const stageXY = (e) => { const r = ink.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     let mode = null, sx = 0, sy = 0, bx = 0, by = 0, a0 = 0, g0 = 0, cxp = 0, cyp = 0, d0 = 1, z0 = 1, edge = null, t0 = 0;
-    const penTool = () => HAND_TOOLS.includes(tool);
+    const penTool = () => HAND_TOOLS.includes(tool) || tool === 'gpen' || tool === 'point';
     const isProt = kind === 'protractor', PR = 190, pcx = w / 2, pcy = PR + 12; // protractor centre (local)
     const badge = document.createElement('div'); badge.className = 'ts-ibadge'; badge.hidden = true; el.append(badge);
     el.addEventListener('pointerdown', (e) => {
@@ -1550,16 +1551,16 @@
         if (uy > -0.02) uy = -0.02;
         const len = PR, phi = Math.atan2(-uy, ux), deg = 180 - phi * 180 / Math.PI;
         const A = toWorld(pcx, pcy), B = toWorld(pcx + ux * len, pcy + uy * len), Lb = toWorld(pcx + ux * (len + 26 / zoom), pcy + uy * (len + 26 / zoom));
-        cur = { t: 'line', c: color, w: size, p: [A, B], label: { text: Math.round(deg) + '°', x: Lb.x, y: Lb.y } }; redraw();
+        cur = { t: 'line', c: geoColor, w: geoSize, p: [A, B], label: { text: Math.round(deg) + '°', x: Lb.x, y: Lb.y } }; redraw();
       } else if (mode === 'edge') { // a straight line along the edge, from where you pressed to where you are
         const [wx, wy] = stageXY(e), [lx, ly] = toLocal(wx, wy), t1 = proj(edge, lx, ly), [[ax, ay], [bx2, by2]] = edge;
         // the pen sits just outside the instrument's edge, so the line stays visible next to it
         let nx = -(by2 - ay), ny = bx2 - ax; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
         if (nx * ((ax + bx2) / 2 - w / 2) + ny * ((ay + by2) / 2 - h / 2) < 0) { nx = -nx; ny = -ny; }
-        const off = (size / 2 + 1.5) / zoom, ox = nx * off, oy = ny * off;
+        const off = (geoSize / 2 + 1.5) / zoom, ox = nx * off, oy = ny * off;
         const A = toWorld(ax + t0 * (bx2 - ax) + ox, ay + t0 * (by2 - ay) + oy), B = toWorld(ax + t1 * (bx2 - ax) + ox, ay + t1 * (by2 - ay) + oy);
         const lenCm = Math.hypot(B.x - A.x, B.y - A.y) / (CM * zoom), mid = toWorld(ax + (t0 + t1) / 2 * (bx2 - ax) + nx * (off + 24 / zoom), ay + (t0 + t1) / 2 * (by2 - ay) + ny * (off + 24 / zoom));
-        cur = { t: 'line', c: color, w: size, p: [A, B], label: { text: lenCm.toFixed(1) + ' cm', x: mid.x, y: mid.y } }; redraw();
+        cur = { t: 'line', c: geoColor, w: geoSize, p: [A, B], label: { text: lenCm.toFixed(1) + ' cm', x: mid.x, y: mid.y } }; redraw();
       }
     });
     const up = () => {
@@ -1593,7 +1594,7 @@
       const { Q, H } = geo(), cm = (r / CM).toFixed(1);
       svg.innerHTML = `<line x1="${P.x}" y1="${P.y}" x2="${H.x}" y2="${H.y}" stroke="#8a97a6" stroke-width="9" stroke-linecap="round"/><line x1="${Q.x}" y1="${Q.y}" x2="${H.x}" y2="${H.y}" stroke="#8a97a6" stroke-width="9" stroke-linecap="round"/>
         <line x1="${P.x}" y1="${P.y}" x2="${P.x + (H.x - P.x) * .12}" y2="${P.y + (H.y - P.y) * .12}" stroke="#444" stroke-width="3" stroke-linecap="round"/>
-        <line x1="${Q.x}" y1="${Q.y}" x2="${Q.x + (H.x - Q.x) * .12}" y2="${Q.y + (H.y - Q.y) * .12}" stroke="${color === '#ffffff' ? '#aaa' : color}" stroke-width="5" stroke-linecap="round"/>
+        <line x1="${Q.x}" y1="${Q.y}" x2="${Q.x + (H.x - Q.x) * .12}" y2="${Q.y + (H.y - Q.y) * .12}" stroke="${geoColor}" stroke-width="5" stroke-linecap="round"/>
         <circle cx="${H.x}" cy="${H.y}" r="12" fill="#2b73a3" stroke="#fff" stroke-width="3"/><circle cx="${P.x}" cy="${P.y}" r="4" fill="#222"/>
         <text x="${(P.x + Q.x) / 2}" y="${(P.y + Q.y) / 2 - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="#0f5173" stroke="#fff" stroke-width="4" paint-order="stroke">r = ${cm} cm</text>`;
       place(bP, P); place(bQ, Q); place(bH, H); place(bX, { x: H.x + 26, y: H.y - 26 });
@@ -1609,7 +1610,7 @@
     grab(bP, (e) => { const p = xy(e); off = { x: p.x - P.x, y: p.y - P.y }; }, (e) => { const p = xy(e); P = { x: p.x - off.x, y: p.y - off.y }; paintC(); });
     grab(bH, () => {}, (e) => { const p = xy(e); r = Math.max(30, Math.min(700, 2 * ((p.x - P.x) * Math.cos(phi) + (p.y - P.y) * Math.sin(phi)))); paintC(); });
     let lastPhi = 0;
-    grab(bQ, () => { lastPhi = phi; cur = { t: 'pen', c: color, w: size, p: [geo().Q] }; redraw(); }, (e) => {
+    grab(bQ, () => { lastPhi = phi; cur = { t: 'pen', c: geoColor, w: geoSize, k: 'ball', p: [geo().Q] }; redraw(); }, (e) => {
       const p = xy(e), target = Math.atan2(p.y - P.y, p.x - P.x);
       let d = target - lastPhi; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
       const n = Math.max(1, Math.ceil(Math.abs(d) / 0.04));
@@ -1625,20 +1626,22 @@
     const box = document.createElement('div');
     box.className = 'ts-geo';
     const pen = document.createElement('div'); pen.className = 'gpen';
+    const lab = document.createElement('div'); lab.className = 'gl'; lab.textContent = 'ប៊ិចធរណីមាត្រ (ដាច់ពីប៊ិចសរសេរ)';
     const tb = (txt, tl, id) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'gt'; b.dataset.t = id; b.textContent = txt; b.title = tl; b.onclick = () => { if (toolSetter) toolSetter(tool === id ? 'none' : id); sync(); }; return b; };
-    const penB = tb('✎ ប៊ិច', 'ប៊ិច៖ គូសលើស្លាយ ឬតាមគែមឧបករណ៍', 'pen'), ptB = tb('● ចំណុច A B C', 'ដាក់ចំណុចមានអក្សរ A B C', 'point');
+    const penB = tb('✎ ប៊ិចគូស', 'ប៊ិចស្តើងសម្រាប់គូសរូបធរណីមាត្រ (មានពណ៌ និងទំហំផ្ទាល់ខ្លួន)', 'gpen'), ptB = tb('● ចំណុច A B C', 'ដាក់ចំណុចមានអក្សរ A B C', 'point');
     const sync = () => { [penB, ptB].forEach((b) => b.classList.toggle('on', tool === b.dataset.t)); };
     box.addEventListener('pointerenter', sync);
     const cr = document.createElement('div'); cr.className = 'gcol';
-    COLORS.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'gc'; b.style.background = c; b.title = c; b.onclick = () => { if (colorSetter) colorSetter(c); if (tool === 'none' && toolSetter) toolSetter('pen'); sync(); }; cr.append(b); });
-    const sr = document.createElement('input'); sr.type = 'range'; sr.min = 1; sr.max = 14; sr.value = size; sr.title = 'ទំហំប៊ិច'; sr.oninput = () => { if (sizeSetter) sizeSetter(+sr.value, false); };
-    pen.append(penB, ptB, cr, sr);
+    const GC = ['#212529', '#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#ae3ec9'];
+    GC.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'gc' + (c === geoColor ? ' on' : ''); b.style.background = c; b.title = c; b.onclick = () => { geoColor = c; cr.querySelectorAll('.gc').forEach((x2) => x2.classList.toggle('on', x2 === b)); if (tool === 'none' && toolSetter) toolSetter('gpen'); sync(); }; cr.append(b); });
+    const sr = document.createElement('input'); sr.type = 'range'; sr.min = 1; sr.max = 10; sr.value = geoSize; sr.title = 'ទំហំប៊ិចធរណីមាត្រ'; sr.oninput = () => { geoSize = +sr.value; };
+    pen.append(lab, penB, ptB, cr, sr);
     box.append(pen);
     box.insertAdjacentHTML('beforeend', '<p class="gh">ចុចឧបករណ៍ដើម្បីដាក់លើស្លាយ · ✥ ផ្លាស់ទី · ↻ បង្វិល · ⤡ ពង្រីក · ជ្រើសប៊ិច ហើយអូសតាមគែមឧបករណ៍ដើម្បីគូសត្រង់ និងបង្ហាញប្រវែង · លើម៉ែត្រមុំ៖ អូសដើម្បីគូសកាំរស្មី និងបង្ហាញមុំ</p>');
     [['ruler', '📏', 'Ruler', 'បន្ទាត់'], ['protractor', '◠', 'Protractor', 'ម៉ែត្រមុំ'], ['compass', '◔', 'Compass', 'ដែកឈាន'], ['set45', '◣', 'Set square 45°', 'ក្រដាសត្រីកោណ 45°'], ['set60', '◺', 'Set square 30°–60°', 'ក្រដាសត្រីកោណ 30°–60°']].forEach(([k, ic, en, km]) => {
       const b = document.createElement('button'); b.type = 'button';
       b.innerHTML = `<span class="gi">${ic}</span><span><b>${en}</b><small>${km}</small></span>`;
-      b.onclick = () => { if (tool === 'none' && toolSetter) toolSetter('pen'); (k === 'compass' ? addCompass : addInstrument)(k); };
+      b.onclick = () => { if (tool === 'none' && toolSetter) toolSetter('gpen'); (k === 'compass' ? addCompass : addInstrument)(k); };
       box.append(b);
     });
     const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'gclr';
