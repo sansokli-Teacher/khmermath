@@ -13,12 +13,12 @@ def esc(t):
     return _h.escape(str(t), quote=False)
 
 
-def m(tex):            # inline maths
-    return '\\(' + tex + '\\)'
+def m(tex):            # inline maths  ('<' is escaped: "84<n<99" would otherwise be read as an HTML tag <n< and swallow the text)
+    return '\\(' + tex.replace('<', '&lt;') + '\\)'
 
 
 def dm(tex):           # display maths
-    return '<div class="dm">\\[' + tex + '\\]</div>'
+    return '<div class="dm">\\[' + tex.replace('<', '&lt;') + '\\]</div>'
 
 
 def p(t, cls=''):
