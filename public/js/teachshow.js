@@ -610,6 +610,7 @@
   async function slideCanvas(sl, w, h, withInk) {
     const holder = document.createElement('div');
     holder.style.cssText = `position:fixed;left:0;top:0;width:${w}px;z-index:-1;pointer-events:none;background:#fff`;
+    if (themeCls) holder.className = themeCls;                    // the lesson's look (purple) must be on the exported picture too
     const el = document.createElement('div');
     el.className = 'ts-slide' + (sl.k ? ` ts-${sl.k}` : '') + (sl.c ? ` ts-${sl.c}` : '');
     el.style.cssText = `position:relative;inset:auto;width:${w}px;min-height:${h}px;height:auto;overflow:visible;font-size:${sl._fs || ''}`;
@@ -2052,10 +2053,37 @@
     return box;
   }
 
+  // ---- lesson looks: a lesson listed here is shown in the "purple" look of the teacher's own decks (cream card on a lavender band, blue
+  // headings, blue outlined boxes) and gets a branded cover slide in front of the lesson's own slides. To give another lesson the same
+  // look, add it here ("grade-lesson": { name, en: English subtitle for the cover }).
+  const LESSON_THEMES = {
+    '7-2': { name: 'purple', en: 'DIVISORS AND MULTIPLES' },
+  };
+  let themeCls = '';                                          // 'ts-theme-purple' while a themed lesson is open
+  function purpleCover(theme, opt) {
+    const star = (x, y, s, c) => `<path d="M${x} ${y - s} Q${x} ${y} ${x + s} ${y} Q${x} ${y} ${x} ${y + s} Q${x} ${y} ${x - s} ${y} Q${x} ${y} ${x} ${y - s}Z" fill="${c}"/>`;
+    const deco = '<svg class="pp-deco" viewBox="0 0 1000 560" aria-hidden="true">'
+      + star(900, 110, 26, '#ffd84a') + star(955, 205, 14, '#ffd84a') + star(70, 440, 22, '#ffd84a') + star(150, 90, 16, '#9b72c0')
+      + star(520, 505, 18, '#9b72c0') + star(880, 470, 24, '#9b72c0')
+      + '<g fill="none" stroke="#9b72c0" stroke-width="5" stroke-linecap="round"><path d="M330 120 l34 14"/><path d="M326 150 l38 -4"/><path d="M700 130 l36 -12"/></g>'
+      + '<g font-family="Times New Roman,serif" font-weight="700" fill="#9b72c0" opacity=".55" font-size="64"><text x="60" y="190">÷</text><text x="885" y="330">√</text><text x="120" y="330">×</text></g></svg>';
+    const html = deco
+      + '<div class="pp-top"><img class="pp-logo" src="/ngs.png" alt=""><div class="pp-school">វិទ្យាល័យព្រះស៊ីសុវត្ថិ<br><span>សាលារៀនជំនាន់ថ្មី</span></div></div>'
+      + `<div class="pp-pill">Grade ${opt.grade}</div>`
+      + `<div class="pp-title">${opt.title || ''}</div>`
+      + `<div class="pp-en">${theme.en || ''}</div>`
+      + '<div class="pp-by">បង្រៀនដោយ : <b data-ts="teacher"></b></div>'
+      + '<div class="pp-meta">ថ្នាក់ <b data-ts="class"></b> &nbsp;·&nbsp; ឆ្នាំសិក្សា <b>២០២៦-២០២៧</b></div>';
+    return { k: 'title', c: 'pp-cover', html };
+  }
+
   function open(opt) {
     slides = ((window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || []).map((x) => ({ ...x }));
     strokes = []; undoS = []; redoS = []; cur = null; i = 0; slideEl = null;
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
+    const theme = LESSON_THEMES[`${opt.grade}-${opt.lesson}`] || null, pre = theme ? 1 : 0;   // pre = slides added in front
+    themeCls = theme ? `ts-theme-${theme.name}` : '';
+    if (theme) slides.unshift(purpleCover(theme, opt));
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
     tool = 'none'; // always start as the plain mouse; pick a pen when you want to write
@@ -2068,7 +2096,7 @@
     const tbar = toolbar();
     root.append(tbar);
     stage = document.createElement('div');
-    stage.className = 'ts-stage';
+    stage.className = 'ts-stage' + (themeCls ? ` ${themeCls}` : '');
     slideEl = document.createElement('div');
     slideEl.className = 'ts-slide';
     ink = document.createElement('canvas');
@@ -2097,7 +2125,7 @@
     ctx = ink.getContext('2d');
     bindInk();
     penPalette();
-    requestAnimationFrame(() => { fitInk(); show(opt.start || 0); });
+    requestAnimationFrame(() => { fitInk(); show(opt.start ? opt.start + pre : 0); });   // opt.start counts the lesson's own slides, so skip the cover we put in front
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', keys);
   }

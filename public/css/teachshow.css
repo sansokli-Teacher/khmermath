@@ -874,3 +874,54 @@ body.teach-show-on { overflow: hidden; }
 
 /* site label, bottom-left of every slide (the page counter is bottom-right, the clock top-left) */
 .ts-stage .ts-wm { position: absolute; left: 20px; bottom: 12px; z-index: 6; pointer-events: none; color: #0f5173; font: 700 19px/1 'Times New Roman', serif; letter-spacing: .02em; opacity: .8; }
+
+/* =====================================================================================================================
+   "purple" lesson look (lesson 2): the teacher's own "Properties of Numbers" deck - a cream card with a thin border over a lavender band,
+   bold blue headings, blue rounded boxes for rules, blue numbers. Switched on per lesson in LESSON_THEMES (teachshow.js).
+   ===================================================================================================================== */
+.ts-theme-purple { --pp: #1414d2; --pp-band: #9b72c0; --pp-cream: #fcfaf7; }
+.ts-theme-purple .ts-slide, .ts-theme-purple .ts-slide.ts-key, .ts-theme-purple .ts-slide.ts-ex, .ts-theme-purple .ts-slide.ts-prac,
+.ts-theme-purple .ts-slide.ts-sol, .ts-theme-purple .ts-slide.ts-title, .ts-theme-purple .ts-slide.ts-cover {
+  background: linear-gradient(180deg, var(--pp-cream) 0, var(--pp-cream) 73.5%, var(--pp-band) 73.5%, var(--pp-band) 100%);
+  color: #111; outline: none; box-shadow: none; isolation: isolate; padding: 46px 66px 66px 66px;
+}
+.ts-theme-purple .ts-slide::before { content: ''; position: absolute; inset: 3.4% 3.6% 5.8% 3.6%; border: 1.5px solid #2b2b2b; border-radius: 8px; background: var(--pp-cream); z-index: 0; }
+.ts-theme-purple .ts-slide > * { position: relative; z-index: 1; }   /* the content sits above the card (no negative z-index: the PDF/PowerPoint picture-maker would lose the card) */
+.ts-theme-purple .ts-slide .ts-kicker { color: var(--pp); font-weight: 800; font-size: 1.22em; margin: 0 0 .2em; }
+.ts-theme-purple .ts-slide h1 { color: var(--pp); }
+.ts-theme-purple .ts-slide h2 { color: var(--pp); border-bottom: 0; padding-bottom: 0; font-size: 1.12em; text-decoration: underline; text-underline-offset: .18em; margin: .1em 0 .45em; }
+.ts-theme-purple .ts-slide.ts-title h1::after { display: none; }
+.ts-theme-purple .ts-slide .ts-sub { color: #444; opacity: 1; }
+.ts-theme-purple .ts-slide .ts-exh, .ts-theme-purple .ts-slide li.lab .lb { color: var(--pp); }
+.ts-theme-purple .ts-slide .katex { color: var(--pp); }
+.ts-theme-purple .ts-slide .ts-obj { background: transparent; border: 2px solid var(--pp); border-radius: 16px; }
+.ts-theme-purple .ts-slide .ts-obj h3 { color: var(--pp); text-decoration: underline; }
+.ts-theme-purple .ts-slide th, .ts-theme-purple .ts-slide td { border-color: var(--pp); }
+.ts-theme-purple .ts-slide th { background: #ece8fa; }
+.ts-theme-purple .ts-slide blockquote { background: #eeeaff; border-left-color: var(--pp); }
+.ts-theme-purple .ts-slide .cap { color: #444; }
+/* rules ("ជាទូទៅ", "និយមន័យ" ...): a blue rounded outline instead of the dark card */
+.ts-theme-purple .ts-card { background: transparent; border: 2px solid var(--pp); border-radius: 16px; box-shadow: none; color: var(--pp); padding: .6em 1.1em .7em; }
+.ts-theme-purple .ts-card-h { margin-bottom: .3em; }
+.ts-theme-purple .ts-card-h span { color: var(--pp); font-style: italic; text-decoration: underline; text-underline-offset: .18em; font-size: 1.1em; }
+.ts-theme-purple .ts-card-h i { display: none; }
+.ts-theme-purple .ts-card-b, .ts-theme-purple .ts-card-b .katex, .ts-theme-purple .ts-card-b li::marker { color: var(--pp) !important; }
+.ts-theme-purple .ts-card-b b, .ts-theme-purple .ts-card-b mark.term { color: #b00000 !important; background: none; border: 0; box-shadow: none; text-shadow: none; padding: 0; margin: 0; animation: none; }
+.ts-theme-purple .ts-card-b th, .ts-theme-purple .ts-card-b td { border-color: var(--pp); color: #111; }
+.ts-theme-purple .ts-card-b th { background: #ece8fa; }
+.ts-theme-purple .ts-wm { color: #fff; opacity: .95; }
+/* the branded cover in front of the lesson */
+.ts-theme-purple .ts-slide.ts-pp-cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 34px 60px 70px; }
+.ts-pp-cover .pp-deco { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.ts-pp-cover > *:not(.pp-deco) { position: relative; z-index: 1; }
+.ts-pp-cover .pp-top { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.ts-pp-cover .pp-logo { width: clamp(54px, 9vh, 92px); height: auto; flex: none; }
+.ts-pp-cover .pp-school { color: var(--pp); font-family: 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; font-weight: 700; font-size: 1.02em; line-height: 1.45; text-align: left; }
+.ts-pp-cover .pp-school span { font-size: .82em; }
+.ts-pp-cover .pp-pill { margin: .45em 0 .15em; background: #ffd84a; color: var(--pp); border-radius: 999px; padding: .05em 1.8em; font: 800 1.35em/1.5 Arial, 'Times New Roman', sans-serif; border: 2px solid #2b2b2b; }
+.ts-pp-cover .pp-title { color: var(--pp); font-family: 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; font-weight: 700; font-size: 2.7em; line-height: 1.35; margin-top: .05em; }
+.ts-pp-cover .pp-en { color: var(--pp); font: 800 1.5em/1.3 Arial, 'Times New Roman', sans-serif; letter-spacing: .02em; }
+.ts-pp-cover .pp-by { margin-top: .8em; color: var(--pp); font-weight: 800; font-size: 1.1em; }
+.ts-pp-cover .pp-meta { margin-top: .1em; color: #333; font-size: .95em; }
+.ts-pp-cover .pp-meta b { color: var(--pp); }
+.ts-theme-purple .ts-slide .ts-exh { font-style: italic; text-decoration: underline; text-underline-offset: .18em; }
