@@ -578,11 +578,14 @@
     });
     bar.addEventListener('pointermove', (e) => {
       if (!dragging) return;
+      if (e.buttons === 0) { dragging = false; return; }
       const s = stage.getBoundingClientRect();
       el.style.left = Math.max(0, Math.min(s.width - 80, e.clientX - s.left - ox)) + 'px';
       el.style.top = Math.max(0, Math.min(s.height - 40, e.clientY - s.top - oy)) + 'px';
     });
     bar.addEventListener('pointerup', () => { dragging = false; });
+    bar.addEventListener('pointercancel', () => { dragging = false; });
+    bar.addEventListener('lostpointercapture', () => { dragging = false; });
   }
 
   function resize(el, handle) {
@@ -596,53 +599,152 @@
     });
     handle.addEventListener('pointermove', (e) => {
       if (!on) return;
+      if (e.buttons === 0) { on = false; return; }
       el.style.width = Math.max(180, sw + (e.clientX - sx)) + 'px';
       el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px';
     });
     handle.addEventListener('pointerup', () => { on = false; });
+    handle.addEventListener('pointercancel', () => { on = false; });
+    handle.addEventListener('lostpointercapture', () => { on = false; });
   }
 
-  function miniSpin(names) {
+  // ---- Spin: wheel of the class list (one student or a group), pop-up result, sound and fireworks ----
+  let audio = null;
+  const snd = {
+    ctx() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch { audio = null; } return audio; },
+    tick(on) { const c = on && this.ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.setValueAtTime(.05, c.currentTime); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .05); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .06); },
+    fanfare(on) { const c = on && this.ctx(); if (!c) return; [523, 659, 784, 1047, 1319].forEach((f, k) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + k * .11; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .5); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .55); }); },
+    boom(on) { const c = on && this.ctx(); if (!c) return; const n = c.sampleRate * .35, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .5; src.connect(f).connect(g).connect(c.destination); src.start(); },
+  };
+
+  function miniSpin(names, cname) {
     const wrap = document.createElement('div');
-    wrap.className = 'ts-spin';
-    const cv = document.createElement('canvas');
-    cv.width = 360; cv.height = 360;
-    const hub = document.createElement('button');
-    hub.type = 'button'; hub.className = 'ts-hub'; hub.textContent = 'បង្វិល';
-    const out = document.createElement('div');
-    out.className = 'ts-spin-out';
-    wrap.append(cv, hub, out);
+    wrap.className = 'sp';
+    const bar = document.createElement('div'); bar.className = 'sp-bar';
+    const modeBtns = [['one', 'ម្នាក់ៗ'], ['group', 'ក្រុម']].map(([m, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.m = m; return b; });
+    const gsel = document.createElement('select'); gsel.title = 'ចំនួនសិស្សក្នុងមួយក្រុម';
+    [2, 3, 4, 5, 6, 7, 8].forEach((n) => gsel.append(new Option(`${kh(n)} នាក់/ក្រុម`, n)));
+    gsel.value = 4;
+    const rep = document.createElement('label'); rep.className = 'sp-chk'; rep.innerHTML = '<input type="checkbox" checked><span>មិនជាន់</span>';
+    const snb = document.createElement('button'); snb.type = 'button'; snb.className = 'sp-snd'; snb.textContent = '🔊'; snb.title = 'សំឡេង';
+    const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'sp-rst'; rst.textContent = '↺'; rst.title = 'ចាប់ផ្ដើមឡើងវិញ';
+    bar.append(...modeBtns, gsel, rep, snb, rst);
+    const stageW = document.createElement('div'); stageW.className = 'sp-wheel';
+    const cv = document.createElement('canvas'); cv.width = 640; cv.height = 640;
+    const ptr = document.createElement('i'); ptr.className = 'sp-ptr';
+    const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'បង្វិល';
+    const disc = document.createElement('div'); disc.className = 'sp-disc';
+    disc.append(cv, ptr, hub); stageW.append(disc);
+    const info = document.createElement('div'); info.className = 'sp-info';
+    const pop = document.createElement('div'); pop.className = 'sp-pop'; pop.hidden = true;
+    const fw = document.createElement('canvas'); fw.className = 'sp-fw';
+    wrap.append(bar, stageW, info, pop, fw);
     const c = cv.getContext('2d');
-    let ang = 0, spin = false, list = names.slice();
-    const pal = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
+    const pal = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4', '#c92a2a', '#087f5b'];
+    const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };
+    const roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
+    const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
+    const makeGroups = () => { const size = +gsel.value, n = Math.max(1, Math.ceil(roster.length / size)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
+    makeGroups();
+    // what is on the wheel right now
+    const items = () => {
+      const noRep = rep.querySelector('input').checked;
+      if (st.mode === 'one') return roster.map((n, k) => ({ id: 'o' + k, label: n, members: [n] })).filter((x) => !(noRep && st.used.has(x.id)));
+      return st.groups.map((g, k) => ({ id: 'g' + k, label: `ក្រុម ${kh(k + 1)}`, members: g })).filter((x) => !(noRep && st.used.has(x.id)));
+    };
+    let list = items();
+    const refresh = () => {
+      list = items();
+      modeBtns.forEach((b) => b.classList.toggle('on', b.dataset.m === st.mode));
+      gsel.style.display = st.mode === 'group' ? '' : 'none';
+      const total = st.mode === 'one' ? roster.length : st.groups.length;
+      info.textContent = `${cname ? cname + ' · ' : ''}${st.mode === 'one' ? 'សិស្ស' : 'ក្រុម'} ${kh(list.length)}/${kh(total)}${list.length ? '' : ' — អស់ហើយ ចុច ↺'}`;
+      draw();
+    };
     function draw() {
-      const n = list.length || 1, W = cv.width, r = W / 2 - 4, a = Math.PI * 2 / n;
-      c.clearRect(0, 0, W, W); c.save(); c.translate(W / 2, W / 2); c.rotate(ang);
+      const n = list.length || 1, W = cv.width, r = W / 2 - 6, a = Math.PI * 2 / n;
+      c.clearRect(0, 0, W, W); c.save(); c.translate(W / 2, W / 2); c.rotate(st.ang);
       for (let k = 0; k < n; k++) {
         c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, r, k * a - Math.PI / 2 - a / 2, k * a - Math.PI / 2 + a / 2); c.closePath();
-        c.fillStyle = pal[k % pal.length]; c.fill();
+        c.fillStyle = list.length ? pal[k % pal.length] : '#6b7a89'; c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.stroke();
+        if (!list.length) continue;
         c.save(); c.rotate(k * a - Math.PI / 2);
-        c.fillStyle = '#fff'; c.font = '600 16px Kantumruy Pro, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
-        c.fillText(list[k] || '—', r * 0.28, 0, r * 0.62);
+        const fs = Math.max(11, Math.min(30, 560 / n / 1.15));
+        c.fillStyle = '#fff'; c.font = `700 ${fs}px "Kantumruy Pro", "Khmer OS Battambang", sans-serif`; c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 3;
+        c.fillText(list[k].label, r * 0.24, 0, r * 0.7);
         c.restore();
       }
       c.restore();
     }
+
+    // ---- fireworks (canvas over the whole spin window) ----
+    let fwRaf = 0, parts = [], fwEnd = 0, nextBurst = 0;
+    function fireworks(ms) {
+      const r = wrap.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      fw.width = Math.floor(r.width * dpr); fw.height = Math.floor(r.height * dpr);
+      const fc = fw.getContext('2d'); fc.setTransform(dpr, 0, 0, dpr, 0, 0);
+      parts = []; fwEnd = performance.now() + ms; nextBurst = 0;
+      cancelAnimationFrame(fwRaf);
+      const burst = () => {
+        const x = r.width * (.15 + Math.random() * .7), y = r.height * (.12 + Math.random() * .5), hue = Math.random() * 360, n = 46;
+        for (let k = 0; k < n; k++) { const a = Math.PI * 2 * k / n + Math.random() * .2, v = 1.6 + Math.random() * 3.2; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 40, w: 2 + Math.random() * 2 }); }
+        snd.boom(st.sound);
+      };
+      const loop = (now) => {
+        fc.clearRect(0, 0, r.width, r.height);
+        if (now < fwEnd && now >= nextBurst) { burst(); nextBurst = now + 380 + Math.random() * 260; }
+        parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += .045; q.vx *= .992; q.life -= .011; fc.globalAlpha = Math.max(0, q.life); fc.fillStyle = `hsl(${q.hue} 95% 60%)`; fc.beginPath(); fc.arc(q.x, q.y, q.w, 0, Math.PI * 2); fc.fill(); });
+        fc.globalAlpha = 1;
+        parts = parts.filter((q) => q.life > 0);
+        if (now < fwEnd || parts.length) fwRaf = requestAnimationFrame(loop); else fc.clearRect(0, 0, r.width, r.height);
+      };
+      fwRaf = requestAnimationFrame(loop);
+    }
+
+    // ---- result pop-up, sized from the spin window ----
+    const showPop = (it) => {
+      const noRep = rep.querySelector('input').checked;
+      if (noRep) st.used.add(it.id);
+      pop.hidden = false;
+      const group = st.mode === 'group';
+      pop.innerHTML = `<div class="pp-card"><div class="pp-k">${group ? '🎉 ក្រុមដែលត្រូវបានជ្រើស' : '🎉 សិស្សដែលត្រូវបានជ្រើស'}</div>
+        <div class="pp-name">${esc(it.label)}</div>
+        ${group ? `<ul class="pp-mem">${it.members.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
+        <div class="pp-act"><button type="button" class="pp-ok">បិទ</button><button type="button" class="pp-again">បង្វិលម្ដងទៀត</button></div></div>`;
+      pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; refresh(); };
+      pop.querySelector('.pp-again').onclick = () => { pop.hidden = true; refresh(); hub.click(); };
+      snd.fanfare(st.sound);
+      fireworks(3200);
+    };
+    const esc = (t) => String(t).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+
     hub.onclick = () => {
-      if (spin || !list.length) return;
-      const pick = Math.floor(Math.random() * list.length);
-      const a = Math.PI * 2 / list.length;
-      const from = ang, to = from + Math.PI * 8 - (pick * a);
-      const t0 = performance.now(); spin = true;
+      if (st.spin || !list.length) return;
+      pop.hidden = true; snd.ctx();
+      const pick = Math.floor(Math.random() * list.length), it = list[pick], a = Math.PI * 2 / list.length;
+      const TAU = Math.PI * 2, from = st.ang, target = -pick * a;
+      const to = from + ((((target - from) % TAU) + TAU) % TAU) + TAU * (5 + Math.floor(Math.random() * 3));
+      const t0 = performance.now(), dur = 4200; st.spin = true; hub.disabled = true;
+      let lastSlice = Math.floor((from + a / 2) / a);
       const frame = (now) => {
-        const t = Math.min(1, (now - t0) / 2800);
-        ang = from + (to - from) * (1 - Math.pow(1 - t, 3)); draw();
+        const t = Math.min(1, (now - t0) / dur);
+        st.ang = from + (to - from) * (1 - Math.pow(1 - t, 4)); draw();
+        const sl = Math.floor((st.ang + a / 2) / a);
+        if (sl !== lastSlice) { lastSlice = sl; snd.tick(st.sound); }
         if (t < 1) return requestAnimationFrame(frame);
-        spin = false; out.textContent = list[pick];
+        st.spin = false; hub.disabled = false; st.ang = ((st.ang % TAU) + TAU) % TAU;
+        showPop(it);
       };
       requestAnimationFrame(frame);
     };
-    draw();
+    modeBtns.forEach((b) => { b.onclick = () => { if (st.spin) return; st.mode = b.dataset.m; st.used.clear(); st.ang = 0; pop.hidden = true; refresh(); }; });
+    gsel.onchange = () => { if (st.spin) return; makeGroups(); st.used.clear(); refresh(); };
+    rep.querySelector('input').onchange = refresh;
+    snb.onclick = () => { st.sound = !st.sound; snb.textContent = st.sound ? '🔊' : '🔇'; };
+    rst.onclick = () => { if (st.spin) return; st.used.clear(); if (st.mode === 'group') makeGroups(); pop.hidden = true; refresh(); };
+    refresh();
     return wrap;
   }
 
@@ -1095,7 +1197,7 @@
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
-    meta = { grade: opt.grade, lesson: opt.lesson };
+    meta = { grade: opt.grade, lesson: opt.lesson, cname: opt.className || '' };
     root = document.getElementById('teach-show');
     root.hidden = false;
     root.innerHTML = '';
@@ -1110,7 +1212,7 @@
     stage.append(slideEl, ink);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
-    makeFloat('wspin', 'Spin', miniSpin(names), { x: '60%', y: '4%', w: '28%', h: '78%' }).hidden = true;
+    makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: '52%', y: '3%', w: '40%', h: '92%' }).hidden = true;
     makeFloat('wtime', 'Timer', timerBox(), { x: '62%', y: '4%', w: '24%' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
