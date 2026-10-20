@@ -832,3 +832,20 @@ body.teach-show-on { overflow: hidden; }
 
 /* last slide: "thank you" */
 .ts-slide .th-you { margin-top: .45em; color: #ee0000; font-family: 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; font-size: clamp(40px, 7vw, 90px); font-weight: 700; line-height: 1.35; }
+
+/* ---- Problem card (Tools -> កាតលំហាត់): a card over the slide to write a new problem on ---- */
+.ts-wcard { background: #fffdf6; border: 4px solid #f0a30a; color: #1f2933; border-radius: 20px; box-shadow: 0 18px 44px rgba(0,0,0,.35); z-index: 9; }
+.ts-wcard .ts-fbar { background: #f0a30a; color: #fff; }
+.ts-wcard .ts-fin { padding: 0; display: flex; overflow: hidden; }
+.ts-wcard.full { left: 2% !important; top: 2% !important; width: 96% !important; height: 96% !important; }
+.cd { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; padding: 10px 16px 12px; gap: 8px; }
+.cd-title { border: 0; border-bottom: 3px solid #ee0000; background: transparent; color: #ee0000; font: 800 30px/1.35 'Kantumruy Pro', 'Khmer OS Muol Light', serif; padding: 2px 4px; outline: none; width: 100%; }
+.cd-edit, .cd-view { flex: 1; min-height: 0; width: 100%; border: 0; outline: none; resize: none; background: transparent; color: #0f2a3a; font-family: 'Times New Roman', 'Kantumruy Pro', serif; line-height: 1.6; padding: 4px; overflow: auto; white-space: pre-wrap; }
+.cd-edit[hidden], .cd-view[hidden] { display: none; }
+.cd-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+.cd-btn { min-height: 0; padding: 4px 12px; border-radius: 10px; border: 0; background: #0f5173; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; }
+.cd-btn:hover { background: #ee0000; }
+
+/* the card's own fields must not take the page's default input look */
+.ts-wcard .cd-title { border: 0 !important; border-bottom: 3px solid #ee0000 !important; border-radius: 0 !important; background: transparent !important; color: #ee0000 !important; font-size: 30px !important; font-weight: 800 !important; box-shadow: none !important; height: auto !important; min-height: 0 !important; padding: 2px 4px !important; }
+.ts-wcard .cd-edit { border: 0 !important; box-shadow: none !important; background: transparent !important; color: #0f2a3a !important; }

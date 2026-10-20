@@ -1300,6 +1300,44 @@
   }
   const calcFmt = (v) => { const r = Number(v.toPrecision(12)); const t = String(r); return t.length > 14 ? r.toExponential(6).replace(/\.?0+e/, 'e') : t; };
 
+  // ---- Problem card (Tools → កាតលំហាត់): a card laid over the slide that the teacher writes a new problem on (group work, a quick
+  // extra question ...). Type in the card; 👁 shows it typeset (maths goes between \( and \), e.g. \(x^2+3x=10\)); ⛶ makes it fill the slide.
+  // The text is kept in this browser (localStorage), so the card is still there when the teacher comes back.
+  function cardBox() {
+    const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    const KEY = 'ts_card_v1';
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
+    const wrap = mk('div', 'cd');
+    const title = mk('input', 'cd-title'); title.type = 'text'; title.placeholder = 'ចំណងជើង'; title.value = saved.t != null ? saved.t : 'លំហាត់ក្រុម';
+    const edit = mk('textarea', 'cd-edit'); edit.placeholder = 'វាយលំហាត់នៅទីនេះ…   (គណិតសរសេរក្នុង \\( … \\) ឧ. \\(x^2+3x=10\\))'; edit.value = saved.b || '';
+    const view = mk('div', 'cd-view'); view.hidden = true;
+    let fs = saved.s || 34, showing = false;
+    const apply = () => { edit.style.fontSize = view.style.fontSize = fs + 'px'; };
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ t: title.value, b: edit.value, s: fs })); } catch (e) { /* storage blocked */ } };
+    const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const bar = mk('div', 'cd-bar');
+    const btn = (label, tip, fn) => { const b = mk('button', 'cd-btn', label); b.type = 'button'; b.title = tip; b.onclick = fn; return b; };
+    const viewB = btn('👁 បង្ហាញ', 'បង្ហាញជាគណិត / កែប្រែ', () => {
+      showing = !showing;
+      if (showing) { view.innerHTML = esc(edit.value).replace(/\n/g, '<br>'); math(view); }
+      edit.hidden = showing; view.hidden = !showing;
+      viewB.textContent = showing ? '✎ កែ' : '👁 បង្ហាញ';
+    });
+    bar.append(
+      btn('A−', 'អក្សរតូចជាង', () => { fs = Math.max(18, fs - 4); apply(); save(); }),
+      btn('A+', 'អក្សរធំជាង', () => { fs = Math.min(110, fs + 4); apply(); save(); }),
+      viewB,
+      btn('⛶ ពេញ', 'ពេញស្លាយ / តូចវិញ', () => { const f = wrap.closest('.ts-float'); if (f) f.classList.toggle('full'); }),
+      btn('🗑 សម្អាត', 'លុបអត្ថបទ', () => { edit.value = ''; view.innerHTML = ''; save(); edit.focus(); }),
+    );
+    title.addEventListener('input', save); edit.addEventListener('input', save);
+    wrap.addEventListener('keydown', (e) => e.stopPropagation());   // typing must not turn the slides (arrows, space, [ ])
+    wrap.append(title, edit, view, bar);
+    apply();
+    return wrap;
+  }
+
   // ---- who is teaching: <b data-ts="teacher"> / <b data-ts="class"> on the cover slide are filled in here ----
   let coverTeacher = null;                                   // null = not asked yet; '' = asked, nothing found
   function fillMeta() {
@@ -1616,6 +1654,7 @@
     ['wspin', '🎡', 'Spin', 'កង់ចាប់ឈ្មោះ'],
     ['wtime', '⏱', 'Timer', 'ម៉ោង'],
     ['wcalc', '∑', 'Calculator', 'ម៉ាស៊ីនគិតលេខ'],
+    ['wcard', '🃏', 'Problem card', 'កាតលំហាត់'],
     ['wgeo', '📐', 'Geometry', 'ឧបករណ៍ធរណីមាត្រ'],
   ];
   function toolsMenu() {
@@ -1898,6 +1937,7 @@
     }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
     { const calc = makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true, inside: true }); calc.hidden = true; drag(calc, calc, true); calc.addEventListener('pointerdown', (e) => { if (e.target.closest('.cl button')) calcTick(); }); calc.addEventListener('keydown', (e) => { if (e.key.length === 1 || ['Enter', 'Backspace', 'Delete'].includes(e.key)) calcTick(); }); }   // grab the slim header or any part of the body that is not a key; every key click ticks
+    makeFloat('wcard', 'កាតលំហាត់', cardBox(), { x: '7%', y: '8%', w: '86%', h: '76%', inside: true }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     // small clock in the right corner: click to hide, click to show
     {
