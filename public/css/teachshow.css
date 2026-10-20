@@ -373,3 +373,34 @@ body.teach-show-on { overflow: hidden; }
 .ts-lens.pin { border-color: #ee0000; box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 0 0 3px rgba(238,0,0,.25); }
 .ts-lens.pin { pointer-events: auto; cursor: pointer; }
 .ts-prow .pdfi { font-size: 11px; font-weight: 900; letter-spacing: .02em; border: 2px solid currentColor; border-radius: 5px; padding: 0 3px; line-height: 1.25; }
+
+/* ===== Tools drop-down + geometry instruments ===== */
+.ts-dock { display: none !important; }
+.ts-bar .ts-tools { position: relative; }
+.ts-tbtn { min-height: 34px; padding: 4px 12px; border-radius: 10px; border: 0; background: rgba(255,255,255,.16); color: #fff; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: none; }
+.ts-tbtn:hover { background: #ee0000; }
+.ts-tbtn em { font-style: normal; font-size: 11px; }
+.ts-tmenu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 250px; background: #1f2d3d; border-radius: 14px; padding: 6px; box-shadow: 0 14px 38px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 2px; }
+.ts-tmenu[hidden] { display: none; }
+.ts-tmenu button { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; min-height: 0; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: #fff; box-shadow: none; }
+.ts-tmenu button:hover { background: rgba(255,255,255,.14); }
+.ts-tmenu .ti { font-size: 22px; width: 28px; text-align: center; }
+.ts-tmenu .tt { display: flex; flex-direction: column; flex: 1; line-height: 1.25; }
+.ts-tmenu .tt b { font-size: 15px; }
+.ts-tmenu .tt small { font-size: 11px; opacity: .7; font-weight: 400; }
+.ts-tmenu .tick { font-style: normal; opacity: 0; color: #4cd68a; font-weight: 900; }
+.ts-tmenu button.on .tick { opacity: 1; }
+.ts-geo { display: flex; flex-direction: column; gap: 6px; }
+.ts-geo .gh { margin: 0 0 4px; font-size: 12px; color: rgba(255,255,255,.7); line-height: 1.5; }
+.ts-geo button { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255,255,255,.1); color: #fff; min-height: 0; box-shadow: none; }
+.ts-geo button:hover { background: rgba(255,255,255,.2); }
+.ts-geo .gi { font-size: 22px; width: 28px; text-align: center; }
+.ts-geo b { display: block; font-size: 14px; }
+.ts-geo small { display: block; font-size: 11px; opacity: .7; font-weight: 400; }
+.ts-geo .gclr { justify-content: center; background: rgba(238,0,0,.55); font-size: 13px; }
+.ts-inst { position: absolute; z-index: 9; cursor: move; touch-action: none; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); user-select: none; }
+.ts-inst svg { display: block; pointer-events: none; }
+.ts-irot, .ts-ix { position: absolute; width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: #0f5173; color: #fff; font-size: 16px; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+.ts-irot { right: -8px; top: -8px; cursor: grab; }
+.ts-ix { left: -8px; top: -8px; background: #ee0000; font-size: 13px; }
+@media (max-width: 720px) { .ts-tbtn { padding: 4px 8px; } }

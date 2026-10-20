@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -740,7 +740,7 @@
     );
     const end = document.createElement('div');
     end.className = 'ts-wid';
-    end.append(mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
+    end.append(toolsMenu(), mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
     bar.append(nav, end);
     return bar;
   }
@@ -945,17 +945,148 @@
   }
 
   // movable tools on the right corner
-  function dock() {
-    const d = document.createElement('div');
-    d.className = 'ts-dock';
-    const items = [['wspin', '🎡', 'កង់ចាប់ឈ្មោះ'], ['wtime', '⏱', 'ម៉ោង'], ['wcalc', '∑', 'ម៉ាស៊ីនគិតលេខ']];
-    items.forEach(([cls, ic, t]) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.title = t; b.innerHTML = `<span>${ic}</span><small>${t.split(' ')[0]}</small>`;
-      b.onclick = () => { const f = root.querySelector('.ts-float.ts-' + cls); if (f) { f.hidden = !f.hidden; if (!f.hidden) stage.append(f); b.classList.toggle('on', !f.hidden); } };
-      d.append(b);
+  // ---- Tools drop-down in the header: Spin, Timer, Calculator, Geometry ----
+  const TOOL_ITEMS = [
+    ['wspin', '🎡', 'Spin', 'កង់ចាប់ឈ្មោះ'],
+    ['wtime', '⏱', 'Timer', 'ម៉ោង'],
+    ['wcalc', '∑', 'Calculator', 'ម៉ាស៊ីនគិតលេខ'],
+    ['wgeo', '📐', 'Geometry', 'ឧបករណ៍ធរណីមាត្រ'],
+  ];
+  function toolsMenu() {
+    const wrap = document.createElement('div');
+    wrap.className = 'ts-tools';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'ts-tbtn'; btn.innerHTML = '🧰 Tools <em>▾</em>';
+    const menu = document.createElement('div');
+    menu.className = 'ts-tmenu'; menu.hidden = true;
+    TOOL_ITEMS.forEach(([cls, ic, en, km]) => {
+      const it = document.createElement('button');
+      it.type = 'button'; it.dataset.w = cls;
+      it.innerHTML = `<span class="ti">${ic}</span><span class="tt"><b>${en}</b><small>${km}</small></span><i class="tick">✓</i>`;
+      it.onclick = (ev) => {
+        ev.stopPropagation();
+        const f = root.querySelector('.ts-float.ts-' + cls);
+        if (f) { f.hidden = !f.hidden; if (!f.hidden) stage.append(f); it.classList.toggle('on', !f.hidden); }
+        menu.hidden = true;
+      };
+      menu.append(it);
     });
-    stage.append(d);
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      menu.querySelectorAll('[data-w]').forEach((x) => { const f = root.querySelector('.ts-float.ts-' + x.dataset.w); x.classList.toggle('on', !!f && !f.hidden); });
+      menu.hidden = !menu.hidden;
+    };
+    const away = (ev) => { if (!wrap.contains(ev.target)) menu.hidden = true; };
+    document.addEventListener('pointerdown', away);
+    offTools = () => document.removeEventListener('pointerdown', away);
+    wrap.append(btn, menu);
+    return wrap;
+  }
+
+  // ---- Geometry: ruler, protractor and set squares that you can drag and turn ----
+  const CM = 37.8; // px per cm
+  function instSVG(kind) {
+    const ns = 'http://www.w3.org/2000/svg';
+    let w, h, body = '';
+    if (kind === 'ruler') {
+      w = Math.round(CM * 15 + 24); h = 66;
+      body += `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" rx="6" fill="rgba(255,236,160,.93)" stroke="#a88a2a" stroke-width="2"/>`;
+      for (let mm = 0; mm <= 150; mm++) {
+        const x = 12 + mm * CM / 10, len = mm % 10 === 0 ? 22 : mm % 5 === 0 ? 15 : 9;
+        body += `<line x1="${x}" y1="2" x2="${x}" y2="${2 + len}" stroke="#5a4a10" stroke-width="${mm % 10 === 0 ? 1.6 : 1}"/>`;
+        if (mm % 10 === 0) body += `<text x="${x}" y="40" font-size="14" font-weight="700" text-anchor="middle" fill="#3b300a">${mm / 10}</text>`;
+      }
+      body += `<text x="${w - 30}" y="58" font-size="12" fill="#5a4a10">cm</text>`;
+    } else if (kind === 'protractor') {
+      const R = 190; w = R * 2 + 20; h = R + 34;
+      const cx = w / 2, cy = R + 12;
+      body += `<path d="M${cx - R} ${cy} A${R} ${R} 0 0 1 ${cx + R} ${cy} Z" fill="rgba(170,215,255,.55)" stroke="#2b6aa6" stroke-width="2"/>`;
+      body += `<path d="M${cx - R * .55} ${cy} A${R * .55} ${R * .55} 0 0 1 ${cx + R * .55} ${cy}" fill="none" stroke="#2b6aa6" stroke-width="1"/>`;
+      for (let d = 0; d <= 180; d++) {
+        const a = Math.PI - d * Math.PI / 180, big = d % 10 === 0, mid = d % 5 === 0, L = big ? 22 : mid ? 15 : 9;
+        const x1 = cx + R * Math.cos(a), y1 = cy - R * Math.sin(a), x2 = cx + (R - L) * Math.cos(a), y2 = cy - (R - L) * Math.sin(a);
+        body += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#14406b" stroke-width="${big ? 1.5 : .8}"/>`;
+        if (big) {
+          const tx = cx + (R - 36) * Math.cos(a), ty = cy - (R - 36) * Math.sin(a);
+          body += `<text x="${tx}" y="${ty + 4}" font-size="11" font-weight="700" text-anchor="middle" fill="#14406b">${d}</text>`;
+          const ux = cx + (R * .55 - 14) * Math.cos(a), uy = cy - (R * .55 - 14) * Math.sin(a);
+          body += `<text x="${ux}" y="${uy + 3}" font-size="9" text-anchor="middle" fill="#2b6aa6">${180 - d}</text>`;
+        }
+      }
+      body += `<line x1="${cx - 14}" y1="${cy}" x2="${cx + 14}" y2="${cy}" stroke="#c0392b" stroke-width="2"/><line x1="${cx}" y1="${cy - 14}" x2="${cx}" y2="${cy}" stroke="#c0392b" stroke-width="2"/>`;
+    } else {
+      const a = kind === 'set45' ? 300 : 210, b = kind === 'set45' ? 300 : 364; // legs
+      w = a + 20; h = b + 20;
+      body += `<polygon points="10,${h - 10} ${10 + a},${h - 10} 10,${h - 10 - b}" fill="rgba(160,235,185,.6)" stroke="#2e8b57" stroke-width="2.2" stroke-linejoin="round"/>`;
+      const ix = 52, iy = kind === 'set45' ? 52 : 70, iw = a - 110, ih = b - 130;
+      if (kind === 'set45') body += `<polygon points="${ix},${h - 10 - iy} ${ix + iw * .55},${h - 10 - iy} ${ix},${h - 10 - iy - iw * .55}" fill="rgba(255,255,255,.7)" stroke="#2e8b57"/>`;
+      else body += `<polygon points="${ix},${h - 10 - iy} ${ix + iw * .5},${h - 10 - iy} ${ix},${h - 10 - iy - ih * .6}" fill="rgba(255,255,255,.7)" stroke="#2e8b57"/>`;
+      for (let mm = 0; mm <= (a - 20) / (CM / 10); mm++) { // cm scale along the base
+        const x = 10 + mm * CM / 10, L = mm % 10 === 0 ? 14 : mm % 5 === 0 ? 10 : 6;
+        body += `<line x1="${x}" y1="${h - 10}" x2="${x}" y2="${h - 10 - L}" stroke="#1f5e3c" stroke-width="1"/>`;
+        if (mm % 10 === 0 && mm) body += `<text x="${x}" y="${h - 28}" font-size="11" text-anchor="middle" fill="#1f5e3c">${mm / 10}</text>`;
+      }
+      body += `<text x="${kind === 'set45' ? 24 : 24}" y="${h - 18}" font-size="11" fill="#1f5e3c">90°</text>`;
+    }
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.setAttribute('width', w); svg.setAttribute('height', h);
+    svg.innerHTML = body;
+    return { svg, w, h };
+  }
+
+  function addInstrument(kind) {
+    const { svg, w, h } = instSVG(kind);
+    const el = document.createElement('div');
+    el.className = 'ts-inst';
+    el.style.width = w + 'px'; el.style.height = h + 'px';
+    el.append(svg);
+    const rot = document.createElement('button'); rot.type = 'button'; rot.className = 'ts-irot'; rot.textContent = '↻'; rot.title = 'បង្វិល';
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'ts-ix'; x.textContent = '✕'; x.title = 'ដកចេញ';
+    el.append(rot, x);
+    let px = Math.max(10, (stage.clientWidth - w) / 2 - 80 + Math.random() * 40), py = Math.max(10, (stage.clientHeight - h) / 2 + Math.random() * 40), ang = 0;
+    const apply = () => { el.style.left = px + 'px'; el.style.top = py + 'px'; el.style.transform = `rotate(${ang}deg)`; };
+    apply();
+    stage.append(el);
+    x.onclick = () => el.remove();
+    let mode = null, sx = 0, sy = 0, bx = 0, by = 0, a0 = 0, g0 = 0, cxp = 0, cyp = 0;
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target === x) return;
+      el.setPointerCapture(e.pointerId);
+      stage.append(el); // bring to front
+      if (e.target === rot) {
+        mode = 'rot';
+        const r = el.getBoundingClientRect(); cxp = r.left + r.width / 2; cyp = r.top + r.height / 2;
+        a0 = Math.atan2(e.clientY - cyp, e.clientX - cxp); g0 = ang;
+      } else { mode = 'move'; sx = e.clientX; sy = e.clientY; bx = px; by = py; }
+      e.preventDefault();
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!mode) return;
+      if (mode === 'move') { px = bx + e.clientX - sx; py = by + e.clientY - sy; }
+      else { ang = g0 + (Math.atan2(e.clientY - cyp, e.clientX - cxp) - a0) * 180 / Math.PI; if (e.shiftKey) ang = Math.round(ang / 15) * 15; }
+      apply();
+    });
+    const up = () => { mode = null; };
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    el.addEventListener('wheel', (e) => { e.preventDefault(); ang += (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1); apply(); }, { passive: false });
+    return el;
+  }
+
+  function geoBox() {
+    const box = document.createElement('div');
+    box.className = 'ts-geo';
+    box.innerHTML = '<p class="gh">ចុចដើម្បីដាក់លើស្លាយ · អូសដើម្បីផ្លាស់ទី · ↻ ឬកង់កណ្ដុរដើម្បីបង្វិល</p>';
+    [['ruler', '📏', 'Ruler', 'បន្ទាត់'], ['protractor', '◠', 'Protractor', 'ម៉ែត្រមុំ'], ['set45', '◣', 'Set square 45°', 'ក្រដាសត្រីកោណ 45°'], ['set60', '◺', 'Set square 30°–60°', 'ក្រដាសត្រីកោណ 30°–60°']].forEach(([k, ic, en, km]) => {
+      const b = document.createElement('button'); b.type = 'button';
+      b.innerHTML = `<span class="gi">${ic}</span><span><b>${en}</b><small>${km}</small></span>`;
+      b.onclick = () => addInstrument(k);
+      box.append(b);
+    });
+    const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'gclr';
+    clr.textContent = 'ដកឧបករណ៍ទាំងអស់ចេញ';
+    clr.onclick = () => stage.querySelectorAll('.ts-inst').forEach((n) => n.remove());
+    box.append(clr);
+    return box;
   }
 
   function open(opt) {
@@ -979,13 +1110,13 @@
     stage.append(slideEl, ink);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
-    makeFloat('wspin', 'កង់ចាប់ឈ្មោះ', miniSpin(names), { x: '60%', y: '4%', w: '28%', h: '78%' }).hidden = true;
-    makeFloat('wtime', 'ម៉ោង', timerBox(), { x: '62%', y: '4%', w: '24%' }).hidden = true;
-    makeFloat('wcalc', 'ម៉ាស៊ីនគិតលេខ', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
+    makeFloat('wspin', 'Spin', miniSpin(names), { x: '60%', y: '4%', w: '28%', h: '78%' }).hidden = true;
+    makeFloat('wtime', 'Timer', timerBox(), { x: '62%', y: '4%', w: '24%' }).hidden = true;
+    makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
+    makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
     bindInk();
     penPalette();
-    dock();
     requestAnimationFrame(() => { fitInk(); show(opt.start || 0); });
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', keys);
@@ -1009,6 +1140,7 @@
   }
 
   function close() {
+    if (offTools) { offTools(); offTools = null; }
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }
     window.removeEventListener('keydown', keys);
     window.removeEventListener('resize', onResize);
