@@ -336,3 +336,15 @@ body.teach-show-on { overflow: hidden; }
 .ts-pen .ts-menu.m-fmt { width: 240px; }
 .ts-bar .ts-pen .ts-menu.m-fmt[data-dir=down] { left: auto; right: 0; }
 .ts-pen:not(.floating) .ts-pgrip { border-radius: 12px 0 0 12px; }
+
+/* pen types + writing hand */
+.ts-menu .kinds { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.ts-menu .kb { flex-direction: column; gap: 0; padding: 5px 0 3px; align-items: center; justify-content: center; text-align: center; }
+.ts-menu .kb span { font-size: 18px; line-height: 1.2; }
+.ts-menu .kb small { font-size: 9px; opacity: .8; }
+.ts-menu .kb.on { background: #1c7ed6; }
+.ts-hand { position: absolute; z-index: 6; width: 84px; height: 84px; pointer-events: none; transform-origin: 6px 76px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.28)); }
+.ts-hand[hidden] { display: none; }
+.ts-hand.writing { animation: ts-write .28s ease-in-out infinite alternate; }
+@keyframes ts-write { from { transform: rotate(-3deg); } to { transform: rotate(2.5deg) translateY(1px); } }
+@media (prefers-reduced-motion: reduce) { .ts-hand.writing { animation: none; } }

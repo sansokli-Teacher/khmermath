@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let laser = [], laserRaf = 0;
+  let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
   let floats = [];
 
@@ -79,7 +79,7 @@
 
   function pos(e) {
     const r = ink.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() };
   }
 
   function paint(st) {
@@ -91,6 +91,8 @@
       ctx.font = '700 46px "Times New Roman", system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(st.ch, st.p[0].x, st.p[0].y);
+    } else if (st.t === 'pen' && st.k && st.k !== 'ball') {
+      paintPen(st);
     } else if (st.t === 'pen' || st.t === 'hi') {
       ctx.beginPath();
       st.p.forEach((q, k) => (k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
@@ -112,6 +114,36 @@
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  const rnd = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
+  // pen types: marker (broad, soft), brush (width follows speed), pencil (grainy), chalk (dusty)
+  function paintPen(st) {
+    const pts = st.p, w = st.w, k = st.k;
+    const path = () => { ctx.beginPath(); pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); if (pts.length === 1) ctx.lineTo(pts[0].x + .1, pts[0].y); };
+    if (k === 'marker') { ctx.globalAlpha = .78; ctx.lineWidth = w * 2.4; path(); ctx.stroke(); return; }
+    if (k === 'brush') {
+      if (pts.length === 1) { ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, w * .8, 0, Math.PI * 2); ctx.fill(); return; }
+      let cw = w * 1.2;
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i], v = Math.hypot(b.x - a.x, b.y - a.y) / Math.max(1, (b.t || 0) - (a.t || 0));
+        const target = w * Math.max(.4, Math.min(1.9, 1.9 - v * 1.1));
+        cw += (target - cw) * .35;
+        ctx.lineWidth = cw; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      return;
+    }
+    if (k === 'pencil') {
+      ctx.globalAlpha = .62; ctx.lineWidth = Math.max(1, w * .75); path(); ctx.stroke();
+      ctx.globalAlpha = .35;
+      pts.forEach((q, i) => { for (let j = 0; j < 3; j++) { const a = rnd(i * 7 + j), b = rnd(i * 13 + j + 5); ctx.fillRect(q.x + (a - .5) * w * 1.3, q.y + (b - .5) * w * 1.3, 1.2, 1.2); } });
+      return;
+    }
+    if (k === 'chalk') {
+      ctx.globalAlpha = .5; ctx.lineWidth = w * 1.1; path(); ctx.stroke();
+      ctx.globalAlpha = .55;
+      pts.forEach((q, i) => { for (let j = 0; j < 5; j++) { const a = rnd(i * 3 + j), b = rnd(i * 11 + j + 2); ctx.beginPath(); ctx.arc(q.x + (a - .5) * w * 1.6, q.y + (b - .5) * w * 1.6, .6 + rnd(i + j) * 1.1, 0, Math.PI * 2); ctx.fill(); } });
+    }
   }
 
   function redraw() {
@@ -185,7 +217,41 @@
   }
 
   const SHAPES = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
+  const HAND_TOOLS = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
+  function makeHand() {
+    const h = document.createElement('div');
+    h.className = 'ts-hand'; h.hidden = true;
+    h.innerHTML = `<svg viewBox="0 0 110 110" width="84" height="84" aria-hidden="true"><g transform="translate(8 100) rotate(-42)">
+      <path d="M0 0 L14 -4.5 L14 4.5 Z" fill="#ecd3ad" stroke="#7a5a3a" stroke-width=".8" stroke-linejoin="round"/>
+      <path d="M0 0 L5.2 -1.8 L5.2 1.8 Z" fill="var(--pen)"/>
+      <rect x="14" y="-4.5" width="58" height="9" rx="2.2" fill="var(--pen)" stroke="rgba(0,0,0,.4)" stroke-width=".8"/>
+      <rect x="62" y="-4.5" width="10" height="9" rx="2.2" fill="rgba(0,0,0,.25)"/>
+      <rect x="21" y="0" width="30" height="12" rx="6" transform="rotate(16 21 0)" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
+      <rect x="28" y="-15" width="36" height="12" rx="6" transform="rotate(-9 28 -9)" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
+      <path d="M52 -17 C70 -30 96 -24 101 -6 C105 10 90 22 68 18 C55 15 47 3 52 -17 Z" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
+      <path d="M60 -10 C64 -16 74 -18 80 -14" fill="none" stroke="#d9a877" stroke-width="1.4" stroke-linecap="round"/>
+      <rect x="96" y="-24" width="14" height="40" rx="5" transform="rotate(12 96 -4)" fill="#0f5173"/>
+    </g></svg>`;
+    stage.append(h);
+    return h;
+  }
+  function handMove(e) {
+    if (!hand) return;
+    if (!HAND_TOOLS.includes(tool) || e.pointerType === 'touch') { hand.hidden = true; return; }
+    const r = ink.getBoundingClientRect();
+    hand.style.left = (e.clientX - r.left - 6) + 'px';
+    hand.style.top = (e.clientY - r.top - 76) + 'px';
+    hand.style.setProperty('--pen', color === '#ffffff' ? '#cfd8e3' : color);
+    hand.hidden = false;
+  }
+
   function bindInk() {
+    hand = makeHand();
+    ink.addEventListener('pointermove', handMove);
+    ink.addEventListener('pointerenter', handMove);
+    ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
+    ink.addEventListener('pointerdown', () => { if (hand) hand.classList.add('writing'); });
+    window.addEventListener('pointerup', () => { if (hand) hand.classList.remove('writing'); });
     const down = (e) => {
       if (e.button && e.button !== 0) return;
       const p = pos(e);
@@ -196,7 +262,7 @@
         const st = { t: 'stamp', c: color, w: size, ch: stamp, p: [p] };
         strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
       } else if (tool === 'erase') { drawing = true; eraseAt(p); }
-      else { drawing = true; cur = { t: tool, c: color, w: size, p: [p] }; }
+      else { drawing = true; cur = { t: tool, c: color, w: size, k: penKind, p: [p] }; }
       ink.setPointerCapture && ink.setPointerCapture(e.pointerId);
       e.preventDefault();
     };
@@ -549,7 +615,8 @@
     const setTool = (id) => {
       tool = id; spot = null; laser = [];
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' || id === 'laser' ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' || id === 'laser' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
+      if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
     };
@@ -584,10 +651,17 @@
     const showDot = () => { dot.style.width = dot.style.height = Math.max(2, size) + 'px'; dot.style.background = color === '#ffffff' ? '#ccc' : color; };
     rng.oninput = () => { size = +rng.value; showDot(); };
     rng.onclick = (ev) => ev.stopPropagation();
-    const lab = document.createElement('small'); lab.textContent = 'ទំហំប៊ិច';
+    const lab = document.createElement('small'); lab.textContent = 'ទំហំក្បាលប៊ិច';
     lw.append(lab, rng, Object.assign(document.createElement('div'), { className: 'dotbox' }));
     lw.querySelector('.dotbox').append(dot); showDot();
-    fmtMenu.append(cw, lw);
+    const kinds = document.createElement('div'); kinds.className = 'kinds';
+    [['ball', '✒', 'ប៊ិចទូទៅ'], ['marker', '🖊', 'ម៉ាកឃ័រ'], ['brush', '🖌', 'ជក់'], ['pencil', '✏', 'ខ្មៅដៃ'], ['chalk', '▒', 'ដីស']].forEach(([id, ic, t]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'kb' + (id === penKind ? ' on' : ''); b.title = t;
+      b.innerHTML = `<span>${ic}</span><small>${t}</small>`;
+      b.onclick = (ev) => { ev.stopPropagation(); penKind = id; kinds.querySelectorAll('.kb').forEach((x) => x.classList.toggle('on', x === b)); if (tool !== 'pen') setTool('pen'); };
+      kinds.append(b);
+    });
+    fmtMenu.append(kinds, cw, lw);
 
     let sw;
     const bMouse = mkBtn('none', ICONS.none, 'ចុច', () => setTool('none'));
