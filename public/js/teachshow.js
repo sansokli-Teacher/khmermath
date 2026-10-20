@@ -163,6 +163,7 @@
     slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '');
     slideEl.innerHTML = s.k === 'key' ? cardify(s.html || '') : (s.html || '');
     math(slideEl);
+    fillMeta();
     const fits = fitText(0.72);
     if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1, atEnd);
     if (!fits) fitText(0.4);
@@ -1299,6 +1300,26 @@
   }
   const calcFmt = (v) => { const r = Number(v.toPrecision(12)); const t = String(r); return t.length > 14 ? r.toExponential(6).replace(/\.?0+e/, 'e') : t; };
 
+  // ---- who is teaching: <b data-ts="teacher"> / <b data-ts="class"> on the cover slide are filled in here ----
+  let coverTeacher = null;                                   // null = not asked yet; '' = asked, nothing found
+  function fillMeta() {
+    if (!slideEl) return;
+    slideEl.querySelectorAll('[data-ts]').forEach((el) => {
+      const k = el.dataset.ts;
+      el.textContent = k === 'class' ? (meta.cname || '—') : k === 'teacher' ? (meta.teacher || coverTeacher || '—') : '';
+    });
+  }
+  function loadTeacher() {
+    if (coverTeacher !== null || meta.teacher) return;
+    coverTeacher = '';
+    const get = (u) => fetch(u, { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    get('/api/profile/paper').then((d) => {
+      const fromProfile = d && d.profile && d.profile.teacher ? String(d.profile.teacher).replace(/^\s*បង្រៀនដោយ\s*/, '').trim() : '';
+      if (fromProfile) return fromProfile;
+      return get('/api/teacher/me').then((m) => (m && (m.display_name || m.username)) || '');
+    }).then((name) => { coverTeacher = name || ''; fillMeta(); });
+  }
+
   // a short key click for the calculator (synthesised, no audio file); silent when the site's sound is muted (km_snd_muted)
   let tickCtx = null;
   function calcTick() {
@@ -1854,7 +1875,8 @@
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
     tool = 'none'; // always start as the plain mouse; pick a pen when you want to write
-    meta = { grade: opt.grade, lesson: opt.lesson, cname: opt.className || '' };
+    meta = { grade: opt.grade, lesson: opt.lesson, cname: opt.className || '', teacher: opt.teacher || '' };
+    loadTeacher();
     root = document.getElementById('teach-show');
     root.hidden = false;
     root.innerHTML = '';

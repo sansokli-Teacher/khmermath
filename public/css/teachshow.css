@@ -808,3 +808,14 @@ body.teach-show-on { overflow: hidden; }
 .ts-wcalc .ts-rl { left: 0; right: auto; }
 .ts-wcalc .ts-fx { color: #5a1030; font-size: 20px; font-weight: 800; opacity: 1; }
 .ts-wcalc .ts-fbar::before { opacity: .8; color: #7a2c4a; }
+
+/* ---- cover slide of a lesson: school logo + name on top, teacher / class / school year at the bottom ---- */
+.ts-cover .cv-brand { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 0 0 8px; margin: 0 auto 8px; border-bottom: 3px solid #0f5173; }
+.ts-cover .cv-logo { width: clamp(52px, 8vh, 84px); height: clamp(52px, 8vh, 84px); flex: none; }
+.ts-cover .cv-school { text-align: left; line-height: 1.35; }
+.ts-cover .cv-school b { display: block; color: #0f5173; font-family: 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; font-size: 1.12em; font-weight: 700; }
+.ts-cover .cv-school span { display: block; color: #ee0000; font-weight: 800; font-size: .86em; }
+.ts-cover .cv-foot { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 12px auto 0; }
+.ts-cover .cv-foot > div { background: #0f5173; color: #fff; border-radius: 12px; padding: 5px 20px 6px; text-align: left; min-width: 9em; }
+.ts-cover .cv-foot small { display: block; font-size: .6em; opacity: .8; line-height: 1.2; }
+.ts-cover .cv-foot b { font-size: .95em; color: #fff; font-weight: 800; }
