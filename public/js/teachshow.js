@@ -451,95 +451,6 @@
   function penPalette() {
     const el = document.createElement('div');
     el.className = 'ts-pen';
-    el.style.left = '12px';
-    const grip = document.createElement('div');
-    grip.className = 'ts-pgrip'; grip.title = 'អូសដើម្បីផ្លាស់ទី · ចុចពីរដងដើម្បីលាក់';
-    const gl = document.createElement('span'); gl.className = 'gl'; gl.innerHTML = '<i></i><i></i><i></i><i></i><i></i><i></i>';
-    grip.append(gl);
-    let vert = false, edge = 'bottom';
-    try { edge = localStorage.getItem('ts_pen_edge') || 'bottom'; } catch { /* ignore */ }
-    const M = 12, RESERVE = 88; // margin; room kept free for the tool dock on the right
-    const fit = () => { // shrink on small screens so the bar always fits
-      el.style.transform = '';
-      const W = stage.clientWidth - 2 * M - (edge === 'right' ? RESERVE : 0), H = stage.clientHeight - 2 * M;
-      const k = Math.min(1, W / el.offsetWidth, H / el.offsetHeight);
-      el.style.transform = k < 1 ? `scale(${k.toFixed(3)})` : '';
-      el.style.transformOrigin = 'top left';
-      return k;
-    };
-    const place = (w, animate) => {
-      edge = w; vert = w === 'left' || w === 'right';
-      el.classList.toggle('vert', vert);
-      el.classList.toggle('glide', !!animate);
-      const k = fit(), W = stage.clientWidth, H = stage.clientHeight;
-      const bw = el.offsetWidth * k, bh = el.offsetHeight * k;
-      const x = w === 'left' ? M : w === 'right' ? W - bw - M - RESERVE + 14 : (W - bw) / 2;
-      const y = w === 'top' ? M : w === 'bottom' ? H - bh - M : (H - bh) / 2;
-      el.style.left = Math.max(0, x) + 'px'; el.style.top = Math.max(0, y) + 'px';
-      try { localStorage.setItem('ts_pen_edge', w); } catch { /* ignore */ }
-    };
-    const nearestEdge = (x, y, w, h) => { // which edge is the bar's own side closest to (within 80px)?
-      const W = stage.clientWidth, H = stage.clientHeight;
-      const d = { left: x, right: W - RESERVE - (x + w), top: y, bottom: H - (y + h) };
-      const k = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
-      return d[k] < 80 ? k : null;
-    };
-    const zone = document.createElement('div');
-    zone.className = 'ts-snapzone'; zone.hidden = true;
-    stage.append(zone);
-    const showZone = (w) => {
-      if (!w) { zone.hidden = true; return; }
-      const W = stage.clientWidth, H = stage.clientHeight;
-      const t = 56; // thickness of the preview strip
-      Object.assign(zone.style, w === 'left' ? { left: '6px', top: '12%', width: t + 'px', height: '76%' }
-        : w === 'right' ? { left: (W - RESERVE - t + 8) + 'px', top: '12%', width: t + 'px', height: '76%' }
-          : w === 'top' ? { left: '14%', top: '6px', width: '72%', height: t + 'px' }
-            : { left: '14%', top: (H - t - 6) + 'px', width: '72%', height: t + 'px' });
-      zone.hidden = false;
-    };
-    const pill = document.createElement('button');
-    pill.type = 'button'; pill.className = 'ts-pill'; pill.textContent = '✎'; pill.title = 'បង្ហាញឧបករណ៍គូស'; pill.hidden = true;
-    const hide = () => {
-      closeMenus();
-      const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
-      pill.style.left = Math.max(0, Math.min(s.width - 52, r.left - s.left)) + 'px';
-      pill.style.top = Math.max(0, Math.min(s.height - 52, r.top - s.top)) + 'px';
-      el.hidden = true; pill.hidden = false;
-    };
-    pill.onclick = () => { pill.hidden = true; el.hidden = false; place(edge); };
-    grip.addEventListener('dblclick', hide);
-    stage.append(pill);
-    // free drag; on release the bar snaps to the nearest edge and turns vertical/horizontal on its own
-    let ox = 0, oy = 0, moving = false, target = null;
-    grip.addEventListener('pointerdown', (e) => {
-      moving = true; closeMenus();
-      el.classList.remove('glide'); el.classList.add('dragging');
-      const r = el.getBoundingClientRect();
-      ox = e.clientX - r.left; oy = e.clientY - r.top;
-      grip.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    grip.addEventListener('pointermove', (e) => {
-      if (!moving) return;
-      const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
-      const x = e.clientX - s.left - ox, y = e.clientY - s.top - oy;
-      el.style.left = Math.max(0, Math.min(s.width - r.width, x)) + 'px';
-      el.style.top = Math.max(0, Math.min(s.height - r.height, y)) + 'px';
-      target = nearestEdge(x, y, r.width, r.height);
-      showZone(target);
-    });
-    const end = () => {
-      if (!moving) return;
-      moving = false; el.classList.remove('dragging'); zone.hidden = true;
-      if (target) place(target, true);
-      else { const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(); // keep fully on screen
-        el.style.left = Math.max(0, Math.min(s.width - r.width, r.left - s.left)) + 'px';
-        el.style.top = Math.max(0, Math.min(s.height - r.height, r.top - s.top)) + 'px'; }
-      target = null;
-    };
-    grip.addEventListener('pointerup', end);
-    grip.addEventListener('pointercancel', end);
-    window.addEventListener('resize', () => { if (el.isConnected && !el.hidden) place(edge); });
     const row = document.createElement('div');
     row.className = 'ts-prow';
     const mkBtn = (a, icon, label, fn) => {
@@ -554,8 +465,7 @@
       const was = !m.hidden; closeMenus(); m.hidden = was;
       if (!m.hidden) { // open upward when the bar is low, otherwise downward
         const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
-        m.classList.toggle('down', r.top - s.top < 230);
-        m.classList.toggle('rt', r.left - s.left > s.width / 2);
+        m.classList.add('down');
       }
     };
     const setTool = (id) => {
@@ -586,18 +496,19 @@
     const cw = document.createElement('div'); cw.className = 'cw';
     COLORS.forEach((col) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'ts-col'; b.style.background = col; b.title = col;
-      b.onclick = (ev) => { ev.stopPropagation(); color = col; cw.querySelectorAll('.ts-col').forEach((x) => x.classList.toggle('on', x === b)); sw.style.background = col; if (['none', 'erase', 'spot'].includes(tool)) setTool('pen'); };
+      b.onclick = (ev) => { ev.stopPropagation(); color = col; showDot(); cw.querySelectorAll('.ts-col').forEach((x) => x.classList.toggle('on', x === b)); sw.style.background = col; if (['none', 'erase', 'spot'].includes(tool)) setTool('pen'); };
       if (col === color) b.classList.add('on');
       cw.append(b);
     });
     const lw = document.createElement('div'); lw.className = 'lw';
-    [2, 4, 8, 14].forEach((w) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'lwb'; b.title = w + 'px';
-      b.innerHTML = `<i style="height:${w}px"></i>`;
-      b.onclick = (ev) => { ev.stopPropagation(); size = w; lw.querySelectorAll('.lwb').forEach((x) => x.classList.toggle('on', x === b)); };
-      if (w === size) b.classList.add('on');
-      lw.append(b);
-    });
+    const dot = document.createElement('i'); dot.className = 'dot';
+    const rng = document.createElement('input'); rng.type = 'range'; rng.min = 1; rng.max = 30; rng.value = size; rng.title = 'ទំហំប៊ិច';
+    const showDot = () => { dot.style.width = dot.style.height = Math.max(2, size) + 'px'; dot.style.background = color === '#ffffff' ? '#ccc' : color; };
+    rng.oninput = () => { size = +rng.value; showDot(); };
+    rng.onclick = (ev) => ev.stopPropagation();
+    const lab = document.createElement('small'); lab.textContent = 'ទំហំប៊ិច';
+    lw.append(lab, rng, Object.assign(document.createElement('div'), { className: 'dotbox' }));
+    lw.querySelector('.dotbox').append(dot); showDot();
     fmtMenu.append(cw, lw);
 
     let sw;
@@ -616,12 +527,12 @@
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
     row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
-    el.append(grip, row, drawMenu, stampMenu, fmtMenu);
-    stage.append(el);
+    el.append(row, drawMenu, stampMenu, fmtMenu);
+    const bar = root.querySelector('.ts-bar');
+    bar.insertBefore(el, bar.querySelector('.ts-wid'));
     palette = el;
     setTool(tool);
     syncUndo();
-    requestAnimationFrame(() => place(edge));
     return el;
   }
 
