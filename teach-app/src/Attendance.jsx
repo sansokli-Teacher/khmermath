@@ -15,6 +15,8 @@ export default function Attendance({ cls, students }) {
   const [period, setPeriod] = useState(1);
   const [rows, setRows] = useState({});
   const [saved, setSaved] = useState('');
+  const [recorded, setRecorded] = useState(true); // false = nothing stored yet for this day + period
+  const [flash, setFlash] = useState(false);
   const [state, setState] = useState('loading'); // loading | ready | saving | error
   const [err, setErr] = useState('');
   const [noteOpen, setNoteOpen] = useState({});
@@ -31,6 +33,7 @@ export default function Attendance({ cls, students }) {
       const next = {};
       for (const r of data.rows || []) next[String(r.student_id)] = { mark: r.mark || 'ok', note: r.note || '' };
       setRows(next);
+      setRecorded((data.rows || []).length > 0);
       setSaved(snap(students, next));
       setNoteOpen({});
       setState('ready');
@@ -43,18 +46,21 @@ export default function Attendance({ cls, students }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const dirty = state === 'ready' && snap(students, rows) !== saved;
+  const loaded = state !== 'loading';
+  const changed = loaded && snap(students, rows) !== saved;
+  // Everyone defaults to present, so a period with no record yet still has to be submitted.
+  const unsaved = loaded && (changed || !recorded);
 
   useEffect(() => {
-    if (!dirty) return undefined;
+    if (!changed) return undefined;
     const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  }, [changed]);
 
   const set = (id, patch) => setRows((r) => ({ ...r, [id]: { ...(r[id] || blank), ...patch } }));
   const markAll = (mark) => setRows(Object.fromEntries(students.map((s) => [s.id, { ...(rows[s.id] || blank), mark }])));
-  const guard = (fn) => () => { if (!dirty || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) fn(); };
+  const guard = (fn) => () => { if (!changed || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) fn(); };
 
   const count = useMemo(() => {
     const c = { ok: 0, A: 0, L: 0 };
@@ -64,16 +70,20 @@ export default function Attendance({ cls, students }) {
 
   async function save() {
     setState('saving');
+    setErr('');
     try {
       await api('/api/attendance', {
         method: 'POST',
         body: { class_id: cls.id, day, period, rows: students.map((s) => ({ student_id: String(s.id), ...(rows[s.id] || blank) })) },
       });
       setSaved(snap(students, rows));
+      setRecorded(true);
       setState('ready');
+      setFlash(true);
+      setTimeout(() => setFlash(false), 2500);
     } catch (e) {
-      setErr(e.message);
-      setState('error');
+      setErr(e.message || 'មិនអាចរក្សាទុកបានទេ។');
+      setState('ready');
     }
   }
 
@@ -85,7 +95,7 @@ export default function Attendance({ cls, students }) {
       <div className="att-top">
         <div className="field">
           <label htmlFor="att-day">ថ្ងៃ</label>
-          <input id="att-day" type="date" value={day} onChange={(e) => { const v = e.target.value || todayISO(); if (!dirty || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) setDay(v); }} />
+          <input id="att-day" type="date" value={day} onChange={(e) => { const v = e.target.value || todayISO(); if (!changed || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) setDay(v); }} />
         </div>
         <div className="field grow">
           <label>ម៉ោងសិក្សា</label>
@@ -132,9 +142,15 @@ export default function Attendance({ cls, students }) {
         </ul>
       )}
 
-      <div className={`savebar${dirty ? ' show' : ''}`} role="status">
-        <span>{dirty ? 'មានការផ្លាស់ប្តូរមិនទាន់រក្សាទុក' : 'បានរក្សាទុករួចរាល់'}</span>
-        <button className="btn primary" disabled={!dirty || state === 'saving'} onClick={save}>{state === 'saving' ? 'កំពុងរក្សាទុក…' : 'ចុះវត្តមាន'}</button>
+      <div className={`savebar${unsaved ? ' show' : ''}${err ? ' err' : ''}${flash ? ' ok' : ''}`} role="status">
+        <span>
+          {err ? `⚠ ${err}`
+            : flash ? '✓ បានចុះវត្តមានរួចរាល់'
+            : changed ? 'មានការផ្លាស់ប្តូរមិនទាន់រក្សាទុក'
+            : !recorded ? 'មិនទាន់បានចុះវត្តមានសម្រាប់ម៉ោងនេះ — ចុច «ចុះវត្តមាន» ដើម្បីរក្សាទុក'
+            : 'បានរក្សាទុករួចរាល់'}
+        </span>
+        <button className="btn primary" disabled={!unsaved || state === 'saving'} onClick={save}>{state === 'saving' ? 'កំពុងរក្សាទុក…' : err ? 'សាកម្តងទៀត' : 'ចុះវត្តមាន'}</button>
       </div>
     </div>
   );
