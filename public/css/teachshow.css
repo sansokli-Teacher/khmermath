@@ -661,3 +661,4 @@ body.teach-show-on { overflow: hidden; }
 .ts-card-b blockquote { background: rgba(255,255,255,.1); border-left-color: #ffd98a; }
 .ts-card-b .katex { color: #fff; }
 .ts-card-b blockquote { background: none; border: 0; padding: 0; margin: 0 0 .4em; border-radius: 0; }
+.ts-card-h span { font-family: 'Kantumruy Pro', 'Noto Sans Khmer', sans-serif; font-weight: 800; letter-spacing: 0; }
