@@ -9,7 +9,8 @@ OUT = os.path.join(os.path.dirname(__file__), '..', '..', 'public', 'js', 'slide
 slides = part_a.build() + part_b.build() + part_c.build() + part_d.build()
 # short neighbouring slides (a lone ជាទូទៅ / សម្គាល់ card, one-line examples) are combined; each later part rises in on the next press of →.
 # numbers are slide numbers in the deck before merging; SKIP_MERGE="11,57" leaves those groups alone (used when one does not fit)
-GROUPS = [(11, 12), (22, 23), (39, 40), (57, 58), (83, 84), (85, 86, 87), (90, 91), (92, 93)]   # (110, 111) was tried: a 3D cube plus a card does not fit on one page
+# (the school/teacher branding slide is slide 1, the lesson cover slide 2, so these numbers are one higher than before it existed)
+GROUPS = [(12, 13), (23, 24), (40, 41), (58, 59), (84, 85), (86, 87, 88), (91, 92), (93, 94)]   # (111, 112) was tried: a 3D cube plus a card does not fit on one page
 skip = {int(x) for x in os.environ.get('SKIP_MERGE', '').split(',') if x.strip()}
 by_first = {g[0]: g for g in GROUPS if g[0] not in skip}
 merged, drop = [], set()

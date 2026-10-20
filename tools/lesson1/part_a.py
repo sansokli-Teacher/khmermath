@@ -12,21 +12,25 @@ def digits_row():
 
 def cover():
     obj = ['បង្ហាញសញ្ញាណចំនួនគត់និងតាងចំនួនគត់លើបន្ទាត់ចំនួន', 'ធ្វើប្រមាណវិធីទាំងបួន(បូក ដក គុណ និងចែក)លើចំនួនគត់', 'គណនាការ៉េ គូប និងឫសការ៉េ ឫសគូបនៃចំនួនគត់', 'ដោះស្រាយចំណោទដែលទាក់ទងនិងចំនួនគត់']
-    # school branding: logo + name on top; teacher, class and school year at the bottom.
-    # data-ts="class" / "teacher" are filled by the slideshow (the class that was opened, the teacher's profile).
-    brand = ('<div class="cv-brand"><img class="cv-logo" src="/ngs.png" alt="">'
-             '<div class="cv-school"><b>វិទ្យាល័យព្រះស៊ីសុវត្ថិ</b><span>(សាលារៀនជំនាន់ថ្មី)</span></div></div>')
-    foot = ('<div class="cv-foot">'
-            '<div><small>គ្រូបង្រៀន</small><b data-ts="teacher"></b></div>'
-            '<div><small>ថ្នាក់</small><b data-ts="class"></b></div>'
-            '<div><small>ឆ្នាំសិក្សា</small><b>២០២៦-២០២៧</b></div></div>')
-    html = (brand + '<p class="ts-kicker">ថ្នាក់ទី ៧ · មេរៀនទី ១</p><h1>ចំនួនគត់</h1><p class="ts-sub">៨ ផ្នែក</p>'
-            '<div class="ts-obj"><h3>គោលបំណង</h3><ol>' + ''.join(f'<li>{o}</li>' for o in obj) + '</ol></div>' + foot)
+    html = ('<p class="ts-kicker">ថ្នាក់ទី ៧ · មេរៀនទី ១</p><h1>ចំនួនគត់</h1><p class="ts-sub">៨ ផ្នែក</p>'
+            '<div class="ts-obj"><h3>គោលបំណង</h3><ol>' + ''.join(f'<li>{o}</li>' for o in obj) + '</ol></div>')
     return {'k': 'title', 'c': 'cover', 'html': html}
 
 
+def brand_slide():
+    """Slide 1 of the lesson: the school (logo and name), the teacher, the class and the school year.
+    data-ts="class" / "teacher" are filled in by the slideshow (the class that was opened, the teacher's profile)."""
+    html = ('<img class="bd-logo" src="/ngs.png" alt="">'
+            '<div class="bd-name">វិទ្យាល័យព្រះស៊ីសុវត្ថិ</div><div class="bd-sub">(សាលារៀនជំនាន់ថ្មី)</div>'
+            '<div class="bd-info">'
+            '<div><small>គ្រូបង្រៀន</small><b data-ts="teacher"></b></div>'
+            '<div><small>ថ្នាក់</small><b data-ts="class"></b></div>'
+            '<div><small>ឆ្នាំសិក្សា</small><b>២០២៦-២០២៧</b></div></div>')
+    return {'k': 'title', 'c': 'brand', 'html': html}
+
+
 def build():
-    S = [cover()]
+    S = [brand_slide(), cover()]
 
     # ------------------------------------------------------------------ 1
     S.append(part(1, 'សញ្ញាណចំនួនគត់', digits_row()))
