@@ -15,12 +15,25 @@
     }
   }
 
+  // definition / general / note / theorem slides: the heading becomes a gold title with a fading line on a dark rounded card
+  function cardify(html) {
+    const box = document.createElement('div'); box.innerHTML = html;
+    const h2 = box.querySelector(':scope > h2'); if (!h2) return html;
+    const kick = box.querySelector(':scope > .ts-kicker');
+    const card = document.createElement('div'); card.className = 'ts-card';
+    const head = document.createElement('div'); head.className = 'ts-card-h'; head.innerHTML = `<span>${h2.innerHTML}</span><i></i>`;
+    const body = document.createElement('div'); body.className = 'ts-card-b';
+    [...box.childNodes].forEach((n) => { if (n !== kick && n !== h2) body.append(n); });
+    card.append(head, body); box.innerHTML = ''; if (kick) box.append(kick); box.append(card);
+    return box.innerHTML;
+  }
+
   function show(n, depth) {
     if (!depth) { if (slides[i] && slideEl && slideEl.innerHTML) slides[i]._ink = strokes; lensOff(); lensClone = null; } // remember what was written on the slide we leave
     i = Math.max(0, Math.min(slides.length - 1, n));
     const s = slides[i] || { html: '' };
     slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '');
-    slideEl.innerHTML = s.html || '';
+    slideEl.innerHTML = s.k === 'key' ? cardify(s.html || '') : (s.html || '');
     math(slideEl);
     const fits = fitText(0.72);
     if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1);
@@ -380,7 +393,7 @@
         const el = document.createElement('div');
         el.className = 'ts-slide' + (sl.k ? ` ts-${sl.k}` : '') + (sl.c ? ` ts-${sl.c}` : '');
         el.style.cssText = `position:relative;width:${w}px;height:${h}px;overflow:hidden;font-size:${sl._fs || ''}`;
-        el.innerHTML = sl.html || '';
+        el.innerHTML = sl.k === 'key' ? cardify(sl.html || '') : (sl.html || '');
         holder.append(el); document.body.append(holder);
         math(el);
         bakeMarkers(el);
