@@ -806,3 +806,5 @@ body.teach-show-on { overflow: hidden; }
 /* the two corner resize handles stay (cursor + hit area) but draw nothing: the wedge was clipped by the rounded corner and looked like a glitch */
 .ts-wcalc .ts-rs, .ts-wcalc .ts-rl { background: none; width: 22px; height: 22px; right: 0; bottom: 0; }
 .ts-wcalc .ts-rl { left: 0; right: auto; }
+.ts-wcalc .ts-fx { color: #5a1030; font-size: 20px; font-weight: 800; opacity: 1; }
+.ts-wcalc .ts-fbar::before { opacity: .8; color: #7a2c4a; }
