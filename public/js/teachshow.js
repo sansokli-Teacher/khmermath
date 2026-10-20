@@ -453,6 +453,87 @@
     el.className = 'ts-pen';
     const row = document.createElement('div');
     row.className = 'ts-prow';
+    const grip = document.createElement('div');
+    grip.className = 'ts-pgrip'; grip.title = 'អូសដើម្បីផ្លាស់ទី: លើ · ក្រោម · ឆ្វេង · ស្តាំ';
+    grip.innerHTML = '<span class="gl"><i></i><i></i><i></i><i></i><i></i><i></i></span>';
+    let edge = 'top';
+    try { edge = localStorage.getItem('ts_pen_edge') || 'top'; } catch { /* ignore */ }
+    const M = 12, RESERVE = 88; // margin; space kept free for the tool dock on the right
+    const header = () => root.querySelector('.ts-bar');
+    // put the bar on an edge: top = inside the header, others float in the slide area
+    const place = (w, animate) => {
+      edge = w;
+      const vert = w === 'left' || w === 'right';
+      el.classList.toggle('vert', vert);
+      el.classList.toggle('floating', w !== 'top');
+      closeMenus();
+      if (w === 'top') {
+        el.style.left = el.style.top = '';
+        header().insertBefore(el, header().querySelector('.ts-wid'));
+      } else {
+        if (el.parentNode !== stage) stage.append(el);
+        el.classList.toggle('glide', !!animate);
+        const W = stage.clientWidth, H = stage.clientHeight, bw = el.offsetWidth, bh = el.offsetHeight;
+        const x = w === 'left' ? M : w === 'right' ? W - bw - M - RESERVE + 14 : (W - bw) / 2;
+        const y = w === 'bottom' ? H - bh - M : Math.max(M, (H - bh) / 2);
+        el.style.left = Math.max(0, x) + 'px'; el.style.top = Math.max(0, y) + 'px';
+      }
+      try { localStorage.setItem('ts_pen_edge', w); } catch { /* ignore */ }
+    };
+    const nearest = (x, y, w, h) => {
+      const W = stage.clientWidth, H = stage.clientHeight;
+      const d = { top: y + 56, left: x, right: W - RESERVE - (x + w), bottom: H - (y + h) }; // +56: header counts as a close edge
+      const k = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      return d[k] < 90 ? k : null;
+    };
+    const zone = document.createElement('div');
+    zone.className = 'ts-snapzone'; zone.hidden = true;
+    stage.append(zone);
+    const showZone = (w) => {
+      if (!w) { zone.hidden = true; return; }
+      const W = stage.clientWidth, H = stage.clientHeight, t = 54;
+      Object.assign(zone.style, w === 'left' ? { left: '6px', top: '12%', width: t + 'px', height: '76%' }
+        : w === 'right' ? { left: (W - RESERVE - t + 8) + 'px', top: '12%', width: t + 'px', height: '76%' }
+          : w === 'top' ? { left: '14%', top: '4px', width: '72%', height: '44px' }
+            : { left: '14%', top: (H - t - 6) + 'px', width: '72%', height: t + 'px' });
+      zone.hidden = false;
+    };
+    let ox = 0, oy = 0, moving = false, target = null;
+    grip.addEventListener('pointerdown', (e) => {
+      closeMenus();
+      const r = el.getBoundingClientRect(), s0 = stage.getBoundingClientRect();
+      if (el.parentNode !== stage) { // lift it out of the header so it can travel
+        el.classList.add('floating'); stage.append(el);
+        el.style.left = (r.left - s0.left) + 'px'; el.style.top = (r.top - s0.top) + 'px';
+      }
+      moving = true; el.classList.remove('glide'); el.classList.add('dragging');
+      const r2 = el.getBoundingClientRect();
+      ox = e.clientX - r2.left; oy = e.clientY - r2.top;
+      grip.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!moving) return;
+      const s0 = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const x = e.clientX - s0.left - ox, y = e.clientY - s0.top - oy;
+      el.style.left = Math.max(0, Math.min(s0.width - r.width, x)) + 'px';
+      el.style.top = Math.max(-50, Math.min(s0.height - r.height, y)) + 'px';
+      target = nearest(x, y, r.width, r.height);
+      showZone(target);
+    });
+    const end = () => {
+      if (!moving) return;
+      moving = false; el.classList.remove('dragging'); zone.hidden = true;
+      if (target) place(target, true);
+      else { // dropped in the open: stay put, keep fully visible
+        const r = el.getBoundingClientRect(), s0 = stage.getBoundingClientRect();
+        el.style.left = Math.max(0, Math.min(s0.width - r.width, r.left - s0.left)) + 'px';
+        el.style.top = Math.max(0, Math.min(s0.height - r.height, r.top - s0.top)) + 'px';
+      }
+      target = null;
+    };
+    grip.addEventListener('pointerup', end);
+    grip.addEventListener('pointercancel', end);
     const mkBtn = (a, icon, label, fn) => {
       const b = document.createElement('button');
       b.type = 'button'; b.dataset.a = a;
@@ -463,10 +544,7 @@
     const menu = (cls) => { const m = document.createElement('div'); m.className = 'ts-menu ' + cls; m.hidden = true; return m; };
     const toggle = (m) => {
       const was = !m.hidden; closeMenus(); m.hidden = was;
-      if (!m.hidden) { // open upward when the bar is low, otherwise downward
-        const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
-        m.classList.add('down');
-      }
+      if (!m.hidden) m.dataset.dir = { top: 'down', bottom: 'up', left: 'right', right: 'left' }[edge];
     };
     const setTool = (id) => {
       tool = id; spot = null; laser = [];
@@ -527,9 +605,11 @@
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
     row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
-    el.append(row, drawMenu, stampMenu, fmtMenu);
-    const bar = root.querySelector('.ts-bar');
-    bar.insertBefore(el, bar.querySelector('.ts-wid'));
+    el.append(grip, row, drawMenu, stampMenu, fmtMenu);
+    header().insertBefore(el, header().querySelector('.ts-wid'));
+    palette = el;
+    requestAnimationFrame(() => place(edge));
+    window.addEventListener('resize', () => { if (el.isConnected) place(edge); });
     palette = el;
     setTool(tool);
     syncUndo();
