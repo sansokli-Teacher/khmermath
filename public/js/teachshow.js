@@ -1066,43 +1066,96 @@
     return wrap;
   }
 
+  // ---- Calculator: expression display, % ( ) √ x² xʸ π sin cos tan log ln, keyboard, no eval ----
+  function calcEval(src, deg) {
+    const s = src.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, '(3.141592653589793)').replace(/√/g, 'sqrt').replace(/\s+/g, '');
+    let i = 0;
+    const open = (s.match(/\(/g) || []).length - (s.match(/\)/g) || []).length, t = s + ')'.repeat(Math.max(0, open));
+    const peek = () => t[i];
+    const num = () => { const m = /^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(t.slice(i)); if (!m) throw new Error('num'); i += m[0].length; return parseFloat(m[0]); };
+    const fn = { sin: (x) => Math.sin(deg ? x * Math.PI / 180 : x), cos: (x) => Math.cos(deg ? x * Math.PI / 180 : x), tan: (x) => Math.tan(deg ? x * Math.PI / 180 : x), log: Math.log10, ln: Math.log, sqrt: Math.sqrt };
+    const expr = () => { let v = term(); while (peek() === '+' || peek() === '-') { const o = t[i++]; const r = term(); v = o === '+' ? v + r : v - r; } return v; };
+    const term = () => {
+      let v = factor();
+      for (;;) {
+        const c = peek();
+        if (c === '*' || c === '/') { i++; const r = factor(); v = c === '*' ? v * r : v / r; }
+        else if (c === '(' || /[a-z]/i.test(c || '')) { v *= factor(); } // 2(3) and 2sin(30)
+        else break;
+      }
+      return v;
+    };
+    const factor = () => { const b = unary(); if (peek() === '^') { i++; return Math.pow(b, factor()); } return b; };
+    const unary = () => { if (peek() === '-') { i++; return -unary(); } if (peek() === '+') { i++; return unary(); } return post(); };
+    const post = () => { let v = primary(); while (peek() === '%') { i++; v /= 100; } return v; };
+    const primary = () => {
+      const c = peek();
+      if (c === '(') { i++; const v = expr(); if (peek() !== ')') throw new Error('par'); i++; return v; }
+      const m = /^[a-z]+/i.exec(t.slice(i));
+      if (m) {
+        const name = m[0].toLowerCase(); i += m[0].length;
+        if (name === 'ans') return calcEval.ans || 0;
+        if (!fn[name]) throw new Error('fn');
+        if (peek() !== '(') throw new Error('par'); i++; const v = expr(); if (peek() !== ')') throw new Error('par'); i++; return fn[name](v);
+      }
+      return num();
+    };
+    const v = expr(); if (i < t.length) throw new Error('syntax');
+    if (!Number.isFinite(v)) throw new Error('math');
+    return v;
+  }
+  const calcFmt = (v) => { const r = Number(v.toPrecision(12)); const t = String(r); return t.length > 14 ? r.toExponential(6).replace(/\.?0+e/, 'e') : t; };
+
   function calcBox() {
     const wrap = document.createElement('div');
-    wrap.className = 'ts-calc';
-    const scr = document.createElement('input');
-    scr.type = 'text'; scr.readOnly = true; scr.value = '0';
-    let cur = '0', op = null, acc = null, fresh = true;
-    const put = (v) => { scr.value = v; };
-    const keys = ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−', '0', '.', '±', '+', '√', 'C', '='];
-    const grid = document.createElement('div');
-    grid.className = 'ts-ckeys';
-    const apply = () => {
-      const b = parseFloat(cur);
-      if (acc == null || !op) { acc = b; return; }
-      if (op === '+') acc += b;
-      else if (op === '−') acc -= b;
-      else if (op === '×') acc *= b;
-      else if (op === '÷') acc = b === 0 ? NaN : acc / b;
-      cur = String(acc);
-      put(cur);
+    wrap.className = 'cl'; wrap.tabIndex = 0;
+    const exprEl = document.createElement('div'); exprEl.className = 'cl-expr';
+    const resEl = document.createElement('div'); resEl.className = 'cl-res'; resEl.textContent = '0';
+    const screen = document.createElement('div'); screen.className = 'cl-screen'; screen.append(exprEl, resEl);
+    let ex = '', done = false, deg = true;
+    const show = () => { exprEl.textContent = ex || ' '; };
+    const live = () => { // result preview while typing
+      if (!ex) { resEl.textContent = '0'; return; }
+      try { resEl.textContent = calcFmt(calcEval(ex, deg)); resEl.classList.remove('err'); } catch { /* keep last result while the expression is unfinished */ }
     };
-    keys.forEach((k) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.textContent = k;
-      b.onclick = () => {
-        if (/^\d$/.test(k) || k === '.') {
-          if (fresh) { cur = k === '.' ? '0.' : k; fresh = false; } else if (!(k === '.' && cur.includes('.'))) cur += k;
-          put(cur); return;
-        }
-        if (k === 'C') { cur = '0'; acc = null; op = null; fresh = true; put(cur); return; }
-        if (k === '±') { cur = String(-(parseFloat(cur) || 0)); put(cur); return; }
-        if (k === '√') { cur = String(Math.sqrt(Math.abs(parseFloat(cur) || 0))); put(cur); acc = parseFloat(cur); fresh = true; return; }
-        if (k === '=') { apply(); op = null; fresh = true; return; }
-        apply(); op = k; fresh = true;
-      };
-      grid.append(b);
+    const add = (tok) => {
+      if (done) { ex = /^[+×÷−^%]/.test(tok) ? 'Ans' : ''; done = false; }
+      ex += tok; show(); live();
+    };
+    const back = () => { if (done) { ex = ''; done = false; } ex = ex.replace(/(sin\(|cos\(|tan\(|log\(|ln\(|√\(|Ans|.)$/, ''); show(); live(); };
+    const clear = () => { ex = ''; done = false; resEl.classList.remove('err'); resEl.textContent = '0'; show(); };
+    const equals = () => {
+      if (!ex) return;
+      try { const v = calcEval(ex, deg); calcEval.ans = v; const txt = calcFmt(v); exprEl.textContent = ex + ' ='; resEl.textContent = txt; resEl.classList.remove('err'); ex = txt; done = true; }
+      catch { resEl.textContent = 'កំហុស'; resEl.classList.add('err'); }
+    };
+    const neg = () => { if (done) done = false; ex = ex.startsWith('−') ? ex.slice(1) : '−' + ex; show(); live(); };
+    const K = (label, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.onclick = () => { fn(); wrap.focus(); }; return b; };
+    const sci = document.createElement('div'); sci.className = 'cl-sci'; sci.hidden = true;
+    [['sin', () => add('sin(')], ['cos', () => add('cos(')], ['tan', () => add('tan(')], ['log', () => add('log(')], ['ln', () => add('ln(')],
+      ['(', () => add('(')], [')', () => add(')')], ['x²', () => add('^2')], ['xʸ', () => add('^')], ['π', () => add('π')], ['√', () => add('√(')], ['Ans', () => add('Ans')]].forEach(([l, f]) => sci.append(K(l, f)));
+    const mode = document.createElement('div'); mode.className = 'cl-mode';
+    const fx = K('fx', () => { sci.hidden = !sci.hidden; fx.classList.toggle('on', !sci.hidden); }, 'tg');
+    const dg = K('DEG', () => { deg = !deg; dg.textContent = deg ? 'DEG' : 'RAD'; live(); }, 'tg'); dg.title = 'ដឺក្រេ / រ៉ាដ្យង់';
+    mode.append(fx, dg);
+    const pad = document.createElement('div'); pad.className = 'cl-pad';
+    [['C', clear, 'fn'], ['⌫', back, 'fn'], ['%', () => add('%'), 'fn'], ['÷', () => add('÷'), 'op'],
+      ['7', () => add('7')], ['8', () => add('8')], ['9', () => add('9')], ['×', () => add('×'), 'op'],
+      ['4', () => add('4')], ['5', () => add('5')], ['6', () => add('6')], ['−', () => add('−'), 'op'],
+      ['1', () => add('1')], ['2', () => add('2')], ['3', () => add('3')], ['+', () => add('+'), 'op'],
+      ['±', neg, 'fn'], ['0', () => add('0')], ['.', () => add('.')], ['=', equals, 'eq']].forEach(([l, f, c]) => pad.append(K(l, f, c)));
+    wrap.append(screen, mode, sci, pad);
+    // keyboard (digits, + - * / ^ ( ) . % Enter Backspace Esc) while the calculator has focus
+    wrap.addEventListener('keydown', (e) => {
+      const k = e.key; let used = true;
+      if (/^[0-9]$/.test(k)) add(k);
+      else if (k === '.' || k === ',') add('.');
+      else if (k === '+') add('+'); else if (k === '-') add('−'); else if (k === '*' || k === 'x') add('×'); else if (k === '/') add('÷');
+      else if (k === '^') add('^'); else if (k === '(' || k === ')') add(k); else if (k === '%') add('%');
+      else if (k === 'Enter' || k === '=') equals(); else if (k === 'Backspace') back(); else if (k === 'Escape' || k === 'Delete') clear();
+      else used = false;
+      if (used) { e.preventDefault(); e.stopPropagation(); }
     });
-    wrap.append(scr, grid);
     return wrap;
   }
 
@@ -1495,7 +1548,7 @@
       makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: (sw - w - 10) + 'px', y: '8px', w: w + 'px', h: h + 'px' }).hidden = true;
     }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
-    makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
+    makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
     bindInk();
