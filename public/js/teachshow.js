@@ -754,7 +754,7 @@
     rl.className = 'ts-rs ts-rl'; rl.title = 'ប្ដូរទំហំ';
     el.append(bar, inner, rs, rl);
     stage.append(el);
-    drag(el, bar);
+    drag(el, bar, opt.inside);
     resize(el, rs);
     resizeLeft(el, rl);
     floats.push(el);
@@ -1298,6 +1298,24 @@
     return v;
   }
   const calcFmt = (v) => { const r = Number(v.toPrecision(12)); const t = String(r); return t.length > 14 ? r.toExponential(6).replace(/\.?0+e/, 'e') : t; };
+
+  // a short key click for the calculator (synthesised, no audio file); silent when the site's sound is muted (km_snd_muted)
+  let tickCtx = null;
+  function calcTick() {
+    try { if (localStorage.getItem('km_snd_muted') === '1') return; } catch (e) { /* storage blocked: play */ }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      tickCtx = tickCtx || new AC();
+      if (tickCtx.state === 'suspended') tickCtx.resume();
+      const t = tickCtx.currentTime, o = tickCtx.createOscillator(), g = tickCtx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(700, t + 0.05);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.connect(g); g.connect(tickCtx.destination);
+      o.start(t); o.stop(t + 0.08);
+    } catch (e) { /* no audio available */ }
+  }
 
   function calcBox() {
     const wrap = document.createElement('div');
@@ -1857,7 +1875,7 @@
       makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: (sw - w - 10) + 'px', y: '8px', w: w + 'px', h: h + 'px' }).hidden = true;
     }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
-    { const calc = makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true }); calc.hidden = true; drag(calc, calc, true); }   // no title bar: grab it anywhere that is not a key
+    { const calc = makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true, inside: true }); calc.hidden = true; drag(calc, calc, true); calc.addEventListener('pointerdown', (e) => { if (e.target.closest('.cl button')) calcTick(); }); calc.addEventListener('keydown', (e) => { if (e.key.length === 1 || ['Enter', 'Backspace', 'Delete'].includes(e.key)) calcTick(); }); }   // grab the slim header or any part of the body that is not a key; every key click ticks
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     // small clock in the right corner: click to hide, click to show
     {

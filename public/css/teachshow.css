@@ -786,3 +786,23 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide ul.ts-bullets > li > .dm { margin: 0; flex: 1; text-align: left; }
 .ts-slide ul.ts-bullets > li > .dm .katex-display { margin: 0; text-align: left; }
 .ts-slide ul.ts-bullets > li > .dm .katex-display > .katex { text-align: left; }
+
+/* calculator, softer: pale pink, a slim header (to drag it by, with a ✕), body still draggable */
+.ts-wcalc { box-shadow: 0 12px 30px rgba(120, 50, 80, .22); }
+.ts-wcalc .ts-fbar { display: flex; padding: 2px 4px 2px 12px; min-height: 0; background: #f6c9d9; color: #7a2c4a; cursor: grab; }
+.ts-wcalc .ts-fbar b { display: none; }
+.ts-wcalc .ts-fbar::before { content: '⋮⋮'; letter-spacing: -2px; font-weight: 800; opacity: .55; }
+.ts-wcalc .ts-fx { min-height: 28px !important; width: 28px; color: #7a2c4a; font-size: 16px; }
+.ts-wcalc .ts-fx:hover { background: rgba(255,255,255,.6) !important; }
+.cl { background: linear-gradient(160deg, #fdeaf1, #f4c1d3); color: #4a1d33; }
+.cl-screen { background: #fff; color: #4a1d33; box-shadow: inset 0 2px 6px rgba(120, 50, 80, .12); }
+.cl button { color: #4a1d33; background: #fff; }
+.cl-pad .fn { background: #fbdce8; }
+.cl-pad .op { background: #d98aa8; color: #fff; }
+.cl-pad .eq { background: #b85c82; color: #fff; }
+.cl-sci button { background: #fdeaf2; }
+.cl-mode .tg { background: rgba(255,255,255,.65); color: #8a3a5d; }
+.cl-mode .tg.on { background: #fff; color: #b85c82; }
+/* the two corner resize handles stay (cursor + hit area) but draw nothing: the wedge was clipped by the rounded corner and looked like a glitch */
+.ts-wcalc .ts-rs, .ts-wcalc .ts-rl { background: none; width: 22px; height: 22px; right: 0; bottom: 0; }
+.ts-wcalc .ts-rl { left: 0; right: auto; }

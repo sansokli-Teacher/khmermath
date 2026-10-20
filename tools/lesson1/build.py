@@ -25,6 +25,12 @@ for n, x in enumerate(slides, 1):
     else:
         merged.append(x)
 slides = merged
+# an exercise and its answer on ONE slide: the question stays, the answer rises in on the next press of →
+for title in ['លំហាត់ទី ៥']:
+    for i, x in enumerate(slides):
+        if f'<h2>{title}</h2>' in x.get('html', '') and i + 1 < len(slides) and f'<h2>ចម្លើយ{title}</h2>' in slides[i + 1].get('html', ''):
+            slides[i:i + 2] = [merge_slides([x, slides[i + 1]])]
+            break
 slides = [stepify(x) if x.get('k') == 'sol' else x for x in slides]   # solutions appear line by line
 old = open(OUT, encoding='utf8').read()
 head = old.split('\n// Slides generated')[0].split('\nwindow.TEACH_SLIDES')[0]
