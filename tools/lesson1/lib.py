@@ -454,3 +454,14 @@ def merge_slides(group):
     html = kick + (f'<h2>{h2}</h2>' if h2 else '') + ''.join(blocks)
     out = {**first, 'html': html}
     return stepify(out, min_units=2)
+
+
+def chain(lhs, *steps):
+    """a calculation written one step per line, the equals signs under each other:  lhs = step1 / = step2 / ..."""
+    body = lhs + ' &= ' + steps[0] + ''.join(' \\\\ &= ' + s for s in steps[1:])
+    return dm('\\begin{aligned}' + body + '\\end{aligned}')
+
+
+def clab(t):
+    """the label (ក. ខ. ...) of a calculation written with chain(): sits beside the working, not above it"""
+    return f'<span class="cl-lab">{t}</span>'

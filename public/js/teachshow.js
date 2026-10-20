@@ -761,10 +761,10 @@
     return el;
   }
 
-  function drag(el, bar) {
+  function drag(el, bar, inside) {   // inside: keep the whole window on the slide (the calculator has no title bar to grab if it hangs off the edge)
     let ox = 0, oy = 0, dragging = false;
     bar.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button,input,select')) return;
+      if (e.target.closest('button,input,select,.ts-rs')) return;
       dragging = true;
       const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
       ox = e.clientX - r.left; oy = e.clientY - r.top;
@@ -775,10 +775,11 @@
       if (!dragging) return;
       if (e.buttons === 0) { dragging = false; return; }
       const s = stage.getBoundingClientRect();
-      el.style.left = Math.max(0, Math.min(s.width - 80, e.clientX - s.left - ox)) + 'px';
-      el.style.top = Math.max(0, Math.min(s.height - 40, e.clientY - s.top - oy)) + 'px';
+      const maxL = inside ? s.width - el.offsetWidth : s.width - 80, maxT = inside ? s.height - el.offsetHeight : s.height - 40;
+      el.style.left = Math.max(0, Math.min(maxL, e.clientX - s.left - ox)) + 'px';
+      el.style.top = Math.max(0, Math.min(maxT, e.clientY - s.top - oy)) + 'px';
     });
-    bar.addEventListener('pointerup', () => { dragging = false; });
+    bar.addEventListener('pointerup', () => { dragging = false; stage.scrollTop = 0; stage.scrollLeft = 0; });   // focusing a key must never scroll the slide away
     bar.addEventListener('pointercancel', () => { dragging = false; });
     bar.addEventListener('lostpointercapture', () => { dragging = false; });
   }
@@ -1856,7 +1857,7 @@
       makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: (sw - w - 10) + 'px', y: '8px', w: w + 'px', h: h + 'px' }).hidden = true;
     }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
-    makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true }).hidden = true;
+    { const calc = makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true }); calc.hidden = true; drag(calc, calc, true); }   // no title bar: grab it anywhere that is not a key
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     // small clock in the right corner: click to hide, click to show
     {
