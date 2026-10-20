@@ -546,6 +546,7 @@
     el.style.top = opt.y;
     el.style.width = opt.w;
     if (opt.h) el.style.height = opt.h;
+    if (opt.autoh) el.dataset.autoh = '1'; // height follows the content (e.g. the calculator zooms with its width)
     const xbtn = document.createElement('button');
     xbtn.type = 'button'; xbtn.className = 'ts-fx'; xbtn.textContent = '✕';
     xbtn.onclick = () => { el.hidden = true; };
@@ -605,7 +606,7 @@
       const w = Math.max(180, sw - (e.clientX - sx));
       el.style.width = w + 'px';
       el.style.left = Math.max(0, sl + (sw - w)) + 'px';
-      el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px';
+      if (!el.dataset.autoh) el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px'; else el.style.height = '';
     });
     const stop = () => { on = false; };
     handle.addEventListener('pointerup', stop); handle.addEventListener('pointercancel', stop); handle.addEventListener('lostpointercapture', stop);
@@ -624,7 +625,7 @@
       if (!on) return;
       if (e.buttons === 0) { on = false; return; }
       el.style.width = Math.max(180, sw + (e.clientX - sx)) + 'px';
-      el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px';
+      if (!el.dataset.autoh) el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px'; else el.style.height = '';
     });
     handle.addEventListener('pointerup', () => { on = false; });
     handle.addEventListener('pointercancel', () => { on = false; });
@@ -1548,7 +1549,7 @@
       makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: (sw - w - 10) + 'px', y: '8px', w: w + 'px', h: h + 'px' }).hidden = true;
     }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
-    makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px' }).hidden = true;
+    makeFloat('wcalc', 'Calculator', calcBox(), { x: '30%', y: '8%', w: '300px', autoh: true }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
     bindInk();

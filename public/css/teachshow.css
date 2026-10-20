@@ -597,3 +597,18 @@ body.teach-show-on { overflow: hidden; }
 .cl-mode .tg { height: 30px; width: auto; padding: 0 14px; font-size: 13px; background: rgba(255,255,255,.2); color: #fff; }
 .cl-mode .tg.on { background: #fff; color: #235b88; }
 .cl-pad .op { background: #0f4468; color: #fff; font-size: 24px; }
+
+/* calculator scales with its window: drag a corner and the keys and numbers zoom with it */
+.ts-wcalc .ts-fin { container-type: inline-size; }
+.cl { font-size: 5.33cqw; padding: .625em; }
+.cl-screen { border-radius: .75em; padding: .5em .75em; min-height: 4.9em; }
+.cl-expr { font-size: .94em; min-height: 1.25em; }
+.cl-res { font-size: 2.1em; }
+.cl-res.err { font-size: 1.5em; }
+.cl-mode { gap: .4em; margin: .5em 0 .15em; }
+.cl button { font-size: 1.25em; height: 2.3em; border-radius: .6em; }
+.cl-pad { gap: .45em; margin-top: .5em; }
+.cl-pad .op { font-size: 1.5em; }
+.cl-sci { gap: .4em; margin-top: .5em; }
+.cl-sci button { height: 2.1em; font-size: 1em; }
+.cl-mode .tg { height: 1.9em; padding: 0 .9em; font-size: .82em; }
