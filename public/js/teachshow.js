@@ -647,8 +647,8 @@
     wrap.className = 'sp';
     const bar = document.createElement('div'); bar.className = 'sp-bar';
     const modeBtns = [['one', 'ម្នាក់ៗ'], ['group', 'ក្រុម']].map(([m, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.m = m; return b; });
-    const gsel = document.createElement('select'); gsel.title = 'ចំនួនក្រុម';
-    [2, 3, 4, 5, 6, 7, 8, 9, 10, 12].forEach((n) => gsel.append(new Option(`${kh(n)} ក្រុម`, n)));
+    const gsel = document.createElement('select'); gsel.title = 'ចំនួនសិស្សក្នុងមួយក្រុម';
+    [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((n) => gsel.append(new Option(`${kh(n)} នាក់/ក្រុម`, n)));
     gsel.value = 6;
     const dvd = document.createElement('button'); dvd.type = 'button'; dvd.className = 'sp-dvd'; dvd.textContent = 'ចែកក្រុម'; dvd.title = 'ចែកថ្នាក់ជាក្រុមៗ ហើយបង្ហាញទាំងអស់';
     const rep = document.createElement('label'); rep.className = 'sp-chk'; rep.innerHTML = '<input type="checkbox" checked><span>មិនជាន់</span>';
@@ -673,7 +673,7 @@
     const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };
     const roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
     const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
-    const makeGroups = () => { const n = Math.max(1, Math.min(+gsel.value || 6, roster.length)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
+    const makeGroups = () => { const size = +gsel.value || 6, n = Math.max(1, Math.ceil(roster.length / size)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
     makeGroups();
     // what is on the wheel right now
     const items = () => {
