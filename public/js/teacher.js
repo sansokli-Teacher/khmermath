@@ -519,8 +519,11 @@ function initTeachMode() {
   if (btn) btn.addEventListener('click', () => {
     if (teachOn()) return applyTeachMode(false, true);
     localStorage.setItem('exam_teach_mode', '1');
-    location.href = '/teach/';
+    try { sessionStorage.setItem('km_vanish', '1'); } catch {}
+    playMagic('vanishOut').then(() => { location.href = '/teach/'; });
   });
+  // Arrived back from /teach/: the dashboard vanishes in.
+  try { if (sessionStorage.getItem('km_vanish') === '1') { sessionStorage.removeItem('km_vanish'); playMagic('vanishIn'); } } catch {}
   if (back) back.addEventListener('click', () => {
     if (fromReact) { location.href = '/teach/'; return; }
     if (window.TeachShow && window.TeachShow.isOpen()) { window.TeachShow.close(); return; }

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+const reduced = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 import { api, kh, gradeOf } from './api.js';
 import Attendance from './Attendance.jsx';
 import Lessons from './Lessons.jsx';
@@ -19,6 +21,17 @@ export default function App() {
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
   const [fs, setFs] = useState(!!document.fullscreenElement);
+  const [anim, setAnim] = useState(() => (reduced() ? '' : 'vanish-in'));
+
+  // Leave teaching mode: vanish out, then go back to the dashboard (which vanishes in).
+  const leave = (e) => {
+    e.preventDefault();
+    const href = e.currentTarget.href;
+    try { sessionStorage.setItem('km_vanish', '1'); } catch { /* storage blocked */ }
+    if (reduced()) { location.href = href; return; }
+    setAnim('vanish-out');
+    setTimeout(() => { location.href = href; }, 800);
+  };
 
   useEffect(() => {
     (async () => {
@@ -52,16 +65,16 @@ export default function App() {
   const hello = me && (me.display_name || me.username);
 
   return (
-    <div className="home">
+    <div className={`home ${anim}`} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setAnim((a) => (a === 'vanish-out' ? a : '')); }}>
       <header className="top">
-        <a className="brand" href="/teacher?classic=1" title="ចេញពីម៉ូដបង្រៀន">
+        <a className="brand" href="/teacher?classic=1" title="ចេញពីម៉ូដបង្រៀន" onClick={leave}>
           <span className="brand-mark">∑</span>
           <span className="brand-t"><b>KhmerMath</b><small>ម៉ូដបង្រៀន</small></span>
         </a>
         <Clock compact />
         <div className="top-r">
           <button className="icon-btn" onClick={toggleFs} aria-label="ពេញអេក្រង់" title="ពេញអេក្រង់">{fs ? '🗗' : '⛶'}</button>
-          <a className="icon-btn txt" href="/teacher?classic=1">ចាកចេញ</a>
+          <a className="icon-btn txt" href="/teacher?classic=1" onClick={leave}>ចាកចេញ</a>
         </div>
       </header>
 

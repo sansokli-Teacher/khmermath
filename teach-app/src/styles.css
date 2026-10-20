@@ -320,3 +320,10 @@ a { color: inherit; }
   .modal, .modal.wide { width: 100vw; max-height: 96vh; border-radius: 26px 26px 0 0; }
   .parts { grid-template-columns: 1fr; }
 }
+
+/* vanishIn / vanishOut when entering and leaving teaching mode (same as the dashboard switch).
+   "backwards" on the way in, so no transform is left behind to trap position:fixed pop-ups. */
+.home.vanish-in { animation: vanishIn .85s backwards; transform-origin: 50% 40%; }
+.home.vanish-out { animation: vanishOut .8s forwards; transform-origin: 50% 40%; pointer-events: none; }
+@keyframes vanishIn { 0% { opacity: 0; transform: scale(2); filter: blur(90px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
+@keyframes vanishOut { 0% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(2); filter: blur(20px); } }
