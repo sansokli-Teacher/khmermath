@@ -857,13 +857,12 @@
     const lab = document.createElement('div'); lab.className = 'tm-lab'; lab.textContent = 'នាទី៖';
     const pr = document.createElement('div'); pr.className = 'tm-prw'; pr.append(lab, presets);
     const more = document.createElement('div'); more.className = 'tm-more'; more.hidden = true;
-    more.append(pr, cust, row2);
-    const moreBtn = document.createElement('button'); moreBtn.type = 'button'; moreBtn.className = 'tm-morebtn'; moreBtn.textContent = 'ជម្រើសបន្ថែម ▾';
-    moreBtn.onclick = () => { more.hidden = !more.hidden; moreBtn.textContent = more.hidden ? 'ជម្រើសបន្ថែម ▾' : 'លាក់ ▴'; };
-    wrap.append(digital, row, moreBtn, more);
+    more.append(row, pr, cust, row2);
+    const moreBtn = document.createElement('button'); moreBtn.type = 'button'; moreBtn.className = 'tm-morebtn'; moreBtn.textContent = '⚙'; moreBtn.title = 'ជម្រើសបន្ថែម';
+    moreBtn.onclick = () => { more.hidden = !more.hidden; moreBtn.classList.toggle('on', !more.hidden); };
+    wrap.append(digital, moreBtn, more);
     const hint = document.createElement('div'); hint.className = 'tm-hint';
     hint.textContent = 'ប៊ូតុងលើ៖ ស្តាំ + បន្ថែម · ឆ្វេង − ដក (ចុចជាប់ = លឿន) · ប៊ូតុងចំហៀង = ចាប់ផ្ដើម/ឈប់';
-    digital.before(hint);
     // real-device buttons: crown on top sets the time, button on the side starts / stops
     const crown = q('.tm-crown'), side = q('.tm-side');
     const crownStep = (dir) => {
@@ -1320,7 +1319,7 @@
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: '52%', y: '3%', w: '40%', h: '92%' }).hidden = true;
-    makeFloat('wtime', 'Timer', timerBox(), { x: '60%', y: '3%', w: '340px' }).hidden = true;
+    makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
