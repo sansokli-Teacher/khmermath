@@ -431,3 +431,26 @@ def capstack(items):
         a = (f' data-step="{n}"' if n else '') + (f' data-until="{u}"' if u else '')
         out += f'<div class="rv"{a}>{h}</div>'
     return f'<div class="capstack">{out}</div>'
+
+
+# ---------------------------------------------------------------- merging short neighbouring slides
+_HEAD = _re.compile(r'^(<p class="ts-kicker">.*?</p>)?(?:<h2>(.*?)</h2>)?', _re.S)
+
+
+def merge_slides(group):
+    """Combine consecutive short slides into one. The first slide stays as it is; every later slide becomes a block that
+    appears (rise + fade) on the next press of →.  A 'key' slide (ជាទូទៅ, សម្គាល់ ...) that joins a normal slide keeps its dark card."""
+    first, rest = group[0], group[1:]
+    mt = _HEAD.match(first['html'])
+    kick, h2, body = mt.group(1) or '', mt.group(2) or '', first['html'][mt.end():]
+    blocks = [body]
+    for x in rest:
+        mx = _HEAD.match(x['html'])
+        title, bx = mx.group(2) or '', x['html'][mx.end():]
+        if x.get('k') == 'key' and first.get('k') != 'key':
+            blocks.append(f'<div class="mg"><div class="ts-card"><div class="ts-card-h"><span>{title}</span><i></i></div><div class="ts-card-b">{bx}</div></div></div>')
+        else:
+            blocks.append(f'<div class="mg"><p class="mg-h">{title}</p>{bx}</div>')
+    html = kick + (f'<h2>{h2}</h2>' if h2 else '') + ''.join(blocks)
+    out = {**first, 'html': html}
+    return stepify(out, min_units=2)

@@ -755,3 +755,9 @@ body.teach-show-on { overflow: hidden; }
 
 /* "≠" / \not signs are drawn from a private-use glyph (U+E020) of KaTeX_Main; 'Mathcad UniMath' has another glyph there (a box) */
 .ts-slide .katex .thinbox, .ts-slide .katex .thinbox *, .ts-slide .katex .mrel:has(.thinbox), .ts-slide .katex .mrel:has(.thinbox) * { font-family: KaTeX_Main, 'Times New Roman', serif; }
+
+/* merged slides: a later part (an extra example, or a key card) rises in below the first part */
+.ts-slide .mg { margin-top: .5em; }
+.ts-slide .mg-h { margin: 0 0 .3em; color: #ee0000; font-weight: 800; font-size: 1.05em; border-top: 2px dashed rgba(15,81,115,.35); padding-top: .35em; }
+.ts-slide.ts-key .mg-h { color: #ffd98a; border-top-color: rgba(255,255,255,.4); }
+.ts-slide .mg > .ts-card { font-size: .92em; }

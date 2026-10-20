@@ -3,10 +3,28 @@
 import json, os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 import part_a, part_b, part_c, part_d
-from lib import stepify
+from lib import stepify, merge_slides
 
 OUT = os.path.join(os.path.dirname(__file__), '..', '..', 'public', 'js', 'slides', 'g7l01.js')
 slides = part_a.build() + part_b.build() + part_c.build() + part_d.build()
+# short neighbouring slides (a lone ជាទូទៅ / សម្គាល់ card, one-line examples) are combined; each later part rises in on the next press of →.
+# numbers are slide numbers in the deck before merging; SKIP_MERGE="11,57" leaves those groups alone (used when one does not fit)
+GROUPS = [(11, 12), (22, 23), (39, 40), (57, 58), (83, 84), (85, 86, 87), (90, 91), (92, 93), (110, 111)]
+skip = {int(x) for x in os.environ.get('SKIP_MERGE', '').split(',') if x.strip()}
+by_first = {g[0]: g for g in GROUPS if g[0] not in skip}
+merged, drop = [], set()
+for n, x in enumerate(slides, 1):
+    if n in drop:
+        continue
+    g = by_first.get(n)
+    if g:
+        parts = [slides[k - 1] for k in g]
+        assert all(slides[k - 1].get('html', '').split('</p>')[0] == parts[0]['html'].split('</p>')[0] for k in g), f'group {g}: different sections'
+        merged.append(merge_slides(parts))
+        drop.update(g[1:])
+    else:
+        merged.append(x)
+slides = merged
 slides = [stepify(x) if x.get('k') == 'sol' else x for x in slides]   # solutions appear line by line
 old = open(OUT, encoding='utf8').read()
 head = old.split('\n// Slides generated')[0].split('\nwindow.TEACH_SLIDES')[0]

@@ -22,8 +22,8 @@ export default function Lessons({ cls, students, onBack }) {
       grade === '7' ? fetch('/data/lessons_g7.json?v=2').then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
-        .then(() => loadScript('/js/slides/g7l01.js?v=20261024j'))
-        .then(() => loadScript('/js/teachshow.js?v=20261023q')),
+        .then(() => loadScript('/js/slides/g7l01.js?v=20261024k'))
+        .then(() => loadScript('/js/teachshow.js?v=20261023r')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -45,8 +45,10 @@ export default function Lessons({ cls, students, onBack }) {
     if (partIdx != null) {
       if (!real) startAt = partIdx + 1;
       else {
-        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && s.html.includes(`<h1>`) && s.html.includes(lesson.p[partIdx]));
-        startAt = hit > 0 ? hit : 0;
+        // each part of the hand-made deck opens with a title slide whose heading starts with the part number ("8. ការ៉េ គូប …");
+        // matching the number (not the part's name) avoids hitting the cover's objectives list or a longer title that contains the name
+        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && s.html.includes(`<h1>${partIdx + 1}. `));
+        startAt = hit >= 0 ? hit : 0;
       }
     }
     window.TeachShow.open({ grade: Number(grade), lesson: n, title: lesson.t, className: cls.name, students, start: startAt });
