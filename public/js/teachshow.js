@@ -631,6 +631,65 @@
     handle.addEventListener('lostpointercapture', () => { on = false; });
   }
 
+  // ---- group poster (same design as the khmermath.org name wheel): download PNG / copy image for Telegram ----
+  const PFONT = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
+  const PPAL = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
+  const teacherName = () => { try { return String((JSON.parse(localStorage.getItem('exam_wheel_set') || '{}')).teacher || '').replace(/\s+/g, ' ').trim(); } catch { return ''; } };
+  const khDate = () => { const d = new Date(); return kh(`${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`); };
+  const rrect = (g, x, y, w, h2, r, tl = r, tr = r, br = r, bl = r) => {
+    g.beginPath(); g.moveTo(x + tl, y); g.lineTo(x + w - tr, y); g.quadraticCurveTo(x + w, y, x + w, y + tr); g.lineTo(x + w, y + h2 - br);
+    g.quadraticCurveTo(x + w, y + h2, x + w - br, y + h2); g.lineTo(x + bl, y + h2); g.quadraticCurveTo(x, y + h2, x, y + h2 - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
+  };
+  function posterCanvas(o) {
+    const FONT = PFONT, rr = rrect, whKh = kh;
+    const W = 1600, pad = 56, gap = 26, n = o.groups.length, cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
+    const cw = (W - pad * 2 - gap * (cols - 1)) / cols, headH = 80, lineH = 46, cpad = 18, bannerH = 250, footH = 110, dpr = 2;
+    const rows = []; for (let i = 0; i < n; i += cols) rows.push(o.groups.slice(i, i + cols));
+    const rowH = rows.map((r) => headH + Math.max(...r.map((x) => x.items.length)) * lineH + cpad * 2);
+    const H = bannerH + 40 + rowH.reduce((a, b) => a + b, 0) + gap * (rows.length - 1) + 40 + footH;
+    const cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#eaf5f2'); bg.addColorStop(1, '#fdf6e8'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const bn = g.createLinearGradient(0, 0, W, bannerH); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f'); g.fillStyle = bn; g.fillRect(0, 0, W, bannerH);
+    for (let k = 0; k < 46; k++) { const a = (k * 9301 + 49297) % 233280 / 233280, b = (k * 7919 + 1237) % 10007 / 10007;
+      g.fillStyle = ['#ffd43b', '#ff8787', '#74c0fc', '#b2f2bb', '#ffffff'][k % 5]; g.globalAlpha = 0.55; g.save(); g.translate(a * W, b * bannerH); g.rotate(k); g.fillRect(-7, -3, 14, 6); g.restore(); }
+    g.globalAlpha = 1; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+    g.font = `700 70px ${FONT}`; g.fillText(o.heading, W / 2, o.teacher ? 84 : 98); g.font = `500 33px ${FONT}`; g.globalAlpha = 0.92; g.fillText(o.sub, W / 2, o.teacher ? 154 : 178); g.globalAlpha = 1;
+    if (o.teacher) { g.font = `600 34px ${FONT}`; g.fillText(`គ្រូបង្រៀន៖ ${o.teacher}`, W / 2, 204); }
+    let y = bannerH + 40;
+    rows.forEach((r, ri) => {
+      r.forEach((grp, ci) => {
+        const x = pad + ci * (cw + gap), h2 = rowH[ri], col = o.colors[(ri * cols + ci) % o.colors.length];
+        g.save(); g.shadowColor = 'rgba(0,0,0,.18)'; g.shadowBlur = 22; g.shadowOffsetY = 8; g.fillStyle = '#fff'; rr(g, x, y, cw, h2, 22); g.fill(); g.restore();
+        g.fillStyle = col; rr(g, x, y, cw, headH, 22, 22, 22, 0, 0); g.fill();
+        g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = `700 36px ${FONT}`; g.fillText(grp.title, x + 26, y + headH / 2 + 2);
+        g.textAlign = 'right'; g.font = `500 28px ${FONT}`; g.globalAlpha = 0.9; g.fillText(`${whKh(grp.items.length)} នាក់`, x + cw - 24, y + headH / 2 + 2); g.globalAlpha = 1;
+        grp.items.forEach((it, i) => {
+          const ty = y + headH + cpad + i * lineH + lineH / 2; g.textAlign = 'left'; g.fillStyle = col; g.font = `700 26px ${FONT}`; g.fillText(`${whKh(i + 1)}.`, x + 24, ty);
+          const dx = x + 76; let size = 33; g.font = `500 ${size}px ${FONT}`; while (g.measureText(it.n).width > x + cw - 20 - dx && size > 12) { size -= 2; g.font = `500 ${size}px ${FONT}`; }
+          g.fillStyle = '#1b2733'; g.fillText(it.n, dx, ty);
+        });
+      });
+      y += rowH[ri] + gap;
+    });
+    const fy = H - footH / 2 - 6;
+    g.strokeStyle = 'rgba(31,111,102,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(pad, H - footH); g.lineTo(W - pad, H - footH); g.stroke();
+    g.fillStyle = '#12263a'; rr(g, W / 2 - 215, fy - 30, 60, 60, 14); g.fill();
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = `700 38px ${FONT}`; g.fillText('√', W / 2 - 185, fy + 2);
+    g.fillStyle = '#e0a13a'; rr(g, W / 2 - 172, fy - 4, 14, 14, 3); g.fill();
+    g.textAlign = 'left'; g.fillStyle = '#1f6f66'; g.font = `700 42px ${FONT}`; g.fillText('khmermath.org', W / 2 - 140, fy - 2);
+    g.fillStyle = '#5b6b7b'; g.font = `500 24px ${FONT}`; g.fillText('កង់ចាប់ឈ្មោះ · គណិតវិទ្យាខ្មែរ', W / 2 - 140, fy + 34);
+    return cv;
+  }
+  // picture of the groups as a PNG blob
+  async function posterBlob(groups, heading, cname) {
+    try { if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('700 30px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]); } catch { /* fonts fall back */ }
+    const total = groups.reduce((a, b) => a + b.items.length, 0);
+    const cv = posterCanvas({ heading, sub: `${cname ? cname + '  ·  ' : ''}${kh(total)} នាក់  ·  ${khDate()}`, teacher: teacherName(), colors: PPAL, groups });
+    return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('no image'))), 'image/png'));
+  }
+  const saveBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+  const stamp14 = () => { const d = new Date(), z = (x) => String(x).padStart(2, '0'); return `${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}`; };
+
   // ---- Spin: wheel of the class list (one student or a group), pop-up result, sound and fireworks ----
   let audio = null;
   const snd = {
@@ -736,28 +795,50 @@
     const showPop = (it) => {
       const noRep = rep.querySelector('input').checked;
       if (noRep) st.used.add(it.id);
-      pop.hidden = false;
+      pop.hidden = false; pop.classList.remove('big');
       const group = st.mode === 'group';
       pop.innerHTML = `<div class="pp-card"><div class="pp-k">${group ? '🎉 ក្រុមដែលត្រូវបានជ្រើស' : '🎉 សិស្សដែលត្រូវបានជ្រើស'}</div>
         <div class="pp-name">${esc(it.label)}</div>
         ${group ? `<ul class="pp-mem">${it.members.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
-        <div class="pp-act"><button type="button" class="pp-ok">បិទ</button><button type="button" class="pp-again">បង្វិលម្ដងទៀត</button></div></div>`;
+        <div class="pp-act">${group ? '<button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button>' : ''}<button type="button" class="pp-again">បង្វិលម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
       pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; refresh(); };
       pop.querySelector('.pp-again').onclick = () => { pop.hidden = true; refresh(); hub.click(); };
+      if (group) wirePoster([{ title: it.label, items: it.members.map((n) => ({ n })) }], 'ក្រុមដែលត្រូវបានជ្រើស', 'group');
       snd.fanfare(st.sound);
       fireworks(3200);
     };
     const esc = (t) => String(t).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
     // divide the whole class into groups and show every group at once
+    // download the poster / copy it to the clipboard so it can be pasted straight into Telegram
+    const wirePoster = (groups, heading, tag) => {
+      const png = pop.querySelector('.pp-png'), cp = pop.querySelector('.pp-copy');
+      const flash = (b, t, back) => { b.textContent = t; setTimeout(() => { b.textContent = back; }, 2400); };
+      png.onclick = async () => {
+        png.textContent = 'កំពុងបង្កើត…';
+        try { saveBlob(await posterBlob(groups, heading, cname), `khmermath-${tag}-${stamp14()}.png`); flash(png, '✓ បានទាញយក', '⬇ ទាញយក PNG'); }
+        catch { flash(png, 'មិនអាចបង្កើតរូបបាន', '⬇ ទាញយក PNG'); }
+      };
+      cp.onclick = async () => {
+        cp.textContent = 'កំពុងចម្លង…';
+        try {
+          if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': posterBlob(groups, heading, cname) })]);
+          flash(cp, '✓ បានចម្លង — ចុច Paste ក្នុង Telegram', '📋 ចម្លងរូបភាព');
+        } catch { flash(cp, 'ចម្លងមិនបាន — សូមប្រើ ទាញយក', '📋 ចម្លងរូបភាព'); }
+      };
+    };
     const showGroups = (again) => {
       if (again) makeGroups();
-      pop.hidden = false;
-      pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-k">👥 ចែកជា ${kh(st.groups.length)} ក្រុម</div>
-        <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g"><b>ក្រុម ${kh(k + 1)}</b><ul>${g.map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>`).join('')}</div>
-        <div class="pp-act"><button type="button" class="pp-ok">បិទ</button><button type="button" class="pp-again">ចែកម្ដងទៀត</button></div></div>`;
+      pop.hidden = false; pop.classList.add('big');
+      const total = st.groups.reduce((a, g) => a + g.length, 0), tch = teacherName();
+      pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-ban"><b>បែងចែកក្រុមរួចរាល់! 🎉</b><small>${esc(cname || '')}${cname ? ' · ' : ''}${kh(total)} នាក់ · ${khDate()}</small>${tch ? `<small>គ្រូបង្រៀន៖ ${esc(tch)}</small>` : ''}</div>
+        <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g" style="--c:${PPAL[k % PPAL.length]}"><div class="pp-gh"><b>ក្រុម ${kh(k + 1)}</b><span>${kh(g.length)} នាក់</span></div><ol>${g.map((m) => `<li>${esc(m)}</li>`).join('')}</ol></div>`).join('')}</div>
+        <div class="pp-brand">khmermath.org · កង់ចាប់ឈ្មោះ</div>
+        <div class="pp-act"><button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button><button type="button" class="pp-again">ចែកម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
       pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; st.used.clear(); refresh(); };
       pop.querySelector('.pp-again').onclick = () => showGroups(true);
+      wirePoster(st.groups.map((g, k) => ({ title: `ក្រុម ${kh(k + 1)}`, items: g.map((n) => ({ n })) })), 'បែងចែកក្រុមរួចរាល់!', 'groups');
       if (again) snd.tick(st.sound);
     };
     dvd.onclick = () => { if (st.spin) return; if (st.mode !== 'group') { st.mode = 'group'; st.used.clear(); st.ang = 0; } showGroups(false); refresh(); };

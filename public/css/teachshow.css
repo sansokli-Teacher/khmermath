@@ -519,3 +519,31 @@ body.teach-show-on { overflow: hidden; }
 .pp-mem { gap: 1.4cqmin 2.2cqw; font-size: clamp(16px, 6cqw, 36px); }
 .pp-mem li { padding: .35em .9em; }
 .pp-all .pp-k { font-size: clamp(16px, 5cqw, 30px); }
+
+/* group pop-up in the khmermath.org name-wheel style */
+.pp-card.pp-all { padding: 0 0 3cqmin; background: linear-gradient(180deg, #eaf5f2, #fdf6e8); border: .8cqmin solid #1f6f66; overflow: auto; }
+.pp-ban { background: linear-gradient(100deg, #1f6f66, #2d8f7e 60%, #3aa68f); color: #fff; padding: 2.4cqmin 3cqw; display: flex; flex-direction: column; gap: .3em; }
+.pp-ban b { font-size: clamp(18px, 6.4cqw, 38px); font-weight: 800; }
+.pp-ban small { font-size: clamp(12px, 3.6cqw, 20px); opacity: .92; font-weight: 600; }
+.pp-all .pp-grid { padding: 0 3cqw; margin: 2cqmin 0; }
+.pp-g { border: 0; border-radius: 14px; padding: 0; overflow: hidden; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.14); }
+.pp-gh { display: flex; justify-content: space-between; align-items: center; padding: .55em .9em; background: var(--c, #1f6f66); color: #fff; }
+.pp-gh b { color: #fff; font-size: clamp(16px, 5.2cqw, 30px); }
+.pp-gh span { font-size: clamp(12px, 3.6cqw, 20px); opacity: .92; font-weight: 600; }
+.pp-g ol { margin: 0; padding: .5em .8em .6em 2.2em; font-size: clamp(16px, 5cqw, 30px); font-weight: 700; color: #1b2733; line-height: 1.6; }
+.pp-g ol li::marker { color: var(--c, #1f6f66); font-weight: 800; }
+.pp-brand { text-align: center; color: #1f6f66; font-weight: 800; font-size: clamp(11px, 3cqw, 17px); margin-bottom: 1.5cqmin; }
+.pp-all .pp-act { padding: 0 3cqw; }
+.pp-png { background: #1f6f66; color: #fff; }
+.pp-copy { background: #1c7ed6; color: #fff; }
+.pp-card:not(.pp-all) .pp-act button.pp-png, .pp-card:not(.pp-all) .pp-act button.pp-copy { font-size: clamp(11px, 3.3cqw, 18px); }
+.sp-pop.big { inset: 3%; }
+.pp-card.pp-all { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
+.pp-all .pp-grid { overflow: auto; flex: 1; min-height: 0; align-content: start; }
+.pp-all .pp-ban, .pp-all .pp-brand, .pp-all .pp-act { flex: none; }
+.pp-all .pp-act { gap: 6px; }
+.pp-all .pp-act button { font-size: clamp(11px, 2.9cqw, 16px); padding: .45em 1em; }
+.pp-ban b { font-size: clamp(16px, 5cqw, 30px); }
+.pp-ban { padding: 1.6cqmin 3cqw; }
+.pp-all .pp-brand { display: none; }
+.pp-all .pp-grid { grid-auto-rows: max-content; }
