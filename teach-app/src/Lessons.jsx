@@ -9,6 +9,9 @@ function boardDeck(n, lesson) {
   return [title, ...parts];
 }
 
+// Sections of a hand-made deck that are not numbered parts of the lesson but can still be started directly (Lesson 1: the exercises after part 8).
+const EXTRA_SECTIONS = { '7-1': [{ t: 'លំហាត់', h1: '<h1>លំហាត់</h1>' }] };
+
 export default function Lessons({ cls, students, onBack }) {
   const grade = gradeOf(cls);
   const [data, setData] = useState(null);
@@ -42,7 +45,12 @@ export default function Lessons({ cls, students, onBack }) {
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;
     if (!window.TEACH_SLIDES[key]) { window.TEACH_SLIDES[key] = boardDeck(n, lesson); window.TEACH_SLIDES[key].board = true; }
     let startAt = 0;
-    if (partIdx != null) {
+    const extras = EXTRA_SECTIONS[key] || [];
+    if (partIdx != null && partIdx >= lesson.p.length) {
+      const want = extras[partIdx - lesson.p.length];
+      const hit = want ? window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && s.html.includes(want.h1)) : -1;
+      startAt = hit >= 0 ? hit : 0;
+    } else if (partIdx != null) {
       if (!real) startAt = partIdx + 1;
       else {
         // each part of the hand-made deck opens with a title slide whose heading starts with the part number ("8. ការ៉េ គូប …");
@@ -67,6 +75,9 @@ export default function Lessons({ cls, students, onBack }) {
         <ol className="parts">
           {l.p.map((p, i) => (
             <li key={p}><button onClick={() => start(pick, i)}><span className="part-n">{kh(i + 1)}</span><b>{p}</b><span className="go" aria-hidden="true">▶</span></button></li>
+          ))}
+          {(EXTRA_SECTIONS[`${grade}-${pick}`] || []).map((x, k) => (
+            <li key={x.t}><button onClick={() => start(pick, l.p.length + k)}><span className="part-n" aria-hidden="true">✎</span><b>{x.t}</b><span className="go" aria-hidden="true">▶</span></button></li>
           ))}
           {!l.p.length && <li className="none">មេរៀននេះមិនទាន់មានផ្នែកទេ។</li>}
         </ol>
