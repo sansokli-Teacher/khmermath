@@ -314,12 +314,12 @@
     stage.append(slideEl, ink);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
-    makeFloat('wspin', 'កង់ចាប់ឈ្មោះ', miniSpin(names), { x: '74%', y: '12%', w: '24%', h: '72%' });
+    makeFloat('wspin', 'កង់ចាប់ឈ្មោះ', miniSpin(names), { x: '74%', y: '12%', w: '24%', h: '72%' }).hidden = true;
     makeFloat('wtime', 'ម៉ោង', timerBox(), { x: '74%', y: '2%', w: '22%' }).hidden = true;
     makeFloat('wcalc', 'ម៉ាស៊ីនគិតលេខ', calcBox(), { x: '4%', y: '58%', w: '260px' }).hidden = true;
     ctx = ink.getContext('2d');
     bindInk();
-    requestAnimationFrame(() => { fitInk(); show(0); });
+    requestAnimationFrame(() => { fitInk(); show(opt.start || 0); });
     window.addEventListener('resize', fitInk);
     window.addEventListener('keydown', keys);
   }

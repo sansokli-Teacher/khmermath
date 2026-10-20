@@ -511,8 +511,18 @@ render.teach = async function () {
 function initTeachMode() {
   const btn = document.getElementById('teach-mode-btn');
   const back = document.getElementById('teach-back');
-  if (btn) btn.addEventListener('click', () => applyTeachMode(!teachOn(), true));
+  // Teaching mode now lives in the React app at /teach/. "?classic=1" keeps the dashboard here
+  // (the React tiles use it to open the name wheel and live quiz, which are dashboard tabs).
+  const params = new URLSearchParams(location.search);
+  const classic = params.get('classic') === '1';
+  const fromReact = classic && params.get('tool');
+  if (btn) btn.addEventListener('click', () => {
+    if (teachOn()) return applyTeachMode(false, true);
+    localStorage.setItem('exam_teach_mode', '1');
+    location.href = '/teach/';
+  });
   if (back) back.addEventListener('click', () => {
+    if (fromReact) { location.href = '/teach/'; return; }
     if (window.TeachShow && window.TeachShow.isOpen()) { window.TeachShow.close(); return; }
     if (window.TeachRoom && window.TeachRoom.isOpen() && !document.body.classList.contains('teach-tool')) {
       return;
@@ -525,7 +535,16 @@ function initTeachMode() {
     if (title) title.textContent = 'ម៉ូដបង្រៀន';
     render.teach();
   });
-  if (teachOn()) applyTeachMode(true, false);
+  if (fromReact) {
+    const tool = params.get('tool');
+    teachClassId = Number(params.get('class')) || null;
+    commitTeachMode(true);
+    if (tool === 'wheel' || tool === 'live') openTeachTool(tool);
+  } else if (classic) {
+    localStorage.setItem('exam_teach_mode', '0');
+  } else if (teachOn()) {
+    location.replace('/teach/');
+  }
 }
 
 let editingStudentId = null;

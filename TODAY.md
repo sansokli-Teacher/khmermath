@@ -87,3 +87,14 @@ Latest Worker version after that fix: `c32e8d63-5288-42d7-a822-78f84c2e1bdb`.
 ## 4. Still uncommitted in the working tree
 
 Teaching mode, attendance, wheel songs, teachshow, plus other WIP not part of today’s teaching request (G11 L02/L03 generators, signup tests, schema/package.json extras). Do not commit unless asked.
+
+---
+
+## 20 October 2026 — Teaching mode rebuilt in React
+
+- New app in `teach-app/` (Vite + React), built into `public/teach/` → https://exam.khmermath.org/teach/. Rebuild with `npm run build:teach`, then deploy.
+- The **បង្រៀន** switch on the dashboard now opens `/teach/`. `/teacher?classic=1` keeps the old dashboard (the wheel/live tiles link there with `&tool=`).
+- Home: class cards on top, game mode below. Click a class → វត្តមាន (pop-up), ស្លាយមេរៀន (all 22 G7 lessons → parts), កង់ចាប់ឈ្មោះ (full screen).
+- Lesson parts come from `public/data/lessons_g7.json` (section titles of Lesson/G7/lessonN.tex). Only lesson 1 has a real deck; other lessons get one drawable board slide per part.
+- Fixed: slide math lost its backslashes (template literals → `String.raw`); slideshow widgets no longer all open at start.
+- Fixed: login/forgot-password could be shadowed by another account's free-text contact.

@@ -46,6 +46,7 @@ body.teach-show-on { overflow: hidden; }
   border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,.4); overflow: hidden;
   display: flex; flex-direction: column;
 }
+.ts-float[hidden] { display: none; }
 .ts-fbar {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 6px 8px 6px 12px; background: rgba(255,255,255,.08); cursor: grab; font-size: 13px;
