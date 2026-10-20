@@ -735,3 +735,23 @@ body.teach-show-on { overflow: hidden; }
 .ts-bar .ts-clock { position: static; z-index: auto; flex: none; box-shadow: none; background: rgba(255,255,255,.16); }
 .ts-bar .ts-clock:hover { background: #ee0000; }
 .ts-bar .ts-clock.off { background: rgba(255,255,255,.1); }
+
+/* live marbles widget (slide: 5.2 practice) */
+.ts-slide .mb-wrap { min-height: 38vh; }
+.ts-slide .mb-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .35em; margin-bottom: .4em; }
+.ts-slide .mb-chip { min-height: 0; padding: .1em .7em; border-radius: 99px; border: 2px solid #1c7ed6; background: #fff; color: #1c7ed6; font: 800 .8em/1.5 inherit; cursor: pointer; }
+.ts-slide .mb-chip.on { background: #1c7ed6; color: #fff; }
+.ts-slide .mb-body { display: flex; align-items: center; justify-content: center; gap: 1.2em; flex-wrap: wrap; }
+.ts-slide .mb-cv { width: min(38vh, 330px); height: min(38vh, 330px); aspect-ratio: 1; }
+.ts-slide .mb-side { text-align: left; font-size: .8em; line-height: 1.6; min-width: 12em; }
+.ts-slide .mb-side b { color: #1f4a5f; }
+.ts-slide .mb-v { margin-top: .2em; padding: .1em .6em; border-radius: .6em; font-weight: 800; display: inline-block; }
+.ts-slide .mb-v.ok { background: #d3f9d8; color: #14532d; border: 2px solid #2f9e44; }
+.ts-slide .mb-v.no { background: #ffe3e3; color: #7f1d1d; border: 2px solid #e03131; }
+.ts-slide .mb-ctl { display: flex; gap: .5em; margin-top: .5em; flex-wrap: wrap; }
+.ts-slide .mb-btn { min-height: 0; padding: .15em .8em; border-radius: .6em; border: 0; background: #1f4a5f; color: #fff; font: 800 .85em/1.5 inherit; cursor: pointer; }
+.ts-slide .mb-btn.go { background: #2f9e44; }
+.ts-slide .mb-btn.go.on { background: #e03131; }
+
+/* "≠" / \not signs are drawn from a private-use glyph (U+E020) of KaTeX_Main; 'Mathcad UniMath' has another glyph there (a box) */
+.ts-slide .katex .thinbox, .ts-slide .katex .thinbox *, .ts-slide .katex .mrel:has(.thinbox), .ts-slide .katex .mrel:has(.thinbox) * { font-family: KaTeX_Main, 'Times New Roman', serif; }

@@ -68,7 +68,16 @@ def build():
     S.append(ex(K82, 'ឧទាហរណ៍ (ជ្រុងការ៉េ)', p('ការ៉េមានផ្ទៃក្រឡា ' + m('\\mathcal{A}=100 \\text{ cm}^{2}=10 \\text{ cm}\\times 10 \\text{ cm}')) + fig(svg(560, 300, rect(60, 30, 230, 230, '#cfe6ff', 6, BLUE, 5) + T(175, 160, '100 cm²', 36, NAVY) + T(175, 290, '10 cm', 30, RED) + T(330, 160, '10 cm', 30, RED, 'start'), '30vh')) + p(m('10') + ' ហៅថា ' + hl('ឫសការ៉េ', RED) + 'នៃ ' + m('100') + ' គេសរសេរ ' + m('\\sqrt{100}=\\sqrt{10^{2}}=10')) + p('ដូច្នេះជ្រុងការ៉េគឺ ' + hl(m('a=\\sqrt{100}=10 \\text{ cm}'), GREEN) + ' ។')))
     W3b, H3b, cb3 = iso_cube(3, 46)
     S.append(ex(K82, 'ឧទាហរណ៍ (ជ្រុងគូប)', p('គូបមានមាឌ ' + m('V=27 \\text{ dm}^{3}=3 \\text{ dm}\\times 3 \\text{ dm}\\times 3 \\text{ dm}')) + fig(svg(W3b, H3b, cb3, '28vh'), '3 × 3 × 3 = 27 គូបតូច') + p(m('3') + ' ហៅថា ' + hl('ឫសគូប', RED) + 'នៃ ' + m('27') + ' គេសរសេរ ' + m('\\sqrt[3]{27}=\\sqrt[3]{3^{3}}=3')) + p('ដូច្នេះជ្រុងនៃគូបគឺ ' + hl(m('a=\\sqrt[3]{27}=3 \\text{ dm}'), GREEN) + ' ។')))
-    rad = svg(900, 200, T(300, 140, '√', 150, RED) + f'<line x1="338" y1="62" x2="560" y2="62" stroke="{RED}" stroke-width="8"/>' + T(450, 126, '100', 78, NAVY) + T(300, 190, 'រ៉ាឌីកាល់', 28, RED) + T(450, 190, 'រ៉ាឌីកង់', 28, NAVY) + T(660, 126, '∛27', 78, NAVY, 'start'), '26vh')
+    def radical(x0, y0, barlen, label_x, text, idx=None):
+        # a drawn radical sign: tick, long down stroke, up stroke, then the bar over the radicand
+        path = (f'<path d="M{x0} {y0+66} L{x0+14} {y0+58} L{x0+36} {y0+122} L{x0+66} {y0} L{x0+66+barlen} {y0}" fill="none" stroke="#ff8f8f" '
+                f'stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>')
+        out = path + T(label_x, y0 + 104, text, 84, '#ffffff')
+        if idx:
+            out += T(x0 + 12, y0 + 44, idx, 34, '#ffffff')
+        return out
+    rad = svg(900, 250, radical(110, 20, 200, 276, '100') + radical(560, 20, 130, 686, '27', '3')
+              + T(160, 222, 'រ៉ាឌីកាល់', 30, '#ff8f8f') + T(280, 222, 'រ៉ាឌីកង់', 30, '#ffd98a') + T(686, 222, 'រ៉ាឌីកង់', 30, '#ffd98a'), '28vh')
     S.append(key(K82, 'សម្គាល់', p('ចំពោះ៖ ' + m('\\sqrt{100}') + ', ' + m('\\sqrt[3]{27}')) + ul(['សញ្ញា ' + m('\\sqrt{}') + ' ហៅថា ' + hl('រ៉ាឌីកាល់', RED), m('100') + ' និង ' + m('27') + ' ហៅថា ' + hl('រ៉ាឌីកង់', NAVY) + ' ។']) + fig(rad)))
     chips = lambda seq: '<div class="keys">' + ''.join(f'<span class="k">{s}</span>' for s in seq) + '</div>'
     S.append(ex(K83, 'ឧទាហរណ៍', p('ប្រើម៉ាស៊ីនគិតលេខ ដើម្បីគណនា') + ul(['ក. ' + m('321+4027-2902'), 'ខ. ' + m('150\\times 12\\div 18'), 'គ. ' + m('\\sqrt{625}'), 'ឃ. ' + m('9^{2}'), 'ង. ' + m('11^{3}') + ' ។'])))
@@ -86,7 +95,7 @@ def build():
           '<tr><td>2. លំដាប់</td><td>ខាងស្តាំធំជាង · ខាងឆ្វេងតូចជាង</td></tr>'
           '<tr><td>3. គូ / សេស</td><td>គូ៖ ចែកដាច់នឹង 2 · សេស៖ ចែកមិនដាច់នឹង 2</td></tr>'
           '<tr><td>4. ប្រមាណវិធី</td><td>' + m('a+b=c\\Rightarrow a=c-b') + ' · ' + m('a\\times b=c\\Rightarrow a=c\\div b') + '</td></tr>'
-          '<tr><td>5. លក្ខណៈ</td><td>ត្រឡប់ · ផ្តុំ · បំបែក · ធាតុអព្យាក្រឹត 0 · ធាតុណឺត 1</td></tr>'
+          '<tr><td>5. លក្ខណៈ</td><td>ត្រឡប់ · ផ្តុំ · បំបែក · ធាតុណឺត 0 · ធាតុណឺត 1</td></tr>'
           '<tr><td>6. លំដាប់ប្រមាណវិធី</td><td>( ) → × ÷ → + − (ពីឆ្វេងទៅស្តាំ)</td></tr>'
           '<tr><td>7. បង្កត់</td><td>0–4 ចុះ · 5–9 ឡើង</td></tr>'
           '<tr><td>8. ការ៉េ គូប ឫស</td><td>' + m('5^2=25,\\ 5^3=125,\\ \\sqrt{100}=10,\\ \\sqrt[3]{27}=3') + '</td></tr></table>')

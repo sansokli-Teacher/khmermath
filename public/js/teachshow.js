@@ -10,6 +10,118 @@
   let stepNow = 0, stepLevels = [];   // step-by-step reveal: how many steps are showing, and the distinct data-step values on this slide
   let floats = [];
 
+
+  // ---- live widgets -----------------------------------------------------------------------------
+  // A <div data-widget="name"> inside a slide is handed to widgets[name](el) once the slide is on screen; what it returns is
+  // called when the slide is left, so animations stop. (Slides are plain HTML, so anything that moves has to live here.)
+  let widgetStops = [];
+  const widgets = {};
+  function stopWidgets() { widgetStops.forEach((f) => { try { f(); } catch (e) { /* ignore */ } }); widgetStops = []; }
+  function startWidgets() {
+    stopWidgets();
+    if (!slideEl) return;
+    slideEl.querySelectorAll('[data-widget]').forEach((el) => {
+      const make = widgets[el.dataset.widget];
+      if (make) { const stop = make(el); if (stop) widgetStops.push(stop); }
+    });
+  }
+
+  // Marbles in a plate (Lesson 1, 5.2: "more than 80, fewer than 90, equal to 7 times the sum of its digits").
+  // The teacher picks a number of marbles, they pop into the plate, and ▶ makes them roll around inside it.
+  widgets.marbles = function (el) {
+    const R = 150, r = 12, SIZE = 2 * R + 20, C = SIZE / 2;
+    const COLORS = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#ae3ec9', '#0ca678'];
+    let n = 81, balls = [], playing = false, raf = 0, alive = true;
+    el.innerHTML = '';
+    const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    const chips = mk('div', 'mb-chips'), body = mk('div', 'mb-body'), cv = mk('canvas', 'mb-cv'), side = mk('div', 'mb-side');
+    const info = mk('div', 'mb-info'), ctl = mk('div', 'mb-ctl');
+    const playB = mk('button', 'mb-btn go', '▶ លេង'), resetB = mk('button', 'mb-btn', '↺ ចាក់ម្តងទៀត');
+    playB.type = resetB.type = 'button';
+    ctl.append(playB, resetB); side.append(info, ctl); body.append(cv, side); el.append(chips, body);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = cv.height = Math.round(SIZE * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    function spawn(count) {           // hex-packed start so nothing overlaps, then a random choice of spots
+      const d = 2 * r + 2, pts = [];
+      for (let j = -8; j <= 8; j++) for (let i = -8; i <= 8; i++) {
+        const x = i * d + (j % 2 ? d / 2 : 0), y = j * d * 0.866;
+        if (Math.hypot(x, y) <= R - r - 2) pts.push([x, y]);
+      }
+      for (let k = pts.length - 1; k > 0; k--) { const q = Math.floor(Math.random() * (k + 1)); [pts[k], pts[q]] = [pts[q], pts[k]]; }
+      const t0 = performance.now();
+      balls = pts.slice(0, count).map((p, k) => ({ x: C + p[0], y: C + p[1], vx: 0, vy: 0, c: COLORS[Math.floor(Math.random() * COLORS.length)], t: t0 + k * 14, s: 0 }));
+    }
+    function step() {
+      // no gravity: like a lottery drum, every marble keeps bouncing at about the same lively speed, so they spread over the whole plate
+      for (let sub = 0; sub < 2; sub++) {
+        for (const b of balls) {
+          const sp = Math.hypot(b.vx, b.vy) || 0.01;
+          const k = 1 + 0.04 * (2.4 / sp - 1);                       // gently pull the speed towards 2.4
+          b.vx = b.vx * k + (Math.random() - 0.5) * 0.1; b.vy = b.vy * k + (Math.random() - 0.5) * 0.1;
+          b.x += b.vx; b.y += b.vy;
+          const dx = b.x - C, dy = b.y - C, dist = Math.hypot(dx, dy);
+          if (dist > R - r) {                                       // bounce off the rim
+            const nx = dx / dist, ny = dy / dist, dot = b.vx * nx + b.vy * ny;
+            b.x = C + nx * (R - r); b.y = C + ny * (R - r);
+            if (dot > 0) {                                          // leave the rim at a random inward angle, so they cross and mix
+              const a = Math.atan2(-ny, -nx) + (Math.random() - 0.5) * 2.2, v = 1.8 + Math.random() * 1.4;
+              b.vx = Math.cos(a) * v; b.vy = Math.sin(a) * v;
+            }
+          }
+        }
+        for (let i = 0; i < balls.length; i++) for (let j = i + 1; j < balls.length; j++) {
+          const a = balls[i], b = balls[j], dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 > 0 && d2 < 4 * r * r) {
+            const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, push = (2 * r - d) / 2;
+            a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
+            const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+            if (rv < 0) { const j2 = -1.0 * rv / 2; a.vx -= j2 * nx; a.vy -= j2 * ny; b.vx += j2 * nx; b.vy += j2 * ny; }
+          }
+        }
+      }
+    }
+    function draw() {
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      const g = ctx.createRadialGradient(C, C - 30, 20, C, C, R + 6);
+      g.addColorStop(0, '#f4f8fb'); g.addColorStop(1, '#cfdde8');
+      ctx.beginPath(); ctx.arc(C, C, R + 6, 0, 6.2832); ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 7; ctx.strokeStyle = '#1f4a5f'; ctx.stroke();
+      const now = performance.now();
+      for (const b of balls) {
+        const k = Math.max(0, Math.min(1, (now - b.t) / 260)); b.s = k;
+        if (!k) continue;
+        const ease = k < 1 ? 1 - Math.pow(1 - k, 3) : 1;                          // pop in: grow with a little overshoot
+        const rr = r * ease * (k < 1 ? 1 + 0.25 * Math.sin(k * Math.PI) : 1);
+        const gr = ctx.createRadialGradient(b.x - rr * 0.35, b.y - rr * 0.35, rr * 0.1, b.x, b.y, rr);
+        gr.addColorStop(0, '#fff'); gr.addColorStop(0.25, b.c); gr.addColorStop(1, '#00000055');
+        ctx.beginPath(); ctx.arc(b.x, b.y, Math.max(0.1, rr), 0, 6.2832); ctx.fillStyle = gr; ctx.fill();
+      }
+    }
+    function say() {
+      const t = Math.floor(n / 10), u = n % 10, sum = t + u, ok = 7 * sum === n;
+      info.innerHTML = `<div>កូនឃ្លី <b>${n}</b> គ្រាប់</div><div>ផលបូកតួលេខ <b>${t} + ${u} = ${sum}</b></div><div>7 × ${sum} = <b>${7 * sum}</b></div>`
+        + `<div class="mb-v ${ok ? 'ok' : 'no'}">${ok ? '✓ ស្មើនឹង ' + n + ' — ត្រូវហើយ!' : '✗ ' + 7 * sum + ' មិនស្មើ ' + n}</div>`;
+      chips.querySelectorAll('button').forEach((b) => b.classList.toggle('on', Number(b.dataset.n) === n));
+    }
+    function pick(v) { n = v; spawn(n); say(); draw(); }
+    for (let v = 81; v <= 89; v++) { const b = mk('button', 'mb-chip', String(v)); b.type = 'button'; b.dataset.n = String(v); b.onclick = () => pick(v); chips.append(b); }
+    playB.onclick = () => { playing = !playing; playB.textContent = playing ? '⏸ ឈប់' : '▶ លេង'; playB.classList.toggle('on', playing); if (playing) balls.forEach((b) => { const a = Math.random() * 6.2832; b.vx = Math.cos(a) * 2.4; b.vy = Math.sin(a) * 2.4; }); };
+    resetB.onclick = () => pick(n);
+    function loop() {
+      if (!alive) return;
+      const animating = balls.some((b) => b.s < 1);
+      if (playing) step();
+      if (playing || animating) draw();
+      raf = requestAnimationFrame(loop);
+    }
+    pick(n);
+    raf = requestAnimationFrame(loop);
+    return () => { alive = false; cancelAnimationFrame(raf); };
+  };
+
   function math(el) {
     if (window.renderMathInElement) {
       try { renderMathInElement(el, { throwOnError: false, strict: false, macros: { '\\arc': '\\overset{\\frown}{#1}' }, delimiters: [{ left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }] }); } catch {}
@@ -43,6 +155,7 @@
     if (!fits) fitText(0.4);
     s._fs = slideEl.style.fontSize;
     setupSteps(atEnd);   // after fitting, so the layout is measured with everything showing and nothing jumps when a step appears
+    startWidgets();
     pageLabel();
     strokes = s._ink || []; undoS = []; redoS = []; cur = null;
     redraw(); syncUndo();
@@ -1768,6 +1881,7 @@
 
   function close() {
     clearInterval(clockT); clockT = 0;
+    stopWidgets();
     if (offTools) { offTools(); offTools = null; }
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }
     window.removeEventListener('keydown', keys);
