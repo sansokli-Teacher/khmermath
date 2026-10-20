@@ -361,3 +361,12 @@ body.teach-show-on { overflow: hidden; }
 .ts-toast.on { opacity: 1; }
 .ts-toast i { display: block; border-radius: 50%; }
 @media (max-width: 720px) { .ts-tip { width: 56px; } }
+
+/* rectangular magnifier */
+.ts-lens { position: absolute; z-index: 7; overflow: hidden; border-radius: 12px; border: 4px solid #0f5173; background: #fff; box-shadow: 0 16px 40px rgba(0,0,0,.4); pointer-events: none; opacity: 0; transition: opacity .18s; }
+.ts-lens.on { opacity: 1; }
+.ts-lens-in { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.ts-lens-in .ts-slide { position: absolute; inset: 0; overflow: hidden; }
+.ts-lens-ico { position: absolute; z-index: 8; width: 64px; height: 64px; pointer-events: none; opacity: 0; transition: opacity .18s; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+.ts-lens-ico.on { opacity: 1; }
+.ts-prow .mi, .ts-stage .ts-prow .mi { width: 22px; height: 22px; display: block; }

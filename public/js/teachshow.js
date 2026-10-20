@@ -3,6 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
+  let lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -227,6 +228,46 @@
     toastT = setTimeout(() => toastEl && toastEl.classList.remove('on'), 1100);
   }
 
+  // rectangular magnifier: the text under the pointer grows smoothly inside a lens that follows the mouse
+  const LW = 420, LH = 230;
+  function lensBuild() {
+    if (!lens) {
+      lens = document.createElement('div'); lens.className = 'ts-lens';
+      lensIn = document.createElement('div'); lensIn.className = 'ts-lens-in';
+      lens.append(lensIn); stage.append(lens);
+      lensIco = document.createElement('img'); lensIco.className = 'ts-lens-ico'; lensIco.src = '/img/magnifier.png'; lensIco.alt = ''; stage.append(lensIco);
+    }
+    lensIn.innerHTML = '';
+    lensClone = slideEl.cloneNode(true);
+    lensClone.removeAttribute('id');
+    lensIn.style.width = slideEl.clientWidth + 'px'; lensIn.style.height = slideEl.clientHeight + 'px';
+    lensIn.append(lensClone);
+  }
+  function lensMove(e) {
+    if (tool !== 'zoom') return;
+    if (!lens || !lensClone || lensClone.innerHTML !== slideEl.innerHTML) lensBuild();
+    const r = ink.getBoundingClientRect();
+    lensGo.x = e.clientX - r.left; lensGo.y = e.clientY - r.top; lensGo.z = lensZoom;
+    if (!lensOn) { lensOn = true; lensNow.x = lensGo.x; lensNow.y = lensGo.y; lensNow.z = 1; lens.classList.add('on'); lensIco.classList.add('on'); }
+    if (!lensRaf) lensRaf = requestAnimationFrame(lensTick);
+  }
+  function lensOff() {
+    lensOn = false; if (lens) { lens.classList.remove('on'); lensIco.classList.remove('on'); }
+  }
+  function lensTick() {
+    lensRaf = 0;
+    if (!lens) return;
+    const k = .22; // easing: the lens glides after the mouse and the zoom eases in/out
+    const tz = lensOn ? lensGo.z : 1;
+    lensNow.x += (lensGo.x - lensNow.x) * k; lensNow.y += (lensGo.y - lensNow.y) * k; lensNow.z += (tz - lensNow.z) * .16;
+    lens.style.width = LW + 'px'; lens.style.height = LH + 'px';
+    lens.style.left = (lensNow.x - LW / 2) + 'px'; lens.style.top = (lensNow.y - LH / 2) + 'px';
+    lensIco.style.left = (lensNow.x + LW / 2 - 30) + 'px'; lensIco.style.top = (lensNow.y + LH / 2 - 30) + 'px';
+    lensIn.style.transform = `translate(${LW / 2 - lensNow.x * lensNow.z}px, ${LH / 2 - lensNow.y * lensNow.z}px) scale(${lensNow.z})`;
+    const moving = Math.abs(lensGo.x - lensNow.x) + Math.abs(lensGo.y - lensNow.y) > .3 || Math.abs(tz - lensNow.z) > .01;
+    if (moving || lensOn) lensRaf = requestAnimationFrame(lensTick);
+  }
+
   const HAND_TOOLS = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
   function makeHand() {
     const h = document.createElement('div');
@@ -246,7 +287,10 @@
 
   function bindInk() {
     hand = makeHand();
-    ink.addEventListener('wheel', (e) => { if (sizeSetter && HAND_TOOLS.includes(tool)) { e.preventDefault(); sizeSetter(size + (e.deltaY < 0 ? 1 : -1), true); } }, { passive: false });
+    ink.addEventListener('wheel', (e) => { if (tool === 'zoom') { e.preventDefault(); lensZoom = Math.max(1.4, Math.min(4.5, lensZoom + (e.deltaY < 0 ? .25 : -.25))); lensGo.z = lensZoom; if (!lensRaf) lensRaf = requestAnimationFrame(lensTick); return; } if (sizeSetter && HAND_TOOLS.includes(tool)) { e.preventDefault(); sizeSetter(size + (e.deltaY < 0 ? 1 : -1), true); } }, { passive: false });
+    ink.addEventListener('pointermove', lensMove);
+    ink.addEventListener('pointerenter', lensMove);
+    ink.addEventListener('pointerleave', lensOff);
     ink.addEventListener('pointermove', handMove);
     ink.addEventListener('pointerenter', handMove);
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
@@ -613,9 +657,9 @@
       if (!m.hidden) m.dataset.dir = { top: 'down', bottom: 'up', left: 'right', right: 'left' }[edge];
     };
     const setTool = (id) => {
-      tool = id; spot = null; laser = [];
+      tool = id; spot = null; laser = []; lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' || id === 'laser' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
       if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
@@ -641,7 +685,7 @@
     const cw = document.createElement('div'); cw.className = 'cw';
     COLORS.forEach((col) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'ts-col'; b.style.background = col; b.title = col;
-      b.onclick = (ev) => { ev.stopPropagation(); color = col; showDot(); cw.querySelectorAll('.ts-col').forEach((x) => x.classList.toggle('on', x === b)); sw.style.background = col; if (['none', 'erase', 'spot'].includes(tool)) setTool('pen'); };
+      b.onclick = (ev) => { ev.stopPropagation(); color = col; showDot(); cw.querySelectorAll('.ts-col').forEach((x) => x.classList.toggle('on', x === b)); sw.style.background = col; if (['none', 'erase', 'zoom'].includes(tool)) setTool('pen'); };
       if (col === color) b.classList.add('on');
       cw.append(b);
     });
@@ -677,7 +721,7 @@
     const bLaser = mkBtn('laser', '●', 'ចង្អុល', () => setTool('laser'));
     const bDraw = mkBtn('draw', ICONS.pen, 'គូស', () => { if (SHAPES.includes(tool)) toggle(drawMenu); else setTool(row.querySelector('[data-a=draw]').dataset.last || 'pen'); });
     const bStamp = mkBtn('stamp', stamp, 'ត្រា', () => { if (tool === 'stamp') toggle(stampMenu); else { setTool('stamp'); } });
-    const bSpot = mkBtn('spot', ICONS.spot, 'ភ្លើង', () => setTool('spot'));
+    const bSpot = mkBtn('zoom', '<img class="mi" src="/img/magnifier.png" alt="" draggable="false">', 'ពង្រីក', () => setTool('zoom'));
     const bErase = mkBtn('erase', ICONS.erase, 'លុប', () => setTool('erase'));
     const bFmt = mkBtn('fmt', '<i class="sw"></i>', 'ពណ៌', () => toggle(fmtMenu));
     sw = bFmt.querySelector('.sw'); sw.style.background = color;
