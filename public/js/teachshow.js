@@ -3,6 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
+  let laser = [], laserRaf = 0;
   let strokes = [], undoS = [], redoS = [], palette = null;
   let floats = [];
 
@@ -119,6 +120,18 @@
     ctx.clearRect(0, 0, r.width, r.height);
     strokes.forEach(paint);
     if (cur) paint(cur);
+    if (tool === 'laser' && laser.length) {
+      const now = performance.now();
+      laser.forEach((q, k) => {
+        const age = Math.min(1, (now - q.t) / 700);
+        ctx.save();
+        ctx.globalAlpha = (1 - age) * (k === laser.length - 1 ? 1 : .6);
+        ctx.fillStyle = color === '#ffffff' ? '#ff2d2d' : color;
+        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.arc(q.x, q.y, (k === laser.length - 1 ? 9 : 6) * (1 - age * .6), 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
+    }
     if (tool === 'spot' && spot) {
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,.72)';
@@ -163,13 +176,22 @@
     palette.querySelector('[data-a=clear]').disabled = !strokes.length;
   }
 
+  function laserTick() {
+    laserRaf = 0;
+    const now = performance.now();
+    laser = laser.filter((q) => now - q.t < 700);
+    redraw();
+    if (tool === 'laser' && laser.length) laserRaf = requestAnimationFrame(laserTick);
+  }
+
   const SHAPES = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
   function bindInk() {
     const down = (e) => {
       if (e.button && e.button !== 0) return;
       const p = pos(e);
       closeMenus();
-      if (tool === 'spot') { spot = p; drawing = true; redraw(); }
+      if (tool === 'laser') { laser.push({ ...p, t: performance.now() }); if (!laserRaf) laserRaf = requestAnimationFrame(laserTick); }
+      else if (tool === 'spot') { spot = p; drawing = true; redraw(); }
       else if (tool === 'stamp') {
         const st = { t: 'stamp', c: color, w: size, ch: stamp, p: [p] };
         strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
@@ -179,6 +201,12 @@
       e.preventDefault();
     };
     const move = (e) => {
+      if (tool === 'laser') {
+        laser.push({ ...pos(e), t: performance.now() });
+        if (laser.length > 40) laser.shift();
+        if (!laserRaf) laserRaf = requestAnimationFrame(laserTick);
+        return;
+      }
       if (tool === 'spot' && !drawing) return;
       if (!drawing) return;
       const p = pos(e);
@@ -444,9 +472,9 @@
       }
     };
     const setTool = (id) => {
-      tool = id; spot = null;
+      tool = id; spot = null; laser = [];
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' || id === 'laser' ? 'none' : 'crosshair';
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
     };
@@ -487,6 +515,7 @@
 
     let sw;
     const bMouse = mkBtn('none', ICONS.none, 'ចុច', () => setTool('none'));
+    const bLaser = mkBtn('laser', '●', 'ចង្អុល', () => setTool('laser'));
     const bDraw = mkBtn('draw', ICONS.pen, 'គូស', () => { if (SHAPES.includes(tool)) toggle(drawMenu); else setTool(row.querySelector('[data-a=draw]').dataset.last || 'pen'); });
     const bStamp = mkBtn('stamp', stamp, 'ត្រា', () => { if (tool === 'stamp') toggle(stampMenu); else { setTool('stamp'); } });
     const bSpot = mkBtn('spot', ICONS.spot, 'ភ្លើង', () => setTool('spot'));
@@ -499,7 +528,7 @@
     const bUndo = mkBtn('undo', '↶', 'ត្រឡប់', undo);
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
-    row.append(bMouse, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
+    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
     el.append(grip, row, drawMenu, stampMenu, fmtMenu);
     stage.append(el);
     palette = el;
