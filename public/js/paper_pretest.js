@@ -48,7 +48,7 @@
     return h('div', { class: 'pt-info' }, [
       f('ឈ្មោះសិស្ស:'), f('ថ្នាក់:'),
       f('កាលបរិច្ឆេទ:'),
-      withNo ? f('លេខរៀង:') : h('div', { class: 'f' }, [h('span', {}, `រយៈពេល: ${kh(o.minutes)} នាទី   ពិន្ទុសរុប: ${kh(mcqPts + wPts)} ពិន្ទុ`)]),
+      withNo ? f('លេខរៀង:') : h('div', { class: 'f' }, [h('span', {}, `រយៈពេល: ${kh(o.minutes)} នាទី   សំណួរ: ${kh(ctx.mcq.length + ctx.writing.length)}   ពិន្ទុសរុប: ${kh(mcqPts + wPts)} ពិន្ទុ`)]),
     ]);
   }
   const page = (ctx, kids) => ctx.h('table', { class: 'flow' }, [

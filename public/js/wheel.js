@@ -1,5 +1,9 @@
 // Name wheel for the teacher: picks a student from one of the teacher's own classes (no second list to keep).
 // Gender comes from the class roster. Absent / already-picked marks are remembered per class in this browser only.
+const WHEEL_SONGS = [
+  { id: 'exam', src: 'audio/kamlang-chet.mp3', t: 'កម្លាំងចិត្តក្នុងការប្រឡង' },
+  { id: 'study', src: 'audio/kamlang-siksa.mp3', t: 'កម្លាំងចិត្តសិក្សា' },
+];
 const WHEEL_PALETTES = {
   a: ['ពណ៌ស្រស់', ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4']],
   b: ['ទឹកសមុទ្រ', ['#0b7285', '#1971c2', '#1098ad', '#3b5bdb', '#0c8599', '#364fc7', '#1864ab', '#0b7285']],
@@ -9,8 +13,10 @@ const WHEEL_PALETTES = {
 };
 // settings are shared by all classes and kept in this browser
 const wheelSettings = (() => {
-  let s = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false };
+  let s = { dur: 5, theme: 'a', fw: true, mystery: false, speak: false, song: false };
   try { s = Object.assign(s, JSON.parse(localStorage.getItem('exam_wheel_set'))); } catch {}
+  if (s.song === true) s.song = 'exam';
+  if (s.song && !WHEEL_SONGS.some((x) => x.id === s.song)) s.song = false;
   return s;
 })();
 // the teacher line is shown only when a name was typed (the box just hints at the format)
@@ -58,6 +64,49 @@ render.wheel = async function () {
   try { mem = Object.assign(mem, JSON.parse(localStorage.getItem(KEY))); } catch {}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch {} };
   let noRepeat = true, sound = true, spinning = false, angle = 0, frozen = null, current = null, audio = null, lastText = '', gFilter = '', ord = null, pendingReveal = false, tally = false, voiceKm = null;
+  let songEl = null;
+  const songTrack = () => WHEEL_SONGS.find((x) => x.id === wheelSettings.song) || null;
+  const songOn = () => !!(sound && songTrack());
+  const stopSong = () => {
+    if (!songEl) return;
+    try { songEl.pause(); songEl.currentTime = 0; } catch {}
+  };
+  const getSong = () => {
+    const track = songTrack();
+    if (!track) return null;
+    if (!songEl || songEl.dataset.id !== track.id) {
+      stopSong();
+      songEl = new Audio(track.src);
+      songEl.dataset.id = track.id;
+      songEl.preload = 'auto';
+      songEl.loop = true;
+    }
+    return songEl;
+  };
+  const playSong = () => {
+    if (!songOn()) return;
+    try {
+      const el = getSong();
+      if (!el) return;
+      el.currentTime = 0;
+      el.volume = 1;
+      el.play().catch(() => {});
+    } catch {}
+  };
+  const songSelect = () => {
+    const selSong = h('select', { class: 'wheel-song-sel', 'aria-label': 'បទពេលបង្វិល' }, [
+      h('option', { value: '' }, '🎵 បទ៖ បិទ'),
+      ...WHEEL_SONGS.map((x) => h('option', { value: x.id }, `🎵 ${x.t}`)),
+    ]);
+    selSong.value = songTrack() ? wheelSettings.song : '';
+    selSong.onchange = () => {
+      wheelSettings.song = selSong.value || false;
+      wheelSaveSettings();
+      if (!wheelSettings.song) stopSong();
+      document.querySelectorAll('#tab-wheel .wheel-song-sel').forEach((el) => { if (el !== selSong) el.value = selSong.value; });
+    };
+    return selSong;
+  };
   const isOff = (p) => mem.off.includes(p.id);
   const eligible = () => {
     if (wheelMode === 'group') {
@@ -243,11 +292,13 @@ render.wheel = async function () {
     const from = angle, norm = ((target - from) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     const to = from + (5 + Math.floor(Math.random() * 3)) * Math.PI * 2 + norm, dur = wheelSettings.dur * 1000 * (0.9 + Math.random() * 0.2), t0 = performance.now();
     let last = -1; spinning = true; spinBtn.disabled = true; msg.hidden = true;
+    playSong();
     const frame = (now) => {
       const t = Math.min(1, (now - t0) / dur); angle = from + (to - from) * (1 - Math.pow(1 - t, 4)); draw();
-      const sl = Math.floor(((-angle % (Math.PI * 2)) + Math.PI * 2 + a / 2) / a); if (sl !== last) { last = sl; beep([900], 0.04, 0.025); }
+      const sl = Math.floor(((-angle % (Math.PI * 2)) + Math.PI * 2 + a / 2) / a);
+      if (sl !== last) { last = sl; if (!songTrack()) beep([900], 0.04, 0.025); }
       if (t < 1) return requestAnimationFrame(frame);
-      spinning = false; angle = to % (Math.PI * 2); draw(); finish(list[pick]);
+      spinning = false; angle = to % (Math.PI * 2); draw(); stopSong(); finish(list[pick]);
     };
     requestAnimationFrame(frame);
   }
@@ -482,69 +533,33 @@ render.wheel = async function () {
     setTimeout(() => { copyBtn.textContent = 'ចម្លងលទ្ធផល'; }, 1600);
   };
 
-  // Mode buttons (Spin Mode vs Group Mode)
-  const updateModeStyles = () => {
-    const isSpin = wheelMode === 'spin';
-    btnSpinMode.style.background = isSpin ? 'var(--brand)' : '#f1f5f9';
-    btnSpinMode.style.color = isSpin ? '#fff' : '#334155';
-    btnGroupMode.style.background = !isSpin ? 'var(--brand)' : '#f1f5f9';
-    btnGroupMode.style.color = !isSpin ? '#fff' : '#334155';
-  };
-
-  const setWheelMode = (m) => {
-    wheelMode = m;
-    updateModeStyles();
-    if (wheelMode === 'group' && (!currentGroups || !currentGroups.length)) {
-      initDefaultGroups(Math.max(1, parseInt(gNum.value, 10) || 6));
-    }
-    refresh();
-    redraw();
-  };
-
-  const btnSpinMode = h('button', {
-    type: 'button',
-    class: 'btn-sm',
-    style: 'border-radius:8px;padding:6px 12px;font-weight:600;transition:all .15s;border:none;cursor:pointer;',
-    onclick: () => setWheelMode('spin')
-  }, '🎡 របៀបចាប់ឈ្មោះ (Spin Mode)');
-
-  const btnGroupMode = h('button', {
-    type: 'button',
-    class: 'btn-sm',
-    style: 'border-radius:8px;padding:6px 12px;font-weight:600;transition:all .15s;border:none;cursor:pointer;',
-    onclick: () => setWheelMode('group')
-  }, '👥 របៀបចាប់ក្រុម (Group Mode)');
-  updateModeStyles();
-
-  const modeSwitch = h('div', {
-    style: 'display:inline-flex;align-items:center;gap:4px;background:#f8fafc;padding:3px;border-radius:10px;border:1px solid #e2e8f0;'
-  }, [btnSpinMode, btnGroupMode]);
-
-  // Old-style group card below the spin wheel
-  const groupCard = h('div', { class: 'card wheel-group-card', style: 'width:100%;box-sizing:border-box;margin-top:14px;text-align:left;' }, [
-    h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;' }, [
-      h('h3', { style: 'margin:0;' }, 'បែងចែកក្រុម'),
-      h('div', { style: 'display:flex;align-items:center;gap:6px;' }, [
-        h('span', { class: 'muted', style: 'font-size:13px;' }, 'របៀបកង់ ៖'),
-        modeSwitch
-      ])
-    ]),
-    h('div', { class: 'row', style: 'margin-top:10px;' }, [gMode, gNum]),
-    h('label', { style: 'display:flex;gap:8px;align-items:flex-start;margin:10px 0;font-weight:400' }, [gBal, 'លាយប្រុស និងស្រីឱ្យស្មើគ្នាក្នុងក្រុម']),
+  const tabSpin = h('button', { type: 'button', class: 'wheel-part on', onclick: () => setSidePart('spin') }, '🎡 បង្វិល');
+  const tabGroup = h('button', { type: 'button', class: 'wheel-part', onclick: () => setSidePart('group') }, '👥 ក្រុម');
+  gNum.className = 'wheel-gnum';
+  gNum.value = '6';
+  const spinPane = h('div', { class: 'wheel-pane' }, [
+    h('h3', { style: 'margin-top:16px' }, ['សិស្ស ', count]),
+    gsum,
+    h('p', { class: 'muted', style: 'font-size:14px' }, 'ចុចលើឈ្មោះដើម្បីសម្គាល់ថាអវត្តមាន (មិនចូលកង់)។ ឈ្មោះ និងភេទមកពី «ថ្នាក់ និងសិស្ស»។'),
+    chips,
+  ]);
+  const groupPane = h('div', { class: 'wheel-pane', hidden: '' }, [
+    h('h3', { style: 'margin-top:16px' }, 'ចំនួនក្រុម'),
+    h('p', { class: 'muted', style: 'font-size:14px;margin:0 0 10px' }, 'វាយចំនួនក្រុម (លំនាំដើម ៦) រួចចុចបែងចែក។'),
+    h('div', { class: 'row', style: 'align-items:center' }, [h('label', { style: 'margin:0;font-weight:600' }, 'ក្រុម'), gNum]),
+    h('label', { style: 'display:flex;gap:8px;align-items:flex-start;margin:12px 0;font-weight:400' }, [gBal, 'លាយប្រុស និងស្រីឱ្យស្មើគ្នាក្នុងក្រុម']),
     h('div', { class: 'row' }, [
       h('button', { class: 'btn-sm', onclick: makeGroups }, 'បែងចែកក្រុម'),
-      h('button', { class: 'secondary btn-sm', onclick: makeOrder }, 'លំដាប់ចៃដន្យ')
+      h('button', { class: 'secondary btn-sm', onclick: makeOrder }, 'លំដាប់ចៃដន្យ'),
     ]),
     groupsBox, copyBtn,
   ]);
-
-  // Initial group display
-  if (!currentGroups.length && present().length) {
-    initDefaultGroups(6);
-  } else if (currentGroups.length) {
-    const blocks = currentGroups.map((g) => ({ title: `${g.title} · ${whKh(g.people.length)} នាក់`, people: g.people }));
-    showBlocks(blocks);
-  }
+  const setSidePart = (m) => {
+    tabSpin.classList.toggle('on', m === 'spin');
+    tabGroup.classList.toggle('on', m === 'group');
+    spinPane.hidden = m !== 'spin';
+    groupPane.hidden = m !== 'group';
+  };
 
   const gSel = h('select', { 'aria-label': 'កង់ជ្រើសពី', style: 'width:auto;min-width:150px' }, [h('option', { value: '' }, 'សិស្សទាំងអស់'), h('option', { value: 'm' }, 'តែប្រុស'), h('option', { value: 'f' }, 'តែស្រី')]);
   gSel.onchange = () => { gFilter = gSel.value; refresh(); redraw(); };
@@ -564,30 +579,34 @@ render.wheel = async function () {
     teacherIn,
     h('label', { style: 'font-weight:400' }, ['រយៈពេលបង្វិល៖ ', durV, ' វិនាទី']), durIn,
     h('label', { style: 'font-weight:400;margin-top:8px;display:block' }, 'ពណ៌កង់'), themeSel,
-    chk('fw', ' កាំជ្រួច និងសំឡេងអបអរ'), chk('mystery', ' លាក់ឈ្មោះសិស្សរហូតដល់ចុច «បង្ហាញឈ្មោះ»'), speakRow,
+    chk('fw', ' កាំជ្រួច និងសំឡេងអបអរ'),
+    h('label', { style: 'font-weight:400;margin-top:8px;display:block' }, 'បទពេលបង្វិល (សំឡេងដើមនៅតែប្រើពេលជ្រើស «បិទ»)'),
+    songSelect(),
+    chk('mystery', ' លាក់ឈ្មោះសិស្សរហូតដល់ចុច «បង្ហាញឈ្មោះ»'), speakRow,
     h('p', { class: 'muted', style: 'font-size:14px;margin:8px 0 0' }, 'ផ្លូវកាត់៖ Space ឬ Ctrl+Enter ដើម្បីបង្វិល · Esc ដើម្បីបិទ'),
   ]);
+  const fsX = h('button', { type: 'button', class: 'wheel-fs-x', 'aria-label': 'ចេញពីពេញអេក្រង់' }, '✕');
+  fsX.onclick = () => { try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} };
   const stage = h('div', { class: 'wheel-stage' }, [
+    fsX,
     h('div', { class: 'wheel-box' }, [h('div', { class: 'wheel-pointer' }), canvas, spinBtn]),
     msg, lastLine,
     h('div', { class: 'row wheel-tools' }, [
       h('button', { class: 'secondary btn-sm', onclick: () => { if (document.fullscreenElement) document.exitFullscreen(); else if (stage.requestFullscreen) stage.requestFullscreen(); } }, 'ពេញអេក្រង់'),
-      h('button', { class: 'secondary btn-sm', onclick: (e) => { sound = !sound; e.target.textContent = `សំឡេង៖ ${sound ? 'បើក' : 'បិទ'}`; } }, 'សំឡេង៖ បើក'),
+      h('button', { class: 'secondary btn-sm', onclick: (e) => { sound = !sound; e.target.textContent = `សំឡេង៖ ${sound ? 'បើក' : 'បិទ'}`; if (!sound) stopSong(); } }, 'សំឡេង៖ បើក'),
+      songSelect(),
       h('button', { class: 'secondary btn-sm', onclick: (e) => { noRepeat = !noRepeat; e.target.textContent = `មិនជ្រើសម្ដងទៀត៖ ${noRepeat ? 'បើក' : 'បិទ'}`; refresh(); redraw(); } }, 'មិនជ្រើសម្ដងទៀត៖ បើក'),
       h('button', { class: 'secondary btn-sm', onclick: () => { mem.done = []; doneGroups = []; save(); current = null; closePop(); refresh(); redraw(); } }, 'ចាប់ផ្ដើមជុំថ្មី'),
       h('button', { class: 'secondary btn-sm', onclick: () => { ord = {}; people.forEach((p) => { ord[p.id] = Math.random(); }); redraw(); } }, 'លាយលំដាប់កង់'),
     ]),
     h('div', { class: 'row wheel-tools', style: 'align-items:center' }, [h('span', {}, 'កង់ជ្រើសពី៖'), gSel]),
-    groupCard,
     fw, pop, gPop,
   ]);
   const side = h('div', {}, [
     h('div', { class: 'card' }, [
       h('label', {}, 'ថ្នាក់'), sel,
-      h('h3', { style: 'margin-top:16px' }, ['សិស្ស ', count]),
-      gsum,
-      h('p', { class: 'muted', style: 'font-size:14px' }, 'ចុចលើឈ្មោះដើម្បីសម្គាល់ថាអវត្តមាន (មិនចូលកង់)។ ឈ្មោះ និងភេទមកពី «ថ្នាក់ និងសិស្ស»។'),
-      chips,
+      h('div', { class: 'wheel-parts' }, [tabSpin, tabGroup]),
+      spinPane, groupPane,
     ]),
     settingsCard,
     h('div', { class: 'card' }, [

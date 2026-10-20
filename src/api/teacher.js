@@ -29,16 +29,50 @@ export async function setup(req, env) {
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }
 
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+const USERNAME_RE = /^[A-Za-z0-9_.\-+]{3,30}$/;
+
+// Contact is free text and unverified, so it must never outrank a real username/email match
+// (otherwise someone could sign up with contact = "victim" and shadow the victim's account).
+const IDENT_RANK = `CASE WHEN LOWER(username) = LOWER(?1) THEN 0
+                         WHEN email IS NOT NULL AND LOWER(email) = LOWER(?1) THEN 1
+                         WHEN LOWER(username) = LOWER(?2) THEN 2 ELSE 3 END`;
+
+export function isValidEmail(s) {
+  if (!s || typeof s !== 'string') return false;
+  const str = s.trim();
+  return str.length >= 5 && str.length <= 80 && EMAIL_RE.test(str);
+}
+
+export function isValidUsername(s) {
+  if (!s || typeof s !== 'string') return false;
+  return USERNAME_RE.test(s.trim());
+}
+
 export async function login(req, env) {
   await ensureColumns(env);
   const { username, password } = await req.json();
-  if (!(await allow(env, `login:${clientIp(req)}:${String(username).toLowerCase()}`, 10, 600))) {
+  const rawIdent = String(username || '').trim();
+  if (!rawIdent) return err('សូមបញ្ចូលឈ្មោះអ្នកប្រើ ឬអ៊ីមែល។', 400);
+
+  if (!(await allow(env, `login:${clientIp(req)}:${rawIdent.toLowerCase()}`, 10, 600))) {
     return err('ព្យាយាមចូលច្រើនដងពេក។ សូមរង់ចាំ ១០ នាទី ហើយសាកល្បងម្តងទៀត។', 429);
   }
-  const row = await env.DB.prepare('SELECT username, password_hash, active FROM teachers WHERE username = ?1').bind(username).first();
-  if (!row) return err('Incorrect username or password.', 401);
+
+  const noAt = rawIdent.replace(/@/g, '');
+  const row = await env.DB.prepare(
+    `SELECT username, password_hash, active 
+     FROM teachers 
+     WHERE LOWER(username) = LOWER(?1) 
+        OR (email IS NOT NULL AND LOWER(email) = LOWER(?1))
+        OR (contact IS NOT NULL AND LOWER(contact) = LOWER(?1))
+        OR (LOWER(username) = LOWER(?2) AND ?1 LIKE '%@%')
+     ORDER BY ${IDENT_RANK}, id ASC LIMIT 1`
+  ).bind(rawIdent, noAt).first();
+
+  if (!row) return err('ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ។', 401);
   const ok = await verifySecretValue(password, row.username, env.SESSION_SECRET, row.password_hash);
-  if (!ok) return err('Incorrect username or password.', 401);
+  if (!ok) return err('ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ។', 401);
   if (!row.active) return err('គណនីនេះត្រូវបានបិទ។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។', 403);
   await env.DB.prepare("UPDATE teachers SET last_login = datetime('now') WHERE username = ?1").bind(row.username).run();
   const cookie = await createSessionCookie({ role: 'teacher', username: row.username }, env.SESSION_SECRET);
@@ -68,22 +102,65 @@ export async function signup(req, env) {
   await ensureColumns(env);
   const open = await env.DB.prepare("SELECT value FROM settings WHERE key = 'signup_open'").first();
   if (open && open.value === '0') return err('ការចុះឈ្មោះបានបិទជាបណ្តោះអាសន្ន។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។', 403);
-  const { username, display_name, password, contact } = await req.json();
-  const uname = String(username || '').trim();
+
+  const { username, display_name, password, contact, email } = await req.json();
+  const rawIdent = String(username || '').trim();
+  const rawEmail = String(email || '').trim();
+  const rawContact = String(contact || '').trim().slice(0, 80);
   const name = String(display_name || '').trim().slice(0, 60);
-  if (!/^[A-Za-z0-9_.\-]{3,30}$/.test(uname)) return err('ឈ្មោះអ្នកប្រើត្រូវមាន ៣–៣០ តួ (អក្សរឡាតាំង លេខ _ . -)។', 400);
+
   if (!name) return err('សូមបញ្ចូលឈ្មោះរបស់អ្នក។', 400);
+
+  let uname = '';
+  let emailVal = null;
+
+  if (rawIdent.includes('@')) {
+    if (!isValidEmail(rawIdent)) {
+      return err('ទម្រង់អ៊ីមែលមិនត្រឹមត្រូវទេ។ (ឧ. teacher@gmail.com)', 400);
+    }
+    uname = rawIdent.toLowerCase();
+    emailVal = uname;
+  } else {
+    if (!isValidUsername(rawIdent)) {
+      return err('ឈ្មោះអ្នកប្រើត្រូវមាន ៣–៣០ តួ (អក្សរឡាតាំង លេខ _ . - ឬលេខទូរស័ព្ទ)។', 400);
+    }
+    uname = rawIdent.toLowerCase();
+    if (rawEmail) {
+      if (!isValidEmail(rawEmail)) return err('ទម្រង់អ៊ីមែលមិនត្រឹមត្រូវទេ។ (ឧ. teacher@gmail.com)', 400);
+      emailVal = rawEmail.toLowerCase();
+    } else if (isValidEmail(rawContact)) {
+      emailVal = rawContact.toLowerCase();
+    }
+  }
+
   if (!password || password.length < 6) return err('ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។', 400);
-  const taken = await env.DB.prepare('SELECT 1 FROM teachers WHERE username = ?1').bind(uname).first();
-  if (taken) return err('ឈ្មោះអ្នកប្រើនេះមានគេប្រើរួចហើយ។ សូមជ្រើសរើសឈ្មោះផ្សេង។', 409);
+
+  // Check if username or email is already in use
+  const taken = await env.DB.prepare(
+    `SELECT 1 FROM teachers 
+     WHERE LOWER(username) = LOWER(?1) 
+        OR (email IS NOT NULL AND LOWER(email) = LOWER(?1))
+        OR (?2 IS NOT NULL AND (LOWER(username) = LOWER(?2) OR (email IS NOT NULL AND LOWER(email) = LOWER(?2))))
+     LIMIT 1`
+  ).bind(uname, emailVal).first();
+
+  if (taken) {
+    return err('ឈ្មោះអ្នកប្រើ ឬអ៊ីមែលនេះមានគេប្រើរួចហើយ។ សូមជ្រើសរើសឈ្មោះផ្សេង ឬចូលប្រើ។', 409);
+  }
+
   // Only real sign-ups count (mistyped forms must not lock people out); a school shares one IP, so allow plenty.
-  if (!(await allow(env, `signup:${clientIp(req)}`, 30, 3600))) return err('ចុះឈ្មោះច្រើនពេកពីបណ្តាញនេះ។ សូមសាកល្បងម្តងទៀតក្រោយ ១ ម៉ោង ឬទាក់ទងម្ចាស់ប្រព័ន្ធ។', 429);
+  if (!(await allow(env, `signup:${clientIp(req)}`, 30, 3600))) {
+    return err('ចុះឈ្មោះច្រើនពេកពីបណ្តាញនេះ។ សូមសាកល្បងម្តងទៀតក្រោយ ១ ម៉ោង ឬទាក់ទងម្ចាស់ប្រព័ន្ធ។', 429);
+  }
+
   const hash = await hashSecretValue(password, uname, env.SESSION_SECRET);
   await env.DB.prepare(
-    "INSERT INTO teachers (username, password_hash, role, display_name, plan, contact, created_at, last_login) VALUES (?1, ?2, 'teacher', ?3, 'trial', ?4, datetime('now'), datetime('now'))",
-  ).bind(uname, hash, name, String(contact || '').trim().slice(0, 80)).run();
+    `INSERT INTO teachers (username, password_hash, role, display_name, plan, contact, email, created_at, last_login) 
+     VALUES (?1, ?2, 'teacher', ?3, 'trial', ?4, ?5, datetime('now'), datetime('now'))`
+  ).bind(uname, hash, name, rawContact, emailVal).run();
+
   await audit(env, null, 'signup', `${uname} (${name})`);
-  await notifyOwner(env, `🆕 គ្រូចុះឈ្មោះថ្មី៖ ${name} (@${uname})${contact ? ` · ${contact}` : ''}`);
+  await notifyOwner(env, `🆕 គ្រូចុះឈ្មោះថ្មី៖ ${name} (${uname})${rawContact ? ` · ${rawContact}` : ''}`);
   const cookie = await createSessionCookie({ role: 'teacher', username: uname }, env.SESSION_SECRET);
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }
@@ -127,8 +204,19 @@ export async function requestUnlock(req, env) {
 export async function forgotPassword(req, env) {
   await ensureColumns(env);
   const { username, contact } = await req.json();
+  const rawIdent = String(username || '').trim();
+  if (!rawIdent) return err('សូមបញ្ចូលឈ្មោះអ្នកប្រើ ឬអ៊ីមែល។', 400);
   if (!(await allow(env, `forgot:${clientIp(req)}`, 6, 3600))) return err('សំណើច្រើនពេក។ សូមរង់ចាំមួយម៉ោង ឬទាក់ទងម្ចាស់ប្រព័ន្ធ។', 429);
-  const t = await env.DB.prepare('SELECT id, username, display_name, role FROM teachers WHERE username = ?1 AND active = 1').bind(String(username || '').trim()).first();
+  const noAt = rawIdent.replace(/@/g, '');
+  const t = await env.DB.prepare(
+    `SELECT id, username, display_name, role FROM teachers 
+     WHERE (LOWER(username) = LOWER(?1) 
+        OR (email IS NOT NULL AND LOWER(email) = LOWER(?1))
+        OR (contact IS NOT NULL AND LOWER(contact) = LOWER(?1))
+        OR (LOWER(username) = LOWER(?2) AND ?1 LIKE '%@%'))
+       AND active = 1 
+     ORDER BY ${IDENT_RANK}, id ASC LIMIT 1`
+  ).bind(rawIdent, noAt).first();
   if (t && t.role !== 'owner') {
     const how = String(contact || '').trim().slice(0, 80);
     await env.DB.prepare("DELETE FROM unlock_requests WHERE teacher_id = ?1 AND plan = 'reset' AND status = 'pending'").bind(t.id).run();

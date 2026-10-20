@@ -87,7 +87,7 @@ def main(names):
         picked = []
         for cell, tgt in target.items():
             need = max(0, tgt - have.get(cell, 0))
-            if total_have >= 50:
+            if total_have >= sum(target.values()):
                 need = 0
             lst = pool.get(cell, [])
             bysec = collections.defaultdict(list)

@@ -60,7 +60,11 @@ function examDoc(o) {
     date ? h('div', { class: 't2' }, `សម័យប្រឡង ${date}`) : null,
     h('div', { class: 't3' }, `វិញ្ញាសា ${profile.subject || 'គណិតវិទ្យា'}`),
   ]));
-  kids.push(h('div', { class: 'p-meta' }, [h('span', {}, ['រយៈពេល៖ ', h('b', {}, `${kh(minutes)} នាទី`)]), h('span', {}, ['ពិន្ទុសរុប៖ ', h('b', {}, `${kh(mcqPts + wPts)} ពិន្ទុ`)])]));
+  kids.push(h('div', { class: 'p-meta' }, [
+    h('span', {}, ['រយៈពេល៖ ', h('b', {}, `${kh(minutes)} នាទី`)]),
+    h('span', {}, ['សំណួរ៖ ', h('b', {}, kh(mcq.length + writing.length))]),
+    h('span', {}, ['ពិន្ទុសរុប៖ ', h('b', {}, `${kh(mcqPts + wPts)} ពិន្ទុ`)]),
+  ]));
   kids.push(h('div', { class: 'p-student' }, [
     h('div', { class: 'f wide' }, ['ឈ្មោះ៖ ', h('i', { class: 'p-line' })]),
     h('div', { class: 'f' }, ['ថ្នាក់៖ ', h('i', { class: 'p-line' })]),
@@ -150,6 +154,7 @@ function answerDoc(o) {
   ]));
   kids.push(h('div', { class: 'p-meta' }, [
     h('span', {}, ['រយៈពេល៖ ', h('b', {}, `${kh(minutes)} នាទី`)]),
+    h('span', {}, ['សំណួរ៖ ', h('b', {}, kh(mcq.length + writing.length))]),
     h('span', {}, ['ពិន្ទុសរុប៖ ', h('b', {}, `${kh(mcqPts + wPts)} ពិន្ទុ`)]),
     h('span', {}, [profile.group || 'ក្រុមគ្រូគណិតវិទ្យា', ' · ', h('b', {}, `ឆ្នាំ ${kh(new Date().getFullYear())}`)]),
   ]));

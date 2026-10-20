@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 270" width="310" height="270">
+  <defs>
+    <filter id="badge-shadow" x="-8%" y="-10%" width="116%" height="125%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+  <!-- Shaded Blocks -->
+  <rect x="60" y="55" width="90" height="180" fill="#dcfce7" fill-opacity="0.85" />
+  <rect x="150" y="55" width="120" height="180" fill="#ffedd5" fill-opacity="0.85" />
+  <!-- Internal Grid Lines (30x30 squares) -->
+  <line x1="60" y1="85" x2="270" y2="85" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="60" y1="115" x2="270" y2="115" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="60" y1="145" x2="270" y2="145" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="60" y1="175" x2="270" y2="175" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="60" y1="205" x2="270" y2="205" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="90" y1="55" x2="90" y2="235" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="120" y1="55" x2="120" y2="235" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="180" y1="55" x2="180" y2="235" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="210" y1="55" x2="210" y2="235" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <line x1="240" y1="55" x2="240" y2="235" stroke="#94a3b8" stroke-width="1" stroke-opacity="0.7" />
+  <!-- Outer Rectangle Border -->
+  <rect x="60" y="55" width="210" height="180" fill="none" stroke="#334155" stroke-width="2" rx="1" />
+  <!-- Dividing Line -->
+  <line x1="150" y1="51" x2="150" y2="239" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" />
+  <!-- Dimension Braces -->
+  <path d="M 60 49 C 60 43.0, 65 43.0, 68 43.0 L 97.0 43.0 C 101.0 43.0, 105.0 38.8, 105.0 37 C 105.0 38.8, 109.0 43.0, 113.0 43.0 L 142 43.0 C 145 43.0, 150 43.0, 150 49" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 150 49 C 150 43.0, 155 43.0, 158 43.0 L 202.0 43.0 C 206.0 43.0, 210.0 38.8, 210.0 37 C 210.0 38.8, 214.0 43.0, 218.0 43.0 L 262 43.0 C 265 43.0, 270 43.0, 270 49" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 54 55 C 47.0 55, 47.0 60, 47.0 63 L 47.0 137.0 C 47.0 141.0, 42.1 145.0, 40 145.0 C 42.1 145.0, 47.0 149.0, 47.0 153.0 L 47.0 227 C 47.0 230, 47.0 235, 54 235" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Dimension Labels in Mathcad / Serif font -->
+  <text x="105.0" y="32" text-anchor="middle" font-family="'Mathcad UniMath Italic', 'Mathcad UniMath', 'Cambria Math', 'Times New Roman', serif" font-size="20" font-weight="bold" fill="#1e40af">3</text>
+  <text x="210.0" y="32" text-anchor="middle" font-family="'Mathcad UniMath Italic', 'Mathcad UniMath', 'Cambria Math', 'Times New Roman', serif" font-size="20" font-weight="bold" fill="#1e40af">4</text>
+  <text x="28" y="152.0" text-anchor="middle" font-family="'Mathcad UniMath Italic', 'Mathcad UniMath', 'Cambria Math', 'Times New Roman', serif" font-size="22" font-weight="bold" fill="#1e40af">6</text>
+  <!-- Area Expression Badges -->
+  <g filter="url(#badge-shadow)">
+    <rect x="75.0" y="131.0" width="60" height="28" rx="6" fill="#ffffff" fill-opacity="0.95" stroke="#10b981" stroke-width="1.5" />
+    <text x="105.0" y="151.0" text-anchor="middle" font-family="'Mathcad UniMath Italic', 'Mathcad UniMath', 'Cambria Math', 'Times New Roman', serif" font-size="16" font-weight="bold" fill="#047857">6 &#215; 3</text>
+  </g>
+  <g filter="url(#badge-shadow)">
+    <rect x="180.0" y="131.0" width="60" height="28" rx="6" fill="#ffffff" fill-opacity="0.95" stroke="#f97316" stroke-width="1.5" />
+    <text x="210.0" y="151.0" text-anchor="middle" font-family="'Mathcad UniMath Italic', 'Mathcad UniMath', 'Cambria Math', 'Times New Roman', serif" font-size="16" font-weight="bold" fill="#c2410c">6 &#215; 4</text>
+  </g>
+</svg>

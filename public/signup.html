@@ -3,15 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>បង្កើតគណនីគ្រូ</title>
+<title>បង្កើតគណនីគ្រូ — Exam Khmer</title>
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/interface.css">
 <link rel="stylesheet" href="css/ui2.css?v=1">
-<link rel="stylesheet" href="css/promo.css?v=4">
+<link rel="stylesheet" href="css/promo.css?v=5">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#285b55">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+.ident-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 6px;
+  animation: fadeIn 0.15s ease-in-out;
+}
+.ident-pill.email { background: #e8f4fd; color: #0b63b7; border: 1px solid #b8dcfa; }
+.ident-pill.phone { background: #e8f8f0; color: #0d7a46; border: 1px solid #b5edd1; }
+.ident-pill.user  { background: #f3f0fc; color: #5b32a3; border: 1px solid #d9ccf5; }
+.field-hint {
+  font-size: 0.82rem;
+  color: #627282;
+  margin: 4px 0 2px;
+  line-height: 1.4;
+}
+.match-badge { font-size: 0.82rem; margin-left: 6px; }
+.match-badge.ok { color: #16895a; font-weight: 700; }
+.match-badge.err { color: #c62828; font-weight: 700; }
+.pw-wrap { position: relative; width: 100%; display: flex; align-items: center; }
+.pw-wrap input { width: 100%; padding-right: 44px; box-sizing: border-box; }
+.pw-eye {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: none; border: 0; padding: 6px 8px; cursor: pointer;
+  font-size: 1.1rem; line-height: 1; opacity: 0.65;
+  transition: opacity 0.15s, background-color 0.15s; border-radius: 8px;
+}
+.pw-eye:hover { opacity: 1; background: rgba(0,0,0,0.06); }
+.error-box {
+  background: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;
+  padding: 10px 14px; border-radius: 12px; margin-top: 14px; font-size: 0.92rem;
+  line-height: 1.5;
+}
+.error-box a { color: #1c5ba6; font-weight: 700; text-decoration: underline; margin-left: 6px; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 </head>
 <body>
 <div class="su-page">
@@ -24,17 +66,48 @@
 
   <section class="su-form" id="card">
     <div class="brand-mark" style="margin:0 0 10px;">∑</div>
-    <h2>បង្កើតគណនី — ៣០ វិនាទី</h2>
+    <h2>បង្កើតគណនីគ្រូ — ៣០ វិនាទី</h2>
     <p class="su-sub">សាកល្បងបានភ្លាម៖ ថ្នាក់ ១ · សិស្ស ១០នាក់ · តេស្ត ២ · ប្រឡង ២។</p>
-    <label for="f-name">ឈ្មោះរបស់អ្នក</label>
-    <input type="text" id="f-name" placeholder="ឧ. គ្រូ សុភា" autocomplete="name">
-    <label for="f-user">ឈ្មោះសម្រាប់ចូល <span class="muted">(ប្រើលេខទូរស័ព្ទក៏បាន)</span></label>
-    <input type="text" id="f-user" placeholder="ឧ. 012345678 ឬ sopha" autocomplete="username" autocapitalize="none">
-    <label for="f-pass">ពាក្យសម្ងាត់ <span class="muted">(យ៉ាងតិច ៦ តួ)</span></label>
-    <div class="pw-wrap"><input type="password" id="f-pass" autocomplete="new-password" style="padding-right:42px;"><button type="button" id="f-eye" aria-label="បង្ហាញពាក្យសម្ងាត់">👁</button></div>
+
+    <label for="f-name">ឈ្មោះរបស់អ្នក <span class="muted" style="font-weight:normal;">(សម្រាប់បង្ហាញសិស្ស)</span></label>
+    <input type="text" id="f-name" placeholder="ឧ. គ្រូ សុភា ឬ លោកគ្រូ វ៉ាន់ដា" autocomplete="name">
+
+    <label for="f-user">
+      ឈ្មោះអ្នកប្រើ ឬ អ៊ីមែល
+      <span id="ident-badge" class="ident-pill" style="display:none;"></span>
+    </label>
+    <input type="text" id="f-user" placeholder="ឧ. sopha, 012345678 ឬ sopha@gmail.com" autocomplete="username" autocapitalize="none" spellcheck="false">
+    <p class="field-hint">អាចប្រើអក្សរឡាតាំង (sopha), លេខទូរស័ព្ទ (012345678) ឬអ៊ីមែល (name@gmail.com)</p>
+
+    <label for="f-contact">
+      លេខទូរស័ព្ទ ឬ Telegram
+      <span class="muted" style="font-weight:normal;font-size:0.86em;">(ស្រេចចិត្ត សម្រាប់ជំនួយ ឬដោះសោគណនី)</span>
+    </label>
+    <input type="text" id="f-contact" placeholder="ឧ. 012 345 678 ឬ @telegram_username" autocomplete="tel">
+
+    <label for="f-pass">
+      ពាក្យសម្ងាត់
+      <span id="pass-hint" class="muted" style="font-weight:normal;font-size:0.86em;">(យ៉ាងតិច ៦ តួ)</span>
+    </label>
+    <div class="pw-wrap">
+      <input type="password" id="f-pass" placeholder="បញ្ចូលពាក្យសម្ងាត់" autocomplete="new-password">
+      <button type="button" id="f-eye1" class="pw-eye" aria-label="បង្ហាញពាក្យសម្ងាត់">👁</button>
+    </div>
+
+    <label for="f-pass2">
+      បញ្ជាក់ពាក្យសម្ងាត់
+      <span id="match-hint" class="match-badge"></span>
+    </label>
+    <div class="pw-wrap">
+      <input type="password" id="f-pass2" placeholder="បញ្ចូលពាក្យសម្ងាត់ម្តងទៀត" autocomplete="new-password">
+      <button type="button" id="f-eye2" class="pw-eye" aria-label="បង្ហាញពាក្យសម្ងាត់">👁</button>
+    </div>
+
+    <div id="form-msg"></div>
+
     <button id="f-go" class="su-cta">🚀 ចាប់ផ្តើមសាកល្បងឥតគិតថ្លៃ</button>
     <div class="su-trust"><span>🔒 ទិន្នន័យរក្សាទុកសុវត្ថិភាព</span><span>↩ ឡើងគម្រោងពេលណាក៏បាន</span></div>
-    <a href="teacher.html" class="back-link" style="display:block;text-align:center;margin-top:12px;">មានគណនីរួចហើយ? ចូលប្រើ</a>
+    <a href="teacher.html" class="back-link" style="display:block;text-align:center;margin-top:14px;">មានគណនីរួចហើយ? ចូលប្រើនៅទីនេះ</a>
   </section>
 
   <section class="su-feat" aria-label="មុខងារ">
@@ -74,27 +147,161 @@
 </div>
 <script src="js/common.js"></script>
 <script>
-const { api, showError } = Exam;
+const { api } = Exam;
 const card = document.getElementById('card');
-const pass = document.getElementById('f-pass');
-document.getElementById('f-eye').addEventListener('click', () => { pass.type = pass.type === 'password' ? 'text' : 'password'; });
-// Khmer / spaces / capitals in the login name are the usual stumbling block: clean it up instead of refusing.
-const cleanUser = (v) => v.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_.\-]/g, '');
-async function go() {
-  const name = document.getElementById('f-name').value.trim();
-  const raw = document.getElementById('f-user').value;
-  const user = cleanUser(raw);
-  if (!name) return showError(card, 'សូមបញ្ចូលឈ្មោះរបស់អ្នក។');
-  if (user.length < 3) return showError(card, 'ឈ្មោះសម្រាប់ចូលត្រូវមានយ៉ាងតិច ៣ តួ — ប្រើអក្សរឡាតាំង ឬលេខ (ឧ. លេខទូរស័ព្ទ)។');
-  if (pass.value.length < 6) return showError(card, 'ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។');
-  const btn = document.getElementById('f-go'); btn.disabled = true;
-  try {
-    await api('/api/teacher/signup', { method: 'POST', body: { display_name: name, username: user, contact: /^[0-9+ ]{8,}$/.test(raw.trim()) ? raw.trim() : '', password: pass.value } });
-    location.href = 'teacher.html';
-  } catch (e) { btn.disabled = false; showError(card, e.message); }
+const fName = document.getElementById('f-name');
+const fUser = document.getElementById('f-user');
+const fContact = document.getElementById('f-contact');
+const fPass = document.getElementById('f-pass');
+const fPass2 = document.getElementById('f-pass2');
+const fGo = document.getElementById('f-go');
+const formMsg = document.getElementById('form-msg');
+const badge = document.getElementById('ident-badge');
+const passHint = document.getElementById('pass-hint');
+const matchHint = document.getElementById('match-hint');
+
+// Eye toggles
+document.getElementById('f-eye1').addEventListener('click', () => {
+  fPass.type = fPass.type === 'password' ? 'text' : 'password';
+});
+document.getElementById('f-eye2').addEventListener('click', () => {
+  fPass2.type = fPass2.type === 'password' ? 'text' : 'password';
+});
+
+// Email regex matching standard format
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+// Real-time identification badge
+fUser.addEventListener('input', () => {
+  const val = fUser.value.trim();
+  if (!val) {
+    badge.style.display = 'none';
+    return;
+  }
+  badge.style.display = 'inline-flex';
+  if (val.includes('@')) {
+    badge.className = 'ident-pill email';
+    badge.textContent = '✉️ អ៊ីមែល';
+  } else if (/^[0-9+ ]{8,}$/.test(val)) {
+    badge.className = 'ident-pill phone';
+    badge.textContent = '📱 លេខទូរស័ព្ទ';
+  } else {
+    badge.className = 'ident-pill user';
+    badge.textContent = '👤 ឈ្មោះអ្នកប្រើ';
+  }
+});
+
+// Password strength indicator
+fPass.addEventListener('input', () => {
+  if (fPass.value.length >= 6) {
+    passHint.textContent = '✓ ត្រឹមត្រូវ (យ៉ាងតិច ៦ តួ)';
+    passHint.style.color = '#16895a';
+  } else {
+    passHint.textContent = '(យ៉ាងតិច ៦ តួ)';
+    passHint.style.color = '';
+  }
+  checkMatch();
+});
+
+// Password match indicator
+function checkMatch() {
+  const p1 = fPass.value;
+  const p2 = fPass2.value;
+  if (!p2) {
+    matchHint.textContent = '';
+    matchHint.className = 'match-badge';
+    return;
+  }
+  if (p1 === p2) {
+    matchHint.textContent = '✓ ពាក្យសម្ងាត់ត្រូវគ្នា';
+    matchHint.className = 'match-badge ok';
+  } else {
+    matchHint.textContent = '✗ មិនទាន់ដូចគ្នា';
+    matchHint.className = 'match-badge err';
+  }
 }
-document.getElementById('f-go').addEventListener('click', go);
-for (const id of ['f-name', 'f-user', 'f-pass']) document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+fPass2.addEventListener('input', checkMatch);
+
+function showMsg(html) {
+  if (!html) { formMsg.innerHTML = ''; return; }
+  formMsg.innerHTML = `<div class="error-box" role="alert">${html}</div>`;
+}
+
+async function go() {
+  showMsg('');
+  const name = fName.value.trim();
+  const rawUser = fUser.value.trim();
+  const rawContact = fContact.value.trim();
+  const p1 = fPass.value;
+  const p2 = fPass2.value;
+
+  if (!name) {
+    fName.focus();
+    return showMsg('សូមបញ្ចូលឈ្មោះរបស់អ្នក។');
+  }
+
+  if (!rawUser) {
+    fUser.focus();
+    return showMsg('សូមបញ្ចូលឈ្មោះអ្នកប្រើ ឬអ៊ីមែលសម្រាប់ចូលគណនី។');
+  }
+
+  // Validate identifier
+  let user = rawUser;
+  if (user.includes('@')) {
+    user = user.toLowerCase().replace(/\s+/g, '');
+    if (!EMAIL_RE.test(user)) {
+      fUser.focus();
+      return showMsg('ទម្រង់អ៊ីមែលមិនត្រឹមត្រូវទេ។ (ឧទាហរណ៍៖ teacher@gmail.com)');
+    }
+  } else {
+    // Keep a-z, 0-9, _, ., -, +
+    user = user.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_.\-+]/g, '');
+    if (user.length < 3) {
+      fUser.focus();
+      return showMsg('ឈ្មោះសម្រាប់ចូលត្រូវមានយ៉ាងតិច ៣ តួ (អក្សរឡាតាំង លេខ ឬលេខទូរស័ព្ទ)។');
+    }
+  }
+
+  if (p1.length < 6) {
+    fPass.focus();
+    return showMsg('ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួអក្សរ។');
+  }
+
+  if (p1 !== p2) {
+    fPass2.focus();
+    return showMsg('ពាក្យសម្ងាត់ទាំងពីរមិនដូចគ្នាទេ។ សូមពិនិត្យឡើងវិញ។');
+  }
+
+  fGo.disabled = true;
+  fGo.textContent = '⏳ កំពុងបង្កើតគណនី...';
+
+  try {
+    const contactVal = rawContact || (/^[0-9+ ]{8,}$/.test(rawUser) ? rawUser : '');
+    await api('/api/teacher/signup', {
+      method: 'POST',
+      body: {
+        display_name: name,
+        username: user,
+        contact: contactVal,
+        password: p1,
+      },
+    });
+    location.href = 'teacher.html';
+  } catch (e) {
+    fGo.disabled = false;
+    fGo.textContent = '🚀 ចាប់ផ្តើមសាកល្បងឥតគិតថ្លៃ';
+    if (e.status === 409 || (e.message && e.message.includes('មានគេប្រើរួចហើយ'))) {
+      showMsg(`${e.message} <a href="teacher.html">ចូលប្រើនៅទីនេះ →</a>`);
+    } else {
+      showMsg(e.message || 'មានបញ្ហាក្នុងការចុះឈ្មោះ។ សូមសាកល្បងម្តងទៀត។');
+    }
+  }
+}
+
+fGo.addEventListener('click', go);
+for (const el of [fName, fUser, fContact, fPass, fPass2]) {
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+}
 </script>
 </body>
 </html>

@@ -32,6 +32,7 @@ export async function authTeacher(req, env) {
 }
 
 export const isAdmin = (t) => t.role === 'owner';
+export const isBankAdmin = (t) => t.role === 'owner' || t.role === 'admin';
 
 const RANK = { sample: 1, reviewer: 1, editor: 2, owner: 3 };
 const NEED = { view: 1, edit: 2, own: 3 };

@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>គ្រូបង្រៀន — Exam Khmer</title>
-<link rel="stylesheet" href="css/app.css">
-<link rel="stylesheet" href="css/interface.css">
+<link rel="stylesheet" href="css/app.css?v=20261019f">
+<link rel="stylesheet" href="css/interface.css?v=20261019f">
 <link rel="stylesheet" href="css/promo.css?v=4">
 <link rel="stylesheet" href="css/shimmer.css?v=2">
-<link rel="stylesheet" href="css/wheel.css?v=20261017g">
-<link rel="stylesheet" href="css/ui2.css?v=20261017d">
+<link rel="stylesheet" href="css/wheel.css?v=20261019q">
+<link rel="stylesheet" href="css/ui2.css?v=20261019u">
+<link rel="stylesheet" href="css/teachshow.css?v=20261019u">
 <link rel="stylesheet" href="css/sharing.css?v=20261018g">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f1b3d">
@@ -41,8 +42,8 @@
     <p class="eyebrow auth-eyebrow">សម្រាប់គ្រូបង្រៀន</p>
     <h2>ចូលគណនីគ្រូ</h2>
     <p class="muted">គ្រប់គ្រងថ្នាក់ រៀបចំការប្រឡង និងតាមដានលទ្ធផល។</p>
-    <label for="login-username">ឈ្មោះអ្នកប្រើប្រាស់</label>
-    <input type="text" id="login-username" autocomplete="username">
+    <label for="login-username">ឈ្មោះអ្នកប្រើប្រាស់ ឬ អ៊ីមែល</label>
+    <input type="text" id="login-username" autocomplete="username" placeholder="ឧ. sopha, 012345678 ឬ sopha@gmail.com" autocapitalize="none" spellcheck="false">
     <label for="login-password">ពាក្យសម្ងាត់</label>
     <input type="password" id="login-password" autocomplete="current-password">
     <div class="row" style="margin-top:14px;"><button id="login-submit">ចូល</button></div>
@@ -58,6 +59,11 @@
   <header class="dashboard-header">
     <div class="dh-title"><p class="eyebrow">ផ្ទាំងគ្រូ</p><h1 id="workspace-title">ថ្នាក់ និងសិស្ស</h1><div id="teacher-username-badge" class="muted"></div></div>
     <div class="dashboard-actions">
+      <button type="button" class="teach-back" id="teach-back" hidden>← ថ្នាក់</button>
+      <button type="button" class="mode-switch" id="teach-mode-btn" title="ម៉ូដបង្រៀន" aria-pressed="false">
+        <span class="mode-switch-track" aria-hidden="true"><span class="mode-switch-knob"></span></span>
+        <span class="mode-switch-label">បង្រៀន</span>
+      </button>
       <a class="btn secondary btn-sm help-link" href="guide.html" target="_blank" title="ណែនាំការប្រើប្រាស់">❓ <span>ណែនាំ</span></a>
       <div class="user-menu">
         <button type="button" class="user-chip" id="user-chip" aria-haspopup="true" aria-expanded="false"><span class="avatar" id="user-avatar" aria-hidden="true">គ</span><span class="user-name" id="user-name">គណនី</span><span class="caret" aria-hidden="true">▾</span></button>
@@ -70,6 +76,7 @@
       </div>
     </div>
   </header>
+  <div id="teach-stage" class="teach-stage">
   <button class="nav-toggle secondary" id="nav-toggle" aria-expanded="false" aria-controls="teacher-navigation">☰ <span>ម៉ឺនុយ</span><span class="mobile-section" id="mobile-section">ថ្នាក់ និងសិស្ស</span></button>
   <nav class="tabs teacher-navigation" id="teacher-navigation" aria-label="មុខងារគ្រូ">
 <a class="site-brand" href="index.html"><span class="brand-symbol" aria-hidden="true">∑</span><span>KhmerMath<span class="brand-caption">ប្រព័ន្ធប្រឡងគណិតវិទ្យា</span></span></a>
@@ -92,6 +99,7 @@
     <a class="nav-home" href="index.html">← ទំព័រដើម</a>
   </nav>
   <main id="dashboard-content" tabindex="-1">
+  <div id="tab-teach" class="shimmer-host" hidden></div>
   <div id="tab-classes" class="shimmer-host"></div>
   <div id="tab-tests" class="shimmer-host" hidden></div>
   <div id="tab-bank" class="shimmer-host" hidden></div>
@@ -105,21 +113,26 @@
   <div id="tab-live" class="shimmer-host" hidden></div>
   <div id="tab-teachers" class="shimmer-host" hidden></div>
   </main>
+  </div>
 </div>
 
 <script src="js/common.js"></script>
-<script src="js/interface.js"></script>
+<script src="js/interface.js?v=20261019u"></script>
 <script src="js/mathtype.js"></script>
-<script src="js/teacher.js?v=20261018f"></script>
+<script src="js/teacher.js?v=20261019u"></script>
+<script src="js/teachroom.js?v=20261019u"></script>
+<script src="js/slides/g7l01.js?v=20261019u"></script>
+<script src="js/teachshow.js?v=20261019u"></script>
 <script src="js/year.js"></script>
 <script src="js/team.js?v=20261018g"></script>
-<script src="js/bank.js?v=20261018f"></script>
-<script src="js/wheel.js?v=20261017g"></script>
-<script src="js/teamgame_tab.js?v=20261017h"></script>
+<script src="js/bank.js?v=20261019f"></script>
+<script src="js/wheel.js?v=20261019q"></script>
+<script src="js/teamgame_tab.js?v=20261019a"></script>
 <script src="js/gamebank.js?v=20261018a"></script>
 <script src="js/qrcode.js"></script>
 <script src="js/avatar.js?v=20261017b"></script>
 <script src="js/sfx.js?v=20261017i"></script>
 <script src="js/livehost.js?v=20261021b"></script>
+<div id="teach-show" hidden></div>
 </body>
 </html>

@@ -12,7 +12,7 @@
   };
   const dashboard = document.getElementById('view-dashboard');
   const sync = () => {
-    if (dashboard.hidden) return;
+    if (dashboard.hidden || document.body.classList.contains('teach-mode')) return;
     const active = buttons.find((button) => button.classList.contains('active'));
     buttons.forEach((button) => {
       if (button === active) button.setAttribute('aria-current', 'page');

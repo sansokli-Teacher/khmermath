@@ -1,0 +1,115 @@
+#teach-show {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column;
+  background: #0b1020; color: #f4f6ff;
+}
+#teach-show[hidden] { display: none !important; }
+body.teach-show-on { overflow: hidden; }
+.ts-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 12px; background: #161c34; border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.ts-tools, .ts-nav, .ts-wid { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ts-bar button {
+  min-height: 36px; padding: 4px 10px; border-radius: 10px;
+  background: #2a3358; color: #fff; border: 0; box-shadow: none; font-weight: 700;
+}
+.ts-bar button.on, .ts-bar button:hover { background: #4d73ee; }
+.ts-col { width: 28px !important; min-width: 28px; padding: 0 !important; height: 28px; min-height: 28px !important; border-radius: 50% !important; border: 2px solid #fff !important; }
+.ts-exit { background: #d9454f !important; }
+.ts-page { min-width: 64px; text-align: center; font-weight: 800; }
+.ts-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.ts-slide {
+  position: absolute; inset: 0; padding: 36px 48px 48px;
+  overflow: auto; font-size: clamp(18px, 2.4vw, 28px); line-height: 1.65;
+}
+.ts-slide h1 { font-size: clamp(36px, 5.5vw, 64px); margin: 8px 0 12px; color: #fff; }
+.ts-slide h2 { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 16px; color: #c9d6ff; }
+.ts-kicker { color: #9bb6ff; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 14px; }
+.ts-sub { color: rgba(255,255,255,.72); }
+.ts-eq { font-size: 1.25em; background: rgba(255,255,255,.06); border-radius: 16px; padding: 12px 18px; }
+.ts-bullets, .ts-ex { margin: 0; padding-left: 1.2em; }
+.ts-bullets li, .ts-ex li { margin: 8px 0; }
+.ts-3, .ts-2 { display: grid; gap: 14px; margin-top: 18px; }
+.ts-3 { grid-template-columns: repeat(3, 1fr); }
+.ts-2 { grid-template-columns: 1fr 1fr; }
+.ts-card { background: rgba(255,255,255,.08); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.ts-axis { display: flex; justify-content: space-between; margin: 28px 0; padding: 10px 8px 0; border-top: 3px solid #6ea0ff; }
+.ts-axis span { position: relative; top: -22px; font-weight: 800; }
+.ts-axis .z { color: #ffd56a; }
+.ts-note, .ts-foot { color: rgba(255,255,255,.6); font-size: .85em; }
+.ts-slide.ts-title { display: grid; place-content: center; text-align: center; }
+.ts-ink { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; touch-action: none; cursor: crosshair; }
+.ts-float {
+  position: absolute; z-index: 8; min-width: 180px; min-height: 120px;
+  background: rgba(18, 24, 48, .94); border: 1px solid rgba(255,255,255,.16);
+  border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,.4); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.ts-fbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 8px 6px 12px; background: rgba(255,255,255,.08); cursor: grab; font-size: 13px;
+}
+.ts-fx { min-height: 32px !important; width: 32px; padding: 0 !important; border-radius: 50% !important; background: transparent !important; color: #fff; border: 0; box-shadow: none; }
+.ts-fin { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+.ts-rs { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #6ea0ff 50%); }
+.ts-spin { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; }
+.ts-spin canvas { width: min(100%, 100%); height: auto; aspect-ratio: 1; max-height: calc(100% - 52px); }
+.ts-hub { position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
+  width: 22%; aspect-ratio: 1; border-radius: 50%; padding: 0; font-size: 12px; font-weight: 800;
+  background: #2f5fe3; color: #fff; border: 3px solid #fff; box-shadow: none; min-height: 0; }
+.ts-spin-out { margin-top: auto; font-weight: 800; font-size: 18px; text-align: center; min-height: 28px; color: #ffd56a; }
+.ts-timer { text-align: center; }
+.ts-tface { font-size: 42px; font-weight: 800; letter-spacing: .06em; margin: 8px 0; }
+.ts-tface.done { color: #ff8787; }
+.ts-trow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.ts-trow button { min-height: 32px; padding: 4px 8px; font-size: 12px; background: #2a3358; color: #fff; border: 0; border-radius: 8px; box-shadow: none; }
+.ts-timer input[type=range] { width: 100%; margin-top: 8px; }
+.ts-calc input { width: 100%; text-align: right; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.ts-ckeys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ts-ckeys button { min-height: 40px; padding: 0; background: #2a3358; color: #fff; border: 0; border-radius: 10px; box-shadow: none; font-weight: 800; }
+@media (max-width: 800px) {
+  .ts-slide { padding: 18px 16px 80px; }
+  .ts-3, .ts-2 { grid-template-columns: 1fr; }
+}
+
+.desk-card { background: #fff; border: 1px solid rgba(28,36,51,.08); border-radius: 22px; padding: 16px; box-shadow: 0 10px 28px rgba(28,36,51,.05); }
+.desk-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.desk-hd h3 { margin: 0; font-size: 20px; color: #1c2433; }
+.desk-hd span { color: #5c677a; font-size: 13px; font-weight: 700; }
+.desk-slides { position: sticky; top: 12px; }
+.slide-open { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; text-align: left; min-height: 108px; margin-bottom: 12px; padding: 16px; border-radius: 18px; }
+.slide-open b { font-size: 26px; }
+.slide-open-k { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
+.att-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 10px; }
+.att-bar label { display: grid; gap: 4px; color: #1c2433; font-weight: 700; }
+.att-period-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.att-period-lab { font-size: 13px; font-weight: 800; color: #5c677a; }
+.att-periods { display: flex; flex-wrap: wrap; gap: 6px; }
+.att-period { min-height: 34px; min-width: 34px; padding: 4px 8px; border-radius: 10px; background: #f3efe6; color: #1c2433; border: 0; box-shadow: none; }
+.att-period.on { background: #1c2433; color: #fff; }
+.att-hint, .att-empty { margin: 0 0 12px; color: #5c677a; font-size: 13.5px; }
+.att-err { margin: 0 0 12px; color: #d9454f; font-weight: 700; }
+.att-list { display: grid; gap: 8px; max-height: 560px; overflow: auto; padding-right: 2px; }
+.att-row { display: grid; grid-template-columns: 36px minmax(120px, 1.2fr) auto minmax(120px, 1fr); gap: 10px; align-items: center;
+  background: #f7f4ee; border-radius: 14px; padding: 8px 10px; color: #1c2433; }
+.att-n { font-weight: 800; color: #2f5fe3; }
+.att-who { display: flex; flex-direction: column; gap: 2px; }
+.att-who b { color: #1c2433; }
+.att-marks { display: flex; gap: 6px; }
+.att-m { min-height: 36px; min-width: 42px; padding: 0 8px; border-radius: 10px; border: 0; box-shadow: none; background: #fff; color: #1c2433; font-weight: 800; }
+.att-m.on.att-ok { background: #1c9a74; color: #fff; }
+.att-m.on.att-A { background: #d9454f; color: #fff; }
+.att-m.on.att-L { background: #b7791f; color: #fff; }
+.att-note { min-height: 36px; background: #fff; color: #1c2433; }
+.att-foot { position: sticky; bottom: 0; margin-top: 12px; background: linear-gradient(transparent, #fff 30%); padding-top: 8px; }
+.att-save { width: 100%; min-height: 48px; font-size: 17px; }
+.teach-lessons { display: grid; gap: 8px; max-height: 420px; overflow: auto; }
+.teach-lesson { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; width: 100%;
+  padding: 12px 14px; border-radius: 14px; background: #f7f4ee; color: #1c2433; border: 0; box-shadow: none; }
+.teach-lesson.off { opacity: .55; }
+.teach-lesson-n { font-size: 12px; font-weight: 800; color: #2f5fe3; }
+@media (max-width: 700px) {
+  .att-row { grid-template-columns: 28px 1fr; }
+  .att-marks, .att-note { grid-column: 1 / -1; }
+}

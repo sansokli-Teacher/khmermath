@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS teachers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL
+  password_hash TEXT NOT NULL,
+  email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS classes (
@@ -138,3 +139,15 @@ CREATE TABLE IF NOT EXISTS session_notes (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 -- (policy columns on test_sessions / results are added by ensureColumns in src/lib/schema.js)
+
+CREATE TABLE IF NOT EXISTS attendance (
+  class_id INTEGER NOT NULL,
+  day TEXT NOT NULL,
+  period INTEGER NOT NULL,
+  student_id TEXT NOT NULL,
+  mark TEXT NOT NULL DEFAULT 'ok',
+  note TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (class_id, day, period, student_id)
+);
+CREATE INDEX IF NOT EXISTS idx_attendance_class_day ON attendance(class_id, day, period);

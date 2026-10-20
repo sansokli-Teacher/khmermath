@@ -1,11 +1,11 @@
-import { GRADES, CHAPTERS, chapterOf, loadCurriculum } from '../lib/curriculum.js';
+import { GRADES, BANK_GRADES, CHAPTERS, chapterOf, loadCurriculum } from '../lib/curriculum.js';
 import { json, err } from '../lib/http.js';
 import { ensureColumns } from '../lib/schema.js';
 import { rescoreSession } from '../lib/scoring.js';
 import { audit } from '../lib/audit.js';
 import { syncKeyToFrozen, frozenCountForTest } from '../lib/frozen.js';
 import { checkTemplate, sampleFor, hasVariants } from '../lib/variants.js';
-import { authTeacher, needTest, needQuestion, needLicense, needAdmin, accessibleTests, lockedResponse, limitResponse, trialUsage } from '../lib/access.js';
+import { authTeacher, needTest, needQuestion, needLicense, needAdmin, isBankAdmin, accessibleTests, lockedResponse, limitResponse, trialUsage } from '../lib/access.js';
 import { TRIAL } from '../lib/plans.js';
 
 export async function listTests(req, env) {
@@ -183,12 +183,62 @@ export async function rescoreTest(req, env, params) {
   return json({ ok: true, sessions: sessions.length, changed, total });
 }
 
+async function bankQuestionRow(env, questionId) {
+  return env.DB.prepare(
+    `SELECT q.id, q.test_id, x.is_bank, x.owner_id
+     FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.id = ?1`,
+  ).bind(Number(questionId)).first();
+}
+
+async function removeQuestionRow(env, t, questionId) {
+  const used = await env.DB.prepare('SELECT 1 AS x FROM responses WHERE question_id = ?1 LIMIT 1').bind(questionId).first();
+  if (used) return { error: 'សំណួរនេះមានសិស្សបានឆ្លើយរួចហើយ មិនអាចលុបបានទេ។ សូមប្រើ «បោះបង់សំណួរ» ជំនួស។', status: 409 };
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM question_notes WHERE question_id = ?1').bind(questionId),
+    env.DB.prepare('DELETE FROM test_questions WHERE id = ?1').bind(questionId),
+  ]);
+  await audit(env, t, 'bank.delete', `question ${questionId}`);
+  return { ok: true };
+}
+
 export async function deleteQuestion(req, env, params) {
-  const g = await needQuestion(req, env, params.questionId, 'edit'); if (g.resp) return g.resp;
-  const used = await env.DB.prepare('SELECT 1 AS x FROM responses WHERE question_id = ?1 LIMIT 1').bind(params.questionId).first();
-  if (used) return err('សំណួរនេះមានសិស្សបានឆ្លើយរួចហើយ មិនអាចលុបបានទេ។ សូមប្រើ «បោះបង់សំណួរ» ជំនួស។', 409);
-  await env.DB.prepare('DELETE FROM test_questions WHERE id = ?1').bind(params.questionId).run();
+  const g = await needQuestion(req, env, params.questionId, 'edit');
+  if (g.resp) {
+    const t = await authTeacher(req, env);
+    if (!t || !isBankAdmin(t)) return g.resp;
+    const row = await bankQuestionRow(env, params.questionId);
+    if (!row || !row.is_bank) return g.resp;
+    const r = await removeQuestionRow(env, t, row.id);
+    if (r.error) return err(r.error, r.status);
+    return json({ ok: true });
+  }
+  const r = await removeQuestionRow(env, g.t, g.q.id);
+  if (r.error) return err(r.error, r.status);
   return json({ ok: true });
+}
+
+// Owner / admin: delete questions from the shared question bank (and any they can edit).
+export async function deleteBankQuestions(req, env) {
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
+  if (!isBankAdmin(t)) return err('សម្រាប់ម្ចាស់ប្រព័ន្ធ និងអ្នកគ្រប់គ្រងតែប៉ុណ្ណោះ។', 403);
+  if (!t.licensed) return lockedResponse(t);
+  const b = await req.json().catch(() => ({}));
+  const ids = [...new Set((b.question_ids || []).map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0))];
+  if (!ids.length) return err('សូមជ្រើសសំណួរដែលចង់លុប។', 400);
+  const mine = await accessibleTests(env, t);
+  let deleted = 0, blocked = 0, skipped = 0;
+  for (const id of ids) {
+    const row = await bankQuestionRow(env, id);
+    if (!row) { skipped += 1; continue; }
+    const acc = mine.get(row.test_id);
+    const allowed = !!row.is_bank || acc === 'owner' || acc === 'editor';
+    if (!allowed) { skipped += 1; continue; }
+    const r = await removeQuestionRow(env, t, id);
+    if (r.error) blocked += 1;
+    else deleted += 1;
+  }
+  return json({ ok: true, deleted, blocked, skipped });
 }
 
 export async function deleteTest(req, env, params) {
@@ -308,11 +358,12 @@ async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
   ).bind(...ids).all();
   const results = raw.map((q) => (sharedIds.has(q.test_id) ? { ...q, shared: 1, test_title: 'ឃ្លាំងសំណួររួម' } : q));
   if (!dedupe) return results.filter((q) => !q.cancelled);
-  // the same question often lives in several tests (copies) — show it once, preferring the tagged copy
+  // the same question often lives in several tests (copies) — show it once, preferring the tagged copy.
+  // Keep one copy per grade/lesson so shared banks (e.g. NGS orientation) stay visible on every class.
   const byKey = new Map();
   for (const q of results) {
     if (q.cancelled) continue;
-    const k = `${q.kind}|${q.stem_text}|${q.options_json}`;
+    const k = `${q.kind}|${q.grade || ''}|${q.lesson || ''}|${q.stem_text}|${q.options_json}`;
     const cur = byKey.get(k);
     const sc = (x) => (x.topic ? 1 : 0) + (x.level ? 1 : 0) + (x.grade ? 2 : 0) + (x.lesson ? 2 : 0) + (x.chapter ? 2 : 0);
     if (!cur || sc(q) > sc(cur)) byKey.set(k, q);
@@ -450,7 +501,7 @@ export async function bulkAdd(req, env, params) {
   return json({ ok: true, added: stmts.length, skipped: bad });
 }
 
-const cleanGrade = (g) => (GRADES.includes(String(g || '').trim()) ? String(g).trim() : null);
+const cleanGrade = (g) => (BANK_GRADES.includes(String(g || '').trim()) ? String(g).trim() : null);
 const cleanLesson = (l) => (l ? String(l).trim().slice(0, 120) || null : null);
 const cleanChapter = (c) => (c ? String(c).trim().slice(0, 120) || null : null);
 
@@ -458,7 +509,7 @@ const cleanChapter = (c) => (c ? String(c).trim().slice(0, 120) || null : null);
 export async function getCurriculum(req, env) {
   const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   const { lessons, chapters } = await loadCurriculum(env, g0.t.id);
-  return json({ grades: GRADES, lessons, chapters });
+  return json({ grades: GRADES, bankGrades: BANK_GRADES, lessons, chapters });
 }
 
 export async function addLesson(req, env) {

@@ -32,7 +32,7 @@ async function makeInvite(env, { purpose, teacherId = null, note = '', createdBy
 export async function listTeachers(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const { results } = await env.DB.prepare(
-    `SELECT t.id, t.username, t.display_name, t.role, t.active, t.last_login, t.plan, t.license_until, t.contact,
+    `SELECT t.id, t.username, t.display_name, t.role, t.active, t.last_login, t.plan, t.license_until, t.contact, t.email,
             (SELECT COUNT(*) FROM classes c WHERE c.owner_id = t.id) AS class_count,
             (SELECT COUNT(*) FROM tests x WHERE x.owner_id = t.id) AS test_count
      FROM teachers t ORDER BY t.id`,

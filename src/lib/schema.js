@@ -4,7 +4,7 @@
 // Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
 // skips everything else; the (batched) migration runs once per version, not once per cold start.
 // (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
-const SCHEMA_VERSION = '2026-10-15-a';
+const SCHEMA_VERSION = '2026-10-19-att';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
@@ -30,6 +30,7 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN license_until TEXT',
     'ALTER TABLE teachers ADD COLUMN contact TEXT',
     'ALTER TABLE teachers ADD COLUMN created_at TEXT',
+    'ALTER TABLE teachers ADD COLUMN email TEXT',
     'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE tests ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE invites ADD COLUMN months INTEGER',
@@ -189,6 +190,17 @@ export async function ensureColumns(env) {
       resolved INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS attendance (
+      class_id INTEGER NOT NULL,
+      day TEXT NOT NULL,
+      period INTEGER NOT NULL,
+      student_id TEXT NOT NULL,
+      mark TEXT NOT NULL DEFAULT 'ok',
+      note TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (class_id, day, period, student_id)
+    )`),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_attendance_class_day ON attendance(class_id, day, period)'),
   ]);
 
   // Add whichever columns are missing — one call to look, one call to add (a failing ALTER would roll the batch back).

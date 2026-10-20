@@ -176,7 +176,7 @@
     .tests-head-top .row { flex-wrap: wrap; }
     .tests-search { min-width: 0; max-width: none; }
     .test-actions { flex-wrap: wrap; }
-    .bank-bar { position: static; }
+    .bank-bar { top: 56px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -20,6 +20,7 @@ import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 import * as game from './api/game.js';
 import * as live from './api/live.js';
+import * as attendance from './api/attendance.js';
 
 function compile(pattern) {
   const keys = [];
@@ -89,6 +90,8 @@ const ROUTES = [
   ['DELETE', '/api/students/:studentId', classes.deleteStudent],
   ['DELETE', '/api/classes/:classId/students/:studentId', classes.deleteStudent],
   ['POST', '/api/classes/:classId/students/bulk', classes.importRoster],
+  ['GET', '/api/attendance', attendance.getAttendance],
+  ['POST', '/api/attendance', attendance.saveAttendance],
 
   ['GET', '/api/settings/pin', settings.getPinStatus],
   ['POST', '/api/settings/pin', settings.setPin],
@@ -110,6 +113,7 @@ const ROUTES = [
   ['GET', '/api/curriculum', tests.getCurriculum],
   ['POST', '/api/curriculum/lesson', tests.addLesson],
   ['POST', '/api/bank/tag', tests.tagQuestions],
+  ['POST', '/api/bank/delete', tests.deleteBankQuestions],
   ['POST', '/api/tests/:testId/questions', tests.addQuestion],
   ['PUT', '/api/questions/:questionId', tests.updateQuestion],
   ['DELETE', '/api/questions/:questionId', tests.deleteQuestion],
@@ -250,6 +254,14 @@ async function handle(req, env, ctx) {
       return err('Not found.', 404);
     }
 
-    return env.ASSETS.fetch(req);
+    const asset = await env.ASSETS.fetch(req);
+    const path = url.pathname;
+    if (path === '/teacher' || path === '/teacher.html' || path.endsWith('/teacher')) {
+      const headers = new Headers(asset.headers);
+      headers.set('Cache-Control', 'no-store, max-age=0');
+      headers.set('CDN-Cache-Control', 'no-store');
+      return new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers });
+    }
+    return asset;
   }
 }

@@ -1,12 +1,34 @@
 /* Name wheel tab (public/js/wheel.js) */
 .wheel-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .wheel-stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.wheel-box { position: relative; width: min(100%, 560px); aspect-ratio: 1; }
+.wheel-box { position: relative; width: min(100%, 420px); aspect-ratio: 1; }
 .wheel-box canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shadow: var(--shadow); }
 .wheel-pointer { position: absolute; top: -10px; left: 50%; z-index: 2; width: 0; height: 0; transform: translateX(-50%);
   border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--ink); filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
-.wheel-hub { position: absolute; top: 50%; left: 50%; z-index: 2; width: 21%; aspect-ratio: 1; padding: 0; transform: translate(-50%, -50%); border-radius: 50%;
-  border: 4px solid #fff; font-weight: 700; font-size: clamp(14px, 3.4vw, 20px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.wheel-hub { position: absolute; top: 50%; left: 50%; z-index: 2; width: 23%; aspect-ratio: 1; padding: 0; transform: translate(-50%, -50%); border-radius: 50%;
+  border: 5px solid #fff; font-weight: 800; font-size: clamp(15px, 3.6vw, 22px); letter-spacing: .02em;
+  background: radial-gradient(circle at 35% 30%, #6ea0ff, #2f5fe3 55%, #1d2540);
+  box-shadow: 0 8px 22px rgba(47, 95, 227, .45), inset 0 -6px 12px rgba(0,0,0,.18); }
+.wheel-song-sel { width: auto; min-width: 220px; max-width: 100%; }
+.wheel-parts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin: 14px 0 4px; padding: 4px; border-radius: 16px;
+  background: rgba(127, 140, 170, .12);
+}
+.wheel-part {
+  min-height: 44px; border-radius: 12px; border: 0; box-shadow: none;
+  background: transparent; color: inherit; font-weight: 800; font-size: 15px;
+}
+.wheel-part.on { background: #fff; color: var(--navy); box-shadow: var(--shadow); }
+.wheel-gnum { width: 100% !important; max-width: 160px; font-size: 22px; font-weight: 800; text-align: center; }
+.wheel-fs-x {
+  display: none; position: absolute; top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right)); z-index: 50;
+  width: 48px; height: 48px; min-height: 48px; padding: 0; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(20,24,40,.78); color: #fff;
+  font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,.28);
+}
+.wheel-fs-x:hover { background: #fff; color: var(--navy); }
 .wheel-hub:disabled { opacity: .75; }
 .wheel-tools { justify-content: center; }
 .wheel-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 360px; overflow-y: auto; }
@@ -30,7 +52,8 @@
 .wheel-g b { display: block; margin-bottom: 4px; color: var(--brand-dark); }
 .wheel-g ol { margin: 0; padding-left: 22px; font-size: 15px; line-height: 1.7; }
 .wheel-stage:fullscreen { justify-content: center; background: var(--bg); padding: 12px; }
-.wheel-stage:fullscreen .wheel-box { width: min(78vh, 92vw); }
+.wheel-stage:fullscreen .wheel-box { width: min(72vh, 86vw); }
+.wheel-stage:fullscreen .wheel-fs-x { display: grid; place-items: center; }
 [hidden] { display: none !important; }
 @media (max-width: 860px) { .wheel-layout { grid-template-columns: 1fr; } }
 
@@ -77,7 +100,7 @@
 .wheel-ggrid .wheel-g { min-height: min-content; }
 
 /* last picked name, always visible under the wheel (also if the popup cannot be shown) */
-.wheel-last { margin: 0; width: min(100%, 560px); padding: 10px 16px; border-radius: 14px; background: var(--brand-soft); border: 2px solid var(--brand); text-align: center; font-size: 18px; color: var(--muted); }
+.wheel-last { margin: 0; width: min(100%, 420px); padding: 10px 16px; border-radius: 14px; background: var(--brand-soft); border: 2px solid var(--brand); text-align: center; font-size: 18px; color: var(--muted); }
 .wheel-last b { display: block; font-size: clamp(26px, 7vw, 40px); line-height: 1.5; color: var(--brand-dark); overflow-wrap: anywhere; }
 /* PNG preview for phones */
 .wheel-pv { position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 12px; background: rgba(10, 18, 30, .97); overflow-y: auto; }

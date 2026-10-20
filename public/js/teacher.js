@@ -40,15 +40,24 @@ document.getElementById('setup-submit').addEventListener('click', async () => {
   } catch (e) { showError(viewSetup.querySelector('.auth-card'), e.message); }
 });
 
+document.getElementById('login-username').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
 document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('login-submit').click(); });
 document.getElementById('login-submit').addEventListener('click', async () => {
+  const btn = document.getElementById('login-submit');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'កំពុងចូល...';
   try {
     await api('/api/teacher/login', { method: 'POST', body: {
       username: document.getElementById('login-username').value.trim(),
       password: document.getElementById('login-password').value,
     } });
     location.reload();
-  } catch (e) { showError(viewLogin.querySelector('.auth-card'), e.message); }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = origText;
+    showError(viewLogin.querySelector('.auth-card'), e.message);
+  }
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -261,6 +270,7 @@ function initDashboard() {
     render[btn.dataset.tab]();
   }));
   render.classes();
+  initTeachMode();
 }
 
 const render = {};
@@ -326,6 +336,197 @@ render.classes = async function () {
   ]);
   container.append(card, addCard);
 };
+
+let teachClassId = null;
+const teachKh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
+const teachOn = () => localStorage.getItem('exam_teach_mode') === '1';
+
+let teachBusy = false;
+
+function playMagic(name) {
+  const el = document.getElementById('dashboard-content');
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      el.classList.remove('magictime', 'vanishIn', 'vanishOut');
+      el.removeEventListener('animationend', finish);
+      resolve();
+    };
+    el.classList.remove('magictime', 'vanishIn', 'vanishOut');
+    void el.offsetWidth;
+    el.classList.add('magictime', name);
+    el.addEventListener('animationend', finish);
+    setTimeout(finish, 1000);
+  });
+}
+
+function commitTeachMode(on) {
+  localStorage.setItem('exam_teach_mode', on ? '1' : '0');
+  document.body.classList.toggle('teach-mode', on);
+  document.body.classList.remove('teach-tool');
+  const btn = document.getElementById('teach-mode-btn');
+  if (btn) {
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', String(on));
+  }
+  const back = document.getElementById('teach-back');
+  if (back) back.hidden = true;
+  const title = document.getElementById('workspace-title');
+  if (on) {
+    if (title) title.textContent = 'ម៉ូដបង្រៀន';
+    document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-teach'; });
+    render.teach();
+  } else {
+    const cls = document.querySelector('[data-tab="classes"]');
+    if (cls) cls.click();
+  }
+}
+
+async function applyTeachMode(on, animate = true) {
+  if (teachBusy) return;
+  if (on === teachOn() && document.body.classList.contains('teach-mode') === on) return;
+  teachBusy = true;
+  if (animate) await playMagic('vanishOut');
+  commitTeachMode(on);
+  if (animate) await playMagic('vanishIn');
+  teachBusy = false;
+}
+
+function openTeachTool(tab) {
+  document.body.classList.add('teach-tool');
+  const back = document.getElementById('teach-back');
+  if (back) back.hidden = false;
+  if (typeof wheelClassId !== 'undefined') wheelClassId = teachClassId;
+  if (typeof tgClassId !== 'undefined') tgClassId = teachClassId;
+  const b = document.querySelector(`[data-tab="${tab}"]`);
+  if (b) b.click();
+}
+
+async function teachLaunchGame(style) {
+  if (!teachClassId) return Exam.notify('សូមជ្រើសថ្នាក់ជាមុនសិន។');
+  try {
+    const { classes } = await api('/api/classes');
+    const cls = classes.find((c) => c.id === teachClassId) || classes[0];
+    const { students } = await api(`/api/classes/${teachClassId}/students`);
+    const names = students.map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
+    if (!names.length) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
+    const n = Math.min(4, Math.max(2, names.length));
+    const teams = Array.from({ length: n }, () => []);
+    const sh = names.slice();
+    for (let i = sh.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sh[i], sh[j]] = [sh[j], sh[i]];
+    }
+    sh.forEach((nm, i) => teams[i % n].push(nm));
+    try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: cls.name, groups: teams })); } catch {}
+    const g = parseInt(cls.grade, 10) || 7;
+    location.href = `teamgame.html?import=1&style=${style}&grade=${g}`;
+  } catch (e) { Exam.notify(e.message); }
+}
+
+render.teach = async function () {
+  const root = document.getElementById('tab-teach');
+  if (!root) return;
+  root.innerHTML = '';
+  const tb = document.getElementById('teach-back');
+  if (tb && !document.body.classList.contains('teach-tool')) tb.hidden = true;
+  let classes = [];
+  try { classes = (await api('/api/classes')).classes || []; } catch (e) {
+    return root.append(h('div', { class: 'error' }, e.message));
+  }
+  if (teachClassId == null || !classes.some((c) => c.id === teachClassId)) teachClassId = classes[0] ? classes[0].id : null;
+
+  const home = h('div', { class: 'teach-home' });
+  root.append(home);
+
+  if (!classes.length) {
+    home.append(h('div', { class: 'teach-empty' }, [
+      h('span', { class: 'teach-empty-ic' }, '🏫'),
+      h('b', {}, 'មិនទាន់មានថ្នាក់ទេ'),
+      h('p', {}, 'បិទម៉ូដបង្រៀនដើម្បីបង្កើតថ្នាក់។'),
+    ]));
+    return;
+  }
+
+  const sel = classes.find((c) => c.id === teachClassId) || classes[0];
+  const pickClass = (c) => {
+    teachClassId = c.id;
+    home.querySelectorAll('.teach-class').forEach((el) => el.classList.toggle('on', el.dataset.id === String(c.id)));
+    const name = document.getElementById('teach-now-name');
+    if (name) name.textContent = c.name;
+    const mark = document.getElementById('teach-now-mark');
+    if (mark) mark.textContent = teachKh(c.grade);
+    if (window.TeachRoom) window.TeachRoom.mount(c);
+  };
+  home.append(h('div', { class: 'teach-hero' }, [
+    h('div', { class: 'teach-hero-copy' }, [
+      h('p', { class: 'teach-kicker' }, 'កំពុងបង្រៀន'),
+      h('h2', { id: 'teach-now-name' }, sel.name),
+      h('p', { class: 'teach-hero-meta', id: 'teach-now-meta' }, `ថ្នាក់ទី ${teachKh(sel.grade)} · សិស្ស ${teachKh(sel.student_count)} នាក់`),
+    ]),
+    h('div', { class: 'teach-hero-mark', id: 'teach-now-mark', 'aria-hidden': 'true' }, teachKh(sel.grade)),
+  ]));
+
+  home.append(h('div', { class: 'teach-rail' }, classes.map((c) => h('button', {
+    type: 'button',
+    class: `teach-class${c.id === teachClassId ? ' on' : ''}`,
+    'data-id': c.id,
+    onclick: () => pickClass(c),
+  }, [
+    h('span', { class: 'teach-grade' }, `ទី ${teachKh(c.grade)}`),
+    h('b', {}, c.name),
+    h('span', { class: 'teach-count' }, `${teachKh(c.student_count)} សិស្ស`),
+  ]))));
+
+  const work = h('div', { id: 'teach-work', class: 'teach-desk' });
+  home.append(work);
+  if (window.TeachRoom) window.TeachRoom.mount(sel, work);
+
+  const tools = [
+    { k: 'spin', ic: '🎡', t: 'កង់ចាប់ឈ្មោះ', d: 'ចាប់ឈ្មោះសិស្សក្នុងថ្នាក់', go: () => openTeachTool('wheel') },
+    { k: 'cards', ic: '🃏', t: 'កាតបើក', d: 'ហ្គេមសំណួរជាក្រុម', go: () => teachLaunchGame('cards') },
+    { k: 'qwheel', ic: '🎲', t: 'កង់វិលសំណួរ', d: 'បង្វិលកង់ជ្រើសសំណួរ', go: () => teachLaunchGame('wheel') },
+    { k: 'boat', ic: '🚣', t: 'ប្រណាំងទូកង', d: 'ឆ្លើយត្រូវ ទូកទៅមុខ', go: () => teachLaunchGame('boat') },
+    { k: 'live', ic: '📱', t: 'សំណួរផ្ទាល់', d: 'សិស្សឆ្លើយលើទូរស័ព្ទ', go: () => openTeachTool('live') },
+    { k: 'bingo', ic: '🎯', t: 'ប៊ីងហ្គោ', d: 'បោះពុម្ពកាតចម្លើយ', go: () => { location.href = 'bingo.html'; } },
+  ];
+  home.append(
+    h('div', { class: 'teach-sec' }, [h('h2', { class: 'teach-h' }, 'សម្ភារបង្រៀន')]),
+    h('div', { class: 'teach-tools' }, tools.map((x, i) => h('button', {
+      type: 'button',
+      class: `teach-tile t-${x.k}`,
+      style: `--i:${i}`,
+      onclick: x.go,
+    }, [
+      h('span', { class: 'teach-ic', 'aria-hidden': 'true' }, x.ic),
+      h('b', {}, x.t),
+      h('span', { class: 'teach-tile-d' }, x.d),
+    ]))),
+  );
+};
+
+function initTeachMode() {
+  const btn = document.getElementById('teach-mode-btn');
+  const back = document.getElementById('teach-back');
+  if (btn) btn.addEventListener('click', () => applyTeachMode(!teachOn(), true));
+  if (back) back.addEventListener('click', () => {
+    if (window.TeachShow && window.TeachShow.isOpen()) { window.TeachShow.close(); return; }
+    if (window.TeachRoom && window.TeachRoom.isOpen() && !document.body.classList.contains('teach-tool')) {
+      return;
+    }
+    if (window.TeachRoom && window.TeachRoom.isOpen()) window.TeachRoom.close();
+    document.body.classList.remove('teach-tool');
+    back.hidden = true;
+    document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-teach'; });
+    const title = document.getElementById('workspace-title');
+    if (title) title.textContent = 'ម៉ូដបង្រៀន';
+    render.teach();
+  });
+  if (teachOn()) applyTeachMode(true, false);
+}
 
 let editingStudentId = null;
 

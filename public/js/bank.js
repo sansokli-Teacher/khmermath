@@ -13,12 +13,15 @@ if (typeof globalThis !== 'undefined') {
   }
 }
 const GRADE_KH = (g) => {
+  if (g === 'NGS') return 'តម្រង់ទិសសិស្ស NGS ២០២៦-២០២៧';
   if (g === '11SC') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រពិត)';
   if (g === '11SS') return 'ថ្នាក់ទី ១១ (វិទ្យាសាស្ត្រសង្គម)';
   if (g === '12SC') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រពិត)';
   if (g === '12SS') return 'ថ្នាក់ទី ១២ (វិទ្យាសាស្ត្រសង្គម)';
   return `ថ្នាក់ទី ${khNum(g)}`;
 };
+const bankGradesOf = (curr) => curr.bankGrades || curr.grades || [];
+const canBankDelete = () => typeof ME !== 'undefined' && ME && (ME.role === 'owner' || ME.role === 'admin');
 let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
 
@@ -28,7 +31,7 @@ async function loadCurr(force) { if (!CURR || force) CURR = await api('/api/curr
 function gradeLessonPicker(g, l, curr, ch) {
   const id = 'lesson-dl-' + Math.random().toString(36).slice(2, 7);
   const chId = 'chapter-dl-' + Math.random().toString(36).slice(2, 7);
-  const grade = h('select', {}, [['', '— ថ្នាក់ —'], ...curr.grades.map((x) => [x, GRADE_KH(x)])].map(([v, t]) => h('option', { value: v, selected: String(g || '') === v ? 'selected' : null }, t)));
+  const grade = h('select', {}, [['', '— ថ្នាក់ —'], ...bankGradesOf(curr).map((x) => [x, GRADE_KH(x)])].map(([v, t]) => h('option', { value: v, selected: String(g || '') === v ? 'selected' : null }, t)));
   const dl = h('datalist', { id });
   const chDl = h('datalist', { id: chId });
   const chapter = h('input', { type: 'text', list: chId, placeholder: 'ជំពូក (មិនចាំបាច់)', value: ch || '' });
@@ -59,7 +62,7 @@ function bankModal(title, body, wide) {
 
 // ---------- download an exercise book: chosen lessons or the whole book of a grade, as PDF or Word ----------
 function openExport(questions, curr, S) {
-  let grade = S.grade && S.grade !== '-' ? S.grade : (curr.grades.find((g) => questions.some((q) => q.grade === g)) || curr.grades[0]);
+  let grade = S.grade && S.grade !== '-' ? S.grade : (bankGradesOf(curr).find((g) => questions.some((q) => q.grade === g)) || bankGradesOf(curr)[0]);
   const picked = new Set();                    // 1-based lesson numbers
   const levels = new Set(['easy', 'medium', 'hard', 'pisa']);
   let kind = 'all', ans = 'none', newpage = false, title = '';
@@ -87,7 +90,7 @@ function openExport(questions, curr, S) {
     const chips = (items, on, set) => h('div', { class: 'ex-chips' }, items.map(([v, l]) => h('button', { type: 'button', class: on(v) ? 'on' : '', onclick: () => { set(v); draw(); } }, l)));
     body.append(
       h('label', {}, 'ថ្នាក់'),
-      h('select', { onchange: (e) => { grade = e.target.value; picked.clear(); draw(); } }, curr.grades.map((g) => h('option', { value: g, selected: g === grade ? 'selected' : null }, `${GRADE_KH(g)} (${questions.filter((q) => q.grade === g).length} សំណួរ)`))),
+      h('select', { onchange: (e) => { grade = e.target.value; picked.clear(); draw(); } }, bankGradesOf(curr).map((g) => h('option', { value: g, selected: g === grade ? 'selected' : null }, `${GRADE_KH(g)} (${questions.filter((q) => q.grade === g).length} សំណួរ)`))),
       h('div', { class: 'ex-lhead' }, [
         h('label', { style: 'margin:0;' }, 'មេរៀនដែលចង់បាន'),
         h('div', { class: 'row', style: 'gap:6px;' }, [
@@ -144,7 +147,7 @@ function openExport(questions, curr, S) {
 let activeViewerModal = null;
 
 // ---------- View modal to see the "real question" (full stem, image, choices with correct answer, solution/rubric) ----------
-function openQuestionViewer(q, onEdit, nav = null) {
+function openQuestionViewer(q, onEdit, nav = null, onDelete = null) {
   if (activeViewerModal) {
     try { activeViewerModal.remove(); } catch {}
     activeViewerModal = null;
@@ -316,6 +319,11 @@ ${q.solution_text}
       class: 'qv-btn-edit',
       onclick: () => { m && m.remove(); onEdit(); }
     }, '✏️ កែសំណួរនេះ') : null,
+    onDelete ? h('button', {
+      type: 'button',
+      class: 'danger qv-btn-delete',
+      onclick: async () => { if (await onDelete()) m && m.remove(); }
+    }, '🗑 លុបសំណួរ') : null,
     h('button', {
       type: 'button',
       class: 'secondary qv-btn-copy',
@@ -382,7 +390,7 @@ render.bank = async function () {
   const gradePill = (val, label, n) => h('button', { class: `filter-pill${S.grade === val ? ' on' : ''}`, onclick: () => { Object.assign(S, { grade: val, chapter: '', lesson: '' }); reload(); } }, [label, ' ', h('span', { class: 'pill-n' }, String(n))]);
   const pills = h('div', { class: 'filter-bar' }, [
     gradePill('', 'ទាំងអស់', questions.length),
-    ...curr.grades.map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
+    ...bankGradesOf(curr).map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
     gradePill('-', 'មិនទាន់កំណត់ថ្នាក់', count((q) => !q.grade)),
   ]);
   if (newCount) container.append(h('div', { class: 'card', style: 'background:#fff4dc;border:1px solid #f1d28a;display:flex;gap:12px;align-items:center;flex-wrap:wrap;' }, [
@@ -401,7 +409,7 @@ render.bank = async function () {
   // ---------- lesson sidebar (grouped by chapter when available)
   const showLessons = S.grade && S.grade !== '-';
   const inGrade = (q) => !S.grade || (S.grade === '-' ? !q.grade : q.grade === S.grade);
-  const side = h('div', { class: 'card', style: 'padding:10px;align-self:start;' });
+  const side = h('div', { class: 'card bank-side', style: 'padding:10px;' });
   if (showLessons) {
     const lv = (qs, l) => qs.filter((q) => q.level === l).length;
     const lessonBtn = (val, label, qs) => {
@@ -493,12 +501,12 @@ render.bank = async function () {
   // ---------- right side: filters, actions, list
   const list = h('div', { class: 'test-list' });
   const countLbl = h('b', {}, '0');
-  const targetSel = h('select', { style: 'width:auto;max-width:240px;' }, editable.map((t) => h('option', { value: t.id }, t.title)));
-  const addBtn = h('button', { disabled: 'disabled', onclick: async () => {
+  const targetSel = h('select', { style: 'width:auto;max-width:170px;' }, editable.map((t) => h('option', { value: t.id }, t.title)));
+  const addBtn = h('button', { class: 'btn-sm', disabled: 'disabled', onclick: async () => {
     if (!targetSel.value) return Exam.notify('សូមបង្កើតតេស្តមួយជាមុនសិន។');
     try { const r = await api(`/api/tests/${targetSel.value}/questions/copy`, { method: 'POST', body: { question_ids: [...selected] } }); await Exam.notify(`✅ បានថែម ${r.copied} សំណួរទៅតេស្ត។`); selected.clear(); draw(); } catch (e) { Exam.notify(e.message); }
   } }, '➕ ថែមទៅតេស្ត');
-  const tagBtn = h('button', { class: 'secondary', disabled: 'disabled', onclick: () => {
+  const tagBtn = h('button', { class: 'secondary btn-sm', disabled: 'disabled', onclick: () => {
     const gl = gradeLessonPicker(S.grade && S.grade !== '-' ? S.grade : '', showLessons && S.lesson && S.lesson !== '-' ? S.lesson : '', curr, showLessons && S.chapter ? S.chapter : '');
     const box = h('div', {}, [h('p', { class: 'muted' }, `ដាក់ ${selected.size} សំណួរក្នុង៖`),
       h('label', {}, 'ថ្នាក់'), gl.grade,
@@ -512,9 +520,8 @@ render.bank = async function () {
     const m = bankModal('🏷 ដាក់ក្នុងមេរៀន', box);
   } }, '🏷 ដាក់ក្នុងមេរៀន');
   const paperBtn = h('button', {
-    class: 'btn-sm',
+    class: 'btn-sm bank-bar-go',
     disabled: !selected.size,
-    style: 'background:#16a34a;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 12px;border-radius:8px;',
     onclick: () => {
       if (!selected.size) return;
       const selArr = [...selected];
@@ -527,13 +534,19 @@ render.bank = async function () {
       const chText = S.chapter ? `${S.chapter}` : '';
       const lessonText = S.lesson && S.lesson !== '-' ? `មេរៀន ${S.lesson}` : '';
       const partText = lessonText ? (chText ? `${chText} · ${lessonText}` : lessonText) : chText;
-      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${partText ? ' ' + partText : ''} (${khNum(selArr.length)} សំណួរ)`;
+      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${partText ? ' ' + partText : ''} (${khNum(selArr.length)} សំណួរ · ${khNum(totalPts)} ពិន្ទុ)`;
 
       const titleInp = h('input', { type: 'text', value: defaultTitle, style: 'width:100%;margin-top:4px;' });
       const minInp = h('input', { type: 'number', value: '60', min: '10', max: '240', style: 'width:100px;' });
 
       const box = h('div', { style: 'text-align:left;' }, [
-        h('p', { class: 'muted', style: 'margin-top:0;' }, `បង្កើតវិញ្ញាសាភ្លាមៗចេញពីសំណួរដែលបានជ្រើស ${khNum(selArr.length)} សំណួរ (ពហុជ្រើសរើស ${khNum(mcqCount)} + សរសេរ ${khNum(wCount)} · សរុប ${khNum(totalPts)} ពិន្ទុ)។`),
+        h('div', { class: 'row', style: 'gap:8px;flex-wrap:wrap;margin:0 0 10px;' }, [
+          h('span', { class: 'chip chip-plain' }, `${khNum(selArr.length)} សំណួរ`),
+          h('span', { class: 'chip chip-open' }, `${khNum(totalPts)} ពិន្ទុ`),
+          mcqCount ? h('span', { class: 'chip chip-plain' }, `ពហុជ្រើសរើស ${khNum(mcqCount)}`) : null,
+          wCount ? h('span', { class: 'chip chip-soon' }, `សរសេរ ${khNum(wCount)}`) : null,
+        ]),
+        h('p', { class: 'muted', style: 'margin-top:0;' }, 'បង្កើតវិញ្ញាសាភ្លាមៗចេញពីសំណួរដែលបានជ្រើស។'),
         h('label', { style: 'font-weight:600;display:block;margin-top:8px;' }, 'ចំណងជើងវិញ្ញាសា'),
         titleInp,
         h('div', { class: 'row', style: 'gap:12px;margin-top:12px;align-items:center;' }, [
@@ -551,8 +564,9 @@ render.bank = async function () {
                 const newTest = await api('/api/tests', { method: 'POST', body: { title: ttl } });
                 const r = await api(`/api/tests/${newTest.id}/questions/copy`, { method: 'POST', body: { question_ids: selArr } });
                 m.remove();
-                await Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» ដោយជោគជ័យ!`);
-                window.open(`paper.html?test=${newTest.id}`, '_blank');
+                await Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» — ${khNum(r.copied || selArr.length)} សំណួរ · ${khNum(totalPts)} ពិន្ទុ`);
+                const min = Math.max(10, Math.min(240, Number(minInp.value) || 60));
+                window.open(`paper.html?test=${newTest.id}&min=${min}`, '_blank');
               } catch (e) {
                 Exam.notify(e.message);
               }
@@ -563,7 +577,22 @@ render.bank = async function () {
       const m = bankModal('📄 បង្កើតវិញ្ញាសាភ្លាមៗ', box);
     }
   }, [h('span', {}, '📄'), ' បង្កើតវិញ្ញាសាភ្លាមៗ']);
-  const bar = h('div', { class: 'bank-bar' }, [h('span', {}, ['បានជ្រើស ', countLbl, ' សំណួរ']), paperBtn, tagBtn, targetSel, addBtn]);
+  const delSelBtn = canBankDelete() ? h('button', {
+    class: 'danger btn-sm',
+    disabled: 'disabled',
+    onclick: async () => {
+      if (!selected.size) return;
+      if (!(await Exam.confirm(`លុបសំណួរ ${selected.size} ពីធនាគារសំណួរ?\nសកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`))) return;
+      try {
+        const r = await api('/api/bank/delete', { method: 'POST', body: { question_ids: [...selected] } });
+        selected.clear();
+        await Exam.notify(`✅ បានលុប ${r.deleted} សំណួរ។${r.blocked ? ` មិនអាចលុប ${r.blocked} (មានសិស្សឆ្លើយរួច)` : ''}`);
+        await reload();
+      } catch (e) { Exam.notify(e.message); }
+    }
+  }, '🗑 លុបដែលបានជ្រើស') : null;
+  const ptsLbl = h('b', {}, '0');
+  const bar = h('div', { class: 'bank-bar' }, [h('span', { class: 'bank-bar-count' }, ['បានជ្រើស ', countLbl, ' សំណួរ · ', ptsLbl, ' ពិន្ទុ']), paperBtn, tagBtn, delSelBtn, targetSel, addBtn].filter(Boolean));
 
   const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
   const fKind = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v, selected: S.kind === v ? 'selected' : null }, l)));
@@ -608,6 +637,16 @@ render.bank = async function () {
       const cb = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none;cursor:pointer;margin-top:3px;', checked: selected.has(x.id) ? 'checked' : null, onchange: (e) => { e.target.checked ? selected.add(x.id) : selected.delete(x.id); upd(); } });
       const canEdit = !x.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
       const onEdit = canEdit ? () => openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload) : null;
+      const deleteOne = async (q) => {
+        if (!canBankDelete()) return false;
+        if (!(await Exam.confirm(`លុបសំណួរ #${q.id} ពីធនាគារសំណួរ?\nសកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`))) return false;
+        try {
+          await api(`/api/questions/${q.id}`, { method: 'DELETE' });
+          await Exam.notify('✅ បានលុបសំណួរពីធនាគារ។');
+          await reload();
+          return true;
+        } catch (e) { Exam.notify(e.message); return false; }
+      };
       const openViewer = (targetIdx = idx) => {
         const targetQ = rows[targetIdx];
         if (!targetQ) return;
@@ -621,7 +660,8 @@ render.bank = async function () {
         };
         const canEditTarget = !targetQ.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
         const onEditTarget = canEditTarget ? () => openQuestionEditor(targetQ, { id: targetQ.test_id, submissions: 0 }, null, reload) : null;
-        return openQuestionViewer(targetQ, onEditTarget, nav);
+        const onDeleteTarget = canBankDelete() ? () => deleteOne(targetQ) : null;
+        return openQuestionViewer(targetQ, onEditTarget, nav, onDeleteTarget);
       };
 
       const viewBtn = h('button', {
@@ -639,6 +679,14 @@ render.bank = async function () {
             onclick: (e) => { e.preventDefault(); e.stopPropagation(); onEdit(); }
           }, '✏️')
         : (x.shared ? h('span', { class: `chip ${isNew(x) ? 'chip-closed' : 'chip-plain'}`, title: 'សំណួររួមរបស់ប្រព័ន្ធ — ចម្លងទៅតេស្តរបស់អ្នកបាន' }, (isNew(x) ? '🆕 ថ្មី' : '🌐 រួម')) : null);
+      const delBtn = canBankDelete()
+        ? h('button', {
+            type: 'button',
+            class: 'danger btn-sm',
+            title: 'លុបសំណួរពីធនាគារ',
+            onclick: (e) => { e.preventDefault(); e.stopPropagation(); deleteOne(x); }
+          }, '🗑')
+        : null;
 
       list.append(h('div', { class: 'bank-item', style: 'display:flex;gap:12px;align-items:flex-start;' }, [
         h('label', { style: 'display:flex;align-items:center;cursor:pointer;flex:none;' }, cb),
@@ -681,14 +729,21 @@ render.bank = async function () {
         ]),
         h('div', { class: 'row', style: 'gap:6px;align-items:center;flex-shrink:0;' }, [
           viewBtn,
-          editBtn
+          editBtn,
+          delBtn
         ]),
       ]));
     });
     if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
     upd();
   }
-  function upd() { countLbl.textContent = String(selected.size); addBtn.disabled = !selected.size; tagBtn.disabled = !selected.size; paperBtn.disabled = !selected.size; }
+  function upd() {
+    const n = selected.size;
+    const pts = questions.filter((q) => selected.has(q.id)).reduce((a, q) => a + (q.points || 1), 0);
+    countLbl.textContent = String(n);
+    ptsLbl.textContent = String(pts);
+    addBtn.disabled = !n; tagBtn.disabled = !n; paperBtn.disabled = !n; if (delSelBtn) delSelBtn.disabled = !n;
+  }
   [fLevel, fKind, fTopic].forEach((el) => el && el.addEventListener('change', draw));
   fQ.addEventListener('input', draw);
 
