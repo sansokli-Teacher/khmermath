@@ -491,3 +491,7 @@ body.teach-show-on { overflow: hidden; }
 .tm-more[hidden] { display: none; }
 .tm-morebtn { margin-top: 8px; min-height: 28px; padding: 2px 14px; border: 0; border-radius: 99px; background: transparent; color: #2b73a3; font-weight: 800; font-size: 12px; box-shadow: none; }
 .tm-more { margin-top: 6px; }
+.tm-core { cursor: pointer; transition: fill .12s; }
+.tm-core:hover { fill: rgba(255,255,255,.12); }
+.tm-core.down { fill: rgba(0,0,0,.18); }
+.tm-state { pointer-events: none; }

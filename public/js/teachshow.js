@@ -803,9 +803,11 @@
       <circle cx="${CX}" cy="${CY}" r="58" fill="url(#tmCore)"/>
       <text class="tm-num" x="${CX}" y="${CY + 12}" text-anchor="middle" fill="#fff" font-size="56" font-weight="800">5</text>
       <text class="tm-unit" x="${CX}" y="${CY + 38}" text-anchor="middle" fill="#fff" font-size="19" font-weight="700">នាទី</text>
+      <text class="tm-state" x="${CX}" y="${CY - 33}" text-anchor="middle" fill="#fff" font-size="15" opacity=".8">▶</text>
+      <circle class="tm-core" cx="${CX}" cy="${CY}" r="58" fill="transparent"><title>ចុចដើម្បីចាប់ផ្ដើម / ឈប់</title></circle>
     </svg>`;
     const q = (c) => wrap.querySelector(c);
-    const wedge = q('.tm-wedge'), num = q('.tm-num'), unit = q('.tm-unit');
+    const wedge = q('.tm-wedge'), num = q('.tm-num'), unit = q('.tm-unit'), stateEl = q('.tm-state'), core = q('.tm-core');
     const digital = document.createElement('div'); digital.className = 'tm-dig';
     let total = 300, left = 300, run = false, t0 = 0, remain0 = 0, raf = 0, alarmT = 0, lastBeep = -1;
     const paint = () => {
@@ -813,19 +815,20 @@
       if (f >= .9995) wedge.setAttribute('d', `M${CX - RF} ${CY} a${RF} ${RF} 0 1 0 ${2 * RF} 0 a${RF} ${RF} 0 1 0 ${-2 * RF} 0Z`);
       else if (f <= 0) wedge.setAttribute('d', `M${CX} ${CY}`);
       else wedge.setAttribute('d', `M${CX} ${CY} L${CX} ${CY - RF} A${RF} ${RF} 0 ${th > Math.PI ? 1 : 0} 1 ${CX + RF * Math.sin(th)} ${CY - RF * Math.cos(th)} Z`);
+      stateEl.textContent = run ? '❚❚' : '▶';
       const sec = Math.max(0, Math.ceil(left));
       if (sec >= 60) { num.textContent = Math.ceil(left / 60); unit.textContent = 'នាទី'; } else { num.textContent = sec; unit.textContent = 'វិនាទី'; }
       num.setAttribute('font-size', String(num.textContent).length > 2 ? 40 : 52);
       digital.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
     };
-    const stop = () => { run = false; cancelAnimationFrame(raf); startBtn.textContent = left <= 0 ? '▶ ចាប់ផ្ដើម' : '▶ បន្ត'; };
+    const stop = () => { run = false; cancelAnimationFrame(raf); paint(); startBtn.textContent = left <= 0 ? '▶ ចាប់ផ្ដើម' : '▶ បន្ត'; };
     const tick = (now) => {
       if (!run) return;
       left = Math.max(0, remain0 - (now - t0) / 1000);
       paint();
       const cs = Math.ceil(left); // beep once a second for the last 5 seconds
       if (cs >= 1 && cs <= 5 && cs !== lastBeep) { lastBeep = cs; snd.beep(true, cs === 1); wrap.classList.remove('last'); void wrap.offsetWidth; wrap.classList.add('last'); }
-      if (left <= 0) { run = false; startBtn.textContent = '▶ ចាប់ផ្ដើម'; wrap.classList.add('done'); [0, 450, 900].forEach((d) => setTimeout(() => snd.alarm(true), d)); return; }
+      if (left <= 0) { run = false; paint(); startBtn.textContent = '▶ ចាប់ផ្ដើម'; wrap.classList.add('done'); [0, 450, 900].forEach((d) => setTimeout(() => snd.alarm(true), d)); return; }
       raf = requestAnimationFrame(tick);
     };
     const setTotal = (sec) => { lastBeep = -1; wrap.classList.remove('last'); run = false; cancelAnimationFrame(raf); total = left = sec; wrap.classList.remove('done'); startBtn.textContent = '▶ ចាប់ផ្ដើម'; paint(); };
@@ -881,6 +884,9 @@
     crown.addEventListener('contextmenu', (e) => e.preventDefault());
     crown.addEventListener('wheel', (e) => { e.preventDefault(); crownStep(e.deltaY < 0 ? 1 : -1); }, { passive: false });
     side.addEventListener('pointerdown', (e) => { e.preventDefault(); side.classList.add('down'); startBtn.click(); snd.tick(true); });
+    core.addEventListener('pointerdown', (e) => { e.preventDefault(); core.classList.add('down'); startBtn.click(); snd.tick(true); });
+    const coreUp = () => core.classList.remove('down');
+    core.addEventListener('pointerup', coreUp); core.addEventListener('pointercancel', coreUp); core.addEventListener('pointerleave', coreUp);
     const sideUp = () => side.classList.remove('down');
     side.addEventListener('pointerup', sideUp); side.addEventListener('pointercancel', sideUp); side.addEventListener('pointerleave', sideUp);
     paint();
