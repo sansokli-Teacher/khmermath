@@ -670,8 +670,8 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide.ts-title .ts-kicker { color: #22475c; }
 
 /* the term being defined: gold, bold, glowing pill */
-.ts-card-b mark.term, .ts-card-b b { background: linear-gradient(180deg, rgba(255,217,138,.10), rgba(255,217,138,.28)); color: #ffd98a; font-weight: 800; padding: .02em .32em .06em; margin: 0 .08em; border-radius: .42em; border-bottom: .12em solid #ffd98a; text-shadow: 0 0 14px rgba(255,217,138,.55); box-shadow: 0 0 0 1px rgba(255,217,138,.25); }
-.ts-card-b mark.term { animation: tsTerm 1.6s ease-out .25s 1 both; }
+.ts-card-b mark.term, .ts-card-b b { background: linear-gradient(180deg, rgba(255,217,138,.10), rgba(255,217,138,.28)); color: #ffd98a; font-weight: 800; padding: .02em .32em .06em; margin: 0 .08em; border-radius: .42em; border-bottom: .12em solid #ffd98a; }
+.ts-card-b mark.term { animation: none; }   /* no glow / pulse ring on the defined term */
 @keyframes tsTerm { 0% { box-shadow: 0 0 0 0 rgba(255,217,138,.9); } 70% { box-shadow: 0 0 0 .5em rgba(255,217,138,0); } 100% { box-shadow: 0 0 0 1px rgba(255,217,138,.25); } }
 @media (prefers-reduced-motion: reduce) { .ts-card-b mark.term { animation: none; } }
 
@@ -711,7 +711,6 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide [data-step], .ts-slide [data-until] { transition: opacity .45s ease, transform .45s ease; }
 .ts-slide .rv-hide { opacity: 0 !important; visibility: hidden; pointer-events: none; }
 .ts-slide div.rv:not(.rv-hide) { animation: tsRise .45s ease both; }
-.ts-slide .rv-now { filter: drop-shadow(0 0 7px rgba(240,163,10,.55)); }
 @keyframes tsRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ts-slide [data-step], .ts-slide [data-until] { transition: none; } .ts-slide div.rv:not(.rv-hide) { animation: none; } }
 /* reveal chips for the new Section 4 pictures */
