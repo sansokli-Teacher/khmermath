@@ -245,6 +245,19 @@
     });
   }
 
+  // exports are 16:9 (1920x1080): the slide is centred with white margins on the left and right
+  function widen(src, w, h) {
+    const W = 1920, H = 1080, MX = 120, MY = 36;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const c = out.getContext('2d');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+    const k = Math.min((W - 2 * MX) / w, (H - 2 * MY) / h);
+    const dw = w * k, dh = h * k;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    return out;
+  }
+
   // save the current slide, with everything written on it, as a PNG the teacher can hand out
   let saving = false;
   async function saveImage() {
@@ -270,9 +283,10 @@
       const c2 = out.getContext('2d');
       c2.drawImage(base, 0, 0);
       c2.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, out.width, out.height); // pen strokes on top
+      const wide = widen(out, w, h);
       const name = `grade${meta.grade}-lesson${meta.lesson}-slide${i + 1}.png`;
       const a = document.createElement('a');
-      a.download = name; a.href = out.toDataURL('image/png');
+      a.download = name; a.href = wide.toDataURL('image/png');
       document.body.append(a); a.click(); a.remove();
       say('✓ បានរក្សាទុករូបភាព ' + name);
     } catch (err) {
@@ -293,7 +307,7 @@
       await need('/js/html2canvas.min.js', () => window.html2canvas);
       await need('/js/jspdf.umd.min.js', () => window.jspdf);
       const w = slideEl.clientWidth, h = slideEl.clientHeight;
-      const doc = new window.jspdf.jsPDF({ orientation: w >= h ? 'landscape' : 'portrait', unit: 'px', format: [w, h], compress: true });
+      const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'px', format: [960, 540], compress: true });
       for (let k = 0; k < list.length; k++) {
         say(`កំពុងបង្កើត PDF… ${kh(k + 1)}/${kh(list.length)}`);
         const sl = list[k];
@@ -315,8 +329,8 @@
         c2.drawImage(base, 0, 0);
         const keep = ctx; ctx = c2; c2.save(); c2.scale(out.width / w, out.height / h);
         try { sl._ink.forEach(paint); } finally { c2.restore(); ctx = keep; }
-        if (k) doc.addPage([w, h], w >= h ? 'landscape' : 'portrait');
-        doc.addImage(out.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, w, h);
+        if (k) doc.addPage([960, 540], 'landscape');
+        doc.addImage(widen(out, w, h).toDataURL('image/jpeg', .92), 'JPEG', 0, 0, 960, 540);
       }
       const name = `grade${meta.grade}-lesson${meta.lesson}-annotated.pdf`;
       doc.save(name);
