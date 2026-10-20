@@ -122,6 +122,19 @@
     return () => { alive = false; cancelAnimationFrame(raf); };
   };
 
+  // The calculator (Tools → Calculator) opens by itself on slides that carry <div data-widget="calc">, so the teacher can show the
+  // key presses live; it is put away again when the slide is left, unless the teacher had opened it before.
+  widgets.calc = function () {
+    const f = root && root.querySelector('.ts-float.ts-wcalc');
+    if (!f) return null;
+    const menuItem = root.querySelector('.ts-tmenu button[data-w="wcalc"]');
+    const wasHidden = f.hidden;
+    if (!f.dataset.placed) { f.style.left = '64%'; f.style.top = '3%'; f.style.width = '270px'; f.dataset.placed = '1'; }   // right side, clear of the slide text and the page pill
+    f.hidden = false; stage.append(f);
+    if (menuItem) menuItem.classList.add('on');
+    return () => { if (wasHidden) { f.hidden = true; if (menuItem) menuItem.classList.remove('on'); } };
+  };
+
   function math(el) {
     if (window.renderMathInElement) {
       try { renderMathInElement(el, { throwOnError: false, strict: false, macros: { '\\arc': '\\overset{\\frown}{#1}' }, delimiters: [{ left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }] }); } catch {}

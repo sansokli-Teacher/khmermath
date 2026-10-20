@@ -22,8 +22,8 @@ export default function Lessons({ cls, students, onBack }) {
       grade === '7' ? fetch('/data/lessons_g7.json?v=2').then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
-        .then(() => loadScript('/js/slides/g7l01.js?v=20261024k'))
-        .then(() => loadScript('/js/teachshow.js?v=20261023r')),
+        .then(() => loadScript('/js/slides/g7l01.js?v=20261024m'))
+        .then(() => loadScript('/js/teachshow.js?v=20261023t')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
