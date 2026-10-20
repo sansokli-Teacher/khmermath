@@ -112,6 +112,24 @@ test('login to legacy account where @ was stripped upon signup', async () => {
   assert.ok(loginRes.headers.get('Set-Cookie'));
 });
 
+test('login with the name as typed when signup cleaned it up (spaces, capitals, symbols)', async () => {
+  const env = await initEnv();
+  const res = await teacher.signup(
+    makeRequest({ display_name: 'គ្រូ សុភា', username: 'sophateacher', password: 'password123' }, '10.0.0.5'),
+    env
+  );
+  assert.equal(res.status, 200);
+  for (const typed of ['Sopha Teacher', ' sopha-teacher ', 'SOPHA TEACHER!']) {
+    const r = await teacher.login(makeRequest({ username: typed, password: 'password123' }, '10.0.0.5'), env);
+    assert.equal(r.status, typed === ' sopha-teacher ' ? 401 : 200, typed);
+  }
+  const phone = await teacher.signup(
+    makeRequest({ display_name: 'រតនា', username: '012345678', password: 'password123' }, '10.0.0.6'), env);
+  assert.equal(phone.status, 200);
+  const r2 = await teacher.login(makeRequest({ username: '012 345 678', password: 'password123' }, '10.0.0.6'), env);
+  assert.equal(r2.status, 200);
+});
+
 test('signup validations reject invalid emails, short passwords, duplicate users', async () => {
   const env = await initEnv();
 

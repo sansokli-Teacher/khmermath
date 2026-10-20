@@ -36,7 +36,16 @@ const USERNAME_RE = /^[A-Za-z0-9_.\-+]{3,30}$/;
 // (otherwise someone could sign up with contact = "victim" and shadow the victim's account).
 const IDENT_RANK = `CASE WHEN LOWER(username) = LOWER(?1) THEN 0
                          WHEN email IS NOT NULL AND LOWER(email) = LOWER(?1) THEN 1
-                         WHEN LOWER(username) = LOWER(?2) THEN 2 ELSE 3 END`;
+                         WHEN LOWER(username) = LOWER(?2) THEN 2
+                         WHEN LOWER(username) = ?3 THEN 2 ELSE 3 END`;
+
+// signup.html stores a cleaned-up login name (lowercase, no spaces, only a-z 0-9 _ . - +),
+// so "Sopha Teacher" or "012 345 678" is saved as "sophateacher" / "012345678". Apply the same
+// clean-up to what is typed at login, otherwise those people can sign up but never get back in.
+export function normalizeIdent(s) {
+  const t = String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+  return t.includes('@') ? t : t.replace(/[^a-z0-9_.\-+]/g, '');
+}
 
 export function isValidEmail(s) {
   if (!s || typeof s !== 'string') return false;
@@ -67,8 +76,9 @@ export async function login(req, env) {
         OR (email IS NOT NULL AND LOWER(email) = LOWER(?1))
         OR (contact IS NOT NULL AND LOWER(contact) = LOWER(?1))
         OR (LOWER(username) = LOWER(?2) AND ?1 LIKE '%@%')
+        OR (?3 <> '' AND (LOWER(username) = ?3 OR (email IS NOT NULL AND LOWER(email) = ?3)))
      ORDER BY ${IDENT_RANK}, id ASC LIMIT 1`
-  ).bind(rawIdent, noAt).first();
+  ).bind(rawIdent, noAt, normalizeIdent(rawIdent)).first();
 
   if (!row) return err('ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ។', 401);
   const ok = await verifySecretValue(password, row.username, env.SESSION_SECRET, row.password_hash);
@@ -213,10 +223,11 @@ export async function forgotPassword(req, env) {
      WHERE (LOWER(username) = LOWER(?1) 
         OR (email IS NOT NULL AND LOWER(email) = LOWER(?1))
         OR (contact IS NOT NULL AND LOWER(contact) = LOWER(?1))
-        OR (LOWER(username) = LOWER(?2) AND ?1 LIKE '%@%'))
+        OR (LOWER(username) = LOWER(?2) AND ?1 LIKE '%@%')
+        OR (?3 <> '' AND (LOWER(username) = ?3 OR (email IS NOT NULL AND LOWER(email) = ?3))))
        AND active = 1 
      ORDER BY ${IDENT_RANK}, id ASC LIMIT 1`
-  ).bind(rawIdent, noAt).first();
+  ).bind(rawIdent, noAt, normalizeIdent(rawIdent)).first();
   if (t && t.role !== 'owner') {
     const how = String(contact || '').trim().slice(0, 80);
     await env.DB.prepare("DELETE FROM unlock_requests WHERE teacher_id = ?1 AND plan = 'reset' AND status = 'pending'").bind(t.id).run();
