@@ -777,7 +777,7 @@
     // ---- fireworks (canvas over the whole spin window; also works full screen) ----
     let fwRaf = 0, parts = [], fwUntil = 0, nextBurst = 0, fwBox = { w: 0, h: 0 }, fc = null;
     const fwSize = () => {
-      const r = wrap.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+      const r = fw.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.floor(r.width * dpr), h = Math.floor(r.height * dpr);
       if (fw.width !== w || fw.height !== h) { fw.width = w; fw.height = h; }
       fc = fw.getContext('2d'); fc.setTransform(dpr, 0, 0, dpr, 0, 0); fwBox = { w: r.width, h: r.height };
@@ -798,7 +798,7 @@
     function fireworks(ms) { fwSize(); fwUntil = performance.now() + ms; nextBurst = 0; if (!fwRaf) fwRaf = requestAnimationFrame(fwLoop); }
     // a small burst at one card when its group locks in
     const burstAt = (el) => {
-      fwSize(); const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+      fwSize(); const r = el.getBoundingClientRect(), w = fw.parentElement.getBoundingClientRect();
       addBurst(r.right - w.left - 30, r.top - w.top + 26, 30); snd.boom(st.sound);
       if (!fwRaf) fwRaf = requestAnimationFrame(fwLoop);
     };
@@ -841,8 +841,20 @@
       };
     };
     let gRun = 0;
-    const floatEl = () => wrap.closest('.ts-float');
-    const toggleFull = () => { const f = floatEl(); try { if (document.fullscreenElement) document.exitFullscreen(); else (f.requestFullscreen || f.webkitRequestFullscreen).call(f); } catch { /* not supported */ } };
+    // full screen shows only the group pop-up; the Spin window itself keeps its size
+    let fsRoot = null;
+    const exitFull = () => {
+      if (!fsRoot) return;
+      wrap.append(pop, fw); fsRoot.remove(); fsRoot = null; pop.classList.remove('full');
+      if (document.fullscreenElement) { try { document.exitFullscreen(); } catch { /* ignore */ } }
+    };
+    const enterFull = () => {
+      fsRoot = document.createElement('div'); fsRoot.className = 'sp-fsroot';
+      root.append(fsRoot); fsRoot.append(pop, fw); pop.classList.add('full');
+      try { (fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen).call(fsRoot); } catch { /* the fixed overlay still fills the window */ }
+    };
+    const toggleFull = () => (fsRoot ? exitFull() : enterFull());
+    document.addEventListener('fullscreenchange', () => { if (fsRoot && !document.fullscreenElement) exitFull(); });
     const showGroups = (again) => {
       if (again) makeGroups();
       const id = ++gRun, n = st.groups.length, calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -852,7 +864,7 @@
         <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g wait" style="--c:${PPAL[k % PPAL.length]}"><div class="pp-gh"><b>ក្រុម ${kh(k + 1)}</b><span>${kh(g.length)} នាក់</span></div><ol>${g.map(() => '<li class="ph">• • •</li>').join('')}</ol></div>`).join('')}</div>
         <div class="pp-act"><button type="button" class="pp-skip">រំលង ▶▶</button><button type="button" class="pp-png" hidden>⬇ ទាញយក PNG</button><button type="button" class="pp-copy" hidden>📋 ចម្លងរូបភាព</button><button type="button" class="pp-again" hidden>ចែកម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
       const q = (c) => pop.querySelector(c), cards = [...pop.querySelectorAll('.pp-g')], title = q('.pp-title');
-      q('.pp-ok').onclick = () => { gRun++; stopRoll(); pop.hidden = true; st.used.clear(); refresh(); };
+      q('.pp-ok').onclick = () => { gRun++; stopRoll(); exitFull(); pop.hidden = true; st.used.clear(); refresh(); };
       q('.pp-again').onclick = () => showGroups(true);
       q('.pp-fs').onclick = toggleFull;
       wirePoster(st.groups.map((g, k) => ({ title: `ក្រុម ${kh(k + 1)}`, items: g.map((nm) => ({ n: nm })) })), 'បែងចែកក្រុមរួចរាល់!', 'groups');

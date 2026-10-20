@@ -565,3 +565,8 @@ body.teach-show-on { overflow: hidden; }
 .ts-float:fullscreen .ts-fbar, .ts-float:fullscreen .ts-rs { display: none; }
 .ts-float:fullscreen .ts-fin { height: 100%; }
 .ts-float:-webkit-full-screen { left: 0 !important; top: 0 !important; width: 100vw !important; height: 100vh !important; border-radius: 0 !important; }
+/* group pop-up full screen (separate from the Spin window) */
+.sp-fsroot { position: fixed; inset: 0; z-index: 400; background: #0b2230; container-type: size; }
+.sp-fsroot .sp-pop { inset: 2.5%; }
+.sp-fsroot .pp-card.pp-all { height: 100%; }
+.sp-fsroot .sp-fw { position: absolute; inset: 0; width: 100%; height: 100%; }
