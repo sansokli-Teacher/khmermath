@@ -662,7 +662,11 @@
     const info = document.createElement('div'); info.className = 'sp-info';
     const pop = document.createElement('div'); pop.className = 'sp-pop'; pop.hidden = true;
     const fw = document.createElement('canvas'); fw.className = 'sp-fw';
-    wrap.append(bar, stageW, info, pop, fw);
+    // simple by default: only the wheel; the options live behind a small gear
+    bar.hidden = true;
+    const gear = document.createElement('button'); gear.type = 'button'; gear.className = 'sp-gear'; gear.textContent = '⚙'; gear.title = 'ជម្រើស';
+    gear.onclick = () => { bar.hidden = !bar.hidden; gear.classList.toggle('on', !bar.hidden); };
+    wrap.append(bar, stageW, info, pop, fw, gear);
     const c = cv.getContext('2d');
     const pal = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4', '#c92a2a', '#087f5b'];
     const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };

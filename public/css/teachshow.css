@@ -499,3 +499,7 @@ body.teach-show-on { overflow: hidden; }
 .tm-morebtn { width: 34px; height: 34px; min-height: 0; padding: 0; margin: 2px auto 0; border-radius: 50%; font-size: 18px; color: #7fa3c1; display: block; }
 .tm-morebtn.on, .tm-morebtn:hover { background: #e3eff8; color: #235b88; }
 .tm-dig { margin: 0; }
+.sp-bar[hidden] { display: none; }
+.sp-gear { position: absolute; right: 8px; bottom: 6px; z-index: 4; width: 32px; height: 32px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.12); color: #cfd8e3; font-size: 17px; box-shadow: none; }
+.sp-gear:hover, .sp-gear.on { background: #ee0000; color: #fff; }
+.sp-bar { padding-right: 4px; }
