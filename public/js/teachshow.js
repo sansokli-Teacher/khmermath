@@ -1739,7 +1739,7 @@
       const tick = () => { const d = new Date(), h = d.getHours() % 12 || 12, ap = d.getHours() < 12 ? 'AM' : 'PM'; ck.innerHTML = shown ? `<b>${h}:${String(d.getMinutes()).padStart(2, '0')}</b><i>${ap}</i>` : '<span>🕒</span>'; ck.classList.toggle('off', !shown); };
       ck.onclick = () => { shown = !shown; try { localStorage.setItem('ts_clock', shown ? '1' : '0'); } catch { /* ignore */ } tick(); };
       tick(); clearInterval(clockT); clockT = setInterval(tick, 5000);
-      stage.append(ck);
+      tbar.prepend(ck);   // the clock lives in the header bar, top-left
     }
     ctx = ink.getContext('2d');
     bindInk();
