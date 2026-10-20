@@ -87,6 +87,7 @@ export default function App() {
                 <li key={c.id} style={{ '--i': i }}>
                   <button className="class-card" style={{ '--a': hue(c)[0], '--b': hue(c)[1] }} onClick={() => setSheet(c)}>
                     <span className="cc-g">ទី {kh(gradeOf(c))}</span>
+                    <span className="cc-go" aria-hidden="true">›</span>
                     <b className="cc-n">{c.name}</b>
                     <span className="cc-c">👥 {kh(c.student_count)} សិស្ស</span>
                   </button>
