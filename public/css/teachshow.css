@@ -467,3 +467,12 @@ body.teach-show-on { overflow: hidden; }
 .tm-row button.rst { width: 38px; padding: 0; }
 .tm.done .tm-svg { animation: tm-pulse .5s ease-in-out 6; }
 @keyframes tm-pulse { 50% { transform: scale(1.04); } }
+.tm.last .tm-num { animation: tm-tick .9s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes tm-tick { 0% { transform: scale(1.35); fill: #ffd54a; } 100% { transform: scale(1); } }
+.tm-prw { align-items: flex-start; }
+.tm-pre { flex-wrap: wrap; justify-content: center; max-width: 250px; }
+.tm-pre button { width: 40px; }
+.tm-cust { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.tm-cust input { width: 70px; height: 32px; padding: 0 8px; border: 2px solid #235b88; border-radius: 9px; font-size: 15px; font-weight: 800; color: #235b88; text-align: center; background: #fff; }
+.tm-cust .ok { min-height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: #2b73a3; color: #fff; font-weight: 800; box-shadow: none; }
+.tm-svg { max-height: 235px; margin: 0 auto; }

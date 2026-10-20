@@ -637,6 +637,7 @@
     ctx() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch { audio = null; } return audio; },
     tick(on) { const c = on && this.ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.setValueAtTime(.05, c.currentTime); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .05); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .06); },
     fanfare(on) { const c = on && this.ctx(); if (!c) return; [523, 659, 784, 1047, 1319].forEach((f, k) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + k * .11; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .5); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .55); }); },
+    beep(on, hi) { const c = on && this.ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.value = hi ? 1175 : 784; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .22); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .25); },
     alarm(on) { const c = on && this.ctx(); if (!c) return; [0, .16].forEach((d) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + d; o.type = 'square'; o.frequency.value = 988; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .13); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .15); }); },
     boom(on) { const c = on && this.ctx(); if (!c) return; const n = c.sampleRate * .35, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .5; src.connect(f).connect(g).connect(c.destination); src.start(); },
   };
@@ -806,7 +807,7 @@
     const q = (c) => wrap.querySelector(c);
     const wedge = q('.tm-wedge'), num = q('.tm-num'), unit = q('.tm-unit');
     const digital = document.createElement('div'); digital.className = 'tm-dig';
-    let total = 300, left = 300, run = false, t0 = 0, remain0 = 0, raf = 0, alarmT = 0;
+    let total = 300, left = 300, run = false, t0 = 0, remain0 = 0, raf = 0, alarmT = 0, lastBeep = -1;
     const paint = () => {
       const f = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0, th = f * Math.PI * 2;
       if (f >= .9995) wedge.setAttribute('d', `M${CX - RF} ${CY} a${RF} ${RF} 0 1 0 ${2 * RF} 0 a${RF} ${RF} 0 1 0 ${-2 * RF} 0Z`);
@@ -822,25 +823,33 @@
       if (!run) return;
       left = Math.max(0, remain0 - (now - t0) / 1000);
       paint();
+      const cs = Math.ceil(left); // beep once a second for the last 5 seconds
+      if (cs >= 1 && cs <= 5 && cs !== lastBeep) { lastBeep = cs; snd.beep(true, cs === 1); wrap.classList.remove('last'); void wrap.offsetWidth; wrap.classList.add('last'); }
       if (left <= 0) { run = false; startBtn.textContent = '▶ ចាប់ផ្ដើម'; wrap.classList.add('done'); [0, 450, 900].forEach((d) => setTimeout(() => snd.alarm(true), d)); return; }
       raf = requestAnimationFrame(tick);
     };
-    const setTotal = (sec) => { run = false; cancelAnimationFrame(raf); total = left = sec; wrap.classList.remove('done'); startBtn.textContent = '▶ ចាប់ផ្ដើម'; paint(); };
+    const setTotal = (sec) => { lastBeep = -1; wrap.classList.remove('last'); run = false; cancelAnimationFrame(raf); total = left = sec; wrap.classList.remove('done'); startBtn.textContent = '▶ ចាប់ផ្ដើម'; paint(); };
     const btn = (lab, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; if (cls) b.className = cls; b.onclick = fn; return b; };
     const startBtn = btn('▶ ចាប់ផ្ដើម', () => {
       if (run) { stop(); return; }
       if (left <= 0) { left = total; wrap.classList.remove('done'); }
-      run = true; t0 = performance.now(); remain0 = left; startBtn.textContent = '❚❚ ផ្អាក';
+      lastBeep = -1; run = true; t0 = performance.now(); remain0 = left; startBtn.textContent = '❚❚ ផ្អាក';
       snd.ctx(); raf = requestAnimationFrame(tick);
     }, 'go');
     const presets = document.createElement('div'); presets.className = 'tm-pre';
-    [1, 3, 5, 10, 15].forEach((m) => presets.append(btn(`${m}`, () => setTotal(m * 60))));
+    [1, 3, 5, 10, 15, 20, 30, 45, 50, 60].forEach((m) => presets.append(btn(`${m}`, () => setTotal(m * 60))));
+    // any length: type the minutes and press Enter / ✓
+    const cust = document.createElement('div'); cust.className = 'tm-cust';
+    const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.max = '600'; inp.placeholder = 'នាទី'; inp.inputMode = 'numeric';
+    const ok = btn('កំណត់', () => { const v = Math.round(parseFloat(inp.value)); if (v >= 1 && v <= 600) { setTotal(v * 60); inp.value = ''; } });
+    inp.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') ok.click(); };
+    cust.append(Object.assign(document.createElement('span'), { textContent: 'ផ្សេងទៀត៖' }), inp, Object.assign(ok, { className: 'ok' }));
     const adj = (d) => { if (run) { remain0 = Math.max(5, remain0 + d); total = Math.max(5, total + d); t0 = performance.now(); left = remain0; } else { setTotal(Math.max(5, total + d)); } paint(); };
     const row = document.createElement('div'); row.className = 'tm-row';
     row.append(btn('−១ នាទី', () => adj(-60)), startBtn, btn('+១ នាទី', () => adj(60)), btn('↺', () => setTotal(total), 'rst'));
     const lab = document.createElement('div'); lab.className = 'tm-lab'; lab.textContent = 'នាទី៖';
     const pr = document.createElement('div'); pr.className = 'tm-prw'; pr.append(lab, presets);
-    wrap.append(digital, pr, row);
+    wrap.append(digital, pr, cust, row);
     paint();
     return wrap;
   }
