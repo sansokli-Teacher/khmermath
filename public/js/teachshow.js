@@ -237,6 +237,12 @@
       lens = document.createElement('div'); lens.className = 'ts-lens';
       lensIn = document.createElement('div'); lensIn.className = 'ts-lens-in';
       lens.append(lensIn); stage.append(lens);
+      lens.addEventListener('click', () => { // click the pinned lens to release it, then zoom somewhere else
+        if (!lensPin) return;
+        lensPin = false; lens.classList.remove('pin');
+        if (toolSetter) toolSetter('zoom');
+      });
+      lens.addEventListener('dblclick', lensKill);
       lensIco = document.createElement('img'); lensIco.className = 'ts-lens-ico'; lensIco.src = '/img/magnifier.png'; lensIco.alt = ''; stage.append(lensIco);
     }
     lensIn.innerHTML = '';
@@ -252,6 +258,10 @@
     lensGo.x = e.clientX - r.left; lensGo.y = e.clientY - r.top; lensGo.z = lensZoom;
     if (!lensOn) { lensOn = true; lensNow.x = lensGo.x; lensNow.y = lensGo.y; lensNow.z = 1; lens.classList.add('on'); lensIco.classList.add('on'); }
     if (!lensRaf) lensRaf = requestAnimationFrame(lensTick);
+  }
+  function lensKill() { // remove the zoom completely
+    lensOff();
+    if (tool === 'zoom' && toolSetter) toolSetter('none');
   }
   function lensOff(keep) {
     if (keep === true && lensPin) return;
@@ -292,7 +302,7 @@
   function bindInk() {
     hand = makeHand();
     ink.addEventListener('wheel', (e) => { if (tool === 'zoom') { e.preventDefault(); lensZoom = Math.max(1.4, Math.min(4.5, lensZoom + (e.deltaY < 0 ? .25 : -.25))); lensGo.z = lensZoom; if (!lensRaf) lensRaf = requestAnimationFrame(lensTick); return; } if (sizeSetter && HAND_TOOLS.includes(tool)) { e.preventDefault(); sizeSetter(size + (e.deltaY < 0 ? 1 : -1), true); } }, { passive: false });
-    ink.addEventListener('dblclick', () => { if (tool === 'zoom' && toolSetter) toolSetter('none'); });
+    ink.addEventListener('dblclick', () => { if (tool === 'zoom') lensKill(); });
     ink.addEventListener('pointermove', lensMove);
     ink.addEventListener('pointerenter', lensMove);
     ink.addEventListener('pointerleave', () => lensOff(true));
@@ -667,7 +677,7 @@
     };
     const setTool = (id) => {
       toolSetter = setTool;
-      tool = id; spot = null; laser = []; lensOff();
+      tool = id; spot = null; laser = []; if (!lensPin) lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
       ink.style.cursor = id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
       if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
