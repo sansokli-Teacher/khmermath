@@ -837,19 +837,22 @@
       snd.ctx(); raf = requestAnimationFrame(tick);
     }, 'go');
     const presets = document.createElement('div'); presets.className = 'tm-pre';
-    [1, 3, 5, 10, 15, 20, 30, 45, 50, 60].forEach((m) => presets.append(btn(`${m}`, () => setTotal(m * 60))));
-    // any length: type the minutes and press Enter / ✓
+    [['10វិ', 10], ['30វិ', 30], ['1', 60], ['3', 180], ['5', 300], ['10', 600], ['15', 900], ['20', 1200], ['30', 1800], ['45', 2700], ['50', 3000], ['60', 3600]].forEach(([t, sec]) => presets.append(btn(t, () => setTotal(sec))));
+    // any length: minutes and seconds, Enter or កំណត់
     const cust = document.createElement('div'); cust.className = 'tm-cust';
-    const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.max = '600'; inp.placeholder = 'នាទី'; inp.inputMode = 'numeric';
-    const ok = btn('កំណត់', () => { const v = Math.round(parseFloat(inp.value)); if (v >= 1 && v <= 600) { setTotal(v * 60); inp.value = ''; } });
-    inp.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') ok.click(); };
-    cust.append(Object.assign(document.createElement('span'), { textContent: 'ផ្សេងទៀត៖' }), inp, Object.assign(ok, { className: 'ok' }));
+    const mk = (ph, max) => { const i = document.createElement('input'); i.type = 'number'; i.min = '0'; i.max = String(max); i.placeholder = ph; i.inputMode = 'numeric'; return i; };
+    const inM = mk('នាទី', 600), inS = mk('វិនាទី', 59);
+    const ok = btn('កំណត់', () => { const sec = Math.round((parseFloat(inM.value) || 0) * 60 + (parseFloat(inS.value) || 0)); if (sec >= 5 && sec <= 36000) { setTotal(sec); inM.value = inS.value = ''; } });
+    [inM, inS].forEach((i) => { i.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') ok.click(); }; });
+    cust.append(inM, Object.assign(document.createElement('b'), { textContent: ':' }), inS, Object.assign(ok, { className: 'ok' }));
     const adj = (d) => { if (run) { remain0 = Math.max(5, remain0 + d); total = Math.max(5, total + d); t0 = performance.now(); left = remain0; } else { setTotal(Math.max(5, total + d)); } paint(); };
     const row = document.createElement('div'); row.className = 'tm-row';
     row.append(btn('−១ នាទី', () => adj(-60)), startBtn, btn('+១ នាទី', () => adj(60)), btn('↺', () => setTotal(total), 'rst'));
+    const row2 = document.createElement('div'); row2.className = 'tm-row'; row2.style.marginTop = '6px';
+    row2.append(btn('−៣០ វិ', () => adj(-30)), btn('+៣០ វិ', () => adj(30)));
     const lab = document.createElement('div'); lab.className = 'tm-lab'; lab.textContent = 'នាទី៖';
     const pr = document.createElement('div'); pr.className = 'tm-prw'; pr.append(lab, presets);
-    wrap.append(digital, pr, cust, row);
+    wrap.append(digital, pr, cust, row, row2);
     paint();
     return wrap;
   }

@@ -476,3 +476,6 @@ body.teach-show-on { overflow: hidden; }
 .tm-cust input { width: 70px; height: 32px; padding: 0 8px; border: 2px solid #235b88; border-radius: 9px; font-size: 15px; font-weight: 800; color: #235b88; text-align: center; background: #fff; }
 .tm-cust .ok { min-height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: #2b73a3; color: #fff; font-weight: 800; box-shadow: none; }
 .tm-svg { max-height: 235px; margin: 0 auto; }
+.tm-cust input { width: 74px; }
+.tm-cust b { font-size: 18px; }
+.tm-pre button { width: 44px; font-size: 13px; }
