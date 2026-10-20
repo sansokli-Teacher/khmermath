@@ -503,3 +503,9 @@ body.teach-show-on { overflow: hidden; }
 .sp-gear { position: absolute; right: 8px; bottom: 6px; z-index: 4; width: 32px; height: 32px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.12); color: #cfd8e3; font-size: 17px; box-shadow: none; }
 .sp-gear:hover, .sp-gear.on { background: #ee0000; color: #fff; }
 .sp-bar { padding-right: 4px; }
+.sp-dvd { background: #1c7ed6 !important; }
+.pp-all { max-height: 100%; overflow: auto; }
+.pp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(30cqw, 1fr)); gap: 1.6cqmin; margin: 1.5cqmin 0 2cqmin; text-align: left; }
+.pp-g { background: #fff; border: 2px solid #0f5173; border-radius: 10px; padding: .6em .8em; }
+.pp-g b { color: #ee0000; font-size: clamp(12px, 3.8cqw, 22px); }
+.pp-g ul { list-style: none; margin: .3em 0 0; padding: 0; font-size: clamp(11px, 3.3cqw, 19px); font-weight: 700; color: #0f5173; line-height: 1.5; }

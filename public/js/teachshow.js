@@ -647,13 +647,14 @@
     wrap.className = 'sp';
     const bar = document.createElement('div'); bar.className = 'sp-bar';
     const modeBtns = [['one', 'ម្នាក់ៗ'], ['group', 'ក្រុម']].map(([m, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.m = m; return b; });
-    const gsel = document.createElement('select'); gsel.title = 'ចំនួនសិស្សក្នុងមួយក្រុម';
-    [2, 3, 4, 5, 6, 7, 8].forEach((n) => gsel.append(new Option(`${kh(n)} នាក់/ក្រុម`, n)));
-    gsel.value = 4;
+    const gsel = document.createElement('select'); gsel.title = 'ចំនួនក្រុម';
+    [2, 3, 4, 5, 6, 7, 8, 9, 10, 12].forEach((n) => gsel.append(new Option(`${kh(n)} ក្រុម`, n)));
+    gsel.value = 6;
+    const dvd = document.createElement('button'); dvd.type = 'button'; dvd.className = 'sp-dvd'; dvd.textContent = 'ចែកក្រុម'; dvd.title = 'ចែកថ្នាក់ជាក្រុមៗ ហើយបង្ហាញទាំងអស់';
     const rep = document.createElement('label'); rep.className = 'sp-chk'; rep.innerHTML = '<input type="checkbox" checked><span>មិនជាន់</span>';
     const snb = document.createElement('button'); snb.type = 'button'; snb.className = 'sp-snd'; snb.textContent = '🔊'; snb.title = 'សំឡេង';
     const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'sp-rst'; rst.textContent = '↺'; rst.title = 'ចាប់ផ្ដើមឡើងវិញ';
-    bar.append(...modeBtns, gsel, rep, snb, rst);
+    bar.append(...modeBtns, gsel, dvd, rep, snb, rst);
     const stageW = document.createElement('div'); stageW.className = 'sp-wheel';
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 640;
     const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'SPIN';
@@ -672,7 +673,7 @@
     const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };
     const roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
     const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
-    const makeGroups = () => { const size = +gsel.value, n = Math.max(1, Math.ceil(roster.length / size)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
+    const makeGroups = () => { const n = Math.max(1, Math.min(+gsel.value || 6, roster.length)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
     makeGroups();
     // what is on the wheel right now
     const items = () => {
@@ -747,6 +748,19 @@
       fireworks(3200);
     };
     const esc = (t) => String(t).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+
+    // divide the whole class into groups and show every group at once
+    const showGroups = (again) => {
+      if (again) makeGroups();
+      pop.hidden = false;
+      pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-k">👥 ចែកជា ${kh(st.groups.length)} ក្រុម</div>
+        <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g"><b>ក្រុម ${kh(k + 1)}</b><ul>${g.map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>`).join('')}</div>
+        <div class="pp-act"><button type="button" class="pp-ok">បិទ</button><button type="button" class="pp-again">ចែកម្ដងទៀត</button></div></div>`;
+      pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; st.used.clear(); refresh(); };
+      pop.querySelector('.pp-again').onclick = () => showGroups(true);
+      if (again) snd.tick(st.sound);
+    };
+    dvd.onclick = () => { if (st.spin) return; if (st.mode !== 'group') { st.mode = 'group'; st.used.clear(); st.ang = 0; } showGroups(false); refresh(); };
 
     hub.onclick = () => {
       if (st.spin || !list.length) return;
