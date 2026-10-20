@@ -66,6 +66,8 @@
       el.classList.toggle('rv-hide', a > cur || u <= cur);
       el.classList.toggle('rv-now', a > 0 && a === cur && stepNow > 0);   // what was just revealed gets a soft highlight
     });
+    // data-now="n": marks the part (e.g. a whole column of a sum) that step n is about, so it is tinted only while that step shows
+    slideEl.querySelectorAll('[data-now]').forEach((el) => el.classList.toggle('rv-on', stepNow > 0 && Number(el.dataset.now) === cur));
   }
   function pageLabel() {
     const lab = root && root.querySelector('.ts-page');

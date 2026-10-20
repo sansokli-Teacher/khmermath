@@ -728,3 +728,6 @@ body.teach-show-on { overflow: hidden; }
 .ts-stage .ts-nav button:hover { background: #ee0000; }
 .ts-stage .ts-nav .ts-page { min-width: 0; padding: 0 6px; font-size: 16px; white-space: nowrap; }
 .ts-slide, .ts-slide.ts-key { padding-top: 52px; }   /* room for the clock in the top-left corner */
+
+/* the column being added / subtracted is tinted while its step shows */
+.ts-slide table.col td.rv-on { background: #fff3cf; border-radius: .25em; }

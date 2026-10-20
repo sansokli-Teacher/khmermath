@@ -200,31 +200,39 @@ def _digits(x):
     return [int(d) for d in str(x)]
 
 
+def _td(txt, sub=None, now=None, cls=''):
+    """table cell for the column pictures: data-sub = the column step at which it appears, data-subnow = the step at which its
+    column is highlighted (stepify() turns both into real data-step / data-now numbers; without stepify they are inert)."""
+    a = (f' class="{cls}"' if cls else '') + (f' data-sub="{sub}"' if sub else '') + (f' data-subnow="{now}"' if now else '')
+    return f'<td{a}>{txt}</td>'
+
+
 def addcol(nums, show_carry=True):
-    """column addition with the carried digits written above."""
+    """column addition with the carried digits written above; the result and the carries appear one column at a time (right to left)."""
     res = sum(nums)
     n = len(str(res))
     rows = [str(x).rjust(n) for x in nums]
-    carry = [0] * (n + 1)
     c = 0
     carries = [''] * n
     for pos in range(n - 1, -1, -1):
-        s = c + sum(int(r[pos]) for r in rows if r[pos] != ' ')
-        c = s // 10
+        s_ = c + sum(int(r[pos]) for r in rows if r[pos] != ' ')
+        c = s_ // 10
         if pos - 1 >= 0 and c:
             carries[pos - 1] = str(c)
+    stp = lambda pos: n - pos                      # column step: the units column is step 1
     h = '<table class="col">'
     if show_carry:
-        h += '<tr class="carry"><td></td>' + ''.join(f'<td>{x}</td>' for x in carries) + '</tr>'
+        # a carry is written while adding the column on its right, and used when adding its own column
+        h += '<tr class="carry"><td></td>' + ''.join(_td(x, stp(k + 1) if x else None, stp(k)) for k, x in enumerate(carries)) + '</tr>'
     for k, r in enumerate(rows):
-        h += '<tr><td class="op">' + ('+' if k == len(rows) - 1 and len(rows) > 1 else '') + '</td>' + ''.join(f'<td>{ch.strip()}</td>' for ch in r) + '</tr>'
+        h += '<tr><td class="op">' + ('+' if k == len(rows) - 1 and len(rows) > 1 else '') + '</td>' + ''.join(_td(ch.strip(), None, stp(q)) for q, ch in enumerate(r)) + '</tr>'
     rs = str(res).rjust(n)
-    h += '<tr class="sum"><td></td>' + ''.join(f'<td>{ch.strip()}</td>' for ch in rs) + '</tr></table>'
+    h += '<tr class="sum"><td></td>' + ''.join(_td(ch.strip(), stp(q), stp(q)) for q, ch in enumerate(rs)) + '</tr></table>'
     return h
 
 
 def subcol(a, b):
-    """column subtraction with borrowing shown (+10 on the borrower, -1 on the lender)."""
+    """column subtraction with borrowing shown (+10 on the borrower, -1 on the lender); one column at a time (right to left)."""
     res = a - b
     n = len(str(a))
     A, B = str(a).rjust(n), str(b).rjust(n)
@@ -241,12 +249,17 @@ def subcol(a, b):
             borrow = 1
         else:
             borrow = 0
-    h = '<table class="col"><tr class="carry"><td></td>' + ''.join(f'<td class="bw">{x}</td>' for x in plus10) + '</tr>'
-    h += '<tr class="carry"><td></td>' + ''.join(f'<td class="bw2">{x}</td>' for x in minus1) + '</tr>'
-    h += '<tr><td class="op"></td>' + ''.join(f'<td>{ch.strip()}</td>' for ch in A) + '</tr>'
-    h += '<tr><td class="op">−</td>' + ''.join(f'<td>{ch.strip()}</td>' for ch in B) + '</tr>'
     rs = str(res).rjust(n)
-    h += '<tr class="sum"><td></td>' + ''.join(f'<td>{ch.strip()}</td>' for ch in rs) + '</tr></table>'
+    # columns that have something to show (a result digit or a borrow mark), right to left, numbered 1, 2, 3 ...
+    active = [pos for pos in range(n - 1, -1, -1) if rs[pos].strip() or plus10[pos] or minus1[pos]]
+    stp = {pos: k + 1 for k, pos in enumerate(active)}
+    st = lambda pos: stp.get(pos)
+    lender = lambda pos: stp.get(pos + 1)          # the "−1" on column pos is written while working column pos+1
+    h = '<table class="col"><tr class="carry"><td></td>' + ''.join(_td(x, st(q) if x else None, st(q), 'bw') for q, x in enumerate(plus10)) + '</tr>'
+    h += '<tr class="carry"><td></td>' + ''.join(_td(x, lender(q) if x else None, st(q), 'bw2') for q, x in enumerate(minus1)) + '</tr>'
+    h += '<tr><td class="op"></td>' + ''.join(_td(ch.strip(), None, st(q)) for q, ch in enumerate(A)) + '</tr>'
+    h += '<tr><td class="op">−</td>' + ''.join(_td(ch.strip(), None, st(q)) for q, ch in enumerate(B)) + '</tr>'
+    h += '<tr class="sum"><td></td>' + ''.join(_td(ch.strip(), st(q), st(q)) for q, ch in enumerate(rs)) + '</tr></table>'
     return h
 
 
@@ -345,6 +358,20 @@ def _top_level(body):
     return parts
 
 
+_SUB = _re.compile(r' data-sub="(\d+)"')
+_SUBNOW = _re.compile(r' data-subnow="(\d+)"')
+
+
+def _resolve_subs(html, first):
+    """Turn the per-column markers of a figure into slide steps first, first+1, ...; returns (html, number of steps used)."""
+    ks = [int(x) for x in _SUB.findall(html)]
+    if not ks:
+        return _SUBNOW.sub('', html), 0
+    html = _SUB.sub(lambda mt: f' data-step="{first + int(mt.group(1)) - 1}"', html)
+    html = _SUBNOW.sub(lambda mt: f' data-now="{first + int(mt.group(1)) - 1}"', html)
+    return html, max(ks)
+
+
 _LIST = _re.compile(r'^(<(?:ul|ol)(?:\s[^>]*)?>)(.*)(</(?:ul|ol)>)$', _re.S)
 
 
@@ -367,12 +394,17 @@ def stepify(d, keep_first=True, min_units=2):
             units.append(('list', ml.group(1), lis, ml.group(3)))
         else:
             units.append(('block', b))
-    if sum(len(u[2]) if u[0] == 'list' else 1 for u in units) < min_units:
+    subs = lambda u: max([int(x) for x in _SUB.findall(u[1])] or [0]) if u[0] == 'block' else 0
+    if sum(len(u[2]) if u[0] == 'list' else (subs(u) or 1) for u in units) < min_units:
         return d
     out, n, first = [], 0, True
     for u in units:
         if u[0] == 'block':
-            if first and keep_first:
+            if subs(u):                      # a column picture: it stays visible and its columns appear one by one
+                body, used = _resolve_subs(u[1], n + 1)
+                n += used
+                out.append(body)
+            elif first and keep_first:
                 out.append(u[1])
             else:
                 n += 1
