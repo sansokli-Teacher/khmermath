@@ -479,3 +479,15 @@ body.teach-show-on { overflow: hidden; }
 .tm-cust input { width: 74px; }
 .tm-cust b { font-size: 18px; }
 .tm-pre button { width: 44px; font-size: 13px; }
+
+/* real-device buttons on the stopwatch */
+.tm-crown, .tm-side { cursor: pointer; }
+.tm-crown, .tm-side .pb { transition: transform .06s, filter .12s; }
+.tm-crown:hover, .tm-side:hover .pb { filter: brightness(1.18); }
+.tm-crown.down { transform: translateY(5px); }
+.tm-side.down .pb { transform: translateY(5px); }
+.tm-hint { font-size: 11px; font-weight: 700; opacity: .75; margin: 2px 0 4px; line-height: 1.5; }
+.tm-svg { max-height: 310px; }
+.tm-more[hidden] { display: none; }
+.tm-morebtn { margin-top: 8px; min-height: 28px; padding: 2px 14px; border: 0; border-radius: 99px; background: transparent; color: #2b73a3; font-weight: 800; font-size: 12px; box-shadow: none; }
+.tm-more { margin-top: 6px; }

@@ -790,10 +790,10 @@
         <linearGradient id="tmBtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f93bd"/><stop offset="1" stop-color="#2a6b99"/></linearGradient>
         <linearGradient id="tmCore" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d93bd"/><stop offset="1" stop-color="#235b88"/></linearGradient>
       </defs>
-      <g transform="rotate(45 ${CX} ${CY})"><rect x="141" y="54" width="18" height="30" fill="#2a6592"/><rect x="128" y="36" width="44" height="26" rx="7" fill="url(#tmBtn)"/></g>
-      <rect x="138" y="44" width="24" height="40" fill="#2a6592"/>
+      <g class="tm-side" transform="rotate(45 ${CX} ${CY})"><title>ប៊ូតុងចំហៀង៖ ចាប់ផ្ដើម / ឈប់</title><g class="pb"><rect x="141" y="54" width="18" height="30" fill="#2a6592"/><rect x="128" y="36" width="44" height="26" rx="7" fill="url(#tmBtn)"/></g><rect x="120" y="28" width="60" height="58" fill="transparent"/></g>
+      <g class="tm-crown"><title>ប៊ូតុងលើ៖ ចុចដើម្បីបន្ថែមម៉ោង (Shift = ដក) · កង់កណ្ដុរ</title><rect x="138" y="44" width="24" height="40" fill="#2a6592"/>
       <rect x="108" y="14" width="84" height="40" rx="8" fill="url(#tmBtn)"/>
-      ${ridges}
+      ${ridges}<rect x="104" y="10" width="92" height="48" fill="transparent"/></g>
       <circle cx="${CX + 3}" cy="${CY + 7}" r="124" fill="rgba(0,0,0,.14)"/>
       <circle cx="${CX}" cy="${CY}" r="122" fill="url(#tmBody)"/>
       <circle cx="${CX}" cy="${CY}" r="106" fill="#2b6a97"/>
@@ -852,7 +852,37 @@
     row2.append(btn('−៣០ វិ', () => adj(-30)), btn('+៣០ វិ', () => adj(30)));
     const lab = document.createElement('div'); lab.className = 'tm-lab'; lab.textContent = 'នាទី៖';
     const pr = document.createElement('div'); pr.className = 'tm-prw'; pr.append(lab, presets);
-    wrap.append(digital, pr, cust, row, row2);
+    const more = document.createElement('div'); more.className = 'tm-more'; more.hidden = true;
+    more.append(pr, cust, row2);
+    const moreBtn = document.createElement('button'); moreBtn.type = 'button'; moreBtn.className = 'tm-morebtn'; moreBtn.textContent = 'ជម្រើសបន្ថែម ▾';
+    moreBtn.onclick = () => { more.hidden = !more.hidden; moreBtn.textContent = more.hidden ? 'ជម្រើសបន្ថែម ▾' : 'លាក់ ▴'; };
+    wrap.append(digital, row, moreBtn, more);
+    const hint = document.createElement('div'); hint.className = 'tm-hint';
+    hint.textContent = 'ប៊ូតុងលើ = កំណត់ម៉ោង (ចុចជាប់ = លឿន) · ប៊ូតុងចំហៀង = ចាប់ផ្ដើម/ឈប់';
+    digital.before(hint);
+    // real-device buttons: crown on top sets the time, button on the side starts / stops
+    const crown = q('.tm-crown'), side = q('.tm-side');
+    const crownStep = (dir) => {
+      const step = dir > 0 ? (total < 60 ? 10 : 60) : (total <= 60 ? 10 : 60);
+      const next = Math.max(10, Math.min(36000, total + dir * step));
+      setTotal(next); snd.tick(true);
+    };
+    let holdT = 0, holdI = 0;
+    const holdStop = () => { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = 0; crown.classList.remove('down'); };
+    crown.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); crown.setPointerCapture && crown.setPointerCapture(e.pointerId);
+      holdStop();
+      const dir = e.shiftKey || e.button === 2 ? -1 : 1;
+      crown.classList.add('down'); crownStep(dir);
+      holdT = setTimeout(() => { if (!crown.matches(':active')) return holdStop(); holdI = setInterval(() => { if (!crown.isConnected || !crown.matches(':active')) return holdStop(); crownStep(dir); }, 110); }, 450);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => crown.addEventListener(ev, holdStop));
+    window.addEventListener('pointerup', holdStop); window.addEventListener('blur', holdStop);
+    crown.addEventListener('contextmenu', (e) => e.preventDefault());
+    crown.addEventListener('wheel', (e) => { e.preventDefault(); crownStep(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+    side.addEventListener('pointerdown', (e) => { e.preventDefault(); side.classList.add('down'); startBtn.click(); snd.tick(true); });
+    const sideUp = () => side.classList.remove('down');
+    side.addEventListener('pointerup', sideUp); side.addEventListener('pointercancel', sideUp); side.addEventListener('pointerleave', sideUp);
     paint();
     return wrap;
   }
