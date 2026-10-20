@@ -370,3 +370,4 @@ body.teach-show-on { overflow: hidden; }
 .ts-lens-ico { position: absolute; z-index: 8; width: 64px; height: 64px; pointer-events: none; opacity: 0; transition: opacity .18s; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
 .ts-lens-ico.on { opacity: 1; }
 .ts-prow .mi, .ts-stage .ts-prow .mi { width: 22px; height: 22px; display: block; }
+.ts-lens.pin { border-color: #ee0000; box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 0 0 3px rgba(238,0,0,.25); }

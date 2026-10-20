@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -246,14 +246,16 @@
     lensIn.append(lensClone);
   }
   function lensMove(e) {
-    if (tool !== 'zoom') return;
+    if (tool !== 'zoom' || lensPin) return;
     if (!lens || !lensClone || lensClone.innerHTML !== slideEl.innerHTML) lensBuild();
     const r = ink.getBoundingClientRect();
     lensGo.x = e.clientX - r.left; lensGo.y = e.clientY - r.top; lensGo.z = lensZoom;
     if (!lensOn) { lensOn = true; lensNow.x = lensGo.x; lensNow.y = lensGo.y; lensNow.z = 1; lens.classList.add('on'); lensIco.classList.add('on'); }
     if (!lensRaf) lensRaf = requestAnimationFrame(lensTick);
   }
-  function lensOff() {
+  function lensOff(keep) {
+    if (keep === true && lensPin) return;
+    lensPin = false; if (lens) lens.classList.remove('pin');
     lensOn = false; if (lens) { lens.classList.remove('on'); lensIco.classList.remove('on'); }
   }
   function lensTick() {
@@ -293,7 +295,7 @@
     ink.addEventListener('dblclick', () => { if (tool === 'zoom' && toolSetter) toolSetter('none'); });
     ink.addEventListener('pointermove', lensMove);
     ink.addEventListener('pointerenter', lensMove);
-    ink.addEventListener('pointerleave', lensOff);
+    ink.addEventListener('pointerleave', () => lensOff(true));
     ink.addEventListener('pointermove', handMove);
     ink.addEventListener('pointerenter', handMove);
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
@@ -303,6 +305,10 @@
       if (e.button && e.button !== 0) return;
       const p = pos(e);
       closeMenus();
+      if (tool === 'zoom') {
+        if (lensOn || lensPin) { lensPin = !lensPin; lens.classList.toggle('pin', lensPin); if (!lensPin) lensMove(e); }
+        return;
+      }
       if (tool === 'laser') { laser.push({ ...p, t: performance.now() }); if (!laserRaf) laserRaf = requestAnimationFrame(laserTick); }
       else if (tool === 'spot') { spot = p; drawing = true; redraw(); }
       else if (tool === 'stamp') {
