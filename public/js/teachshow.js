@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -219,6 +219,46 @@
   }
 
   const SHAPES = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
+  function say(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'ts-toast'; stage.append(toastEl); }
+    toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl && toastEl.classList.remove('on'), 2200);
+  }
+
+  // save the current slide, with everything written on it, as a PNG the teacher can hand out
+  let saving = false;
+  async function saveImage() {
+    if (saving) return;
+    saving = true; say('កំពុងរៀបចំរូបភាព…');
+    try {
+      if (!window.html2canvas) {
+        await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = '/js/html2canvas.min.js'; sc.onload = ok; sc.onerror = no; document.head.append(sc); });
+      }
+      const w = slideEl.clientWidth, h = slideEl.clientHeight;
+      const holder = document.createElement('div');
+      holder.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;z-index:-1;pointer-events:none;background:#fff`;
+      const copy = slideEl.cloneNode(true);
+      copy.style.position = 'relative'; copy.style.inset = 'auto'; copy.style.width = w + 'px'; copy.style.height = h + 'px'; copy.style.overflow = 'hidden';
+      holder.append(copy); document.body.append(holder);
+      const scale = 2;
+      let base;
+      try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale, useCORS: true, logging: false }); }
+      finally { holder.remove(); }
+      const out = document.createElement('canvas');
+      out.width = base.width; out.height = base.height;
+      const c2 = out.getContext('2d');
+      c2.drawImage(base, 0, 0);
+      c2.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, out.width, out.height); // pen strokes on top
+      const name = `grade${meta.grade}-lesson${meta.lesson}-slide${i + 1}.png`;
+      const a = document.createElement('a');
+      a.download = name; a.href = out.toDataURL('image/png');
+      document.body.append(a); a.click(); a.remove();
+      say('✓ បានរក្សាទុករូបភាព ' + name);
+    } catch (err) {
+      say('រក្សាទុករូបភាពមិនបានសម្រេច');
+    } finally { saving = false; }
+  }
+
   function sizeToast() {
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'ts-toast'; stage.append(toastEl); }
     toastEl.textContent = `ទំហំក្បាលប៊ិច ${kh(size)}`;
@@ -752,7 +792,9 @@
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
     const tipWrap = document.createElement('label'); tipWrap.className = 'ts-tipw'; tipWrap.title = 'ទំហំក្បាលប៊ិច'; tipWrap.append(Object.assign(document.createElement('i'), { className: 'tdot' }), tip);
-    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, tipWrap, bUndo, bRedo, bClear);
+    const bSave = mkBtn('save', '💾', 'រក្សាទុក', saveImage);
+    bSave.title = 'រក្សាទុកជារូបភាព (PNG)';
+    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, tipWrap, bUndo, bRedo, bClear, bSave);
     el.append(grip, row, drawMenu, stampMenu, fmtMenu);
     header().insertBefore(el, header().querySelector('.ts-wid'));
     palette = el;
@@ -783,6 +825,7 @@
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
+    meta = { grade: opt.grade, lesson: opt.lesson };
     root = document.getElementById('teach-show');
     root.hidden = false;
     root.innerHTML = '';
