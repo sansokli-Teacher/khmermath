@@ -706,3 +706,19 @@ body.teach-show-on { overflow: hidden; }
 .ts-card-b table.tbl th { background: rgba(255,255,255,.16); color: #ffd98a; border-color: rgba(255,255,255,.4); }
 .ts-card-b table.tbl td { border-color: rgba(255,255,255,.4); color: #fff; }
 .ts-card-b table.tbl.sm td:first-child { color: #ffd98a; }
+
+/* ---- step-by-step reveal (data-step / data-until, see teachshow.js) ---- */
+.ts-slide [data-step], .ts-slide [data-until] { transition: opacity .45s ease, transform .45s ease; }
+.ts-slide .rv-hide { opacity: 0 !important; visibility: hidden; pointer-events: none; }
+.ts-slide div.rv:not(.rv-hide) { animation: tsRise .45s ease both; }
+.ts-slide .rv-now { filter: drop-shadow(0 0 7px rgba(240,163,10,.55)); }
+@keyframes tsRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ts-slide [data-step], .ts-slide [data-until] { transition: none; } .ts-slide div.rv:not(.rv-hide) { animation: none; } }
+/* reveal chips for the new Section 4 pictures */
+.ts-slide .stepcard { display: inline-block; margin: .2em .35em; padding: .25em .8em; border-radius: .6em; font-weight: 800; }
+.ts-slide .stepcard.a { background: #dbeafe; color: #1f4a5f; border: 2px solid #1c7ed6; }
+.ts-slide .stepcard.b { background: #fff3cf; color: #7a4a00; border: 2px solid #f0a30a; }
+.ts-slide .stepcard.ok { background: #d3f9d8; color: #14532d; border: 2px solid #2f9e44; }
+.ts-slide .stepcard.no { background: #ffe3e3; color: #7f1d1d; border: 2px solid #e03131; }
+.ts-slide .capstack { display: grid; margin-top: .3em; text-align: center; font-weight: 700; }
+.ts-slide .capstack > div { grid-area: 1 / 1; align-self: center; animation: none; }

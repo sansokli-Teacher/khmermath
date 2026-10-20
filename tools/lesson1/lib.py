@@ -301,3 +301,101 @@ def prac(kick, title, body):
 
 def sol(kick, title, body):
     return slide(kick, title, body, k='sol')
+
+
+# ---------------------------------------------------------------- step-by-step reveal (see public/js/teachshow.js)
+import re as _re
+
+
+def rvg(n, body, until=None):
+    """SVG group that appears at step n (0 = visible from the start) and optionally disappears again at step `until`."""
+    a = (f' data-step="{n}"' if n else '') + (f' data-until="{until}"' if until else '')
+    return f'<g class="rv"{a}>{body}</g>'
+
+
+def rvd(n, html, cls=''):
+    """HTML block that appears at step n."""
+    c = ('rv ' + cls).strip()
+    return f'<div class="{c}" data-step="{n}">{html}</div>'
+
+
+_TAG = _re.compile(r'<(/?)(p|div|table|tr|td|th|ul|ol|li|span|svg|b|i|g|h2|h3|blockquote|thead|tbody|mark)(\s[^>]*?)?(/?)>')
+
+
+def _top_level(body):
+    """Split an HTML string into its top-level blocks; None when the markup is not balanced (then it is left alone)."""
+    parts, depth, start = [], 0, 0
+    for mt in _TAG.finditer(body):
+        close, selfc = mt.group(1) == '/', mt.group(4) == '/'
+        if selfc:
+            continue
+        if not close:
+            if depth == 0 and body[start:mt.start()].strip():
+                return None                        # loose text between blocks
+            depth += 1
+        else:
+            depth -= 1
+            if depth < 0:
+                return None
+            if depth == 0:
+                parts.append(body[start:mt.end()])
+                start = mt.end()
+    if depth != 0 or body[start:].strip():
+        return None
+    return parts
+
+
+_LIST = _re.compile(r'^(<(?:ul|ol)(?:\s[^>]*)?>)(.*)(</(?:ul|ol)>)$', _re.S)
+
+
+def stepify(d, keep_first=True, min_units=2):
+    """Turn a slide's blocks (after the kicker and heading) into reveal steps: the first block stays visible,
+    every later block - or every later bullet of a list - is shown by the next press of →.
+    Slides that already have steps, or markup we cannot split safely, are left alone."""
+    html = d['html']
+    if 'data-step' in html:
+        return d
+    head = _re.match(r'^(<p class="ts-kicker">.*?</p>)?(<h2>.*?</h2>)?', html, _re.S).group(0)
+    blocks = _top_level(html[len(head):])
+    if not blocks:
+        return d
+    units = []                                   # ('block', html) or ('list', open, [li...], close)
+    for b in blocks:
+        ml = _LIST.match(b)
+        lis = _top_level(ml.group(2)) if ml else None
+        if ml and lis and all(x.startswith('<li') for x in lis):
+            units.append(('list', ml.group(1), lis, ml.group(3)))
+        else:
+            units.append(('block', b))
+    if sum(len(u[2]) if u[0] == 'list' else 1 for u in units) < min_units:
+        return d
+    out, n, first = [], 0, True
+    for u in units:
+        if u[0] == 'block':
+            if first and keep_first:
+                out.append(u[1])
+            else:
+                n += 1
+                out.append(f'<div class="rv" data-step="{n}">{u[1]}</div>')
+            first = False
+        else:
+            row = []
+            for li in u[2]:
+                if first and keep_first:
+                    row.append(li)
+                else:
+                    n += 1
+                    row.append(li.replace('<li', f'<li data-step="{n}"', 1))
+                first = False
+            out.append(u[1] + ''.join(row) + u[3])
+    return {**d, 'html': head + ''.join(out)}
+
+
+def capstack(items):
+    """One caption position whose text changes with the steps: items = [(step, until_or_None, html)].
+    All captions share a single grid cell, so the slide keeps a fixed height and nothing jumps."""
+    out = ''
+    for n, u, h in items:
+        a = (f' data-step="{n}"' if n else '') + (f' data-until="{u}"' if u else '')
+        out += f'<div class="rv"{a}>{h}</div>'
+    return f'<div class="capstack">{out}</div>'

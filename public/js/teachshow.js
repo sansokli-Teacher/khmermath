@@ -7,6 +7,7 @@
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
+  let stepNow = 0, stepLevels = [];   // step-by-step reveal: how many steps are showing, and the distinct data-step values on this slide
   let floats = [];
 
   function math(el) {
@@ -30,7 +31,7 @@
     return box.innerHTML;
   }
 
-  function show(n, depth) {
+  function show(n, depth, atEnd) {
     if (!depth) { if (slides[i] && slideEl && slideEl.innerHTML) slides[i]._ink = strokes; lensOff(); lensClone = null; } // remember what was written on the slide we leave
     i = Math.max(0, Math.min(slides.length - 1, n));
     const s = slides[i] || { html: '' };
@@ -38,13 +39,45 @@
     slideEl.innerHTML = s.k === 'key' ? cardify(s.html || '') : (s.html || '');
     math(slideEl);
     const fits = fitText(0.72);
-    if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1);
+    if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1, atEnd);
     if (!fits) fitText(0.4);
     s._fs = slideEl.style.fontSize;
-    const lab = root.querySelector('.ts-page');
-    if (lab) lab.textContent = `${kh(i + 1)} / ${kh(slides.length)}`;
+    setupSteps(atEnd);   // after fitting, so the layout is measured with everything showing and nothing jumps when a step appears
+    pageLabel();
     strokes = s._ink || []; undoS = []; redoS = []; cur = null;
     redraw(); syncUndo();
+  }
+
+  // ---- step-by-step reveal ------------------------------------------------------------------
+  // Mark anything in a slide with data-step="n": it stays hidden until the n-th press of → (or the next click).
+  // data-until="n" does the opposite: the element is hidden again from step n on (a borrowed ten that is broken up).
+  // Hidden elements keep their space, so the slide never reflows while the teacher reveals it.
+  function setupSteps(atEnd) {
+    const vals = [...slideEl.querySelectorAll('[data-step],[data-until]')].flatMap((el) => [el.dataset.step, el.dataset.until]).filter((v) => v != null && v !== '').map(Number);
+    stepLevels = [...new Set(vals)].sort((a, b) => a - b).filter((v) => v > 0);
+    stepNow = atEnd ? stepLevels.length : 0;
+    applySteps();
+  }
+  function applySteps() {
+    const cur = stepNow ? stepLevels[stepNow - 1] : 0;   // the data-step value that is showing now
+    slideEl.querySelectorAll('[data-step],[data-until]').forEach((el) => {
+      const a = el.dataset.step != null ? Number(el.dataset.step) : 0;
+      const u = el.dataset.until != null ? Number(el.dataset.until) : Infinity;
+      el.classList.toggle('rv-hide', a > cur || u <= cur);
+      el.classList.toggle('rv-now', a > 0 && a === cur && stepNow > 0);   // what was just revealed gets a soft highlight
+    });
+  }
+  function pageLabel() {
+    const lab = root && root.querySelector('.ts-page');
+    if (!lab) return;
+    lab.textContent = `${kh(i + 1)} / ${kh(slides.length)}` + (stepLevels.length ? ` · ${kh(stepNow)}/${kh(stepLevels.length)}` : '');
+  }
+  // → / next click: reveal the next step first, then move on; ← takes a step back, then lands on the finished previous slide
+  function nextStep() {
+    if (stepNow < stepLevels.length) { stepNow++; applySteps(); pageLabel(); } else show(i + 1);
+  }
+  function prevStep() {
+    if (stepNow > 0) { stepNow--; applySteps(); pageLabel(); } else show(i - 1, 0, true);
   }
 
   // a slide that is too long is cut into two pages (title kept on both)
@@ -1197,9 +1230,9 @@
     const nav = document.createElement('div');
     nav.className = 'ts-nav';
     nav.append(
-      mk('', '←', () => show(i - 1)),
+      mk('', '←', () => prevStep()),
       Object.assign(document.createElement('span'), { className: 'ts-page', textContent: '' }),
-      mk('', '→', () => show(i + 1)),
+      mk('', '→', () => nextStep()),
     );
     const end = document.createElement('div');
     end.className = 'ts-wid';
@@ -1712,12 +1745,12 @@
     window.addEventListener('keydown', keys);
   }
 
-  function onResize() { fitInk(); show(i); }
+  function onResize() { const keep = stepNow; fitInk(); show(i); stepNow = Math.min(keep, stepLevels.length); applySteps(); pageLabel(); }   // a resize must not hide what was already revealed
 
   function keys(e) {
     if (root && root.hidden) return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
-    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextStep(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevStep(); }
     if ((e.key === '[' || e.key === ']') && sizeSetter) sizeSetter(size + (e.key === ']' ? 1 : -1), true);
     if (e.key === 'Escape') close();
   }
