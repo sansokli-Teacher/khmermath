@@ -453,7 +453,52 @@
     el.className = 'ts-pen';
     el.style.left = '12px';
     const grip = document.createElement('div');
-    grip.className = 'ts-pgrip'; grip.textContent = '⋮⋮'; grip.title = 'អូសដើម្បីផ្លាស់ទី';
+    grip.className = 'ts-pgrip'; grip.title = 'អូសដើម្បីផ្លាស់ទី';
+    const gl = document.createElement('span'); gl.className = 'gl'; gl.textContent = '⋮⋮';
+    const gb = document.createElement('div'); gb.className = 'gb';
+    const pref = (() => { try { return JSON.parse(localStorage.getItem('ts_pen') || '{}'); } catch { return {}; } })();
+    let scale = pref.scale || 1, vert = !!pref.vert, where = 'bottom';
+    const save = () => { try { localStorage.setItem('ts_pen', JSON.stringify({ scale, vert })); } catch { /* ignore */ } };
+    const gbtn = (t, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.title = title; b.onclick = (ev) => { ev.stopPropagation(); fn(); }; gb.append(b); return b; };
+    const apply = () => {
+      el.classList.toggle('vert', vert);
+      el.style.transform = `scale(${scale})`;
+      el.style.transformOrigin = 'top left';
+    };
+    const place = (w) => {
+      where = w;
+      if (w === 'left' || w === 'right') vert = true; else vert = false;
+      apply(); save();
+      requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect(), W = stage.clientWidth, H = stage.clientHeight;
+        const x = w === 'left' ? 12 : w === 'right' ? W - r.width - 90 : (W - r.width) / 2;
+        const y = w === 'top' ? 12 : w === 'bottom' ? H - r.height - 14 : (H - r.height) / 2;
+        el.style.left = Math.max(0, x) + 'px'; el.style.top = Math.max(0, y) + 'px';
+      });
+    };
+    const order = ['bottom', 'top', 'left', 'right'];
+    gbtn('⇄', 'ផ្ដេក / បញ្ឈរ', () => { vert = !vert; apply(); save(); keepInside(); });
+    gbtn('⤒', 'ប្ដូរទីតាំង (ក្រោម/លើ/ឆ្វេង/ស្តាំ)', () => place(order[(order.indexOf(where) + 1) % order.length]));
+    gbtn('A−', 'តូចជាង', () => { scale = Math.max(.7, +(scale - .15).toFixed(2)); apply(); save(); keepInside(); });
+    gbtn('A+', 'ធំជាង', () => { scale = Math.min(1.6, +(scale + .15).toFixed(2)); apply(); save(); keepInside(); });
+    gbtn('–', 'លាក់', () => hide());
+    grip.append(gl, gb);
+    const keepInside = () => requestAnimationFrame(() => {
+      const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+      el.style.left = Math.max(0, Math.min(s.width - r.width, r.left - s.left)) + 'px';
+      el.style.top = Math.max(0, Math.min(s.height - r.height, r.top - s.top)) + 'px';
+    });
+    const pill = document.createElement('button');
+    pill.type = 'button'; pill.className = 'ts-pill'; pill.textContent = '✎'; pill.title = 'បង្ហាញឧបករណ៍គូស'; pill.hidden = true;
+    const hide = () => {
+      closeMenus();
+      const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+      pill.style.left = Math.max(0, Math.min(s.width - 52, r.left - s.left)) + 'px';
+      pill.style.top = Math.max(0, Math.min(s.height - 52, r.top - s.top)) + 'px';
+      el.hidden = true; pill.hidden = false;
+    };
+    pill.onclick = () => { pill.hidden = true; el.hidden = false; keepInside(); };
+    stage.append(pill);
     const row = document.createElement('div');
     row.className = 'ts-prow';
     const mkBtn = (a, icon, label, fn) => {
@@ -469,6 +514,7 @@
       if (!m.hidden) { // open upward when the bar is low, otherwise downward
         const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
         m.classList.toggle('down', r.top - s.top < 230);
+        m.classList.toggle('rt', r.left - s.left > s.width / 2);
       }
     };
     const setTool = (id) => {
@@ -534,7 +580,8 @@
     palette = el;
     setTool(tool);
     syncUndo();
-    requestAnimationFrame(() => { el.style.top = Math.max(8, stage.clientHeight - el.offsetHeight - 14) + 'px'; });
+    apply();
+    place(vert ? 'left' : 'bottom');
     drag(el, grip);
     return el;
   }

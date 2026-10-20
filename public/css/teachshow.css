@@ -244,3 +244,28 @@ body.teach-show-on { overflow: hidden; }
 .ts-menu .lwb { width: 44px; height: 32px; padding: 0 8px; justify-content: center; align-items: center; }
 .ts-menu .lwb i { display: block; width: 100%; background: #fff; border-radius: 99px; }
 .ts-menu .lwb.on { background: #1c7ed6; }
+
+/* palette: orientation, size, hide */
+.ts-pen[hidden] { display: none; }
+.ts-pgrip { flex-direction: column; justify-content: center; gap: 4px; padding: 4px 6px; letter-spacing: 0; }
+.ts-pgrip .gl { letter-spacing: -2px; text-align: center; }
+.ts-pgrip .gb { display: flex; flex-direction: column; gap: 3px; }
+.ts-pgrip .gb button { min-height: 0; width: 30px; height: 26px; padding: 0; border: 0; border-radius: 7px; background: rgba(255,255,255,.14); color: #fff; font-size: 12px; font-weight: 800; box-shadow: none; }
+.ts-pgrip .gb button:hover { background: #1c7ed6; }
+.ts-pen.vert { flex-direction: column; }
+.ts-pen.vert .ts-pgrip { flex-direction: row; border-radius: 14px 14px 0 0; justify-content: center; }
+.ts-pen.vert .ts-pgrip .gb { flex-direction: row; }
+.ts-pen.vert .ts-pgrip .gl { display: none; }
+.ts-pen.vert .ts-prow { flex-direction: column; }
+.ts-pen.vert .ts-prow > button { width: 62px; }
+.ts-pen.vert .ts-menu, .ts-pen.vert .ts-menu.m-fmt { left: calc(100% + 8px); bottom: auto; top: 0; }
+.ts-pen.vert .ts-menu.rt, .ts-pen.vert .ts-menu.m-fmt.rt { left: auto; right: calc(100% + 8px); }
+.ts-pill { position: absolute; z-index: 9; width: 48px; height: 48px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: #1c7ed6; color: #fff; font-size: 24px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+.ts-pill[hidden] { display: none; }
+.ts-pgrip .gb, .ts-pen.vert .ts-pgrip .gb { display: grid; grid-template-columns: repeat(2, 28px); gap: 3px; }
+.ts-pgrip .gb button { width: 28px; height: 24px; font-size: 11px; }
+.ts-pen.vert .ts-pgrip { padding: 6px; }
+.ts-pen.vert .ts-prow > button { width: 48px; padding: 3px 0; }
+.ts-pen.vert .ts-prow > button small { display: none; }
+.ts-pen.vert .ts-prow > button .ic { height: 28px; }
+.ts-pen.vert .ts-prow { gap: 1px; padding: 4px; }
