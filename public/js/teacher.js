@@ -256,8 +256,9 @@ function initDashboard() {
   if (bk) bk.onclick = () => downloadBackup().catch((e) => Exam.notify(e.message));
   if (ME.status === 'trial') for (const k of ['year', 'overview']) render[k] = () => showLocked(k);   // everything else works, within the free-trial limits
   if (ME.status === 'trial' || ME.status === 'expired') {
-    const dash = document.getElementById('view-dashboard');
-    dash.insertBefore(licenseBar(), dash.querySelector('.tabs'));
+    // The panels live in <main>; the upgrade bar goes on top of them (the nav is no longer a direct child of the dashboard).
+    const main = document.getElementById('dashboard-content');
+    main.insertBefore(licenseBar(), main.firstChild);
   }
   const badge = document.getElementById('teacher-username-badge');
   if (badge) badge.textContent = `${ME.display_name} · ${ME.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : ME.status === 'trial' ? 'សាកល្បង 🔒' : ME.status === 'expired' ? 'ផុតកំណត់ ⏰' : `គ្រូ${ME.license_until ? ` · ដល់ ${fmtDateTime(ME.license_until).split(',')[0]}` : ''}`}`;
