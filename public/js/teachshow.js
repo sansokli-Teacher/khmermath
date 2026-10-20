@@ -16,6 +16,7 @@
   }
 
   function show(n, depth) {
+    if (!depth) { if (slides[i] && slideEl && slideEl.innerHTML) slides[i]._ink = strokes; lensOff(); lensClone = null; } // remember what was written on the slide we leave
     i = Math.max(0, Math.min(slides.length - 1, n));
     const s = slides[i] || { html: '' };
     slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '');
@@ -24,9 +25,11 @@
     const fits = fitText(0.72);
     if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1);
     if (!fits) fitText(0.4);
+    s._fs = slideEl.style.fontSize;
     const lab = root.querySelector('.ts-page');
     if (lab) lab.textContent = `${kh(i + 1)} / ${kh(slides.length)}`;
-    clearInk(false);
+    strokes = s._ink || []; undoS = []; redoS = []; cur = null;
+    redraw(); syncUndo();
   }
 
   // a slide that is too long is cut into two pages (title kept on both)
@@ -42,7 +45,7 @@
     const out = (arr) => head.concat(arr).map((n) => (n.nodeType === 1 ? n.outerHTML : n.textContent)).join('');
     const a = { ...s, html: out(body.slice(0, cut)) };
     const b = { ...s, html: out(body.slice(cut)) };
-    delete a.c; delete b.c;
+    delete a.c; delete b.c; delete a._ink; delete b._ink;
     slides.splice(idx, 1, a, b);
     return true;
   }
@@ -225,6 +228,23 @@
     toastT = setTimeout(() => toastEl && toastEl.classList.remove('on'), 2200);
   }
 
+  // html2canvas drops list markers, so write them into the text before taking the picture
+  function bakeMarkers(root) {
+    root.querySelectorAll('ol, ul').forEach((l) => {
+      let n = 0;
+      [...l.children].forEach((li) => {
+        if (li.tagName !== 'LI' || li.classList.contains('lab')) return;
+        n += 1;
+        const m = document.createElement('span');
+        m.textContent = l.tagName === 'OL' ? `${n}.\u00a0` : '•\u00a0';
+        m.style.cssText = 'display:inline-block;min-width:1.4em;margin-left:-1.4em;text-align:right;padding-right:.25em';
+        li.insertBefore(m, li.firstChild);
+        li.style.listStyle = 'none';
+      });
+      l.style.listStyle = 'none';
+    });
+  }
+
   // save the current slide, with everything written on it, as a PNG the teacher can hand out
   let saving = false;
   async function saveImage() {
@@ -240,6 +260,7 @@
       const copy = slideEl.cloneNode(true);
       copy.style.position = 'relative'; copy.style.inset = 'auto'; copy.style.width = w + 'px'; copy.style.height = h + 'px'; copy.style.overflow = 'hidden';
       holder.append(copy); document.body.append(holder);
+      bakeMarkers(copy);
       const scale = 2;
       let base;
       try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale, useCORS: true, logging: false }); }
@@ -257,6 +278,52 @@
     } catch (err) {
       say('រក្សាទុករូបភាពមិនបានសម្រេច');
     } finally { saving = false; }
+  }
+
+  // one PDF with every slide that has writing on it
+  let pdfBusy = false;
+  async function savePdf() {
+    if (pdfBusy) return;
+    if (slides[i]) slides[i]._ink = strokes;
+    const list = slides.filter((x) => x._ink && x._ink.length);
+    if (!list.length) { say('មិនទាន់មានស្លាយណាដែលបានសរសេរទេ'); return; }
+    pdfBusy = true;
+    try {
+      const need = (src, ok) => ok() ? Promise.resolve() : new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.append(sc); });
+      await need('/js/html2canvas.min.js', () => window.html2canvas);
+      await need('/js/jspdf.umd.min.js', () => window.jspdf);
+      const w = slideEl.clientWidth, h = slideEl.clientHeight;
+      const doc = new window.jspdf.jsPDF({ orientation: w >= h ? 'landscape' : 'portrait', unit: 'px', format: [w, h], compress: true });
+      for (let k = 0; k < list.length; k++) {
+        say(`កំពុងបង្កើត PDF… ${kh(k + 1)}/${kh(list.length)}`);
+        const sl = list[k];
+        const holder = document.createElement('div');
+        holder.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;z-index:-1;pointer-events:none;background:#fff`;
+        const el = document.createElement('div');
+        el.className = 'ts-slide' + (sl.k ? ` ts-${sl.k}` : '') + (sl.c ? ` ts-${sl.c}` : '');
+        el.style.cssText = `position:relative;width:${w}px;height:${h}px;overflow:hidden;font-size:${sl._fs || ''}`;
+        el.innerHTML = sl.html || '';
+        holder.append(el); document.body.append(holder);
+        math(el);
+        bakeMarkers(el);
+        let base;
+        try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }); }
+        finally { holder.remove(); }
+        const out = document.createElement('canvas');
+        out.width = base.width; out.height = base.height;
+        const c2 = out.getContext('2d');
+        c2.drawImage(base, 0, 0);
+        const keep = ctx; ctx = c2; c2.save(); c2.scale(out.width / w, out.height / h);
+        try { sl._ink.forEach(paint); } finally { c2.restore(); ctx = keep; }
+        if (k) doc.addPage([w, h], w >= h ? 'landscape' : 'portrait');
+        doc.addImage(out.toDataURL('image/jpeg', .92), 'JPEG', 0, 0, w, h);
+      }
+      const name = `grade${meta.grade}-lesson${meta.lesson}-annotated.pdf`;
+      doc.save(name);
+      say(`✓ បានរក្សាទុក PDF ${kh(list.length)} ស្លាយ`);
+    } catch (err) {
+      say('បង្កើត PDF មិនបានសម្រេច');
+    } finally { pdfBusy = false; }
   }
 
   function sizeToast() {
@@ -792,9 +859,11 @@
     const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
     const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
     const tipWrap = document.createElement('label'); tipWrap.className = 'ts-tipw'; tipWrap.title = 'ទំហំក្បាលប៊ិច'; tipWrap.append(Object.assign(document.createElement('i'), { className: 'tdot' }), tip);
+    const bPdf = mkBtn('pdf', '<b class="pdfi">PDF</b>', 'PDF', savePdf);
+    bPdf.title = 'រក្សាទុកស្លាយដែលបានសរសេរទាំងអស់ជា PDF មួយ';
     const bSave = mkBtn('save', '💾', 'រក្សាទុក', saveImage);
     bSave.title = 'រក្សាទុកជារូបភាព (PNG)';
-    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, tipWrap, bUndo, bRedo, bClear, bSave);
+    row.append(bMouse, bLaser, bDraw, bStamp, bSpot, bErase, bFmt, tipWrap, bUndo, bRedo, bClear, bSave, bPdf);
     el.append(grip, row, drawMenu, stampMenu, fmtMenu);
     header().insertBefore(el, header().querySelector('.ts-wid'));
     palette = el;
@@ -821,7 +890,8 @@
   }
 
   function open(opt) {
-    slides = [...((window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || [])];
+    slides = ((window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || []).map((x) => ({ ...x }));
+    strokes = []; undoS = []; redoS = []; cur = null; i = 0; slideEl = null;
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
