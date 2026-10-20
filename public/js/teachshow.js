@@ -2,7 +2,7 @@
 (function () {
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
-  let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
+  let tool = 'none', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
   let offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
@@ -1260,6 +1260,7 @@
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
+    tool = 'none'; // always start as the plain mouse; pick a pen when you want to write
     meta = { grade: opt.grade, lesson: opt.lesson, cname: opt.className || '' };
     root = document.getElementById('teach-show');
     root.hidden = false;
