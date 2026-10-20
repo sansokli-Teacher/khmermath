@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -290,6 +290,7 @@
   function bindInk() {
     hand = makeHand();
     ink.addEventListener('wheel', (e) => { if (tool === 'zoom') { e.preventDefault(); lensZoom = Math.max(1.4, Math.min(4.5, lensZoom + (e.deltaY < 0 ? .25 : -.25))); lensGo.z = lensZoom; if (!lensRaf) lensRaf = requestAnimationFrame(lensTick); return; } if (sizeSetter && HAND_TOOLS.includes(tool)) { e.preventDefault(); sizeSetter(size + (e.deltaY < 0 ? 1 : -1), true); } }, { passive: false });
+    ink.addEventListener('dblclick', () => { if (tool === 'zoom' && toolSetter) toolSetter('none'); });
     ink.addEventListener('pointermove', lensMove);
     ink.addEventListener('pointerenter', lensMove);
     ink.addEventListener('pointerleave', lensOff);
@@ -659,6 +660,7 @@
       if (!m.hidden) m.dataset.dir = { top: 'down', bottom: 'up', left: 'right', right: 'left' }[edge];
     };
     const setTool = (id) => {
+      toolSetter = setTool;
       tool = id; spot = null; laser = []; lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
       ink.style.cursor = id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
@@ -723,7 +725,7 @@
     const bLaser = mkBtn('laser', '●', 'ចង្អុល', () => setTool('laser'));
     const bDraw = mkBtn('draw', ICONS.pen, 'គូស', () => { if (SHAPES.includes(tool)) toggle(drawMenu); else setTool(row.querySelector('[data-a=draw]').dataset.last || 'pen'); });
     const bStamp = mkBtn('stamp', stamp, 'ត្រា', () => { if (tool === 'stamp') toggle(stampMenu); else { setTool('stamp'); } });
-    const bSpot = mkBtn('zoom', '<img class="mi" src="/img/magnifier.png" alt="" draggable="false">', 'ពង្រីក', () => setTool('zoom'));
+    const bSpot = mkBtn('zoom', '<img class="mi" src="/img/magnifier.png" alt="" draggable="false">', 'ពង្រីក', () => setTool(tool === 'zoom' ? 'none' : 'zoom'));
     const bErase = mkBtn('erase', ICONS.erase, 'លុប', () => setTool('erase'));
     const bFmt = mkBtn('fmt', '<i class="sw"></i>', 'ពណ៌', () => toggle(fmtMenu));
     sw = bFmt.querySelector('.sw'); sw.style.background = color;
