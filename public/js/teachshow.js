@@ -495,6 +495,8 @@
     const dw = w * k, dh = h * k;
     c.imageSmoothingQuality = 'high';
     c.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    c.font = '700 30px "Times New Roman", serif'; c.fillStyle = 'rgba(15,81,115,.8)'; c.textBaseline = 'alphabetic';
+    c.fillText('khmermath.org', 40, H - 28);                      // the same site label on every exported picture / PDF / PowerPoint page
     return out;
   }
 
@@ -580,6 +582,129 @@
     } catch (err) {
       say('បង្កើត PDF មិនបានសម្រេច');
     } finally { pdfBusy = false; }
+  }
+
+  // ---- download slides as PDF or PowerPoint (⬇ in the header): the whole lesson, one part, or just this slide -------------------------
+  // Every slide is drawn to a 16:9 picture (the same way as the pen-toolbar PDF), then packed into a PDF (jsPDF) or a .pptx (PptxGenJS).
+  // In the .pptx each slide is a picture, so it looks exactly like the screen but the text cannot be edited.
+  const loadOnce = (src, ok) => (ok() ? Promise.resolve() : new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error('load ' + src)); document.head.append(sc); }));
+
+  // what can be downloaded: the lesson, each numbered part (and the exercises) found by their title slides, and the slide on screen
+  function exportScopes() {
+    const out = [{ id: 'all', file: 'full-lesson', label: 'ទាំងមេរៀន', from: 0, to: slides.length }];
+    const heads = [];
+    slides.forEach((s, k) => {
+      if (s.k !== 'title' || !s.html) return;
+      const m = s.html.match(/<h1>\s*(\d+)\.\s*([^<]+?)\s*<\/h1>/);
+      if (m) heads.push({ k, file: `part${m[1]}`, label: `ផ្នែកទី ${kh(m[1])} · ${m[2]}` });
+      else if (/<h1>\s*លំហាត់\s*<\/h1>/.test(s.html)) heads.push({ k, file: 'exercises', label: 'លំហាត់' });
+    });
+    let endAt = slides.findIndex((s) => s.k === 'title' && /<h1>\s*ចប់មេរៀន\s*<\/h1>/.test(s.html || ''));
+    if (endAt < 0) endAt = slides.length;
+    heads.forEach((h, n) => out.push({ id: `p${n}`, file: h.file, label: h.label, from: h.k, to: n + 1 < heads.length ? heads[n + 1].k : endAt }));
+    out.push({ id: 'cur', file: `slide${i + 1}`, label: `ស្លាយនេះតែមួយ (ស្លាយទី ${kh(i + 1)})`, from: i, to: i + 1 });
+    return out;
+  }
+
+  // one slide -> a 1920x1080 canvas, with its steps all showing and (optionally) what the teacher wrote on it
+  async function slideCanvas(sl, w, h, withInk) {
+    const holder = document.createElement('div');
+    holder.style.cssText = `position:fixed;left:0;top:0;width:${w}px;z-index:-1;pointer-events:none;background:#fff`;
+    const el = document.createElement('div');
+    el.className = 'ts-slide' + (sl.k ? ` ts-${sl.k}` : '') + (sl.c ? ` ts-${sl.c}` : '');
+    el.style.cssText = `position:relative;inset:auto;width:${w}px;min-height:${h}px;height:auto;overflow:visible;font-size:${sl._fs || ''}`;
+    el.innerHTML = sl.k === 'key' ? cardify(sl.html || '') : (sl.html || '');
+    holder.append(el); document.body.append(holder);
+    math(el); fillMeta(el); bakeMarkers(el);
+    const H = Math.max(h, el.scrollHeight);                      // a slide that is longer than the screen is shrunk to fit, not cut
+    holder.style.height = H + 'px';
+    let base;
+    try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }); }
+    finally { holder.remove(); }
+    const out = document.createElement('canvas');
+    out.width = base.width; out.height = base.height;
+    const c2 = out.getContext('2d');
+    c2.drawImage(base, 0, 0);
+    if (withInk && sl._ink && sl._ink.length) {
+      const keep = ctx; ctx = c2; c2.save(); c2.scale(out.width / w, out.height / H);
+      try { sl._ink.forEach(paint); } finally { c2.restore(); ctx = keep; }
+    }
+    return widen(out, w, H);
+  }
+
+  function openExport() {
+    if (!root || root.querySelector('.ts-exp')) return;
+    if (slides[i]) slides[i]._ink = strokes;
+    const scopes = exportScopes();
+    const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+    const back = mk('div', 'ts-exp'), card = mk('div', 'ts-exp-card');
+    const sel = mk('select', 'ts-exp-sel');
+    scopes.forEach((s) => { const o = mk('option', '', s.id === 'all' ? `${s.label}  (${kh(s.to - s.from)} ស្លាយ)` : `${s.label}  (${kh(s.to - s.from)})`); sel.append(o); });
+    const fmts = mk('div', 'ts-exp-fmt');
+    const radio = (val, label, on) => { const l = mk('label'); const r = mk('input'); r.type = 'radio'; r.name = 'ts-exp-fmt'; r.value = val; r.checked = on; l.append(r, document.createTextNode(' ' + label)); return l; };
+    fmts.append(radio('pdf', 'PDF', true), radio('pptx', 'PowerPoint (.pptx)', false));
+    const inkL = mk('label', 'ts-exp-ink'); const inkC = mk('input'); inkC.type = 'checkbox'; inkC.checked = true; inkL.append(inkC, document.createTextNode(' រួមទាំងអ្វីដែលបានសរសេរលើស្លាយ'));
+    const note = mk('p', 'ts-exp-note', 'ក្នុង PowerPoint ស្លាយនីមួយៗជារូបភាព (មើលដូចលើអេក្រង់ តែមិនអាចកែអក្សរបាន) ។');
+    const status = mk('p', 'ts-exp-status', ''), bar = mk('div', 'ts-exp-bar'), fill = mk('i'); bar.append(fill);
+    const go = mk('button', 'ts-exp-go', '⬇ ទាញយក'), close2 = mk('button', 'ts-exp-close', 'បិទ');
+    go.type = close2.type = 'button';
+    const row = mk('div', 'ts-exp-row'); row.append(go, close2);
+    card.append(mk('h3', '', 'ទាញយកស្លាយ'), mk('label', 'ts-exp-l', 'ជ្រើសរើសផ្នែក'), sel, mk('label', 'ts-exp-l', 'ទម្រង់ឯកសារ'), fmts, inkL, note, status, bar, row);
+    back.append(card); root.append(back);
+    let busy = false, cancel = false;
+    const shut = () => { cancel = true; back.remove(); };
+    close2.onclick = shut;
+    back.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') shut(); });
+    back.addEventListener('pointerdown', (e) => { if (e.target === back && !busy) shut(); });
+    go.onclick = async () => {
+      if (busy) return;
+      busy = true; cancel = false; go.disabled = true; sel.disabled = true; close2.textContent = 'បោះបង់';
+      const sc = scopes[sel.selectedIndex], fmt = fmts.querySelector('input:checked').value;
+      try {
+        status.textContent = 'កំពុងរៀបចំ…';
+        const file = await buildExport(sc, fmt, inkC.checked, (k, n) => {
+          status.textContent = `កំពុងបង្កើត… ${kh(k + 1)} / ${kh(n)}`; fill.style.width = `${Math.round((k / n) * 100)}%`;
+        }, () => cancel);
+        if (!file) return;                                       // cancelled
+        status.textContent = 'កំពុងរក្សាទុកឯកសារ…';
+        downloadFile(file.name, file.blob);
+        fill.style.width = '100%';
+        status.textContent = `✓ រួចរាល់ ${kh(file.count)} ស្លាយ — ${file.name}`;
+        close2.textContent = 'បិទ';
+      } catch (err) {
+        status.textContent = 'ទាញយកមិនបានសម្រេច — សូមសាកល្បងម្តងទៀត ។';
+      } finally { busy = false; go.disabled = false; sel.disabled = false; }
+    };
+    sel.focus();
+  }
+
+  // build the file in memory: { name, blob, count } (null when cancelled). fmt = 'pdf' | 'pptx'
+  async function buildExport(sc, fmt, withInk, progress, cancelled) {
+    const list = slides.slice(sc.from, sc.to);
+    await loadOnce('/js/html2canvas.min.js', () => window.html2canvas);
+    if (fmt === 'pdf') await loadOnce('/js/jspdf.umd.min.js', () => window.jspdf); else await loadOnce('/js/pptxgen.bundle.js', () => window.PptxGenJS);
+    const w = slideEl.clientWidth, h = slideEl.clientHeight;
+    const doc = fmt === 'pdf' ? new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'px', format: [960, 540], compress: true }) : null;
+    const pptx = fmt === 'pptx' ? new window.PptxGenJS() : null;
+    if (pptx) { pptx.layout = 'LAYOUT_16x9'; pptx.title = `${meta.cname || ''} ${sc.label}`.trim(); }
+    for (let k = 0; k < list.length; k++) {
+      if (cancelled && cancelled()) return null;
+      if (progress) progress(k, list.length);
+      const url = (await slideCanvas(list[k], w, h, withInk)).toDataURL('image/jpeg', 0.9);
+      if (doc) { if (k) doc.addPage([960, 540], 'landscape'); doc.addImage(url, 'JPEG', 0, 0, 960, 540); }
+      else pptx.addSlide().addImage({ data: url, x: 0, y: 0, w: 10, h: 5.625 });
+      await new Promise((r) => setTimeout(r, 0));                // let the page breathe between slides
+    }
+    if (cancelled && cancelled()) return null;
+    const name = `grade${meta.grade}-lesson${meta.lesson}-${sc.file}.${fmt}`;
+    const blob = doc ? doc.output('blob') : await pptx.write({ outputType: 'blob' });
+    return { name, blob, count: list.length };
+  }
+  function downloadFile(name, blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   }
 
   function sizeToast() {
@@ -1303,6 +1428,23 @@
   // ---- Problem card (Tools → កាតលំហាត់): a card laid over the slide that the teacher writes a new problem on (group work, a quick
   // extra question ...). Type in the card; 👁 shows it typeset (maths goes between \( and \), e.g. \(x^2+3x=10\)); ⛶ makes it fill the slide.
   // The text is kept in this browser (localStorage), so the card is still there when the teacher comes back.
+  // the cursor goes into the card as soon as it opens, so the teacher can type straight away
+  function focusCard(f) {
+    if (!f || f.hidden || !f.classList.contains('ts-wcard')) return;
+    const t = f.querySelector('.cd-edit');
+    if (t && !t.hidden) setTimeout(() => { try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }, 0);
+  }
+  // header button 🃏: show / hide the card (kept in step with the Tools menu entry)
+  function toggleCard() {
+    const f = root && root.querySelector('.ts-float.ts-wcard');
+    if (!f) return;
+    f.hidden = !f.hidden;
+    if (!f.hidden) stage.append(f);
+    const mi = root.querySelector('.ts-tmenu button[data-w="wcard"]');
+    if (mi) mi.classList.toggle('on', !f.hidden);
+    focusCard(f);
+  }
+
   function cardBox() {
     const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
     const KEY = 'ts_card_v1';
@@ -1332,7 +1474,7 @@
       btn('🗑 សម្អាត', 'លុបអត្ថបទ', () => { edit.value = ''; view.innerHTML = ''; save(); edit.focus(); }),
     );
     title.addEventListener('input', save); edit.addEventListener('input', save);
-    wrap.addEventListener('keydown', (e) => e.stopPropagation());   // typing must not turn the slides (arrows, space, [ ])
+    ['keydown', 'keyup', 'keypress'].forEach((t) => wrap.addEventListener(t, (e) => e.stopPropagation()));   // typing must not turn the slides (arrows, space, [ ]) or trigger shortcuts
     wrap.append(title, edit, view, bar);
     apply();
     return wrap;
@@ -1340,9 +1482,10 @@
 
   // ---- who is teaching: <b data-ts="teacher"> / <b data-ts="class"> on the cover slide are filled in here ----
   let coverTeacher = null;                                   // null = not asked yet; '' = asked, nothing found
-  function fillMeta() {
-    if (!slideEl) return;
-    slideEl.querySelectorAll('[data-ts]').forEach((el) => {
+  function fillMeta(target) {
+    const host = target || slideEl;
+    if (!host) return;
+    host.querySelectorAll('[data-ts]').forEach((el) => {
       const k = el.dataset.ts;
       el.textContent = k === 'class' ? (meta.cname || '—') : k === 'teacher' ? (meta.teacher || coverTeacher || '—') : '';
     });
@@ -1442,7 +1585,9 @@
     );
     const end = document.createElement('div');
     end.className = 'ts-wid';
-    end.append(toolsMenu(), mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
+    const dl = mk('ts-dl', '⬇', openExport); dl.title = 'ទាញយកស្លាយជា PDF ឬ PowerPoint (ទាំងមេរៀន ឬមួយផ្នែក)';
+    const cdb = mk('ts-cd', '🃏', toggleCard); cdb.title = 'កាតលំហាត់ — សរសេរលំហាត់ថ្មីលើស្លាយ (ឧ. លំហាត់ក្រុម)';
+    end.append(toolsMenu(), cdb, dl, mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
     bar.append(end);
     bar._nav = nav;   // the page / arrows sit in the bottom-right corner of the slide (added to the stage in open())
     return bar;
@@ -1671,7 +1816,7 @@
       it.onclick = (ev) => {
         ev.stopPropagation();
         const f = root.querySelector('.ts-float.ts-' + cls);
-        if (f) { f.hidden = !f.hidden; if (!f.hidden) stage.append(f); it.classList.toggle('on', !f.hidden); }
+        if (f) { f.hidden = !f.hidden; if (!f.hidden) stage.append(f); it.classList.toggle('on', !f.hidden); focusCard(f); }
         menu.hidden = true;
       };
       menu.append(it);
@@ -1928,7 +2073,8 @@
     slideEl.className = 'ts-slide';
     ink = document.createElement('canvas');
     ink.className = 'ts-ink';
-    stage.append(slideEl, ink, tbar._nav);
+    const wm = document.createElement('div'); wm.className = 'ts-wm'; wm.textContent = 'khmermath.org';   // site label, bottom-left of every slide
+    stage.append(slideEl, ink, wm, tbar._nav);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     { // Spin starts about a quarter of the slide in size, in the top-right corner
@@ -1986,5 +2132,5 @@
     palette = null;
   }
 
-  window.TeachShow = { open, close, isOpen: () => root && !root.hidden };
+  window.TeachShow = { open, close, isOpen: () => root && !root.hidden, exportScopes, buildExport };   // exportScopes/buildExport: also used by the tests
 })();

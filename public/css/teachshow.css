@@ -849,3 +849,28 @@ body.teach-show-on { overflow: hidden; }
 /* the card's own fields must not take the page's default input look */
 .ts-wcard .cd-title { border: 0 !important; border-bottom: 3px solid #ee0000 !important; border-radius: 0 !important; background: transparent !important; color: #ee0000 !important; font-size: 30px !important; font-weight: 800 !important; box-shadow: none !important; height: auto !important; min-height: 0 !important; padding: 2px 4px !important; }
 .ts-wcard .cd-edit { border: 0 !important; box-shadow: none !important; background: transparent !important; color: #0f2a3a !important; }
+
+/* ---- download dialog (⬇ in the header) ---- */
+.ts-bar .ts-dl { font-size: 20px; padding: 4px 12px; }
+.ts-exp { position: fixed; inset: 0; z-index: 70; background: rgba(15, 40, 60, .55); display: grid; place-items: center; }
+.ts-exp-card { background: #fff; color: #0f2a3a; border-radius: 18px; padding: 20px 26px 22px; width: min(560px, 92vw); box-shadow: 0 24px 60px rgba(0,0,0,.4); font-family: 'Kantumruy Pro', 'Khmer OS Battambang', system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+.ts-exp-card h3 { margin: 0 0 8px; color: #ee0000; font-size: 1.5em; }
+.ts-exp-l { display: block; font-weight: 800; margin: 12px 0 4px; color: #0f5173; }
+.ts-exp-sel { width: 100%; padding: 8px 10px; border: 2px solid #0f5173; border-radius: 10px; font-size: 1em; background: #fff; color: #0f2a3a; }
+.ts-exp-fmt { display: flex; gap: 20px; flex-wrap: wrap; }
+.ts-exp-fmt label, .ts-exp-ink { font-weight: 700; cursor: pointer; }
+.ts-exp-ink { display: block; margin-top: 10px; }
+.ts-exp-note { margin: 8px 0 0; font-size: .85em; opacity: .75; }
+.ts-exp-status { min-height: 1.5em; margin: 10px 0 4px; font-weight: 800; color: #0f5173; }
+.ts-exp-bar { height: 8px; background: #dbe6ee; border-radius: 6px; overflow: hidden; }
+.ts-exp-bar i { display: block; height: 100%; width: 0; background: #2f9e44; transition: width .2s; }
+.ts-exp-row { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+.ts-exp-go, .ts-exp-close { min-height: 0; padding: 8px 20px; border: 0; border-radius: 12px; font-weight: 800; font-size: 1em; cursor: pointer; }
+.ts-exp-go { background: #2f9e44; color: #fff; }
+.ts-exp-go:disabled { opacity: .5; cursor: default; }
+.ts-exp-close { background: #e5edf3; color: #0f2a3a; }
+
+.ts-bar .ts-cd { font-size: 20px; padding: 4px 12px; }
+
+/* site label, bottom-left of every slide (the page counter is bottom-right, the clock top-left) */
+.ts-stage .ts-wm { position: absolute; left: 20px; bottom: 12px; z-index: 6; pointer-events: none; color: #0f5173; font: 700 19px/1 'Times New Roman', serif; letter-spacing: .02em; opacity: .8; }
