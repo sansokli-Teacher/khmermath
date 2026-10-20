@@ -655,10 +655,9 @@
     bar.append(...modeBtns, gsel, rep, snb, rst);
     const stageW = document.createElement('div'); stageW.className = 'sp-wheel';
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 640;
-    const ptr = document.createElement('i'); ptr.className = 'sp-ptr';
     const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'SPIN';
     const disc = document.createElement('div'); disc.className = 'sp-disc';
-    disc.append(cv, ptr, hub); stageW.append(disc);
+    disc.append(cv, hub); stageW.append(disc);
     const info = document.createElement('div'); info.className = 'sp-info';
     const pop = document.createElement('div'); pop.className = 'sp-pop'; pop.hidden = true;
     const fw = document.createElement('canvas'); fw.className = 'sp-fw';
@@ -694,10 +693,10 @@
         c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.stroke();
         if (!list.length) continue;
         c.save(); c.rotate(k * a - Math.PI / 2);
-        const fs = Math.max(11, Math.min(30, 560 / n / 1.15));
-        c.fillStyle = '#fff'; c.font = `700 ${fs}px "Kantumruy Pro", "Khmer OS Battambang", sans-serif`; c.textAlign = 'left'; c.textBaseline = 'middle';
+        const fs = Math.max(13, Math.min(46, (Math.PI * 2 * r * 0.62 / n) * 0.72));
+        c.fillStyle = '#fff'; c.font = `800 ${fs}px "Kantumruy Pro", "Khmer OS Battambang", sans-serif`; c.textAlign = 'left'; c.textBaseline = 'middle';
         c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 3;
-        c.fillText(list[k].label, r * 0.24, 0, r * 0.7);
+        c.fillText(list[k].label, r * 0.3, 0, r * 0.66);
         c.restore();
       }
       c.restore();
