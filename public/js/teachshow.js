@@ -289,7 +289,8 @@
       mk('', '🎡 កង់', () => { const f = root.querySelector('.ts-float.ts-wspin'); if (f) f.hidden = !f.hidden; }),
       mk('', '⏱ ម៉ោង', () => { const f = root.querySelector('.ts-float.ts-wtime'); if (f) f.hidden = !f.hidden; }),
       mk('', '∑ ម៉ាស៊ីនគិត', () => { const f = root.querySelector('.ts-float.ts-wcalc'); if (f) f.hidden = !f.hidden; }),
-      mk('ts-exit', 'ចាកចេញ', close),
+      mk('ts-fs', '⛶', toggleFs),
+      mk('ts-exit', '✕', close),
     );
     bar.append(tools, nav, widgets);
     return bar;
@@ -331,7 +332,15 @@
     if (e.key === 'Escape') close();
   }
 
+  function toggleFs() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else (root.requestFullscreen || root.webkitRequestFullscreen || (() => {})).call(root);
+    } catch (e) { /* not supported (e.g. iPhone) */ }
+  }
+
   function close() {
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }
     window.removeEventListener('keydown', keys);
     window.removeEventListener('resize', fitInk);
     document.body.classList.remove('teach-show-on');

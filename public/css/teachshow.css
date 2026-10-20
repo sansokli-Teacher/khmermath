@@ -164,3 +164,12 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide table { border-collapse: collapse; }
 .ts-slide th, .ts-slide td { border: 2px solid #0f5173; padding: 4px 12px; }
 .ts-slide th { background: #eaf1f6; }
+
+/* fonts: Khmer M1 titles, Khmer OS Battambang body, Times New Roman for English, Mathcad UniMath italic for maths */
+.ts-slide { font-family: 'Times New Roman', 'Khmer OS Battambang', 'Kantumruy Pro', serif; }
+.ts-slide h1, .ts-slide h2, .ts-kicker { font-family: 'Times New Roman', 'Khmer M1', 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; }
+.ts-slide .katex, .ts-slide .katex .mathnormal, .ts-slide .katex .mord.mathit { font-family: 'Mathcad UniMath', KaTeX_Math, 'Times New Roman', serif; }
+.ts-slide .katex .mathnormal { font-style: italic; }
+.ts-bar .ts-fs { font-size: 20px; padding: 4px 12px; }
+.ts-bar .ts-exit { font-size: 20px; width: 40px; padding: 4px 0; }
+#teach-show:fullscreen { background: #fff; }
