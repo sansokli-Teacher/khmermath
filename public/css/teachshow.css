@@ -665,3 +665,6 @@ body.teach-show-on { overflow: hidden; }
 
 /* all slide headings use the same rounded Kantumruy Pro bold */
 .ts-slide h1, .ts-slide h2, .ts-slide .ts-kicker, .ts-slide .ts-exh { font-family: 'Kantumruy Pro', 'Noto Sans Khmer', sans-serif; font-weight: 800; }
+/* part title above the dark card: same deep teal-navy as the card */
+.ts-slide .ts-kicker { color: #22475c; }
+.ts-slide.ts-title .ts-kicker { color: #22475c; }
