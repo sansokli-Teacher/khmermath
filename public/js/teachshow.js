@@ -783,7 +783,8 @@
       ticks += `<line x1="${CX + r1 * Math.sin(a)}" y1="${CY - r1 * Math.cos(a)}" x2="${CX + r2 * Math.sin(a)}" y2="${CY - r2 * Math.cos(a)}" stroke="${major ? '#2b73a3' : '#4b93bd'}" stroke-width="${w}" stroke-linecap="butt"/>`;
     }
     let ridges = '';
-    for (let k = 0; k < 9; k++) ridges += `<rect x="${118 + k * 8.6}" y="20" width="3.4" height="22" rx="1.2" fill="rgba(255,255,255,.55)"/>`;
+    for (let k = 0; k < 5; k++) ridges += `<rect x="${133 + k * 8.6}" y="20" width="3.4" height="22" rx="1.2" fill="rgba(255,255,255,.5)"/>`;
+    ridges += `<text class="tm-cm" x="120" y="42" text-anchor="middle" font-size="26" font-weight="800" fill="#fff">−</text><text class="tm-cp" x="180" y="42" text-anchor="middle" font-size="26" font-weight="800" fill="#fff">+</text><line x1="150" y1="18" x2="150" y2="46" stroke="rgba(255,255,255,.28)" stroke-width="1.5"/>`;
     wrap.innerHTML = `<svg viewBox="0 0 300 330" class="tm-svg" aria-hidden="true">
       <defs>
         <linearGradient id="tmBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ba0c9"/><stop offset="1" stop-color="#21588a"/></linearGradient>
@@ -791,7 +792,7 @@
         <linearGradient id="tmCore" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d93bd"/><stop offset="1" stop-color="#235b88"/></linearGradient>
       </defs>
       <g class="tm-side" transform="rotate(45 ${CX} ${CY})"><title>ប៊ូតុងចំហៀង៖ ចាប់ផ្ដើម / ឈប់</title><g class="pb"><rect x="141" y="54" width="18" height="30" fill="#2a6592"/><rect x="128" y="36" width="44" height="26" rx="7" fill="url(#tmBtn)"/></g><rect x="120" y="28" width="60" height="58" fill="transparent"/></g>
-      <g class="tm-crown"><title>ប៊ូតុងលើ៖ ចុចដើម្បីបន្ថែមម៉ោង (Shift = ដក) · កង់កណ្ដុរ</title><rect x="138" y="44" width="24" height="40" fill="#2a6592"/>
+      <g class="tm-crown"><title>ប៊ូតុងលើ៖ ចុចខាងស្តាំ (+) បន្ថែមម៉ោង · ចុចខាងឆ្វេង (−) ដកម៉ោង · កង់កណ្ដុរ</title><rect x="138" y="44" width="24" height="40" fill="#2a6592"/>
       <rect x="108" y="14" width="84" height="40" rx="8" fill="url(#tmBtn)"/>
       ${ridges}<rect x="104" y="10" width="92" height="48" fill="transparent"/></g>
       <circle cx="${CX + 3}" cy="${CY + 7}" r="124" fill="rgba(0,0,0,.14)"/>
@@ -861,7 +862,7 @@
     moreBtn.onclick = () => { more.hidden = !more.hidden; moreBtn.textContent = more.hidden ? 'ជម្រើសបន្ថែម ▾' : 'លាក់ ▴'; };
     wrap.append(digital, row, moreBtn, more);
     const hint = document.createElement('div'); hint.className = 'tm-hint';
-    hint.textContent = 'ប៊ូតុងលើ = កំណត់ម៉ោង (ចុចជាប់ = លឿន) · ប៊ូតុងចំហៀង = ចាប់ផ្ដើម/ឈប់';
+    hint.textContent = 'ប៊ូតុងលើ៖ ស្តាំ + បន្ថែម · ឆ្វេង − ដក (ចុចជាប់ = លឿន) · ប៊ូតុងចំហៀង = ចាប់ផ្ដើម/ឈប់';
     digital.before(hint);
     // real-device buttons: crown on top sets the time, button on the side starts / stops
     const crown = q('.tm-crown'), side = q('.tm-side');
@@ -875,7 +876,8 @@
     crown.addEventListener('pointerdown', (e) => {
       e.preventDefault(); crown.setPointerCapture && crown.setPointerCapture(e.pointerId);
       holdStop();
-      const dir = e.shiftKey || e.button === 2 ? -1 : 1;
+      const rc = crown.getBoundingClientRect();
+      const dir = e.shiftKey || e.button === 2 || e.clientX < rc.left + rc.width / 2 ? -1 : 1; // left half withdraws, right half adds
       crown.classList.add('down'); crownStep(dir);
       holdT = setTimeout(() => { if (!crown.matches(':active')) return holdStop(); holdI = setInterval(() => { if (!crown.isConnected || !crown.matches(':active')) return holdStop(); crownStep(dir); }, 110); }, 450);
     });
