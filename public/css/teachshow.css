@@ -212,3 +212,35 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide .ts-kicker { font-size: 1.1em; margin: 0 0 .1em; }
 .ts-slide .katex-display { margin: .3em 0; }
 .ts-slide p { margin: 0 0 .5em; }
+
+/* ===== Zoom-style Draw toolbar ===== */
+.ts-pen { display: flex; align-items: stretch; background: #1f2d3d; border-radius: 14px; overflow: visible; box-shadow: 0 12px 34px rgba(0,0,0,.4); }
+.ts-pgrip { display: flex; align-items: center; padding: 0 8px; cursor: grab; color: rgba(255,255,255,.55); background: rgba(255,255,255,.07); border-radius: 14px 0 0 14px; letter-spacing: -2px; font-size: 18px; }
+.ts-prow { display: flex; gap: 2px; padding: 6px; }
+.ts-prow > button {
+  position: relative; width: 58px; min-height: 0; padding: 6px 0 4px; border-radius: 10px; border: 0; box-shadow: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; background: transparent; color: #fff; font-weight: 700;
+}
+.ts-prow > button .ic { font-size: 22px; line-height: 1.1; height: 26px; display: flex; align-items: center; }
+.ts-prow > button small { font-size: 11px; opacity: .85; }
+.ts-prow > button:hover { background: rgba(255,255,255,.12); }
+.ts-prow > button.on { background: #1c7ed6; }
+.ts-prow > button:disabled { opacity: .35; pointer-events: none; }
+.ts-prow > button em { position: absolute; top: 2px; right: 4px; font-style: normal; font-size: 10px; opacity: .8; padding: 2px 3px; }
+.ts-prow .sw { display: block; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; }
+.ts-menu { position: absolute; left: 40px; bottom: calc(100% + 8px); background: #1f2d3d; border-radius: 12px; padding: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.4); display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+.ts-menu.down { bottom: auto; top: calc(100% + 8px); }
+.ts-menu[hidden] { display: none; }
+.ts-menu button { background: transparent; color: #fff; border: 0; box-shadow: none; text-align: left; padding: 6px 10px; border-radius: 8px; min-height: 0; font-weight: 700; display: flex; gap: 10px; align-items: center; }
+.ts-menu button:hover { background: rgba(255,255,255,.14); }
+.ts-menu .ic { width: 22px; text-align: center; }
+.ts-menu.m-stamp { flex-direction: row; flex-wrap: wrap; width: 170px; min-width: 0; }
+.ts-menu .stp { font-size: 22px; width: 44px; height: 44px; padding: 0; justify-content: center; }
+.ts-menu.m-fmt { left: 200px; width: 220px; gap: 10px; }
+.ts-menu .cw { display: flex; gap: 8px; flex-wrap: wrap; }
+.ts-menu .ts-col { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 2px solid #fff; }
+.ts-menu .ts-col.on { outline: 3px solid #1c7ed6; outline-offset: 2px; }
+.ts-menu .lw { display: flex; gap: 8px; }
+.ts-menu .lwb { width: 44px; height: 32px; padding: 0 8px; justify-content: center; align-items: center; }
+.ts-menu .lwb i { display: block; width: 100%; background: #fff; border-radius: 99px; }
+.ts-menu .lwb.on { background: #1c7ed6; }

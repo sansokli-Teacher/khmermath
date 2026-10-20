@@ -2,7 +2,8 @@
 (function () {
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
-  let tool = 'pen', color = '#e03131', size = 3, drawing = false, last = null;
+  let tool = 'pen', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
+  let strokes = [], undoS = [], redoS = [], palette = null;
   let floats = [];
 
   function math(el) {
@@ -63,41 +64,145 @@
     ink.width = Math.floor(r.width * dpr);
     ink.height = Math.floor(r.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    redraw();
   }
 
-  function clearInk(all) {
+  function clearInk(user) {
     if (!ctx) return;
-    ctx.clearRect(0, 0, ink.width, ink.height);
+    if (user) { if (strokes.length) { undoS.push({ del: strokes }); redoS = []; } strokes = []; }
+    else { strokes = []; undoS = []; redoS = []; }
+    cur = null;
+    redraw();
+    syncUndo();
   }
 
   function pos(e) {
     const r = ink.getBoundingClientRect();
-    const p = e.touches ? e.touches[0] : e;
-    return { x: p.clientX - r.left, y: p.clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
-  function drawTo(p) {
-    if (!last) { last = p; return; }
-    ctx.globalCompositeOperation = tool === 'erase' ? 'destination-out' : 'source-over';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = tool === 'erase' ? 22 : tool === 'hi' ? 18 : size;
-    ctx.globalAlpha = tool === 'hi' ? 0.35 : 1;
-    ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-    last = p;
+  function paint(st) {
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = st.c; ctx.fillStyle = st.c; ctx.lineWidth = st.w;
+    if (st.t === 'hi') { ctx.globalAlpha = .35; ctx.lineWidth = st.w * 4; ctx.lineCap = 'butt'; }
+    if (st.t === 'stamp') {
+      ctx.font = '700 46px "Times New Roman", system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(st.ch, st.p[0].x, st.p[0].y);
+    } else if (st.t === 'pen' || st.t === 'hi') {
+      ctx.beginPath();
+      st.p.forEach((q, k) => (k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+      if (st.p.length === 1) ctx.lineTo(st.p[0].x + .1, st.p[0].y);
+      ctx.stroke();
+    } else {
+      const [a, b] = [st.p[0], st.p[st.p.length - 1]];
+      ctx.beginPath();
+      if (st.t === 'rect') ctx.rect(a.x, a.y, b.x - a.x, b.y - a.y);
+      else if (st.t === 'ellipse') ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.abs(b.x - a.x) / 2, Math.abs(b.y - a.y) / 2, 0, 0, Math.PI * 2);
+      else {
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        if (st.t === 'arrow') {
+          const ang = Math.atan2(b.y - a.y, b.x - a.x), h = 10 + st.w * 3;
+          ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - h * Math.cos(ang - .45), b.y - h * Math.sin(ang - .45));
+          ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - h * Math.cos(ang + .45), b.y - h * Math.sin(ang + .45));
+        }
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
+  function redraw() {
+    if (!ctx) return;
+    const r = ink.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height);
+    strokes.forEach(paint);
+    if (cur) paint(cur);
+    if (tool === 'spot' && spot) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,.72)';
+      ctx.beginPath(); ctx.rect(0, 0, r.width, r.height);
+      ctx.arc(spot.x, spot.y, 110, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+      ctx.restore();
+    }
+  }
+
+  function near(st, p) {
+    const pts = st.t === 'pen' || st.t === 'hi' || st.t === 'stamp' ? st.p : [st.p[0], st.p[st.p.length - 1]];
+    if (st.t === 'stamp') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 34;
+    if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 14;
+    const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y);
+    if (st.t === 'pen' || st.t === 'hi') return pts.some((q, k) => k && distSeg(p, pts[k - 1], q) < 14);
+    if (st.t === 'line' || st.t === 'arrow') return distSeg(p, pts[0], pts[1]) < 14;
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const inside = p.x > x0 - 10 && p.x < x1 + 10 && p.y > y0 - 10 && p.y < y1 + 10;
+    return inside && (p.x < x0 + 10 || p.x > x1 - 10 || p.y < y0 + 10 || p.y > y1 - 10);
+  }
+  function distSeg(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l));
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  }
+
+  function undo() {
+    const a = undoS.pop(); if (!a) return;
+    if (a.add) strokes = strokes.filter((x) => x !== a.add); else strokes = strokes.concat(a.del);
+    redoS.push(a); redraw(); syncUndo();
+  }
+  function redo() {
+    const a = redoS.pop(); if (!a) return;
+    if (a.add) strokes.push(a.add); else strokes = strokes.filter((x) => !a.del.includes(x));
+    undoS.push(a); redraw(); syncUndo();
+  }
+  function syncUndo() {
+    if (!palette) return;
+    palette.querySelector('[data-a=undo]').disabled = !undoS.length;
+    palette.querySelector('[data-a=redo]').disabled = !redoS.length;
+    palette.querySelector('[data-a=clear]').disabled = !strokes.length;
+  }
+
+  const SHAPES = ['pen', 'hi', 'line', 'arrow', 'rect', 'ellipse'];
   function bindInk() {
-    const down = (e) => { if (e.button && e.button !== 0) return; drawing = true; last = pos(e); e.preventDefault(); };
-    const move = (e) => { if (!drawing) return; drawTo(pos(e)); e.preventDefault(); };
-    const up = () => { drawing = false; last = null; };
+    const down = (e) => {
+      if (e.button && e.button !== 0) return;
+      const p = pos(e);
+      closeMenus();
+      if (tool === 'spot') { spot = p; drawing = true; redraw(); }
+      else if (tool === 'stamp') {
+        const st = { t: 'stamp', c: color, w: size, ch: stamp, p: [p] };
+        strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
+      } else if (tool === 'erase') { drawing = true; eraseAt(p); }
+      else { drawing = true; cur = { t: tool, c: color, w: size, p: [p] }; }
+      ink.setPointerCapture && ink.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    };
+    const move = (e) => {
+      if (tool === 'spot' && !drawing) return;
+      if (!drawing) return;
+      const p = pos(e);
+      if (tool === 'spot') { spot = p; redraw(); }
+      else if (tool === 'erase') eraseAt(p);
+      else if (cur) {
+        if (cur.t === 'pen' || cur.t === 'hi') cur.p.push(p); else cur.p = [cur.p[0], p];
+        redraw();
+      }
+      e.preventDefault();
+    };
+    const up = () => {
+      if (!drawing) return;
+      drawing = false;
+      if (cur) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; cur = null; redraw(); syncUndo(); }
+    };
+    function eraseAt(p) {
+      const hit = strokes.filter((st) => near(st, p));
+      if (!hit.length) return;
+      strokes = strokes.filter((st) => !hit.includes(st));
+      undoS.push({ del: hit }); redoS = []; redraw(); syncUndo();
+    }
     ink.addEventListener('pointerdown', down);
-    window.addEventListener('pointermove', move);
+    ink.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   }
 
@@ -307,34 +412,99 @@
     return bar;
   }
 
-  // Zoom-style annotation palette: drag it anywhere
+  // Zoom-style "Draw" toolbar: a bar you can drag, with drop-down menus
+  const ICONS = { none: '☝', pen: '✎', hi: '🖍', line: '／', arrow: '➚', rect: '▭', ellipse: '◯', erase: '⌫', stamp: '✔', spot: '◉', draw: '✎' };
+  const NAMES = { pen: 'ប៊ិច', hi: 'គំនូស', line: 'បន្ទាត់', arrow: 'ព្រួញ', rect: 'ចតុកោណ', ellipse: 'ពងក្រពើ' };
+  const COLORS = ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#212529', '#ffffff'];
+  const STAMPS = ['✔', '✘', '★', '♥', '?', '➜'];
+
+  function closeMenus() { if (palette) palette.querySelectorAll('.ts-menu').forEach((m) => { m.hidden = true; }); }
+
   function penPalette() {
     const el = document.createElement('div');
     el.className = 'ts-pen';
-    el.style.left = '12px'; el.style.top = '14px';
+    el.style.left = '12px';
     const grip = document.createElement('div');
-    grip.className = 'ts-pgrip'; grip.textContent = '⋮⋮ គូស';
-    const body = document.createElement('div');
-    body.className = 'ts-pbody';
-    const btn = (cls, label, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.title = title; b.onclick = fn; return b; };
-    const setTool = (id) => {
-      tool = id;
-      ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      body.querySelectorAll('.ts-tl').forEach((x) => x.classList.toggle('on', x.dataset.t === id));
+    grip.className = 'ts-pgrip'; grip.textContent = '⋮⋮'; grip.title = 'អូសដើម្បីផ្លាស់ទី';
+    const row = document.createElement('div');
+    row.className = 'ts-prow';
+    const mkBtn = (a, icon, label, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.a = a;
+      b.innerHTML = `<span class="ic">${icon}</span><small>${label}</small>`;
+      b.onclick = (ev) => { ev.stopPropagation(); fn(b); };
+      return b;
     };
-    [['none', '☝', 'ចុច/រំកិល'], ['pen', '✎', 'ប៊ិច'], ['hi', '🖍', 'គំនូស'], ['erase', '⌫', 'ជ័រលុប']].forEach(([id, ic, t]) => {
-      const b = btn('ts-tl' + (id === tool ? ' on' : ''), ic, t, () => setTool(id));
-      b.dataset.t = id;
-      body.append(b);
+    const menu = (cls) => { const m = document.createElement('div'); m.className = 'ts-menu ' + cls; m.hidden = true; return m; };
+    const toggle = (m) => {
+      const was = !m.hidden; closeMenus(); m.hidden = was;
+      if (!m.hidden) { // open upward when the bar is low, otherwise downward
+        const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+        m.classList.toggle('down', r.top - s.top < 230);
+      }
+    };
+    const setTool = (id) => {
+      tool = id; spot = null;
+      ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
+      ink.style.cursor = id === 'erase' ? 'cell' : id === 'spot' ? 'none' : 'crosshair';
+      row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
+      redraw();
+    };
+
+    // Draw (shapes) menu
+    const drawMenu = menu('m-draw');
+    SHAPES.forEach((id) => {
+      const b = document.createElement('button'); b.type = 'button';
+      b.innerHTML = `<span class="ic">${ICONS[id]}</span> ${NAMES[id]}`;
+      b.onclick = (ev) => { ev.stopPropagation(); setTool(id); const d = row.querySelector('[data-a=draw]'); d.dataset.last = id; d.querySelector('.ic').textContent = ICONS[id]; closeMenus(); };
+      drawMenu.append(b);
     });
-    ['#e03131', '#1c7ed6', '#2f9e44', '#f08c00', '#212529', '#ffffff'].forEach((col) => {
-      const b = btn('ts-col', '', col, () => { color = col; if (tool === 'erase' || tool === 'none') setTool('pen'); });
-      b.style.background = col;
-      body.append(b);
+    // Stamp menu
+    const stampMenu = menu('m-stamp');
+    STAMPS.forEach((ch) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'stp'; b.textContent = ch;
+      b.onclick = (ev) => { ev.stopPropagation(); stamp = ch; setTool('stamp'); row.querySelector('[data-a=stamp] .ic').textContent = ch; closeMenus(); };
+      stampMenu.append(b);
     });
-    body.append(btn('ts-clr', '🗑', 'សម្អាត', () => clearInk(true)));
-    el.append(grip, body);
+    // Format menu: colour + thickness
+    const fmtMenu = menu('m-fmt');
+    const cw = document.createElement('div'); cw.className = 'cw';
+    COLORS.forEach((col) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ts-col'; b.style.background = col; b.title = col;
+      b.onclick = (ev) => { ev.stopPropagation(); color = col; cw.querySelectorAll('.ts-col').forEach((x) => x.classList.toggle('on', x === b)); sw.style.background = col; if (['none', 'erase', 'spot'].includes(tool)) setTool('pen'); };
+      if (col === color) b.classList.add('on');
+      cw.append(b);
+    });
+    const lw = document.createElement('div'); lw.className = 'lw';
+    [2, 4, 8, 14].forEach((w) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'lwb'; b.title = w + 'px';
+      b.innerHTML = `<i style="height:${w}px"></i>`;
+      b.onclick = (ev) => { ev.stopPropagation(); size = w; lw.querySelectorAll('.lwb').forEach((x) => x.classList.toggle('on', x === b)); };
+      if (w === size) b.classList.add('on');
+      lw.append(b);
+    });
+    fmtMenu.append(cw, lw);
+
+    let sw;
+    const bMouse = mkBtn('none', ICONS.none, 'ចុច', () => setTool('none'));
+    const bDraw = mkBtn('draw', ICONS.pen, 'គូស', () => { if (SHAPES.includes(tool)) toggle(drawMenu); else setTool(row.querySelector('[data-a=draw]').dataset.last || 'pen'); });
+    const bStamp = mkBtn('stamp', stamp, 'ត្រា', () => { if (tool === 'stamp') toggle(stampMenu); else { setTool('stamp'); } });
+    const bSpot = mkBtn('spot', ICONS.spot, 'ភ្លើង', () => setTool('spot'));
+    const bErase = mkBtn('erase', ICONS.erase, 'លុប', () => setTool('erase'));
+    const bFmt = mkBtn('fmt', '<i class="sw"></i>', 'ពណ៌', () => toggle(fmtMenu));
+    sw = bFmt.querySelector('.sw'); sw.style.background = color;
+    // small arrow buttons to open the menus of draw / stamp
+    const caret = (btn, m) => { const c = document.createElement('em'); c.textContent = '▾'; c.onclick = (ev) => { ev.stopPropagation(); toggle(m); }; btn.append(c); };
+    caret(bDraw, drawMenu); caret(bStamp, stampMenu);
+    const bUndo = mkBtn('undo', '↶', 'ត្រឡប់', undo);
+    const bRedo = mkBtn('redo', '↷', 'ធ្វើវិញ', redo);
+    const bClear = mkBtn('clear', '🗑', 'សម្អាត', () => clearInk(true));
+    row.append(bMouse, bDraw, bStamp, bSpot, bErase, bFmt, bUndo, bRedo, bClear);
+    el.append(grip, row, drawMenu, stampMenu, fmtMenu);
     stage.append(el);
+    palette = el;
+    setTool(tool);
+    syncUndo();
     requestAnimationFrame(() => { el.style.top = Math.max(8, stage.clientHeight - el.offsetHeight - 14) + 'px'; });
     drag(el, grip);
     return el;
@@ -408,6 +578,7 @@
     document.body.classList.remove('teach-show-on');
     if (root) { root.hidden = true; root.innerHTML = ''; }
     floats = [];
+    palette = null;
   }
 
   window.TeachShow = { open, close, isOpen: () => root && !root.hidden };
