@@ -245,6 +245,59 @@
     });
   }
 
+  // where the writing and the text really are on a slide (so the export can drop the empty space and enlarge the text)
+  function contentBox(el, st, w, h) {
+    const o = el.getBoundingClientRect();
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    const add = (l, t, r, b) => { x0 = Math.min(x0, l); y0 = Math.min(y0, t); x1 = Math.max(x1, r); y1 = Math.max(y1, b); };
+    const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), rg = document.createRange();
+    while (tw.nextNode()) {
+      const n = tw.currentNode;
+      if (!n.textContent.trim() || n.parentElement.closest('.katex-mathml')) continue;
+      rg.selectNodeContents(n);
+      [...rg.getClientRects()].forEach((r) => { if (r.width > 0 && r.height > 0) add(r.left - o.left, r.top - o.top, r.right - o.left, r.bottom - o.top); });
+    }
+    el.querySelectorAll('img,svg,table,canvas,.ts-axis').forEach((e) => {
+      const r = e.getBoundingClientRect(); if (r.width > 0) add(r.left - o.left, r.top - o.top, r.right - o.left, r.bottom - o.top);
+    });
+    (st || []).forEach((q) => q.p.forEach((pt) => { const m = (q.t === 'stamp' ? 30 : q.w * (q.t === 'hi' ? 3 : 1.6)) + 6; add(pt.x - m, pt.y - m, pt.x + m, pt.y + m); }));
+    if (x1 < x0) return { x: 0, y: 0, w, h };
+    const pad = 36;
+    const x = Math.max(0, x0 - pad), y = Math.max(0, y0 - pad);
+    return { x, y, w: Math.min(w, x1 + pad) - x, h: Math.min(h, y1 + pad) - y };
+  }
+
+  // exports are 16:9 (1920x1080): the slide content is cropped to what is on it, enlarged, and centred with margins left and right
+  function widen(src, w, h, box, bg) {
+    const W = 1920, H = 1080, MX = 210, MY = 50;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const c = out.getContext('2d');
+    c.fillStyle = bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg) ? bg : '#ffffff'; c.fillRect(0, 0, W, H);
+    const b = box || { x: 0, y: 0, w, h };
+    const k = Math.min((W - 2 * MX) / b.w, (H - 2 * MY) / b.h, 2.2);
+    const dw = b.w * k, dh = b.h * k, r = src.width / w;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(src, b.x * r, b.y * r, b.w * r, b.h * r, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    return out;
+  }
+
+  // html2canvas drops list markers, so write them into the text before taking the picture
+  function bakeMarkers(root) {
+    root.querySelectorAll('ol, ul').forEach((l) => {
+      let n = 0;
+      [...l.children].forEach((li) => {
+        if (li.tagName !== 'LI' || li.classList.contains('lab')) return;
+        n += 1;
+        const m = document.createElement('span');
+        m.textContent = l.tagName === 'OL' ? `${n}.\u00a0` : '•\u00a0';
+        m.style.cssText = 'display:inline-block;min-width:1.4em;margin-left:-1.4em;text-align:right;padding-right:.25em';
+        li.insertBefore(m, li.firstChild);
+        li.style.listStyle = 'none';
+      });
+      l.style.listStyle = 'none';
+    });
+  }
+
   // exports are 16:9 (1920x1080): the slide is centred with white margins on the left and right
   function widen(src, w, h) {
     const W = 1920, H = 1080, MX = 120, MY = 36;
@@ -274,6 +327,7 @@
       copy.style.position = 'relative'; copy.style.inset = 'auto'; copy.style.width = w + 'px'; copy.style.height = h + 'px'; copy.style.overflow = 'hidden';
       holder.append(copy); document.body.append(holder);
       bakeMarkers(copy);
+      const box = contentBox(copy, strokes, w, h), bg = getComputedStyle(copy).backgroundColor;
       const scale = 2;
       let base;
       try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale, useCORS: true, logging: false }); }
@@ -283,7 +337,7 @@
       const c2 = out.getContext('2d');
       c2.drawImage(base, 0, 0);
       c2.drawImage(ink, 0, 0, ink.width, ink.height, 0, 0, out.width, out.height); // pen strokes on top
-      const wide = widen(out, w, h);
+      const wide = widen(out, w, h, box, bg);
       const name = `grade${meta.grade}-lesson${meta.lesson}-slide${i + 1}.png`;
       const a = document.createElement('a');
       a.download = name; a.href = wide.toDataURL('image/png');
@@ -320,6 +374,7 @@
         holder.append(el); document.body.append(holder);
         math(el);
         bakeMarkers(el);
+        const box = contentBox(el, sl._ink, w, h), bg = getComputedStyle(el).backgroundColor;
         let base;
         try { base = await window.html2canvas(holder, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }); }
         finally { holder.remove(); }
@@ -330,7 +385,7 @@
         const keep = ctx; ctx = c2; c2.save(); c2.scale(out.width / w, out.height / h);
         try { sl._ink.forEach(paint); } finally { c2.restore(); ctx = keep; }
         if (k) doc.addPage([960, 540], 'landscape');
-        doc.addImage(widen(out, w, h).toDataURL('image/jpeg', .92), 'JPEG', 0, 0, 960, 540);
+        doc.addImage(widen(out, w, h, box, bg).toDataURL('image/jpeg', .92), 'JPEG', 0, 0, 960, 540);
       }
       const name = `grade${meta.grade}-lesson${meta.lesson}-annotated.pdf`;
       doc.save(name);
