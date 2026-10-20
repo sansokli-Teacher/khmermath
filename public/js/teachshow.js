@@ -453,41 +453,50 @@
     el.className = 'ts-pen';
     el.style.left = '12px';
     const grip = document.createElement('div');
-    grip.className = 'ts-pgrip'; grip.title = 'អូសដើម្បីផ្លាស់ទី';
-    const gl = document.createElement('span'); gl.className = 'gl'; gl.textContent = '⋮⋮';
-    const gb = document.createElement('div'); gb.className = 'gb';
-    const pref = (() => { try { return JSON.parse(localStorage.getItem('ts_pen') || '{}'); } catch { return {}; } })();
-    let scale = pref.scale || 1, vert = !!pref.vert, where = 'bottom';
-    const save = () => { try { localStorage.setItem('ts_pen', JSON.stringify({ scale, vert })); } catch { /* ignore */ } };
-    const gbtn = (t, title, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.title = title; b.onclick = (ev) => { ev.stopPropagation(); fn(); }; gb.append(b); return b; };
-    const apply = () => {
-      el.classList.toggle('vert', vert);
-      el.style.transform = `scale(${scale})`;
+    grip.className = 'ts-pgrip'; grip.title = 'អូសដើម្បីផ្លាស់ទី · ចុចពីរដងដើម្បីលាក់';
+    const gl = document.createElement('span'); gl.className = 'gl'; gl.innerHTML = '<i></i><i></i><i></i><i></i><i></i><i></i>';
+    grip.append(gl);
+    let vert = false, edge = 'bottom';
+    try { edge = localStorage.getItem('ts_pen_edge') || 'bottom'; } catch { /* ignore */ }
+    const M = 12, RESERVE = 88; // margin; room kept free for the tool dock on the right
+    const fit = () => { // shrink on small screens so the bar always fits
+      el.style.transform = '';
+      const W = stage.clientWidth - 2 * M - (edge === 'right' ? RESERVE : 0), H = stage.clientHeight - 2 * M;
+      const k = Math.min(1, W / el.offsetWidth, H / el.offsetHeight);
+      el.style.transform = k < 1 ? `scale(${k.toFixed(3)})` : '';
       el.style.transformOrigin = 'top left';
+      return k;
     };
-    const place = (w) => {
-      where = w;
-      if (w === 'left' || w === 'right') vert = true; else vert = false;
-      apply(); save();
-      requestAnimationFrame(() => {
-        const r = el.getBoundingClientRect(), W = stage.clientWidth, H = stage.clientHeight;
-        const x = w === 'left' ? 12 : w === 'right' ? W - r.width - 90 : (W - r.width) / 2;
-        const y = w === 'top' ? 12 : w === 'bottom' ? H - r.height - 14 : (H - r.height) / 2;
-        el.style.left = Math.max(0, x) + 'px'; el.style.top = Math.max(0, y) + 'px';
-      });
+    const place = (w, animate) => {
+      edge = w; vert = w === 'left' || w === 'right';
+      el.classList.toggle('vert', vert);
+      el.classList.toggle('glide', !!animate);
+      const k = fit(), W = stage.clientWidth, H = stage.clientHeight;
+      const bw = el.offsetWidth * k, bh = el.offsetHeight * k;
+      const x = w === 'left' ? M : w === 'right' ? W - bw - M - RESERVE + 14 : (W - bw) / 2;
+      const y = w === 'top' ? M : w === 'bottom' ? H - bh - M : (H - bh) / 2;
+      el.style.left = Math.max(0, x) + 'px'; el.style.top = Math.max(0, y) + 'px';
+      try { localStorage.setItem('ts_pen_edge', w); } catch { /* ignore */ }
     };
-    const order = ['bottom', 'top', 'left', 'right'];
-    gbtn('⇄', 'ផ្ដេក / បញ្ឈរ', () => { vert = !vert; apply(); save(); keepInside(); });
-    gbtn('⤒', 'ប្ដូរទីតាំង (ក្រោម/លើ/ឆ្វេង/ស្តាំ)', () => place(order[(order.indexOf(where) + 1) % order.length]));
-    gbtn('A−', 'តូចជាង', () => { scale = Math.max(.7, +(scale - .15).toFixed(2)); apply(); save(); keepInside(); });
-    gbtn('A+', 'ធំជាង', () => { scale = Math.min(1.6, +(scale + .15).toFixed(2)); apply(); save(); keepInside(); });
-    gbtn('–', 'លាក់', () => hide());
-    grip.append(gl, gb);
-    const keepInside = () => requestAnimationFrame(() => {
-      const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
-      el.style.left = Math.max(0, Math.min(s.width - r.width, r.left - s.left)) + 'px';
-      el.style.top = Math.max(0, Math.min(s.height - r.height, r.top - s.top)) + 'px';
-    });
+    const nearestEdge = (x, y, w, h) => { // which edge is the bar's own side closest to (within 80px)?
+      const W = stage.clientWidth, H = stage.clientHeight;
+      const d = { left: x, right: W - RESERVE - (x + w), top: y, bottom: H - (y + h) };
+      const k = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      return d[k] < 80 ? k : null;
+    };
+    const zone = document.createElement('div');
+    zone.className = 'ts-snapzone'; zone.hidden = true;
+    stage.append(zone);
+    const showZone = (w) => {
+      if (!w) { zone.hidden = true; return; }
+      const W = stage.clientWidth, H = stage.clientHeight;
+      const t = 56; // thickness of the preview strip
+      Object.assign(zone.style, w === 'left' ? { left: '6px', top: '12%', width: t + 'px', height: '76%' }
+        : w === 'right' ? { left: (W - RESERVE - t + 8) + 'px', top: '12%', width: t + 'px', height: '76%' }
+          : w === 'top' ? { left: '14%', top: '6px', width: '72%', height: t + 'px' }
+            : { left: '14%', top: (H - t - 6) + 'px', width: '72%', height: t + 'px' });
+      zone.hidden = false;
+    };
     const pill = document.createElement('button');
     pill.type = 'button'; pill.className = 'ts-pill'; pill.textContent = '✎'; pill.title = 'បង្ហាញឧបករណ៍គូស'; pill.hidden = true;
     const hide = () => {
@@ -497,8 +506,40 @@
       pill.style.top = Math.max(0, Math.min(s.height - 52, r.top - s.top)) + 'px';
       el.hidden = true; pill.hidden = false;
     };
-    pill.onclick = () => { pill.hidden = true; el.hidden = false; keepInside(); };
+    pill.onclick = () => { pill.hidden = true; el.hidden = false; place(edge); };
+    grip.addEventListener('dblclick', hide);
     stage.append(pill);
+    // free drag; on release the bar snaps to the nearest edge and turns vertical/horizontal on its own
+    let ox = 0, oy = 0, moving = false, target = null;
+    grip.addEventListener('pointerdown', (e) => {
+      moving = true; closeMenus();
+      el.classList.remove('glide'); el.classList.add('dragging');
+      const r = el.getBoundingClientRect();
+      ox = e.clientX - r.left; oy = e.clientY - r.top;
+      grip.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!moving) return;
+      const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const x = e.clientX - s.left - ox, y = e.clientY - s.top - oy;
+      el.style.left = Math.max(0, Math.min(s.width - r.width, x)) + 'px';
+      el.style.top = Math.max(0, Math.min(s.height - r.height, y)) + 'px';
+      target = nearestEdge(x, y, r.width, r.height);
+      showZone(target);
+    });
+    const end = () => {
+      if (!moving) return;
+      moving = false; el.classList.remove('dragging'); zone.hidden = true;
+      if (target) place(target, true);
+      else { const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(); // keep fully on screen
+        el.style.left = Math.max(0, Math.min(s.width - r.width, r.left - s.left)) + 'px';
+        el.style.top = Math.max(0, Math.min(s.height - r.height, r.top - s.top)) + 'px'; }
+      target = null;
+    };
+    grip.addEventListener('pointerup', end);
+    grip.addEventListener('pointercancel', end);
+    window.addEventListener('resize', () => { if (el.isConnected && !el.hidden) place(edge); });
     const row = document.createElement('div');
     row.className = 'ts-prow';
     const mkBtn = (a, icon, label, fn) => {
@@ -580,9 +621,7 @@
     palette = el;
     setTool(tool);
     syncUndo();
-    apply();
-    place(vert ? 'left' : 'bottom');
-    drag(el, grip);
+    requestAnimationFrame(() => place(edge));
     return el;
   }
 
