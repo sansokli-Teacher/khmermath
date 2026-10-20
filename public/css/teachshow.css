@@ -348,3 +348,6 @@ body.teach-show-on { overflow: hidden; }
 .ts-hand.writing { animation: ts-write .28s ease-in-out infinite alternate; }
 @keyframes ts-write { from { transform: rotate(-3deg); } to { transform: rotate(2.5deg) translateY(1px); } }
 @media (prefers-reduced-motion: reduce) { .ts-hand.writing { animation: none; } }
+
+.ts-hand { width: 112px; height: 112px; transform-origin: 8px 88px; }
+.ts-hand img { width: 100%; height: 100%; display: block; user-select: none; }

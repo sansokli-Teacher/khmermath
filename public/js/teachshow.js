@@ -221,17 +221,7 @@
   function makeHand() {
     const h = document.createElement('div');
     h.className = 'ts-hand'; h.hidden = true;
-    h.innerHTML = `<svg viewBox="0 0 110 110" width="84" height="84" aria-hidden="true"><g transform="translate(8 100) rotate(-42)">
-      <path d="M0 0 L14 -4.5 L14 4.5 Z" fill="#ecd3ad" stroke="#7a5a3a" stroke-width=".8" stroke-linejoin="round"/>
-      <path d="M0 0 L5.2 -1.8 L5.2 1.8 Z" fill="var(--pen)"/>
-      <rect x="14" y="-4.5" width="58" height="9" rx="2.2" fill="var(--pen)" stroke="rgba(0,0,0,.4)" stroke-width=".8"/>
-      <rect x="62" y="-4.5" width="10" height="9" rx="2.2" fill="rgba(0,0,0,.25)"/>
-      <rect x="21" y="0" width="30" height="12" rx="6" transform="rotate(16 21 0)" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
-      <rect x="28" y="-15" width="36" height="12" rx="6" transform="rotate(-9 28 -9)" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
-      <path d="M52 -17 C70 -30 96 -24 101 -6 C105 10 90 22 68 18 C55 15 47 3 52 -17 Z" fill="#f6cfa4" stroke="#b98557" stroke-width="1"/>
-      <path d="M60 -10 C64 -16 74 -18 80 -14" fill="none" stroke="#d9a877" stroke-width="1.4" stroke-linecap="round"/>
-      <rect x="96" y="-24" width="14" height="40" rx="5" transform="rotate(12 96 -4)" fill="#0f5173"/>
-    </g></svg>`;
+    h.innerHTML = '<img src="/img/hand.png" alt="" draggable="false">';
     stage.append(h);
     return h;
   }
@@ -239,9 +229,8 @@
     if (!hand) return;
     if (!HAND_TOOLS.includes(tool) || e.pointerType === 'touch') { hand.hidden = true; return; }
     const r = ink.getBoundingClientRect();
-    hand.style.left = (e.clientX - r.left - 6) + 'px';
-    hand.style.top = (e.clientY - r.top - 76) + 'px';
-    hand.style.setProperty('--pen', color === '#ffffff' ? '#cfd8e3' : color);
+    hand.style.left = (e.clientX - r.left - 8) + 'px';
+    hand.style.top = (e.clientY - r.top - 88) + 'px';
     hand.hidden = false;
   }
 
