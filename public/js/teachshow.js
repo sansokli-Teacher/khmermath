@@ -728,6 +728,17 @@
     disc.append(cv, hub); stageW.append(disc);
     const info = document.createElement('div'); info.className = 'sp-info';
     const pop = document.createElement('div'); pop.className = 'sp-pop'; pop.hidden = true;
+    // vanish in / vanish out for the pop-ups
+    let popT = 0;
+    const calmMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const openPop = () => { clearTimeout(popT); pop.classList.remove('vout'); pop.hidden = false; pop.classList.remove('vin'); void pop.offsetWidth; if (!calmMotion()) pop.classList.add('vin'); };
+    const closePop = (instant) => {
+      if (pop.hidden) return;
+      clearTimeout(popT);
+      if (instant || calmMotion()) { pop.hidden = true; pop.classList.remove('vin', 'vout'); return; }
+      pop.classList.remove('vin'); pop.classList.add('vout');
+      popT = setTimeout(() => { pop.hidden = true; pop.classList.remove('vout'); }, 430);
+    };
     const fw = document.createElement('canvas'); fw.className = 'sp-fw';
     // simple by default: only the wheel; the options live behind a small gear
     bar.hidden = true;
@@ -807,14 +818,14 @@
     const showPop = (it) => {
       const noRep = rep.querySelector('input').checked;
       if (noRep) st.used.add(it.id);
-      pop.hidden = false; pop.classList.remove('big');
+      openPop(); pop.classList.remove('big');
       const group = st.mode === 'group';
       pop.innerHTML = `<div class="pp-card"><div class="pp-k">${group ? '🎉 ក្រុមដែលត្រូវបានជ្រើស' : '🎉 សិស្សដែលត្រូវបានជ្រើស'}</div>
         <div class="pp-name">${esc(it.label)}</div>
         ${group ? `<ul class="pp-mem">${it.members.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
         <div class="pp-act">${group ? '<button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button>' : ''}<button type="button" class="pp-again">បង្វិលម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
-      pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; refresh(); };
-      pop.querySelector('.pp-again').onclick = () => { pop.hidden = true; refresh(); hub.click(); };
+      pop.querySelector('.pp-ok').onclick = () => { closePop(); refresh(); };
+      pop.querySelector('.pp-again').onclick = () => { closePop(true); refresh(); hub.click(); };
       if (group) wirePoster([{ title: it.label, items: it.members.map((n) => ({ n })) }], 'ក្រុមដែលត្រូវបានជ្រើស', 'group');
       snd.fanfare(st.sound);
       fireworks(3200);
@@ -845,12 +856,15 @@
     let fsRoot = null;
     const exitFull = () => {
       if (!fsRoot) return;
-      wrap.append(pop, fw); fsRoot.remove(); fsRoot = null; pop.classList.remove('full');
+      const r = fsRoot; fsRoot = null;
       if (document.fullscreenElement) { try { document.exitFullscreen(); } catch { /* ignore */ } }
+      const back = () => { wrap.append(pop, fw); r.remove(); pop.classList.remove('full'); };
+      if (calmMotion()) return back();
+      r.classList.add('vout'); setTimeout(back, 400);
     };
     const enterFull = () => {
       fsRoot = document.createElement('div'); fsRoot.className = 'sp-fsroot';
-      root.append(fsRoot); fsRoot.append(pop, fw); pop.classList.add('full');
+      root.append(fsRoot); fsRoot.append(pop, fw); pop.classList.add('full'); if (!calmMotion()) fsRoot.classList.add('vin');
       try { (fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen).call(fsRoot); } catch { /* the fixed overlay still fills the window */ }
     };
     const toggleFull = () => (fsRoot ? exitFull() : enterFull());
@@ -858,13 +872,13 @@
     const showGroups = (again) => {
       if (again) makeGroups();
       const id = ++gRun, n = st.groups.length, calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      pop.hidden = false; pop.classList.add('big');
+      openPop(); pop.classList.add('big');
       const total = st.groups.reduce((a, g) => a + g.length, 0), tch = teacherName();
       pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-ban"><b class="pp-title">កំពុងបែងចែកក្រុម…</b><small>${esc(cname || '')}${cname ? ' · ' : ''}${kh(total)} នាក់ · ${khDate()}</small>${tch ? `<small>គ្រូបង្រៀន៖ ${esc(tch)}</small>` : ''}<button type="button" class="pp-fs" title="ពេញអេក្រង់">⛶</button></div>
         <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g wait" style="--c:${PPAL[k % PPAL.length]}"><div class="pp-gh"><b>ក្រុម ${kh(k + 1)}</b><span>${kh(g.length)} នាក់</span></div><ol>${g.map(() => '<li class="ph">• • •</li>').join('')}</ol></div>`).join('')}</div>
         <div class="pp-act"><button type="button" class="pp-skip">រំលង ▶▶</button><button type="button" class="pp-png" hidden>⬇ ទាញយក PNG</button><button type="button" class="pp-copy" hidden>📋 ចម្លងរូបភាព</button><button type="button" class="pp-again" hidden>ចែកម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
       const q = (c) => pop.querySelector(c), cards = [...pop.querySelectorAll('.pp-g')], title = q('.pp-title');
-      q('.pp-ok').onclick = () => { gRun++; stopRoll(); exitFull(); pop.hidden = true; st.used.clear(); refresh(); };
+      q('.pp-ok').onclick = () => { gRun++; stopRoll(); exitFull(); closePop(); st.used.clear(); refresh(); };
       q('.pp-again').onclick = () => showGroups(true);
       q('.pp-fs').onclick = toggleFull;
       wirePoster(st.groups.map((g, k) => ({ title: `ក្រុម ${kh(k + 1)}`, items: g.map((nm) => ({ n: nm })) })), 'បែងចែកក្រុមរួចរាល់!', 'groups');
@@ -904,7 +918,7 @@
 
     hub.onclick = () => {
       if (st.spin || !list.length) return;
-      pop.hidden = true; snd.ctx();
+      closePop(true); snd.ctx();
       const pick = Math.floor(Math.random() * list.length), it = list[pick], a = Math.PI * 2 / list.length;
       const TAU = Math.PI * 2, from = st.ang, target = -pick * a;
       const to = from + ((((target - from) % TAU) + TAU) % TAU) + TAU * (5 + Math.floor(Math.random() * 3));
@@ -921,11 +935,11 @@
       };
       requestAnimationFrame(frame);
     };
-    modeBtns.forEach((b) => { b.onclick = () => { if (st.spin) return; st.mode = b.dataset.m; st.used.clear(); st.ang = 0; pop.hidden = true; refresh(); }; });
+    modeBtns.forEach((b) => { b.onclick = () => { if (st.spin) return; st.mode = b.dataset.m; st.used.clear(); st.ang = 0; closePop(true); refresh(); }; });
     gsel.onchange = () => { if (st.spin) return; makeGroups(); st.used.clear(); refresh(); };
     rep.querySelector('input').onchange = refresh;
     snb.onclick = () => { st.sound = !st.sound; snb.textContent = st.sound ? '🔊' : '🔇'; };
-    rst.onclick = () => { if (st.spin) return; st.used.clear(); if (st.mode === 'group') makeGroups(); pop.hidden = true; refresh(); };
+    rst.onclick = () => { if (st.spin) return; st.used.clear(); if (st.mode === 'group') makeGroups(); closePop(true); refresh(); };
     refresh();
     return wrap;
   }

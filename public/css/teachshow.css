@@ -570,3 +570,11 @@ body.teach-show-on { overflow: hidden; }
 .sp-fsroot .sp-pop { inset: 2.5%; }
 .sp-fsroot .pp-card.pp-all { height: 100%; }
 .sp-fsroot .sp-fw { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* vanishIn / vanishOut for the pop-ups */
+.sp-pop { animation: none; }
+.vin { animation: tsVanishIn .5s ease-out backwards; }
+.vout { animation: tsVanishOut .42s ease-in forwards; }
+@keyframes tsVanishIn { 0% { opacity: 0; transform: scale(2); filter: blur(36px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
+@keyframes tsVanishOut { 0% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(2); filter: blur(36px); } }
+@media (prefers-reduced-motion: reduce) { .vin, .vout { animation: none; } }

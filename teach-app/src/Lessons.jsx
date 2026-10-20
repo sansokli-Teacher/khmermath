@@ -23,7 +23,7 @@ export default function Lessons({ cls, students, onBack }) {
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
         .then(() => loadScript('/js/slides/g7l01.js?v=20261020h'))
-        .then(() => loadScript('/js/teachshow.js?v=20261022r')),
+        .then(() => loadScript('/js/teachshow.js?v=20261022s')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
