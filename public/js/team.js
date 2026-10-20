@@ -85,6 +85,10 @@ render.teachers = async function () {
         h('td', { class: 'muted', style: 'white-space:nowrap;' }, t.last_login ? fmtDateTime(t.last_login) : '—'),
         h('td', {}, h('span', { class: `badge ${t.active ? 'ready' : 'closed'}` }, t.active ? 'ប្រើបាន' : 'ត្រូវបានបិទ')),
         h('td', {}, t.role === 'owner' ? null : h('div', { class: 'row', style: 'gap:4px;flex-wrap:wrap;min-width:150px;' }, [
+          h('button', { class: `btn-sm ${t.teach_ok ? 'ready' : 'secondary'}`, title: 'អនុញ្ញាត ឬបិទម៉ូដបង្រៀនសម្រាប់គ្រូនេះ', onclick: async () => {
+            await api(`/api/admin/teachers/${t.id}/teach`, { method: 'POST', body: { allowed: !t.teach_ok } });
+            render.teachers();
+          } }, t.teach_ok ? '🎓 ម៉ូដបង្រៀន៖ បើក' : '🎓 ម៉ូដបង្រៀន៖ បិទ'),
           h('button', { class: 'secondary btn-sm', title: 'ផ្តល់ ឬបន្ថែមការប្រើប្រាស់', onclick: () => grantDialog(t) }, '🔓 ដោះសោ'),
           t.plan === 'full' ? h('button', { class: 'secondary btn-sm', title: 'ចាក់សោវិញ', onclick: async () => {
             if (!(await Exam.confirm(`ចាក់សោគណនី ${t.display_name || t.username} វិញ? គាត់នឹងត្រឡប់ទៅជាគណនីសាកល្បង (ទិន្នន័យនៅរក្សាទុក)។`))) return;

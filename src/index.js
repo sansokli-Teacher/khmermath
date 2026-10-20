@@ -65,6 +65,7 @@ const ROUTES = [
   ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
   ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
   ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],
+  ['POST', '/api/admin/teachers/:id/teach', admin.setTeachAccess],
   ['GET', '/api/invite/:token', admin.inviteInfo],
   ['POST', '/api/invite/:token/accept', admin.acceptInvite],
   ['GET', '/api/teachers/search', admin.searchTeachers],

@@ -18,7 +18,7 @@ export async function authTeacher(req, env) {
   if (!session) return null;
   await ensureColumns(env);
   const row = await env.DB.prepare(
-    'SELECT id, username, role, display_name, active, plan, license_until FROM teachers WHERE username = ?1',
+    'SELECT id, username, role, display_name, active, plan, license_until, teach_ok FROM teachers WHERE username = ?1',
   ).bind(session.username).first();
   if (!row || !row.active) return null;
   const owner = row.role === 'owner';
@@ -28,10 +28,12 @@ export async function authTeacher(req, env) {
   return {
     id: row.id, username: row.username, role: row.role, display_name: row.display_name || row.username,
     plan: row.plan, license_until: row.license_until, licensed, status,
+    teach: owner || row.role === 'admin' || row.teach_ok === 1,   // teaching mode: owner/admin always, others only when allowed
   };
 }
 
 export const isAdmin = (t) => t.role === 'owner';
+export const TEACH_DENIED = 'ម៉ូដបង្រៀនមិនទាន់បើកសម្រាប់គណនីរបស់អ្នកទេ។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។';
 export const isBankAdmin = (t) => t.role === 'owner' || t.role === 'admin';
 
 const RANK = { sample: 1, reviewer: 1, editor: 2, owner: 3 };

@@ -36,7 +36,9 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        setMe(await api('/api/teacher/me'));
+        const who = await api('/api/teacher/me');
+        setMe(who);
+        if (!who.teach_allowed) { setError('ម៉ូដបង្រៀនមិនទាន់បើកសម្រាប់គណនីរបស់អ្នកទេ។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។'); return; }
         setClasses((await api('/api/classes')).classes);
       } catch (e) {
         if (e.status === 401) location.href = '/teacher';

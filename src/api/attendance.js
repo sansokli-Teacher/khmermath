@@ -1,5 +1,5 @@
 import { json, err } from '../lib/http.js';
-import { needClass } from '../lib/access.js';
+import { needClass, TEACH_DENIED } from '../lib/access.js';
 import { ensureColumns } from '../lib/schema.js';
 
 const MARKS = new Set(['ok', 'A', 'L']);
@@ -12,6 +12,7 @@ export async function getAttendance(req, env) {
   if (!classId || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return err('class_id and day are required.', 400);
   await ensureColumns(env);
   const g = await needClass(req, env, classId, 'view'); if (g.resp) return g.resp;
+  if (!g.t.teach) return err(TEACH_DENIED, 403);
   const { results } = await env.DB.prepare(
     'SELECT student_id, mark, note FROM attendance WHERE class_id = ?1 AND day = ?2 AND period = ?3',
   ).bind(Number(classId), day, period).all();
@@ -27,6 +28,7 @@ export async function saveAttendance(req, env) {
   if (!classId || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return err('class_id and day are required.', 400);
   await ensureColumns(env);
   const g = await needClass(req, env, classId, 'edit'); if (g.resp) return g.resp;
+  if (!g.t.teach) return err(TEACH_DENIED, 403);
   const ids = new Set((await env.DB.prepare('SELECT id FROM students WHERE class_id = ?1').bind(classId).all()).results.map((s) => String(s.id)));
   const stmts = [
     env.DB.prepare('DELETE FROM attendance WHERE class_id = ?1 AND day = ?2 AND period = ?3').bind(classId, day, period),

@@ -32,7 +32,7 @@ async function makeInvite(env, { purpose, teacherId = null, note = '', createdBy
 export async function listTeachers(req, env) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const { results } = await env.DB.prepare(
-    `SELECT t.id, t.username, t.display_name, t.role, t.active, t.last_login, t.plan, t.license_until, t.contact, t.email,
+    `SELECT t.id, t.username, t.display_name, t.role, t.active, t.teach_ok, t.last_login, t.plan, t.license_until, t.contact, t.email,
             (SELECT COUNT(*) FROM classes c WHERE c.owner_id = t.id) AS class_count,
             (SELECT COUNT(*) FROM tests x WHERE x.owner_id = t.id) AS test_count
      FROM teachers t ORDER BY t.id`,
@@ -71,6 +71,16 @@ export async function setTeacherActive(req, env, params) {
   if (Number(params.id) === g.t.id) return err('មិនអាចបិទគណនីរបស់ខ្លួនឯងបានទេ។', 400);
   const { active } = await req.json();
   await env.DB.prepare('UPDATE teachers SET active = ?1 WHERE id = ?2 AND role <> \'owner\'').bind(active ? 1 : 0, params.id).run();
+  return json({ ok: true });
+}
+
+// Teaching mode is opt-in per teacher. The owner is always allowed (and so is an 'admin' role), so only teacher rows can be switched.
+export async function setTeachAccess(req, env, params) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const { allowed } = await req.json();
+  const r = await env.DB.prepare("UPDATE teachers SET teach_ok = ?1 WHERE id = ?2 AND role NOT IN ('owner', 'admin')").bind(allowed ? 1 : 0, params.id).run();
+  if (!r.meta.changes) return err('Teacher not found.', 404);
+  await audit(env, g.t, allowed ? 'teach_on' : 'teach_off', String(params.id));
   return json({ ok: true });
 }
 

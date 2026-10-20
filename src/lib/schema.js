@@ -4,7 +4,7 @@
 // Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
 // skips everything else; the (batched) migration runs once per version, not once per cold start.
 // (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
-const SCHEMA_VERSION = '2026-10-19-att';
+const SCHEMA_VERSION = '2026-10-20-teach';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
@@ -31,6 +31,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN contact TEXT',
     'ALTER TABLE teachers ADD COLUMN created_at TEXT',
     'ALTER TABLE teachers ADD COLUMN email TEXT',
+    // teaching mode is opt-in: the owner (or an admin) switches it on per teacher
+    'ALTER TABLE teachers ADD COLUMN teach_ok INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE tests ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE invites ADD COLUMN months INTEGER',

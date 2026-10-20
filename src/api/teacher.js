@@ -98,7 +98,7 @@ export async function me(req, env) {
   if (!t) return err('Not logged in.', 401);
   const contact = await env.DB.prepare("SELECT value FROM settings WHERE key = 'contact_text'").first();
   return json({
-    id: t.id, username: t.username, role: t.role, display_name: t.display_name,
+    id: t.id, username: t.username, role: t.role, display_name: t.display_name, teach_allowed: t.teach,
     status: t.status, licensed: t.licensed, license_until: t.license_until, contact_text: contact ? contact.value : '',
     contact: (await env.DB.prepare('SELECT contact FROM teachers WHERE id = ?1').bind(t.id).first() || {}).contact || '',
     telegram: OWNER_TELEGRAM, pending_requests: t.role === 'owner' ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM unlock_requests WHERE status = 'pending'").first().catch(() => null)) || { n: 0 }).n : 0,

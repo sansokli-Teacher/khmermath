@@ -517,6 +517,12 @@ function initTeachMode() {
   const params = new URLSearchParams(location.search);
   const classic = params.get('classic') === '1';
   const fromReact = classic && params.get('tool');
+  if (!ME.teach_allowed) {   // teaching mode is switched on per teacher by the owner
+    if (btn) btn.hidden = true;
+    if (back) back.hidden = true;
+    localStorage.setItem('exam_teach_mode', '0');
+    return;
+  }
   if (btn) btn.addEventListener('click', () => {
     if (teachOn()) return applyTeachMode(false, true);
     localStorage.setItem('exam_teach_mode', '1');
