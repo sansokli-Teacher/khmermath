@@ -3,7 +3,7 @@
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
   let tool = 'none', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
-  let offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
+  let colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
@@ -96,6 +96,8 @@
       ctx.font = '700 46px "Times New Roman", system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(st.ch, st.p[0].x, st.p[0].y);
+    } else if (st.t === 'point') {
+      ctx.beginPath(); ctx.arc(st.p[0].x, st.p[0].y, Math.max(4.5, st.w * 1.3), 0, Math.PI * 2); ctx.fill();
     } else if (st.t === 'pen' && st.k && st.k !== 'ball') {
       paintPen(st);
     } else if (st.t === 'pen' || st.t === 'hi') {
@@ -117,6 +119,13 @@
         }
       }
       ctx.stroke();
+    }
+    if (st.label) { // measurement text (length in cm, angle in degrees, point name)
+      ctx.font = '700 19px "Kantumruy Pro", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.globalAlpha = 1;
+      const m = ctx.measureText(st.label.text);
+      ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fillRect(st.label.x - m.width / 2 - 7, st.label.y - 14, m.width + 14, 28);
+      ctx.strokeStyle = st.c; ctx.lineWidth = 1.5; ctx.strokeRect(st.label.x - m.width / 2 - 7, st.label.y - 14, m.width + 14, 28);
+      ctx.fillStyle = st.c; ctx.fillText(st.label.text, st.label.x, st.label.y);
     }
     ctx.restore();
   }
@@ -180,8 +189,9 @@
   }
 
   function near(st, p) {
-    const pts = st.t === 'pen' || st.t === 'hi' || st.t === 'stamp' ? st.p : [st.p[0], st.p[st.p.length - 1]];
+    const pts = st.t === 'pen' || st.t === 'hi' || st.t === 'stamp' || st.t === 'point' ? st.p : [st.p[0], st.p[st.p.length - 1]];
     if (st.t === 'stamp') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 34;
+    if (st.t === 'point') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 22;
     if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 14;
     const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y);
     if (st.t === 'pen' || st.t === 'hi') return pts.some((q, k) => k && distSeg(p, pts[k - 1], q) < 14);
@@ -499,6 +509,10 @@
       else if (tool === 'spot') { spot = p; drawing = true; redraw(); }
       else if (tool === 'stamp') {
         const st = { t: 'stamp', c: color, w: size, ch: stamp, p: [p] };
+        strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
+      } else if (tool === 'point') { // a labelled point: A, B, C ...
+        const n = strokes.filter((q) => q.t === 'point').length, letter = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[n % 26] + (n >= 26 ? String(Math.floor(n / 26)) : '');
+        const st = { t: 'point', c: color, w: size, p: [p], label: { text: letter, x: p.x + 20, y: p.y - 20 } };
         strokes.push(st); undoS.push({ add: st }); redoS = []; redraw(); syncUndo();
       } else if (tool === 'erase') { drawing = true; eraseAt(p); }
       else { drawing = true; cur = { t: tool, c: color, w: size, k: penKind, p: [p] }; }
@@ -1288,7 +1302,7 @@
       toolSetter = setTool;
       tool = id; spot = null; laser = []; if (!lensPin) lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'point' ? 'crosshair' : id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
       if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
@@ -1318,6 +1332,7 @@
       if (col === color) b.classList.add('on');
       cw.append(b);
     });
+    colorSetter = (col) => { color = col; showDot(); const i = COLORS.indexOf(col); [...cw.children].forEach((x2, k) => x2.classList.toggle('on', k === i)); sw.style.background = col; };
     const lw = document.createElement('div'); lw.className = 'lw';
     const dot = document.createElement('i'); dot.className = 'dot';
     const rng = document.createElement('input'); rng.type = 'range'; rng.min = 1; rng.max = 30; rng.value = size; rng.title = 'ទំហំប៊ិច';
@@ -1420,7 +1435,7 @@
   const CM = 37.8; // px per cm
   function instSVG(kind) {
     const ns = 'http://www.w3.org/2000/svg';
-    let w, h, body = '';
+    let w, h, body = '', edges = [];
     if (kind === 'ruler') {
       w = Math.round(CM * 15 + 24); h = 66;
       body += `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" rx="6" fill="rgba(255,236,160,.93)" stroke="#a88a2a" stroke-width="2"/>`;
@@ -1430,6 +1445,7 @@
         if (mm % 10 === 0) body += `<text x="${x}" y="40" font-size="14" font-weight="700" text-anchor="middle" fill="#3b300a">${mm / 10}</text>`;
       }
       body += `<text x="${w - 30}" y="58" font-size="12" fill="#5a4a10">cm</text>`;
+      edges = [[[0, 1], [w, 1]]];
     } else if (kind === 'protractor') {
       const R = 190; w = R * 2 + 20; h = R + 34;
       const cx = w / 2, cy = R + 12;
@@ -1447,9 +1463,11 @@
         }
       }
       body += `<line x1="${cx - 14}" y1="${cy}" x2="${cx + 14}" y2="${cy}" stroke="#c0392b" stroke-width="2"/><line x1="${cx}" y1="${cy - 14}" x2="${cx}" y2="${cy}" stroke="#c0392b" stroke-width="2"/>`;
+      edges = [[[cx - R, cy], [cx + R, cy]]];
     } else {
       const a = kind === 'set45' ? 300 : 210, b = kind === 'set45' ? 300 : 364; // legs
       w = a + 20; h = b + 20;
+      edges = [[[10, h - 10], [10 + a, h - 10]], [[10, h - 10], [10, h - 10 - b]], [[10 + a, h - 10], [10, h - 10 - b]]];
       body += `<polygon points="10,${h - 10} ${10 + a},${h - 10} 10,${h - 10 - b}" fill="rgba(160,235,185,.6)" stroke="#2e8b57" stroke-width="2.2" stroke-linejoin="round"/>`;
       const ix = 52, iy = kind === 'set45' ? 52 : 70, iw = a - 110, ih = b - 130;
       if (kind === 'set45') body += `<polygon points="${ix},${h - 10 - iy} ${ix + iw * .55},${h - 10 - iy} ${ix},${h - 10 - iy - iw * .55}" fill="rgba(255,255,255,.7)" stroke="#2e8b57"/>`;
@@ -1464,60 +1482,168 @@
     const svg = document.createElementNS(ns, 'svg');
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.setAttribute('width', w); svg.setAttribute('height', h);
     svg.innerHTML = body;
-    return { svg, w, h };
+    return { svg, w, h, edges };
   }
 
   function addInstrument(kind) {
-    const { svg, w, h } = instSVG(kind);
+    const { svg, w, h, edges } = instSVG(kind);
     const el = document.createElement('div');
     el.className = 'ts-inst';
     el.style.width = w + 'px'; el.style.height = h + 'px';
     el.append(svg);
-    const rot = document.createElement('button'); rot.type = 'button'; rot.className = 'ts-irot'; rot.textContent = '↻'; rot.title = 'បង្វិល';
-    const x = document.createElement('button'); x.type = 'button'; x.className = 'ts-ix'; x.textContent = '✕'; x.title = 'ដកចេញ';
-    el.append(rot, x);
-    let px = Math.max(10, (stage.clientWidth - w) / 2 - 80 + Math.random() * 40), py = Math.max(10, (stage.clientHeight - h) / 2 + Math.random() * 40), ang = 0;
-    const apply = () => { el.style.left = px + 'px'; el.style.top = py + 'px'; el.style.transform = `rotate(${ang}deg)`; };
+    const hb = (cls, txt, title) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = txt; b.title = title; return b; };
+    const rot = hb('ts-irot', '↻', 'បង្វិល'), x = hb('ts-ix', '✕', 'ដកចេញ'), mv = hb('ts-imv', '✥', 'អូសដើម្បីផ្លាស់ទី'), sc = hb('ts-isc', '⤡', 'អូសដើម្បីពង្រីក / បង្រួម'), ed = hb('ts-ied', '✎', 'គូសបន្ទាត់តាមគែម');
+    el.append(rot, x, mv, sc, ed);
+    let px = Math.max(10, (stage.clientWidth - w) / 2 - 80 + Math.random() * 40), py = Math.max(10, (stage.clientHeight - h) / 2 + Math.random() * 40), ang = 0, zoom = 1, edgeMode = false;
+    const apply = () => { el.style.left = px + 'px'; el.style.top = py + 'px'; el.style.transform = `rotate(${ang}deg) scale(${zoom})`; el.style.setProperty('--inv', String(1 / zoom)); };
     apply();
     stage.append(el);
     x.onclick = () => el.remove();
-    let mode = null, sx = 0, sy = 0, bx = 0, by = 0, a0 = 0, g0 = 0, cxp = 0, cyp = 0;
+    ed.onclick = (ev) => { ev.stopPropagation(); edgeMode = !edgeMode; el.classList.toggle('edge', edgeMode); };
+    // local <-> stage coordinates of this (turned, scaled) instrument
+    const centre = () => ({ x: px + w / 2, y: py + h / 2 });
+    const toWorld = (lx, ly) => { const c = centre(), r = ang * Math.PI / 180, dx = (lx - w / 2) * zoom, dy = (ly - h / 2) * zoom; return { x: c.x + dx * Math.cos(r) - dy * Math.sin(r), y: c.y + dx * Math.sin(r) + dy * Math.cos(r) }; };
+    const toLocal = (wx, wy) => { const c = centre(), r = -ang * Math.PI / 180, ux = wx - c.x, uy = wy - c.y; return [(ux * Math.cos(r) - uy * Math.sin(r)) / zoom + w / 2, (ux * Math.sin(r) + uy * Math.cos(r)) / zoom + h / 2]; };
+    const proj = (edge, lx, ly) => { const [[ax, ay], [bx2, by2]] = edge, dx = bx2 - ax, dy = by2 - ay; return Math.max(0, Math.min(1, ((lx - ax) * dx + (ly - ay) * dy) / (dx * dx + dy * dy))); };
+    const edgeDist = (edge, lx, ly) => { const t = proj(edge, lx, ly), [[ax, ay], [bx2, by2]] = edge; return Math.hypot(lx - (ax + t * (bx2 - ax)), ly - (ay + t * (by2 - ay))); };
+    const stageXY = (e) => { const r = ink.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    let mode = null, sx = 0, sy = 0, bx = 0, by = 0, a0 = 0, g0 = 0, cxp = 0, cyp = 0, d0 = 1, z0 = 1, edge = null, t0 = 0;
+    const penTool = () => HAND_TOOLS.includes(tool);
+    const isProt = kind === 'protractor', PR = 190, pcx = w / 2, pcy = PR + 12; // protractor centre (local)
+    const badge = document.createElement('div'); badge.className = 'ts-ibadge'; badge.hidden = true; el.append(badge);
     el.addEventListener('pointerdown', (e) => {
-      if (e.target === x) return;
+      if (e.target === x || e.target === ed) return;
       el.setPointerCapture(e.pointerId);
       stage.append(el); // bring to front
+      const [wx, wy] = stageXY(e), [lx, ly] = toLocal(wx, wy), draw = edgeMode || penTool();
+      const handle = e.target === rot || e.target === sc || e.target === mv;
+      const near = draw && !handle && edges.slice().sort((p, q) => edgeDist(p, lx, ly) - edgeDist(q, lx, ly))[0];
       if (e.target === rot) {
         mode = 'rot';
         const r = el.getBoundingClientRect(); cxp = r.left + r.width / 2; cyp = r.top + r.height / 2;
         a0 = Math.atan2(e.clientY - cyp, e.clientX - cxp); g0 = ang;
+      } else if (e.target === sc) {
+        mode = 'scale';
+        const r = el.getBoundingClientRect(); cxp = r.left + r.width / 2; cyp = r.top + r.height / 2;
+        d0 = Math.hypot(e.clientX - cxp, e.clientY - cyp) || 1; z0 = zoom;
+      } else if (isProt && draw && !handle && Math.hypot(lx - pcx, ly - pcy) > 26 && ly < pcy - 8 && Math.hypot(lx - pcx, ly - pcy) < PR + 6) {
+        mode = 'ray'; // a ray from the protractor centre; its angle is written on the slide
+      } else if (near && (edgeMode || edgeDist(near, lx, ly) <= 20 / zoom)) {
+        edge = near; t0 = proj(edge, lx, ly); mode = 'edge';
       } else { mode = 'move'; sx = e.clientX; sy = e.clientY; bx = px; by = py; }
       e.preventDefault();
     });
     el.addEventListener('pointermove', (e) => {
-      if (!mode) return;
-      if (mode === 'move') { px = bx + e.clientX - sx; py = by + e.clientY - sy; }
-      else { ang = g0 + (Math.atan2(e.clientY - cyp, e.clientX - cxp) - a0) * 180 / Math.PI; if (e.shiftKey) ang = Math.round(ang / 15) * 15; }
-      apply();
+      if (!mode) { // protractor: show the angle under the pointer
+        if (isProt && e.target !== rot && e.target !== x) {
+          const [wx, wy] = stageXY(e), [lx, ly] = toLocal(wx, wy), dx = lx - pcx, dy = pcy - ly;
+          if (dy > 4 && Math.hypot(dx, dy) < PR) { badge.hidden = false; badge.textContent = Math.round(180 - Math.atan2(dy, dx) * 180 / Math.PI) + '°'; badge.style.left = lx + 'px'; badge.style.top = (ly - 26) + 'px'; badge.style.transform = `translate(-50%,-50%) rotate(${-ang}deg) scale(${1 / zoom})`; } else badge.hidden = true;
+        }
+        return;
+      }
+      if (mode === 'move') { px = bx + e.clientX - sx; py = by + e.clientY - sy; apply(); }
+      else if (mode === 'rot') { ang = g0 + (Math.atan2(e.clientY - cyp, e.clientX - cxp) - a0) * 180 / Math.PI; if (e.shiftKey) ang = Math.round(ang / 15) * 15; apply(); }
+      else if (mode === 'scale') { zoom = Math.max(.4, Math.min(2.6, z0 * (Math.hypot(e.clientX - cxp, e.clientY - cyp) / d0))); apply(); }
+      else if (mode === 'ray') {
+        const [wx, wy] = stageXY(e), [lx, ly] = toLocal(wx, wy);
+        let ux = lx - pcx, uy = ly - pcy; const L = Math.hypot(ux, uy) || 1; ux /= L; uy /= L;
+        if (uy > -0.02) uy = -0.02;
+        const len = PR, phi = Math.atan2(-uy, ux), deg = 180 - phi * 180 / Math.PI;
+        const A = toWorld(pcx, pcy), B = toWorld(pcx + ux * len, pcy + uy * len), Lb = toWorld(pcx + ux * (len + 26 / zoom), pcy + uy * (len + 26 / zoom));
+        cur = { t: 'line', c: color, w: size, p: [A, B], label: { text: Math.round(deg) + '°', x: Lb.x, y: Lb.y } }; redraw();
+      } else if (mode === 'edge') { // a straight line along the edge, from where you pressed to where you are
+        const [wx, wy] = stageXY(e), [lx, ly] = toLocal(wx, wy), t1 = proj(edge, lx, ly), [[ax, ay], [bx2, by2]] = edge;
+        // the pen sits just outside the instrument's edge, so the line stays visible next to it
+        let nx = -(by2 - ay), ny = bx2 - ax; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+        if (nx * ((ax + bx2) / 2 - w / 2) + ny * ((ay + by2) / 2 - h / 2) < 0) { nx = -nx; ny = -ny; }
+        const off = (size / 2 + 1.5) / zoom, ox = nx * off, oy = ny * off;
+        const A = toWorld(ax + t0 * (bx2 - ax) + ox, ay + t0 * (by2 - ay) + oy), B = toWorld(ax + t1 * (bx2 - ax) + ox, ay + t1 * (by2 - ay) + oy);
+        const lenCm = Math.hypot(B.x - A.x, B.y - A.y) / (CM * zoom), mid = toWorld(ax + (t0 + t1) / 2 * (bx2 - ax) + nx * (off + 24 / zoom), ay + (t0 + t1) / 2 * (by2 - ay) + ny * (off + 24 / zoom));
+        cur = { t: 'line', c: color, w: size, p: [A, B], label: { text: lenCm.toFixed(1) + ' cm', x: mid.x, y: mid.y } }; redraw();
+      }
     });
-    const up = () => { mode = null; };
+    const up = () => {
+      if ((mode === 'edge' || mode === 'ray') && cur && cur.t === 'line') {
+        if (Math.hypot(cur.p[1].x - cur.p[0].x, cur.p[1].y - cur.p[0].y) > 3) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; syncUndo(); }
+        cur = null; redraw();
+      }
+      mode = null;
+    };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-    el.addEventListener('wheel', (e) => { e.preventDefault(); ang += (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1); apply(); }, { passive: false });
+    el.addEventListener('pointerleave', () => { badge.hidden = true; });
+    el.addEventListener('wheel', (e) => { e.preventDefault(); if (e.ctrlKey) { zoom = Math.max(.4, Math.min(2.6, zoom * (e.deltaY < 0 ? 1.06 : .94))); } else { ang += (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1); } apply(); }, { passive: false });
     return el;
+  }
+
+  // Compass (ដែកឈាន): move the needle, set the radius, drag the pencil to draw an arc or a circle
+  function addCompass() {
+    const o = document.createElement('div'); o.className = 'ts-cmp';
+    const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%'); o.append(svg);
+    const mk = (cls, t, title) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ts-ch ' + cls; b.textContent = t; b.title = title; o.append(b); return b; };
+    const bP = mk('p', '✥', 'អូសដើម្បីផ្លាស់ទី (ម្ជុល)'), bQ = mk('q', '✎', 'អូសដើម្បីគូសធ្នូ ឬរង្វង់'), bH = mk('h', '↔', 'អូសដើម្បីកែកាំ'), bX = mk('x', '✕', 'ដកចេញ');
+    let P = { x: Math.max(180, stage.clientWidth * 0.34), y: stage.clientHeight * 0.62 }, r = 150, phi = -0.45;
+    const geo = () => {
+      const Q = { x: P.x + r * Math.cos(phi), y: P.y + r * Math.sin(phi) }, leg = r * 0.75 + 120, hgt = Math.sqrt(Math.max(1, leg * leg - (r / 2) * (r / 2)));
+      let nx = -Math.sin(phi), ny = Math.cos(phi); if (ny > 0) { nx = -nx; ny = -ny; }
+      return { Q, H: { x: (P.x + Q.x) / 2 + nx * hgt, y: (P.y + Q.y) / 2 + ny * hgt } };
+    };
+    const place = (b, pt) => { b.style.left = pt.x + 'px'; b.style.top = pt.y + 'px'; };
+    const paintC = () => {
+      const { Q, H } = geo(), cm = (r / CM).toFixed(1);
+      svg.innerHTML = `<line x1="${P.x}" y1="${P.y}" x2="${H.x}" y2="${H.y}" stroke="#8a97a6" stroke-width="9" stroke-linecap="round"/><line x1="${Q.x}" y1="${Q.y}" x2="${H.x}" y2="${H.y}" stroke="#8a97a6" stroke-width="9" stroke-linecap="round"/>
+        <line x1="${P.x}" y1="${P.y}" x2="${P.x + (H.x - P.x) * .12}" y2="${P.y + (H.y - P.y) * .12}" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+        <line x1="${Q.x}" y1="${Q.y}" x2="${Q.x + (H.x - Q.x) * .12}" y2="${Q.y + (H.y - Q.y) * .12}" stroke="${color === '#ffffff' ? '#aaa' : color}" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="${H.x}" cy="${H.y}" r="12" fill="#2b73a3" stroke="#fff" stroke-width="3"/><circle cx="${P.x}" cy="${P.y}" r="4" fill="#222"/>
+        <text x="${(P.x + Q.x) / 2}" y="${(P.y + Q.y) / 2 - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="#0f5173" stroke="#fff" stroke-width="4" paint-order="stroke">r = ${cm} cm</text>`;
+      place(bP, P); place(bQ, Q); place(bH, H); place(bX, { x: H.x + 26, y: H.y - 26 });
+    };
+    const xy = (e) => { const b = ink.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
+    const grab = (btn, start, move, end) => {
+      btn.addEventListener('pointerdown', (e) => { btn.setPointerCapture(e.pointerId); stage.append(o); start(e); btn._on = true; e.preventDefault(); });
+      btn.addEventListener('pointermove', (e) => { if (btn._on) { if (e.buttons === 0) { btn._on = false; end && end(); return; } move(e); } });
+      const stop = () => { if (btn._on) { btn._on = false; end && end(); } };
+      btn.addEventListener('pointerup', stop); btn.addEventListener('pointercancel', stop); btn.addEventListener('lostpointercapture', stop);
+    };
+    let off = { x: 0, y: 0 };
+    grab(bP, (e) => { const p = xy(e); off = { x: p.x - P.x, y: p.y - P.y }; }, (e) => { const p = xy(e); P = { x: p.x - off.x, y: p.y - off.y }; paintC(); });
+    grab(bH, () => {}, (e) => { const p = xy(e); r = Math.max(30, Math.min(700, 2 * ((p.x - P.x) * Math.cos(phi) + (p.y - P.y) * Math.sin(phi)))); paintC(); });
+    let lastPhi = 0;
+    grab(bQ, () => { lastPhi = phi; cur = { t: 'pen', c: color, w: size, p: [geo().Q] }; redraw(); }, (e) => {
+      const p = xy(e), target = Math.atan2(p.y - P.y, p.x - P.x);
+      let d = target - lastPhi; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+      const n = Math.max(1, Math.ceil(Math.abs(d) / 0.04));
+      for (let k = 1; k <= n; k++) { const ph = lastPhi + d * k / n; cur.p.push({ x: P.x + r * Math.cos(ph), y: P.y + r * Math.sin(ph), t: performance.now() }); }
+      lastPhi = lastPhi + d; phi = lastPhi; paintC(); redraw();
+    }, () => { if (cur && cur.t === 'pen') { if (cur.p.length > 2) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; syncUndo(); } cur = null; redraw(); } });
+    bX.onclick = () => o.remove();
+    stage.append(o); paintC();
+    return o;
   }
 
   function geoBox() {
     const box = document.createElement('div');
     box.className = 'ts-geo';
-    box.innerHTML = '<p class="gh">ចុចដើម្បីដាក់លើស្លាយ · អូសដើម្បីផ្លាស់ទី · ↻ ឬកង់កណ្ដុរដើម្បីបង្វិល</p>';
-    [['ruler', '📏', 'Ruler', 'បន្ទាត់'], ['protractor', '◠', 'Protractor', 'ម៉ែត្រមុំ'], ['set45', '◣', 'Set square 45°', 'ក្រដាសត្រីកោណ 45°'], ['set60', '◺', 'Set square 30°–60°', 'ក្រដាសត្រីកោណ 30°–60°']].forEach(([k, ic, en, km]) => {
+    const pen = document.createElement('div'); pen.className = 'gpen';
+    const tb = (txt, tl, id) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'gt'; b.dataset.t = id; b.textContent = txt; b.title = tl; b.onclick = () => { if (toolSetter) toolSetter(tool === id ? 'none' : id); sync(); }; return b; };
+    const penB = tb('✎ ប៊ិច', 'ប៊ិច៖ គូសលើស្លាយ ឬតាមគែមឧបករណ៍', 'pen'), ptB = tb('● ចំណុច A B C', 'ដាក់ចំណុចមានអក្សរ A B C', 'point');
+    const sync = () => { [penB, ptB].forEach((b) => b.classList.toggle('on', tool === b.dataset.t)); };
+    box.addEventListener('pointerenter', sync);
+    const cr = document.createElement('div'); cr.className = 'gcol';
+    COLORS.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'gc'; b.style.background = c; b.title = c; b.onclick = () => { if (colorSetter) colorSetter(c); if (tool === 'none' && toolSetter) toolSetter('pen'); sync(); }; cr.append(b); });
+    const sr = document.createElement('input'); sr.type = 'range'; sr.min = 1; sr.max = 14; sr.value = size; sr.title = 'ទំហំប៊ិច'; sr.oninput = () => { if (sizeSetter) sizeSetter(+sr.value, false); };
+    pen.append(penB, ptB, cr, sr);
+    box.append(pen);
+    box.insertAdjacentHTML('beforeend', '<p class="gh">ចុចឧបករណ៍ដើម្បីដាក់លើស្លាយ · ✥ ផ្លាស់ទី · ↻ បង្វិល · ⤡ ពង្រីក · ជ្រើសប៊ិច ហើយអូសតាមគែមឧបករណ៍ដើម្បីគូសត្រង់ និងបង្ហាញប្រវែង · លើម៉ែត្រមុំ៖ អូសដើម្បីគូសកាំរស្មី និងបង្ហាញមុំ</p>');
+    [['ruler', '📏', 'Ruler', 'បន្ទាត់'], ['protractor', '◠', 'Protractor', 'ម៉ែត្រមុំ'], ['compass', '◔', 'Compass', 'ដែកឈាន'], ['set45', '◣', 'Set square 45°', 'ក្រដាសត្រីកោណ 45°'], ['set60', '◺', 'Set square 30°–60°', 'ក្រដាសត្រីកោណ 30°–60°']].forEach(([k, ic, en, km]) => {
       const b = document.createElement('button'); b.type = 'button';
       b.innerHTML = `<span class="gi">${ic}</span><span><b>${en}</b><small>${km}</small></span>`;
-      b.onclick = () => addInstrument(k);
+      b.onclick = () => { if (tool === 'none' && toolSetter) toolSetter('pen'); (k === 'compass' ? addCompass : addInstrument)(k); };
       box.append(b);
     });
     const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'gclr';
     clr.textContent = 'ដកឧបករណ៍ទាំងអស់ចេញ';
-    clr.onclick = () => stage.querySelectorAll('.ts-inst').forEach((n) => n.remove());
+    clr.onclick = () => stage.querySelectorAll('.ts-inst, .ts-cmp').forEach((n) => n.remove());
     box.append(clr);
     return box;
   }

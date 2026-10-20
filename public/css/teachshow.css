@@ -612,3 +612,28 @@ body.teach-show-on { overflow: hidden; }
 .cl-sci { gap: .4em; margin-top: .5em; }
 .cl-sci button { height: 2.1em; font-size: 1em; }
 .cl-mode .tg { height: 1.9em; padding: 0 .9em; font-size: .82em; }
+
+/* geometry: move / rotate / zoom handles and draw-along-edge */
+.ts-inst button { transform: scale(var(--inv, 1)); transform-origin: center; }
+.ts-imv, .ts-isc, .ts-ied { position: absolute; width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: #0f5173; color: #fff; font-size: 15px; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+.ts-imv { left: 50%; top: -12px; margin-left: -15px; cursor: move; }
+.ts-isc { right: -8px; bottom: -8px; cursor: nwse-resize; }
+.ts-ied { left: -8px; bottom: -8px; background: #2b73a3; }
+.ts-inst.edge .ts-ied { background: #ee0000; }
+.ts-inst.edge { cursor: crosshair; }
+
+/* Geometry: pen row, protractor readout, compass */
+.gpen { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
+.ts-geo .gt { flex: 1 1 auto; justify-content: center; padding: 7px 10px; font-size: 13px; font-weight: 800; }
+.ts-geo .gt.on { background: #ee0000; }
+.gcol { display: flex; gap: 6px; flex: 1 0 100%; }
+.ts-geo .gc { width: 26px; height: 26px; min-height: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; flex: none; }
+.gpen input[type=range] { flex: 1 0 100%; accent-color: #1c7ed6; }
+.ts-ibadge { position: absolute; z-index: 5; pointer-events: none; background: #0f5173; color: #fff; font-weight: 800; font-size: 16px; padding: 2px 10px; border-radius: 99px; box-shadow: 0 3px 8px rgba(0,0,0,.35); white-space: nowrap; }
+.ts-ibadge[hidden] { display: none; }
+.ts-cmp { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+.ts-cmp svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.ts-ch { position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; min-height: 0; padding: 0; border-radius: 50%; border: 3px solid #fff; background: #0f5173; color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 3px 8px rgba(0,0,0,.4); pointer-events: auto; touch-action: none; cursor: grab; }
+.ts-ch.q { background: #ee0000; }
+.ts-ch.h { background: #2b73a3; }
+.ts-ch.x { background: #6b7a89; width: 26px; height: 26px; margin: -13px 0 0 -13px; font-size: 12px; }
