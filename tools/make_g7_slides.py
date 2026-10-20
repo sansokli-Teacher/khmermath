@@ -434,6 +434,45 @@ def make_slides(n, tex):
     return title, slides
 
 
+def add_div7(slides):
+    """Lesson 2: the divisibility-by-7 rule (it is in the teacher's own 'Properties of Numbers' deck but not in the book). It goes after
+    1.3 (4 and 8), as 1.4, so the book's 1.4 (sums and differences) becomes 1.5. Hand-written slides, same layout as the generated ones."""
+    OLD, NEW = '1.4. លក្ខណៈចែកដាច់នៃផលបូកនិងផលដក', '1.5. លក្ខណៈចែកដាច់នៃផលបូកនិងផលដក'
+    at = next((k for k, s in enumerate(slides) if OLD in s['html']), None)
+    if at is None:
+        return slides
+    K = '1. លក្ខណៈចែកដាច់នៃចំនួនគត់ · 1.4. ភាពចែកដាច់នឹង 7'
+    sl = lambda kind, head, body: {'k': kind, 'html': f'<p class="ts-kicker">{K}</p><h2>{head}</h2>' + body}
+    ex = (r'<p class="ts-exh">ឧទាហរណ៍ 1</p><p>\(119 = 7\times 17\), \(203 = 7\times 29\), \(343 = 7\times 49\) ។ គេសង្កេតឃើញថា</p>'
+          r'<ul class="ts-bullets">'
+          r'<li>\(119\) ចែកដាច់នឹង \(7\) ហើយ \(11 - 2\times 9 = -7\) ចែកដាច់នឹង \(7\) ។</li>'
+          r'<li>\(203\) ចែកដាច់នឹង \(7\) ហើយ \(20 - 2\times 3 = 14\) ចែកដាច់នឹង \(7\) ។</li>'
+          r'<li>\(343\) ចែកដាច់នឹង \(7\) ហើយ \(34 - 2\times 3 = 28\) ចែកដាច់នឹង \(7\) ។</li></ul>'
+          r'<p class="ts-exh">ឧទាហរណ៍ 2</p><p>\(205\) មិនចែកដាច់នឹង \(7\) ហើយ \(20 - 2\times 5 = 10\) ក៏មិនចែកដាច់នឹង \(7\) ដែរ ។</p>')
+    key = (r'<ol class="ts-bullets"><li>មួយចំនួនគត់ចែកដាច់នឹង \(7\) កាលណាផលដកនៃចំនួនដែលនៅសល់ (ក្រោយដកខ្ទង់ចុងក្រោយចេញ) '
+           r'និងពីរដងនៃខ្ទង់ចុងក្រោយ ចែកដាច់នឹង \(7\) ។</li>'
+           r'<li>ចំពោះ \(N = 10a + b\) (\(b\) ជាខ្ទង់ចុងក្រោយ) ៖ \(N\) ចែកដាច់នឹង \(7\) កាលណា \(a - 2b\) ចែកដាច់នឹង \(7\) ។</li>'
+           r'<li>បើចំនួនដែលបានមកនៅធំ គេអាចអនុវត្តវិធីនេះម្តងទៀតលើវា ។</li></ol>')
+    prac1 = r'<p>តើចំនួនណាខាងក្រោមចែកដាច់នឹង \(7\) ?</p><p>ក. \(252\) ខ. \(385\) គ. \(1001\) ឃ. \(2025\) ។</p>'
+    sol1 = (r'<ul class="ts-bullets">'
+            r'<li>ក. \(25 - 2\times 2 = 21\) ចែកដាច់នឹង \(7\) ដូច្នេះ \(252\) ចែកដាច់នឹង \(7\) ។</li>'
+            r'<li>ខ. \(38 - 2\times 5 = 28\) ចែកដាច់នឹង \(7\) ដូច្នេះ \(385\) ចែកដាច់នឹង \(7\) ។</li>'
+            r'<li>គ. \(100 - 2\times 1 = 98\) រួច \(9 - 2\times 8 = -7\) ចែកដាច់នឹង \(7\) ដូច្នេះ \(1001\) ចែកដាច់នឹង \(7\) ។</li>'
+            r'<li>ឃ. \(202 - 2\times 5 = 192\) រួច \(19 - 2\times 2 = 15\) មិនចែកដាច់នឹង \(7\) ដូច្នេះ \(2025\) មិនចែកដាច់នឹង \(7\) ។</li></ul>')
+    prac2 = r'<p>ចូររកលេខក្នុងប្រអប់ ដើម្បីឱ្យចំនួន \(4\square 6\) ចែកដាច់នឹង \(7\) ។</p>'
+    sol2 = (r'<p>ចំនួន \(4\square 6\) មាន \(a = 40+\square\) និង \(b = 6\) ។ គេបាន \(a - 2b = 40+\square - 12 = 28+\square\) ។</p>'
+            r'<p>ដើម្បីឱ្យ \(28+\square\) ចែកដាច់នឹង \(7\) ហើយ \(28\) ចែកដាច់នឹង \(7\) នោះ \(\square\) ត្រូវចែកដាច់នឹង \(7\) ដែរ ។ ដូច្នេះ \(\square = 0\) ឬ \(\square = 7\) ។</p>'
+            r'<p>ចម្លើយ ៖ \(406 = 7\times 58\) និង \(476 = 7\times 68\) ។</p>')
+    new = [sl('ex', 'ឧទាហរណ៍', ex), sl('key', 'ជាទូទៅ', key), sl('prac', 'លំហាត់គំរូ', prac1), sl('sol', 'ដំណោះស្រាយ', sol1),
+           sl('prac', 'ប្រតិបត្តិ', prac2), sl('sol', 'ចម្លើយ', sol2)]
+    out = slides[:at] + new + slides[at:]
+    for s in out:
+        s['html'] = s['html'].replace(OLD, NEW)
+    if out and '2, 3, 4, 5, 8, 9' in out[0]['html']:
+        out[0]['html'] = out[0]['html'].replace('2, 3, 4, 5, 8, 9', '2, 3, 4, 5, 7, 8, 9')
+    return out
+
+
 def parts_of(tex):
     return [re.sub(r'\s+', ' ', re.sub(r'^\s*[0-9០-៩]+\s*[\.\)]\s*', '', p)).strip() for p in re.findall(r'\\subsection\*?\{([^}]*)\}', tex)]
 
@@ -444,6 +483,8 @@ def main():
         path = os.path.join(SRC, f'lesson{n}.tex')
         tex = open(path, encoding='utf8').read()
         title, slides = make_slides(n, tex)
+        if n == 2:
+            slides = add_div7(slides)
         meta[n] = {'t': title, 'p': [p for p in parts_of(strip_comments(tex)) if p]}
         decks[f'7-{n}'] = slides
         print(f'lesson {n:2d}: {len(slides):3d} slides  {title}')

@@ -2056,9 +2056,20 @@
   // ---- lesson looks: a lesson listed here is shown in the "purple" look of the teacher's own decks (cream card on a lavender band, blue
   // headings, blue outlined boxes) and gets a branded cover slide in front of the lesson's own slides. To give another lesson the same
   // look, add it here ("grade-lesson": { name, en: English subtitle for the cover }).
-  const LESSON_THEMES = {
-    '7-2': { name: 'purple', en: 'DIVISORS AND MULTIPLES' },
-  };
+  // (Lesson 2 tried this look and went back to the Lesson 1 design, so nothing uses it right now.)
+  const LESSON_THEMES = {};
+  // lessons whose generated deck gets the same first slide as Lesson 1: the school (logo, name), the teacher, the class, the school year.
+  // The lesson's own cover (title + objectives) then comes second, exactly like Lesson 1. Add "grade-lesson" keys to give more lessons this.
+  const BRANDED_LESSONS = new Set(['7-2']);
+  function brandSlide() {
+    return {
+      k: 'title', c: 'brand',
+      html: '<img class="bd-logo" src="/ngs.png" alt="">'
+        + '<div class="bd-name">វិទ្យាល័យព្រះស៊ីសុវត្ថិ</div><div class="bd-sub">(សាលារៀនជំនាន់ថ្មី)</div>'
+        + '<div class="bd-info"><div><small>គ្រូបង្រៀន</small><b data-ts="teacher"></b></div>'
+        + '<div><small>ថ្នាក់</small><b data-ts="class"></b></div><div><small>ឆ្នាំសិក្សា</small><b>២០២៦-២០២៧</b></div></div>',
+    };
+  }
   let themeCls = '';                                          // 'ts-theme-purple' while a themed lesson is open
   function purpleCover(theme, opt) {
     const star = (x, y, s, c) => `<path d="M${x} ${y - s} Q${x} ${y} ${x + s} ${y} Q${x} ${y} ${x} ${y + s} Q${x} ${y} ${x - s} ${y} Q${x} ${y} ${x} ${y - s}Z" fill="${c}"/>`;
@@ -2081,8 +2092,11 @@
     slides = ((window.TEACH_SLIDES && window.TEACH_SLIDES[`${opt.grade}-${opt.lesson}`]) || []).map((x) => ({ ...x }));
     strokes = []; undoS = []; redoS = []; cur = null; i = 0; slideEl = null;
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
-    const theme = LESSON_THEMES[`${opt.grade}-${opt.lesson}`] || null, pre = theme ? 1 : 0;   // pre = slides added in front
+    const lessonKey = `${opt.grade}-${opt.lesson}`;
+    const theme = LESSON_THEMES[lessonKey] || null, branded = BRANDED_LESSONS.has(lessonKey);
+    const pre = (theme ? 1 : 0) + (branded ? 1 : 0);                // pre = slides added in front of the lesson's own slides
     themeCls = theme ? `ts-theme-${theme.name}` : '';
+    if (branded) slides.unshift(brandSlide());
     if (theme) slides.unshift(purpleCover(theme, opt));
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
     close();
