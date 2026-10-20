@@ -698,6 +698,13 @@
     fanfare(on) { const c = on && this.ctx(); if (!c) return; [523, 659, 784, 1047, 1319].forEach((f, k) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + k * .11; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .5); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .55); }); },
     beep(on, hi) { const c = on && this.ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'sine'; o.frequency.value = hi ? 1175 : 784; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .22); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .25); },
     alarm(on) { const c = on && this.ctx(); if (!c) return; [0, .16].forEach((d) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + d; o.type = 'square'; o.frequency.value = 988; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .13); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .15); }); },
+    roll(on, ms) { // drum roll: quick soft taps that speed up
+      if (!on || !this.ctx()) return () => {};
+      let stopped = false, k = 0; const t0 = performance.now();
+      const hit = () => { if (stopped) return; const c = audio, o = c.createOscillator(), g = c.createGain(), t = c.currentTime; o.type = 'triangle'; o.frequency.setValueAtTime(190 + Math.random() * 40, t); o.frequency.exponentialRampToValueAtTime(90, t + .06); g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.0001, t + .08); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .1); const p = (performance.now() - t0) / ms; if (p < 1) setTimeout(hit, Math.max(34, 95 - 60 * p)); };
+      hit(); return () => { stopped = true; };
+    },
+    crash(on) { const c = on && this.ctx(); if (!c) return; const n = c.sampleRate * .9, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 2.2); const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'highpass'; f.frequency.value = 3800; g.gain.value = .3; src.connect(f).connect(g).connect(c.destination); src.start(); [784, 1047].forEach((fr, i) => { const o = c.createOscillator(), og = c.createGain(), t = c.currentTime + i * .05; o.type = 'triangle'; o.frequency.value = fr; og.gain.setValueAtTime(.0001, t); og.gain.exponentialRampToValueAtTime(.12, t + .01); og.gain.exponentialRampToValueAtTime(.0001, t + .45); o.connect(og).connect(c.destination); o.start(t); o.stop(t + .5); }); },
     boom(on) { const c = on && this.ctx(); if (!c) return; const n = c.sampleRate * .35, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .5; src.connect(f).connect(g).connect(c.destination); src.start(); },
   };
 
@@ -767,29 +774,34 @@
       c.restore();
     }
 
-    // ---- fireworks (canvas over the whole spin window) ----
-    let fwRaf = 0, parts = [], fwEnd = 0, nextBurst = 0;
-    function fireworks(ms) {
+    // ---- fireworks (canvas over the whole spin window; also works full screen) ----
+    let fwRaf = 0, parts = [], fwUntil = 0, nextBurst = 0, fwBox = { w: 0, h: 0 }, fc = null;
+    const fwSize = () => {
       const r = wrap.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
-      fw.width = Math.floor(r.width * dpr); fw.height = Math.floor(r.height * dpr);
-      const fc = fw.getContext('2d'); fc.setTransform(dpr, 0, 0, dpr, 0, 0);
-      parts = []; fwEnd = performance.now() + ms; nextBurst = 0;
-      cancelAnimationFrame(fwRaf);
-      const burst = () => {
-        const x = r.width * (.15 + Math.random() * .7), y = r.height * (.12 + Math.random() * .5), hue = Math.random() * 360, n = 46;
-        for (let k = 0; k < n; k++) { const a = Math.PI * 2 * k / n + Math.random() * .2, v = 1.6 + Math.random() * 3.2; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 40, w: 2 + Math.random() * 2 }); }
-        snd.boom(st.sound);
-      };
-      const loop = (now) => {
-        fc.clearRect(0, 0, r.width, r.height);
-        if (now < fwEnd && now >= nextBurst) { burst(); nextBurst = now + 380 + Math.random() * 260; }
-        parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += .045; q.vx *= .992; q.life -= .011; fc.globalAlpha = Math.max(0, q.life); fc.fillStyle = `hsl(${q.hue} 95% 60%)`; fc.beginPath(); fc.arc(q.x, q.y, q.w, 0, Math.PI * 2); fc.fill(); });
-        fc.globalAlpha = 1;
-        parts = parts.filter((q) => q.life > 0);
-        if (now < fwEnd || parts.length) fwRaf = requestAnimationFrame(loop); else fc.clearRect(0, 0, r.width, r.height);
-      };
-      fwRaf = requestAnimationFrame(loop);
-    }
+      const w = Math.floor(r.width * dpr), h = Math.floor(r.height * dpr);
+      if (fw.width !== w || fw.height !== h) { fw.width = w; fw.height = h; }
+      fc = fw.getContext('2d'); fc.setTransform(dpr, 0, 0, dpr, 0, 0); fwBox = { w: r.width, h: r.height };
+    };
+    const addBurst = (x, y, n = 46) => {
+      const hue = Math.random() * 360;
+      for (let k = 0; k < n; k++) { const a = Math.PI * 2 * k / n + Math.random() * .2, v = 1.6 + Math.random() * 3.2; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 40, w: 2 + Math.random() * 2 }); }
+    };
+    const fwLoop = (now) => {
+      fwRaf = 0;
+      fc.clearRect(0, 0, fwBox.w, fwBox.h);
+      if (now < fwUntil && now >= nextBurst) { addBurst(fwBox.w * (.15 + Math.random() * .7), fwBox.h * (.12 + Math.random() * .5)); snd.boom(st.sound); nextBurst = now + 380 + Math.random() * 260; }
+      parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += .045; q.vx *= .992; q.life -= .011; fc.globalAlpha = Math.max(0, q.life); fc.fillStyle = `hsl(${q.hue} 95% 60%)`; fc.beginPath(); fc.arc(q.x, q.y, q.w, 0, Math.PI * 2); fc.fill(); });
+      fc.globalAlpha = 1;
+      parts = parts.filter((q) => q.life > 0);
+      if (now < fwUntil || parts.length) fwRaf = requestAnimationFrame(fwLoop); else fc.clearRect(0, 0, fwBox.w, fwBox.h);
+    };
+    function fireworks(ms) { fwSize(); fwUntil = performance.now() + ms; nextBurst = 0; if (!fwRaf) fwRaf = requestAnimationFrame(fwLoop); }
+    // a small burst at one card when its group locks in
+    const burstAt = (el) => {
+      fwSize(); const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+      addBurst(r.right - w.left - 30, r.top - w.top + 26, 30); snd.boom(st.sound);
+      if (!fwRaf) fwRaf = requestAnimationFrame(fwLoop);
+    };
 
     // ---- result pop-up, sized from the spin window ----
     const showPop = (it) => {
@@ -828,18 +840,53 @@
         } catch { flash(cp, 'ចម្លងមិនបាន — សូមប្រើ ទាញយក', '📋 ចម្លងរូបភាព'); }
       };
     };
+    let gRun = 0;
+    const floatEl = () => wrap.closest('.ts-float');
+    const toggleFull = () => { const f = floatEl(); try { if (document.fullscreenElement) document.exitFullscreen(); else (f.requestFullscreen || f.webkitRequestFullscreen).call(f); } catch { /* not supported */ } };
     const showGroups = (again) => {
       if (again) makeGroups();
+      const id = ++gRun, n = st.groups.length, calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       pop.hidden = false; pop.classList.add('big');
       const total = st.groups.reduce((a, g) => a + g.length, 0), tch = teacherName();
-      pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-ban"><b>បែងចែកក្រុមរួចរាល់! 🎉</b><small>${esc(cname || '')}${cname ? ' · ' : ''}${kh(total)} នាក់ · ${khDate()}</small>${tch ? `<small>គ្រូបង្រៀន៖ ${esc(tch)}</small>` : ''}</div>
-        <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g" style="--c:${PPAL[k % PPAL.length]}"><div class="pp-gh"><b>ក្រុម ${kh(k + 1)}</b><span>${kh(g.length)} នាក់</span></div><ol>${g.map((m) => `<li>${esc(m)}</li>`).join('')}</ol></div>`).join('')}</div>
-        <div class="pp-brand">khmermath.org · កង់ចាប់ឈ្មោះ</div>
-        <div class="pp-act"><button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button><button type="button" class="pp-again">ចែកម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
-      pop.querySelector('.pp-ok').onclick = () => { pop.hidden = true; st.used.clear(); refresh(); };
-      pop.querySelector('.pp-again').onclick = () => showGroups(true);
-      wirePoster(st.groups.map((g, k) => ({ title: `ក្រុម ${kh(k + 1)}`, items: g.map((n) => ({ n })) })), 'បែងចែកក្រុមរួចរាល់!', 'groups');
-      if (again) snd.tick(st.sound);
+      pop.innerHTML = `<div class="pp-card pp-all"><div class="pp-ban"><b class="pp-title">កំពុងបែងចែកក្រុម…</b><small>${esc(cname || '')}${cname ? ' · ' : ''}${kh(total)} នាក់ · ${khDate()}</small>${tch ? `<small>គ្រូបង្រៀន៖ ${esc(tch)}</small>` : ''}<button type="button" class="pp-fs" title="ពេញអេក្រង់">⛶</button></div>
+        <div class="pp-grid">${st.groups.map((g, k) => `<div class="pp-g wait" style="--c:${PPAL[k % PPAL.length]}"><div class="pp-gh"><b>ក្រុម ${kh(k + 1)}</b><span>${kh(g.length)} នាក់</span></div><ol>${g.map(() => '<li class="ph">• • •</li>').join('')}</ol></div>`).join('')}</div>
+        <div class="pp-act"><button type="button" class="pp-skip">រំលង ▶▶</button><button type="button" class="pp-png" hidden>⬇ ទាញយក PNG</button><button type="button" class="pp-copy" hidden>📋 ចម្លងរូបភាព</button><button type="button" class="pp-again" hidden>ចែកម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
+      const q = (c) => pop.querySelector(c), cards = [...pop.querySelectorAll('.pp-g')], title = q('.pp-title');
+      q('.pp-ok').onclick = () => { gRun++; stopRoll(); pop.hidden = true; st.used.clear(); refresh(); };
+      q('.pp-again').onclick = () => showGroups(true);
+      q('.pp-fs').onclick = toggleFull;
+      wirePoster(st.groups.map((g, k) => ({ title: `ក្រុម ${kh(k + 1)}`, items: g.map((nm) => ({ n: nm })) })), 'បែងចែកក្រុមរួចរាល់!', 'groups');
+      const fill = (card, names) => { card.querySelector('ol').innerHTML = names.map((m) => `<li>${esc(m)}</li>`).join(''); };
+      let remaining = st.groups.flat(), cur = -1, phase = 'start', t0 = 0, last = 0, skip = false, stopRollFn = null;
+      const stopRoll = () => { if (stopRollFn) { stopRollFn(); stopRollFn = null; } };
+      q('.pp-skip').onclick = () => { skip = true; };
+      const per = calm ? 0 : Math.max(800, Math.min(1500, 9000 / n)), pause = calm ? 0 : 380;
+      const lock = (i, fx) => {
+        const card = cards[i]; card.className = 'pp-g done'; fill(card, st.groups[i]);
+        const ids = new Set(st.groups[i]); remaining = remaining.filter((m) => !ids.has(m));
+        if (fx) { snd.crash(st.sound); burstAt(card); }
+      };
+      const finale = () => {
+        stopRoll(); title.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉';
+        pop.querySelector('.pp-skip').hidden = true; ['.pp-png', '.pp-copy', '.pp-again'].forEach((c) => { q(c).hidden = false; });
+        snd.fanfare(st.sound); fireworks(3600);
+      };
+      const frame = (now) => {
+        if (id !== gRun) { stopRoll(); return; }
+        if (skip) { for (let k = Math.max(cur, 0); k < n; k++) if (cards[k].className !== 'pp-g done') lock(k, false); return finale(); }
+        if (phase === 'start' || (phase === 'pause' && now - t0 >= pause)) {
+          cur++; if (cur >= n) return finale();
+          phase = 'roll'; t0 = now; cards[cur].className = 'pp-g active'; title.textContent = `កំពុងបែងចែក ក្រុមទី ${kh(cur + 1)}…`;
+          { const gr = q('.pp-grid'); gr.scrollTo({ top: Math.max(0, cards[cur].offsetTop - gr.offsetTop - 8), behavior: 'smooth' }); } // scroll only the list, never the page
+          stopRoll(); stopRollFn = snd.roll(st.sound, per);
+        }
+        if (phase === 'roll') {
+          if (now - t0 >= per) { stopRoll(); lock(cur, true); phase = 'pause'; t0 = now; }
+          else if (now - last > 80) { last = now; fill(cards[cur], shuffle(remaining).slice(0, st.groups[cur].length)); }
+        }
+        requestAnimationFrame(frame);
+      };
+      if (calm) { cards.forEach((c, i) => lock(i, false)); finale(); } else requestAnimationFrame(frame);
     };
     dvd.onclick = () => { if (st.spin) return; if (st.mode !== 'group') { st.mode = 'group'; st.used.clear(); st.ang = 0; } showGroups(false); refresh(); };
 
@@ -1417,7 +1464,10 @@
     stage.append(slideEl, ink);
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
-    makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: '52%', y: '3%', w: '40%', h: '92%' }).hidden = true;
+    { // Spin starts about a quarter of the slide in size, in the top-right corner
+      const sw = stage.clientWidth, sh = stage.clientHeight, w = Math.round(Math.min(Math.max(sw * 0.3, 340), 480)), h = Math.round(Math.min(sh - 16, w * 1.12));
+      makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: (sw - w - 10) + 'px', y: '8px', w: w + 'px', h: h + 'px' }).hidden = true;
+    }
     makeFloat('wtime', 'Timer', timerBox(), { x: '64%', y: '3%', w: '300px' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
