@@ -558,10 +558,13 @@
     inner.append(body);
     const rs = document.createElement('div');
     rs.className = 'ts-rs';
-    el.append(bar, inner, rs);
+    const rl = document.createElement('div');
+    rl.className = 'ts-rs ts-rl'; rl.title = 'ប្ដូរទំហំ';
+    el.append(bar, inner, rs, rl);
     stage.append(el);
     drag(el, bar);
     resize(el, rs);
+    resizeLeft(el, rl);
     floats.push(el);
     return el;
   }
@@ -586,6 +589,26 @@
     bar.addEventListener('pointerup', () => { dragging = false; });
     bar.addEventListener('pointercancel', () => { dragging = false; });
     bar.addEventListener('lostpointercapture', () => { dragging = false; });
+  }
+
+  // bottom-left corner: grows to the left and down
+  function resizeLeft(el, handle) {
+    let sx = 0, sy = 0, sw = 0, sh = 0, sl = 0, on = false;
+    handle.addEventListener('pointerdown', (e) => {
+      on = true; sx = e.clientX; sy = e.clientY; sw = el.offsetWidth; sh = el.offsetHeight; sl = el.offsetLeft;
+      handle.setPointerCapture(e.pointerId);
+      e.preventDefault(); e.stopPropagation();
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!on) return;
+      if (e.buttons === 0) { on = false; return; }
+      const w = Math.max(180, sw - (e.clientX - sx));
+      el.style.width = w + 'px';
+      el.style.left = Math.max(0, sl + (sw - w)) + 'px';
+      el.style.height = Math.max(140, sh + (e.clientY - sy)) + 'px';
+    });
+    const stop = () => { on = false; };
+    handle.addEventListener('pointerup', stop); handle.addEventListener('pointercancel', stop); handle.addEventListener('lostpointercapture', stop);
   }
 
   function resize(el, handle) {
@@ -632,7 +655,7 @@
     const stageW = document.createElement('div'); stageW.className = 'sp-wheel';
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 640;
     const ptr = document.createElement('i'); ptr.className = 'sp-ptr';
-    const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'បង្វិល';
+    const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'SPIN';
     const disc = document.createElement('div'); disc.className = 'sp-disc';
     disc.append(cv, ptr, hub); stageW.append(disc);
     const info = document.createElement('div'); info.className = 'sp-info';

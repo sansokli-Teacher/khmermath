@@ -438,3 +438,15 @@ body.teach-show-on { overflow: hidden; }
 .sp-disc { position: relative; height: 100%; aspect-ratio: 1 / 1; max-width: 100%; }
 .sp-wheel canvas { position: static; width: 100%; height: 100%; max-width: none; object-fit: fill; }
 .sp-ptr { top: -6px; }
+
+/* spin button: dark teardrop with the point up, like the pointer */
+.sp-hub {
+  width: min(26cqmin, 112px); height: calc(min(26cqmin, 112px) * 1.08); aspect-ratio: auto; border: 0; border-radius: 0;
+  top: 50%; transform: translate(-50%, -64%); padding: 28% 0 0; display: grid; place-items: center;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 108'><path d='M50 3 C50 3 11 40 11 68 a39 39 0 0 0 78 0 C89 40 50 3 50 3Z' fill='%23222'/></svg>") center / 100% 100% no-repeat;
+  color: #fff; font-weight: 900; letter-spacing: .03em; font-family: 'Inter', 'Kantumruy Pro', system-ui, sans-serif; font-size: clamp(12px, 4.2cqmin, 20px);
+  text-shadow: 0 2px 4px rgba(0,0,0,.6); box-shadow: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5));
+}
+.sp-hub:hover:not(:disabled) { filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)) brightness(1.25); }
+.ts-rs.ts-rl { right: auto; left: 2px; background: linear-gradient(225deg, transparent 50%, #6ea0ff 50%); cursor: nesw-resize; width: 18px; height: 18px; }
+.sp-hub { --hw: min(26cqmin, 112px); width: var(--hw); height: calc(var(--hw) * 1.08); padding: calc(var(--hw) * .26) 0 0 !important; box-sizing: border-box; }
