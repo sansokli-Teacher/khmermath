@@ -775,50 +775,43 @@
   function timerBox() {
     const wrap = document.createElement('div');
     wrap.className = 'tm';
-    const ns = 'http://www.w3.org/2000/svg';
-    const CX = 214, CY = 124, R = 104, RW = 68, CIRC = 2 * Math.PI * RW;
+    const CX = 150, CY = 190, RF = 94; // dial centre and face radius
     let ticks = '';
     for (let k = 0; k < 60; k++) {
-      const major = k % 5 === 0, a = k * Math.PI / 30, r1 = 88, r2 = r1 - (major ? 15 : 8);
-      ticks += `<line x1="${CX + r1 * Math.sin(a)}" y1="${CY - r1 * Math.cos(a)}" x2="${CX + r2 * Math.sin(a)}" y2="${CY - r2 * Math.cos(a)}" stroke="${major ? '#1d4f91' : '#86abd9'}" stroke-width="${major ? 5 : 2.4}" stroke-linecap="round"/>`;
+      const major = k % 5 === 0, a = k * Math.PI / 30, r1 = 88, r2 = r1 - (major ? 17 : 9), w = major ? 6.5 : 3.6;
+      ticks += `<line x1="${CX + r1 * Math.sin(a)}" y1="${CY - r1 * Math.cos(a)}" x2="${CX + r2 * Math.sin(a)}" y2="${CY - r2 * Math.cos(a)}" stroke="${major ? '#2b73a3' : '#4b93bd'}" stroke-width="${w}" stroke-linecap="butt"/>`;
     }
-    wrap.innerHTML = `<svg viewBox="0 0 330 250" class="tm-svg" aria-hidden="true">
+    let ridges = '';
+    for (let k = 0; k < 9; k++) ridges += `<rect x="${118 + k * 8.6}" y="20" width="3.4" height="22" rx="1.2" fill="rgba(255,255,255,.55)"/>`;
+    wrap.innerHTML = `<svg viewBox="0 0 300 330" class="tm-svg" aria-hidden="true">
       <defs>
-        <clipPath id="tmGlass"><path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z"/></clipPath>
-        <linearGradient id="tmBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#52b8ff"/><stop offset="1" stop-color="#2f6be0"/></linearGradient>
-        <linearGradient id="tmSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc83d"/><stop offset="1" stop-color="#f2a413"/></linearGradient>
+        <linearGradient id="tmBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ba0c9"/><stop offset="1" stop-color="#21588a"/></linearGradient>
+        <linearGradient id="tmBtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f93bd"/><stop offset="1" stop-color="#2a6b99"/></linearGradient>
+        <linearGradient id="tmCore" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d93bd"/><stop offset="1" stop-color="#235b88"/></linearGradient>
       </defs>
-      <circle cx="${CX + 4}" cy="${CY + 8}" r="${R + 6}" fill="rgba(0,0,0,.12)"/>
-      <circle cx="${CX}" cy="${CY}" r="${R}" fill="#1d4f91"/>
-      <circle cx="${CX}" cy="${CY}" r="${R - 12}" fill="#fff"/>
+      <g transform="rotate(45 ${CX} ${CY})"><rect x="141" y="54" width="18" height="30" fill="#2a6592"/><rect x="128" y="36" width="44" height="26" rx="7" fill="url(#tmBtn)"/></g>
+      <rect x="138" y="44" width="24" height="40" fill="#2a6592"/>
+      <rect x="108" y="14" width="84" height="40" rx="8" fill="url(#tmBtn)"/>
+      ${ridges}
+      <circle cx="${CX + 3}" cy="${CY + 7}" r="124" fill="rgba(0,0,0,.14)"/>
+      <circle cx="${CX}" cy="${CY}" r="122" fill="url(#tmBody)"/>
+      <circle cx="${CX}" cy="${CY}" r="106" fill="#2b6a97"/>
+      <circle cx="${CX}" cy="${CY}" r="${RF}" fill="#fff"/>
+      <path class="tm-wedge" d="M${CX} ${CY}" fill="#8fc4e8"/>
       ${ticks}
-      <circle class="tm-red" cx="${CX}" cy="${CY}" r="${RW}" fill="none" stroke="#e8453c" stroke-width="22" stroke-dasharray="0 ${CIRC}" transform="rotate(-90 ${CX} ${CY})"/>
-      <circle cx="${CX}" cy="${CY}" r="50" fill="url(#tmBlue)"/>
-      <text class="tm-num" x="${CX}" y="${CY + 10}" text-anchor="middle" fill="#fff" font-size="52" font-weight="800">5</text>
-      <text class="tm-unit" x="${CX}" y="${CY + 34}" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">នាទី</text>
-      <g>
-        <path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z" fill="rgba(170,215,250,.28)"/>
-        <g clip-path="url(#tmGlass)">
-          <rect class="tm-top" x="20" y="22" width="80" height="100" fill="url(#tmSand)"/>
-          <rect class="tm-bot" x="20" y="226" width="80" height="0" fill="url(#tmSand)"/>
-          <line class="tm-flow" x1="60" y1="118" x2="60" y2="226" stroke="#f6b52a" stroke-width="2.6" opacity="0"/>
-        </g>
-        <path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z" fill="none" stroke="#9fd0f5" stroke-width="3"/>
-        <rect x="16" y="8" width="88" height="14" rx="4" fill="#3d8de0"/>
-        <rect x="16" y="226" width="88" height="14" rx="4" fill="#3d8de0"/>
-      </g>
+      <circle cx="${CX}" cy="${CY}" r="58" fill="url(#tmCore)"/>
+      <text class="tm-num" x="${CX}" y="${CY + 12}" text-anchor="middle" fill="#fff" font-size="56" font-weight="800">5</text>
+      <text class="tm-unit" x="${CX}" y="${CY + 38}" text-anchor="middle" fill="#fff" font-size="19" font-weight="700">នាទី</text>
     </svg>`;
     const q = (c) => wrap.querySelector(c);
-    const red = q('.tm-red'), num = q('.tm-num'), unit = q('.tm-unit'), top = q('.tm-top'), bot = q('.tm-bot'), flow = q('.tm-flow');
+    const wedge = q('.tm-wedge'), num = q('.tm-num'), unit = q('.tm-unit');
     const digital = document.createElement('div'); digital.className = 'tm-dig';
     let total = 300, left = 300, run = false, t0 = 0, remain0 = 0, raf = 0, alarmT = 0;
     const paint = () => {
-      const f = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0;
-      red.setAttribute('stroke-dasharray', `${f * CIRC} ${CIRC}`);
-      const topH = 100 * f, botH = 100 * (1 - f);
-      top.setAttribute('y', 124 - topH + (f > 0 ? 0 : 0)); top.setAttribute('height', Math.max(0, topH - 2));
-      bot.setAttribute('y', 226 - botH); bot.setAttribute('height', botH);
-      flow.setAttribute('y2', 226 - botH); flow.setAttribute('opacity', run && f > 0 ? 1 : 0);
+      const f = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0, th = f * Math.PI * 2;
+      if (f >= .9995) wedge.setAttribute('d', `M${CX - RF} ${CY} a${RF} ${RF} 0 1 0 ${2 * RF} 0 a${RF} ${RF} 0 1 0 ${-2 * RF} 0Z`);
+      else if (f <= 0) wedge.setAttribute('d', `M${CX} ${CY}`);
+      else wedge.setAttribute('d', `M${CX} ${CY} L${CX} ${CY - RF} A${RF} ${RF} 0 ${th > Math.PI ? 1 : 0} 1 ${CX + RF * Math.sin(th)} ${CY - RF * Math.cos(th)} Z`);
       const sec = Math.max(0, Math.ceil(left));
       if (sec >= 60) { num.textContent = Math.ceil(left / 60); unit.textContent = 'នាទី'; } else { num.textContent = sec; unit.textContent = 'វិនាទី'; }
       num.setAttribute('font-size', String(num.textContent).length > 2 ? 40 : 52);
@@ -1277,7 +1270,7 @@
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: '52%', y: '3%', w: '40%', h: '92%' }).hidden = true;
-    makeFloat('wtime', 'Timer', timerBox(), { x: '56%', y: '4%', w: '380px' }).hidden = true;
+    makeFloat('wtime', 'Timer', timerBox(), { x: '60%', y: '3%', w: '340px' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
