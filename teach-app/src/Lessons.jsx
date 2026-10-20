@@ -19,11 +19,11 @@ export default function Lessons({ cls, students, onBack }) {
   useEffect(() => {
     let live = true;
     Promise.all([
-      grade === '7' ? fetch('/data/lessons_g7.json?v=1').then((r) => r.json()) : Promise.resolve({}),
+      grade === '7' ? fetch('/data/lessons_g7.json?v=2').then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
-        .then(() => loadScript('/js/slides/g7l01.js?v=20261020a'))
-        .then(() => loadScript('/js/teachshow.js?v=20261020a')),
+        .then(() => loadScript('/js/slides/g7l01.js?v=20261020e'))
+        .then(() => loadScript('/js/teachshow.js?v=20261020e')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -33,9 +33,10 @@ export default function Lessons({ cls, students, onBack }) {
   const nums = Object.keys(data).map(Number).sort((a, b) => a - b);
   if (!nums.length) return <div className="empty slim"><span>📖</span><p>មិនទាន់មានមេរៀនសម្រាប់ថ្នាក់ទី {kh(grade)} ទេ។</p></div>;
 
-  const hasDeck = (n) => !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
-  const start = (n, partIdx) => {
+  const hasDeck = (n) => (grade === '7' && n > 1) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
+  const start = async (n, partIdx) => {
     const lesson = data[n];
+    if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261020e`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;
@@ -44,7 +45,7 @@ export default function Lessons({ cls, students, onBack }) {
     if (partIdx != null) {
       if (!real) startAt = partIdx + 1;
       else {
-        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.html && s.html.includes(lesson.p[partIdx]));
+        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && s.html.includes(`<h1>`) && s.html.includes(lesson.p[partIdx]));
         startAt = hit > 0 ? hit : 0;
       }
     }

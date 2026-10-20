@@ -114,3 +114,23 @@ body.teach-show-on { overflow: hidden; }
   .att-row { grid-template-columns: 28px 1fr; }
   .att-marks, .att-note { grid-column: 1 / -1; }
 }
+
+/* generated lesson decks (tools/make_g7_slides.py) */
+.ts-pg { font-size: .55em; color: rgba(255,255,255,.55); font-weight: 600; }
+.ts-slide p { margin: 0 0 .7em; }
+.ts-slide .ts-exh { color: #ffd56a; font-weight: 800; margin-top: .4em; }
+.ts-slide.ts-key { box-shadow: inset 6px 0 0 #5b8cff; }
+.ts-slide.ts-ex { box-shadow: inset 6px 0 0 #ffd56a; }
+.ts-slide.ts-prac { box-shadow: inset 6px 0 0 #ff8a5b; }
+.ts-slide.ts-sol { box-shadow: inset 6px 0 0 #2fcf8d; }
+.ts-slide.ts-sol h2 { color: #7ff0bd; }
+.ts-slide.ts-prac h2 { color: #ffb594; }
+.ts-slide.ts-ex h2 { color: #ffe39a; }
+.ts-slide ol.ts-bullets { padding-left: 1.5em; }
+.ts-slide li.lab { list-style: none; display: flex; gap: .6em; margin-left: -1.2em; }
+.ts-slide li.lab .lb { font-weight: 800; color: #9bb6ff; flex: none; }
+.ts-slide li.lab > div { flex: 1; min-width: 0; }
+.ts-slide blockquote { margin: .6em 0; padding: .4em 1em; border-left: 4px solid #6ea0ff; background: rgba(255,255,255,.06); border-radius: 10px; }
+.ts-table { border-collapse: collapse; margin: .6em 0; }
+.ts-table td { border: 1px solid rgba(255,255,255,.28); padding: 6px 14px; text-align: center; }
+.ts-slide .katex-display { margin: .5em 0; overflow-x: auto; overflow-y: hidden; }

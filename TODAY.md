@@ -98,3 +98,5 @@ Teaching mode, attendance, wheel songs, teachshow, plus other WIP not part of to
 - Lesson parts come from `public/data/lessons_g7.json` (section titles of Lesson/G7/lessonN.tex). Only lesson 1 has a real deck; other lessons get one drawable board slide per part.
 - Fixed: slide math lost its backslashes (template literals → `String.raw`); slideshow widgets no longer all open at start.
 - Fixed: login/forgot-password could be shadowed by another account's free-text contact.
+
+- Slides for G7 lessons 2–22 generated from `Lesson/G7/lessonN.tex`: `python3 tools/make_g7_slides.py` → `public/js/slides/g7/lessonN.js` (loaded on demand) + `public/data/lessons_g7.json`. Lesson 1 stays hand-made. Re-run after editing a lesson .tex. All 1,719 slides checked in-browser for KaTeX errors / stray LaTeX (0). Geometry lessons have no figures (the .tex has none) — draw with the pen.
