@@ -24,6 +24,8 @@
     const head = document.createElement('div'); head.className = 'ts-card-h'; head.innerHTML = `<span>${h2.innerHTML}</span><i></i>`;
     const body = document.createElement('div'); body.className = 'ts-card-b';
     [...box.childNodes].forEach((n) => { if (n !== kick && n !== h2) body.append(n); });
+    // the new word being defined ("ហៅថា ___") gets a special highlight
+    body.innerHTML = body.innerHTML.replace(/(ហៅថា\s*)([^\s។,;<\\&]+)/g, '$1<mark class="term">$2</mark>');
     card.append(head, body); box.innerHTML = ''; if (kick) box.append(kick); box.append(card);
     return box.innerHTML;
   }
