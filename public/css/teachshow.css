@@ -829,3 +829,6 @@ body.teach-show-on { overflow: hidden; }
 .ts-brand .bd-info > div { background: #0f5173; color: #fff; border-radius: 14px; padding: 8px 26px 10px; text-align: left; min-width: 10em; }
 .ts-brand .bd-info small { display: block; font-size: .62em; opacity: .8; line-height: 1.2; }
 .ts-brand .bd-info b { font-size: 1em; color: #fff; font-weight: 800; }
+
+/* last slide: "thank you" */
+.ts-slide .th-you { margin-top: .45em; color: #ee0000; font-family: 'Khmer OS Muol Light', 'Moul', 'Kantumruy Pro', serif; font-size: clamp(40px, 7vw, 90px); font-weight: 700; line-height: 1.35; }
