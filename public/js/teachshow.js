@@ -637,6 +637,7 @@
     ctx() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch { audio = null; } return audio; },
     tick(on) { const c = on && this.ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.setValueAtTime(.05, c.currentTime); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .05); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .06); },
     fanfare(on) { const c = on && this.ctx(); if (!c) return; [523, 659, 784, 1047, 1319].forEach((f, k) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + k * .11; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .5); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .55); }); },
+    alarm(on) { const c = on && this.ctx(); if (!c) return; [0, .16].forEach((d) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + d; o.type = 'square'; o.frequency.value = 988; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .13); o.connect(g).connect(c.destination); o.start(t); o.stop(t + .15); }); },
     boom(on) { const c = on && this.ctx(); if (!c) return; const n = c.sampleRate * .35, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let k = 0; k < n; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / n, 3); const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = .5; src.connect(f).connect(g).connect(c.destination); src.start(); },
   };
 
@@ -771,44 +772,84 @@
     return wrap;
   }
 
+  // ---- Timer: hourglass + stopwatch dial (red wedge = time left), presets, alarm ----
   function timerBox() {
     const wrap = document.createElement('div');
-    wrap.className = 'ts-timer';
-    let left = 300, run = false, t0 = 0, remain0 = 0, scale = 1;
-    const face = document.createElement('div');
-    face.className = 'ts-tface';
-    const fmt = () => {
-      const s = Math.max(0, Math.round(left));
-      face.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    wrap.className = 'tm';
+    const ns = 'http://www.w3.org/2000/svg';
+    const CX = 214, CY = 124, R = 104, RW = 68, CIRC = 2 * Math.PI * RW;
+    let ticks = '';
+    for (let k = 0; k < 60; k++) {
+      const major = k % 5 === 0, a = k * Math.PI / 30, r1 = 88, r2 = r1 - (major ? 15 : 8);
+      ticks += `<line x1="${CX + r1 * Math.sin(a)}" y1="${CY - r1 * Math.cos(a)}" x2="${CX + r2 * Math.sin(a)}" y2="${CY - r2 * Math.cos(a)}" stroke="${major ? '#1d4f91' : '#86abd9'}" stroke-width="${major ? 5 : 2.4}" stroke-linecap="round"/>`;
+    }
+    wrap.innerHTML = `<svg viewBox="0 0 330 250" class="tm-svg" aria-hidden="true">
+      <defs>
+        <clipPath id="tmGlass"><path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z"/></clipPath>
+        <linearGradient id="tmBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#52b8ff"/><stop offset="1" stop-color="#2f6be0"/></linearGradient>
+        <linearGradient id="tmSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc83d"/><stop offset="1" stop-color="#f2a413"/></linearGradient>
+      </defs>
+      <circle cx="${CX + 4}" cy="${CY + 8}" r="${R + 6}" fill="rgba(0,0,0,.12)"/>
+      <circle cx="${CX}" cy="${CY}" r="${R}" fill="#1d4f91"/>
+      <circle cx="${CX}" cy="${CY}" r="${R - 12}" fill="#fff"/>
+      ${ticks}
+      <circle class="tm-red" cx="${CX}" cy="${CY}" r="${RW}" fill="none" stroke="#e8453c" stroke-width="22" stroke-dasharray="0 ${CIRC}" transform="rotate(-90 ${CX} ${CY})"/>
+      <circle cx="${CX}" cy="${CY}" r="50" fill="url(#tmBlue)"/>
+      <text class="tm-num" x="${CX}" y="${CY + 10}" text-anchor="middle" fill="#fff" font-size="52" font-weight="800">5</text>
+      <text class="tm-unit" x="${CX}" y="${CY + 34}" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">នាទី</text>
+      <g>
+        <path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z" fill="rgba(170,215,250,.28)"/>
+        <g clip-path="url(#tmGlass)">
+          <rect class="tm-top" x="20" y="22" width="80" height="100" fill="url(#tmSand)"/>
+          <rect class="tm-bot" x="20" y="226" width="80" height="0" fill="url(#tmSand)"/>
+          <line class="tm-flow" x1="60" y1="118" x2="60" y2="226" stroke="#f6b52a" stroke-width="2.6" opacity="0"/>
+        </g>
+        <path d="M26 22 C26 76 60 100 60 124 C60 148 26 172 26 226 H94 C94 172 60 148 60 124 C60 100 94 76 94 22 Z" fill="none" stroke="#9fd0f5" stroke-width="3"/>
+        <rect x="16" y="8" width="88" height="14" rx="4" fill="#3d8de0"/>
+        <rect x="16" y="226" width="88" height="14" rx="4" fill="#3d8de0"/>
+      </g>
+    </svg>`;
+    const q = (c) => wrap.querySelector(c);
+    const red = q('.tm-red'), num = q('.tm-num'), unit = q('.tm-unit'), top = q('.tm-top'), bot = q('.tm-bot'), flow = q('.tm-flow');
+    const digital = document.createElement('div'); digital.className = 'tm-dig';
+    let total = 300, left = 300, run = false, t0 = 0, remain0 = 0, raf = 0, alarmT = 0;
+    const paint = () => {
+      const f = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0;
+      red.setAttribute('stroke-dasharray', `${f * CIRC} ${CIRC}`);
+      const topH = 100 * f, botH = 100 * (1 - f);
+      top.setAttribute('y', 124 - topH + (f > 0 ? 0 : 0)); top.setAttribute('height', Math.max(0, topH - 2));
+      bot.setAttribute('y', 226 - botH); bot.setAttribute('height', botH);
+      flow.setAttribute('y2', 226 - botH); flow.setAttribute('opacity', run && f > 0 ? 1 : 0);
+      const sec = Math.max(0, Math.ceil(left));
+      if (sec >= 60) { num.textContent = Math.ceil(left / 60); unit.textContent = 'នាទី'; } else { num.textContent = sec; unit.textContent = 'វិនាទី'; }
+      num.setAttribute('font-size', String(num.textContent).length > 2 ? 40 : 52);
+      digital.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
     };
-    fmt();
-    let raf;
+    const stop = () => { run = false; cancelAnimationFrame(raf); startBtn.textContent = left <= 0 ? '▶ ចាប់ផ្ដើម' : '▶ បន្ត'; };
     const tick = (now) => {
       if (!run) return;
       left = Math.max(0, remain0 - (now - t0) / 1000);
-      fmt();
-      if (left <= 0) { run = false; face.classList.add('done'); return; }
+      paint();
+      if (left <= 0) { run = false; startBtn.textContent = '▶ ចាប់ផ្ដើម'; wrap.classList.add('done'); [0, 450, 900].forEach((d) => setTimeout(() => snd.alarm(true), d)); return; }
       raf = requestAnimationFrame(tick);
     };
-    const row = document.createElement('div');
-    row.className = 'ts-trow';
-    const btn = (lab, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; b.onclick = fn; return b; };
-    const start = btn('ចាប់ផ្ដើម', () => {
-      if (run) { run = false; return; }
-      face.classList.remove('done');
-      run = true; t0 = performance.now(); remain0 = left;
-      raf = requestAnimationFrame(tick);
-    });
-    row.append(
-      btn('−១នាទី', () => { left = Math.max(10, left - 60); fmt(); remain0 = left; t0 = performance.now(); }),
-      btn('+១នាទី', () => { left += 60; fmt(); remain0 = left; t0 = performance.now(); }),
-      start,
-      btn('កំណត់ឡើងវិញ', () => { run = false; left = 300; fmt(); face.classList.remove('done'); }),
-    );
-    const sz = document.createElement('input');
-    sz.type = 'range'; sz.min = '0.7'; sz.max = '2.2'; sz.step = '0.1'; sz.value = '1';
-    sz.oninput = () => { scale = +sz.value; face.style.transform = `scale(${scale})`; };
-    wrap.append(face, row, sz);
+    const setTotal = (sec) => { run = false; cancelAnimationFrame(raf); total = left = sec; wrap.classList.remove('done'); startBtn.textContent = '▶ ចាប់ផ្ដើម'; paint(); };
+    const btn = (lab, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = lab; if (cls) b.className = cls; b.onclick = fn; return b; };
+    const startBtn = btn('▶ ចាប់ផ្ដើម', () => {
+      if (run) { stop(); return; }
+      if (left <= 0) { left = total; wrap.classList.remove('done'); }
+      run = true; t0 = performance.now(); remain0 = left; startBtn.textContent = '❚❚ ផ្អាក';
+      snd.ctx(); raf = requestAnimationFrame(tick);
+    }, 'go');
+    const presets = document.createElement('div'); presets.className = 'tm-pre';
+    [1, 3, 5, 10, 15].forEach((m) => presets.append(btn(`${m}`, () => setTotal(m * 60))));
+    const adj = (d) => { if (run) { remain0 = Math.max(5, remain0 + d); total = Math.max(5, total + d); t0 = performance.now(); left = remain0; } else { setTotal(Math.max(5, total + d)); } paint(); };
+    const row = document.createElement('div'); row.className = 'tm-row';
+    row.append(btn('−១ នាទី', () => adj(-60)), startBtn, btn('+១ នាទី', () => adj(60)), btn('↺', () => setTotal(total), 'rst'));
+    const lab = document.createElement('div'); lab.className = 'tm-lab'; lab.textContent = 'នាទី៖';
+    const pr = document.createElement('div'); pr.className = 'tm-prw'; pr.append(lab, presets);
+    wrap.append(digital, pr, row);
+    paint();
     return wrap;
   }
 
@@ -1236,7 +1277,7 @@
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     makeFloat('wspin', 'Spin' + (meta.cname ? ' · ' + meta.cname : ''), miniSpin(students, meta.cname), { x: '52%', y: '3%', w: '40%', h: '92%' }).hidden = true;
-    makeFloat('wtime', 'Timer', timerBox(), { x: '62%', y: '4%', w: '24%' }).hidden = true;
+    makeFloat('wtime', 'Timer', timerBox(), { x: '56%', y: '4%', w: '380px' }).hidden = true;
     makeFloat('wcalc', 'Calculator', calcBox(), { x: '60%', y: '40%', w: '260px' }).hidden = true;
     makeFloat('wgeo', 'Geometry', geoBox(), { x: '62%', y: '6%', w: '300px' }).hidden = true;
     ctx = ink.getContext('2d');
