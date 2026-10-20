@@ -434,6 +434,28 @@ def make_slides(n, tex):
     return title, slides
 
 
+def split_734(slides):
+    """Lesson 2, practice 734□0: the answer was auto-split mid-list (1/2, 2/2); it is now one slide per part, ក. (divisible by 4) and ខ. (by 8)."""
+    at = next((k for k, s in enumerate(slides) if s['k'] == 'sol' and '734' in s['html'] and '(១/២)' in s['html']), None)
+    if at is None or at + 1 >= len(slides):
+        return slides
+    kick = slides[at]['html'].split('</p>')[0] + '</p>'
+    sl = lambda head, body: {'k': 'sol', 'html': f'{kick}<h2>{head}</h2>' + body}
+    a = (r'<p><b>ក. ចែកដាច់នឹង \(4\)</b></p>'
+         r'<p>មួយចំនួនចែកដាច់នឹង \(4\) កាលណាពីរខ្ទង់ចុងក្រោយចែកដាច់នឹង \(4\) ។ ពីរខ្ទង់ចុងក្រោយនៃ \(734\square 0\) គឺ \(\square 0\) ។</p>'
+         r'<ul class="ts-bullets"><li>\(00 \div 4 = 0\) (ចែកដាច់) \(\implies \square = 0\)</li><li>\(20 \div 4 = 5\) (ចែកដាច់) \(\implies \square = 2\)</li>'
+         r'<li>\(40 \div 4 = 10\) (ចែកដាច់) \(\implies \square = 4\)</li><li>\(60 \div 4 = 15\) (ចែកដាច់) \(\implies \square = 6\)</li>'
+         r'<li>\(80 \div 4 = 20\) (ចែកដាច់) \(\implies \square = 8\)</li></ul>'
+         r'<p>ដូចនេះ លេខក្នុងប្រអប់អាចជា ៖ \(0, 2, 4, 6, 8\) ។</p>')
+    b = (r'<p><b>ខ. ចែកដាច់នឹង \(8\)</b></p>'
+         r'<p>មួយចំនួនចែកដាច់នឹង \(8\) កាលណាបីខ្ទង់ចុងក្រោយចែកដាច់នឹង \(8\) ។ បីខ្ទង់ចុងក្រោយនៃ \(734\square 0\) គឺ \(4\square 0\) ។ យើងពិនិត្យលេខគូដែលរកឃើញក្នុងសំណួរ ក. ៖</p>'
+         r'<ul class="ts-bullets"><li>បើ \(\square = 0\) ៖ \(400 \div 8 = 50\) (ចែកដាច់)</li><li>បើ \(\square = 2\) ៖ \(420 \div 8 = 52.5\) (ចែកមិនដាច់)</li>'
+         r'<li>បើ \(\square = 4\) ៖ \(440 \div 8 = 55\) (ចែកដាច់)</li><li>បើ \(\square = 6\) ៖ \(460 \div 8 = 57.5\) (ចែកមិនដាច់)</li>'
+         r'<li>បើ \(\square = 8\) ៖ \(480 \div 8 = 60\) (ចែកដាច់)</li></ul>'
+         r'<p>ដូចនេះ លេខក្នុងប្រអប់អាចជា ៖ \(0, 4, 8\) ។</p>')
+    return slides[:at] + [sl('ចម្លើយ ក.', a), sl('ចម្លើយ ខ.', b)] + slides[at + 2:]
+
+
 def add_div7(slides):
     """Lesson 2: the divisibility-by-7 rule (it is in the teacher's own 'Properties of Numbers' deck but not in the book). It goes after
     1.3 (4 and 8), as 1.4, so the book's 1.4 (sums and differences) becomes 1.5. Hand-written slides, same layout as the generated ones."""
@@ -484,7 +506,7 @@ def main():
         tex = open(path, encoding='utf8').read()
         title, slides = make_slides(n, tex)
         if n == 2:
-            slides = add_div7(slides)
+            slides = add_div7(split_734(slides))
         meta[n] = {'t': title, 'p': [p for p in parts_of(strip_comments(tex)) if p]}
         decks[f'7-{n}'] = slides
         print(f'lesson {n:2d}: {len(slides):3d} slides  {title}')
