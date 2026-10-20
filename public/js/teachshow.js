@@ -229,8 +229,10 @@
   }
 
   // rectangular magnifier: the text under the pointer grows smoothly inside a lens that follows the mouse
-  const LW = 420, LH = 230;
+  let LW = 640, LH = 350;
+  const lensSize = () => { const w = stage.clientWidth; LW = Math.round(Math.min(780, Math.max(380, w * .52))); LH = Math.round(LW * .55); };
   function lensBuild() {
+    lensSize();
     if (!lens) {
       lens = document.createElement('div'); lens.className = 'ts-lens';
       lensIn = document.createElement('div'); lensIn.className = 'ts-lens-in';
