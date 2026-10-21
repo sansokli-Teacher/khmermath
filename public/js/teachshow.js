@@ -7,6 +7,7 @@
   let sizeSetter = null, toastEl = null, toastT = 0;
   let laser = [], laserRaf = 0, penKind = 'ball', hand = null;
   let strokes = [], undoS = [], redoS = [], palette = null;
+  let baseCv = null, baseList = [], lastPenAt = -1e9, eraseR = 14, hoverP = null, penErase = false, downType = '';   // pen: committed-ink cache, palm rejection, eraser size and ring
   let stepNow = 0, stepLevels = [];   // step-by-step reveal: how many steps are showing, and the distinct data-step values on this slide
   let floats = [];
 
@@ -261,7 +262,9 @@
 
   function pos(e) {
     const r = ink.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() };
+    const q = { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() };
+    if (e.pointerType === 'pen' && e.pressure > 0) q.pr = e.pressure;          // a pen reports how hard it is pressed; mouse and touch do not
+    return q;
   }
 
   function paint(st) {
@@ -277,11 +280,10 @@
       ctx.beginPath(); ctx.arc(st.p[0].x, st.p[0].y, Math.max(4.5, st.w * 1.3), 0, Math.PI * 2); ctx.fill();
     } else if (st.t === 'pen' && st.k && st.k !== 'ball') {
       paintPen(st);
+    } else if (st.t === 'pen' && st.p.some((q) => q.pr != null)) {
+      pressureStroke(st);
     } else if (st.t === 'pen' || st.t === 'hi') {
-      ctx.beginPath();
-      st.p.forEach((q, k) => (k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
-      if (st.p.length === 1) ctx.lineTo(st.p[0].x + .1, st.p[0].y);
-      ctx.stroke();
+      ctx.beginPath(); curve(st.p); ctx.stroke();
     } else {
       const [a, b] = [st.p[0], st.p[st.p.length - 1]];
       ctx.beginPath();
@@ -307,11 +309,31 @@
     ctx.restore();
   }
 
+  // a stroke as a smooth curve through the middle of each pair of points (not a jagged polyline)
+  function curve(pts) {
+    if (pts.length < 3) { pts.forEach((q, k) => (k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); if (pts.length === 1) ctx.lineTo(pts[0].x + .1, pts[0].y); return; }
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let k = 1; k < pts.length - 1; k++) ctx.quadraticCurveTo(pts[k].x, pts[k].y, (pts[k].x + pts[k + 1].x) / 2, (pts[k].y + pts[k + 1].y) / 2);
+    const l = pts[pts.length - 1]; ctx.lineTo(l.x, l.y);
+  }
+  // pen with pressure: the line gets thicker the harder the pen is pressed, eased so it does not jump
+  function pressureStroke(st) {
+    const pts = st.p, wOf = (q) => st.w * (0.35 + 1.3 * (q.pr == null ? 0.5 : q.pr));
+    if (pts.length === 1) { ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, wOf(pts[0]) / 2, 0, Math.PI * 2); ctx.fill(); return; }
+    let pw = wOf(pts[0]);
+    for (let k = 1; k < pts.length; k++) {
+      const a = k === 1 ? pts[0] : { x: (pts[k - 1].x + pts[k].x) / 2, y: (pts[k - 1].y + pts[k].y) / 2 };
+      const b = k === pts.length - 1 ? pts[k] : { x: (pts[k].x + pts[k + 1].x) / 2, y: (pts[k].y + pts[k + 1].y) / 2 };
+      pw += (wOf(pts[k]) - pw) * .4; ctx.lineWidth = pw;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(pts[k].x, pts[k].y, b.x, b.y); ctx.stroke();
+    }
+  }
+
   const rnd = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
   // pen types: marker (broad, soft), brush (width follows speed), pencil (grainy), chalk (dusty)
   function paintPen(st) {
     const pts = st.p, w = st.w, k = st.k;
-    const path = () => { ctx.beginPath(); pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y))); if (pts.length === 1) ctx.lineTo(pts[0].x + .1, pts[0].y); };
+    const path = () => { ctx.beginPath(); curve(pts); };
     if (k === 'marker') { ctx.globalAlpha = .78; ctx.lineWidth = w * 2.4; path(); ctx.stroke(); return; }
     if (k === 'brush') {
       if (pts.length === 1) { ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, w * .8, 0, Math.PI * 2); ctx.fill(); return; }
@@ -340,9 +362,20 @@
   function redraw() {
     if (!ctx) return;
     const r = ink.getBoundingClientRect();
-    ctx.clearRect(0, 0, r.width, r.height);
-    strokes.forEach(paint);
+    // finished strokes are painted once into a cache and reused while the pen moves; only the stroke being drawn is repainted
+    const same = baseCv && baseCv.width === ink.width && baseCv.height === ink.height && baseList.length === strokes.length && baseList.every((x, k) => x === strokes[k]);
+    if (!same) {
+      baseCv = baseCv || document.createElement('canvas'); baseCv.width = ink.width; baseCv.height = ink.height;
+      const real = ctx, dpr = ink.width / Math.max(1, r.width);
+      ctx = baseCv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      strokes.forEach(paint); ctx = real; baseList = strokes.slice();
+    }
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ink.width, ink.height); ctx.drawImage(baseCv, 0, 0); ctx.restore();
     if (cur) paint(cur);
+    if ((tool === 'erase' || penErase) && hoverP) {                                // the eraser's size, so the teacher sees what will be rubbed out
+      ctx.save(); ctx.strokeStyle = 'rgba(30,41,59,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(hoverP.x, hoverP.y, eraseR, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
     if (tool === 'laser' && laser.length) {
       const now = performance.now();
       laser.forEach((q, k) => {
@@ -365,14 +398,15 @@
     }
   }
 
-  function near(st, p) {
+  function near(st, p, rad) {
+    const R = rad || 14;
     const pts = st.t === 'pen' || st.t === 'hi' || st.t === 'stamp' || st.t === 'point' ? st.p : [st.p[0], st.p[st.p.length - 1]];
-    if (st.t === 'stamp') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 34;
-    if (st.t === 'point') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 22;
-    if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < 14;
+    if (st.t === 'stamp') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < R + 20;
+    if (st.t === 'point') return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < R + 8;
+    if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) < R;
     const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y);
-    if (st.t === 'pen' || st.t === 'hi') return pts.some((q, k) => k && distSeg(p, pts[k - 1], q) < 14);
-    if (st.t === 'line' || st.t === 'arrow') return distSeg(p, pts[0], pts[1]) < 14;
+    if (st.t === 'pen' || st.t === 'hi') return pts.some((q, k) => k && distSeg(p, pts[k - 1], q) < R);
+    if (st.t === 'line' || st.t === 'arrow') return distSeg(p, pts[0], pts[1]) < R;
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
     const inside = p.x > x0 - 10 && p.x < x1 + 10 && p.y > y0 - 10 && p.y < y1 + 10;
     return inside && (p.x < x0 + 10 || p.x > x1 - 10 || p.y < y0 + 10 || p.y > y1 - 10);
@@ -800,10 +834,18 @@
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
     ink.addEventListener('pointerdown', () => { if (hand) hand.classList.add('writing'); });
     window.addEventListener('pointerup', () => { if (hand) hand.classList.remove('writing'); });
-    let penErase = false;                                                          // the eraser end of a pen (Wacom) erases whatever tool is chosen
+    ink.addEventListener('contextmenu', (e) => e.preventDefault());              // the pen's side button must not open a menu
+    ink.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'pen') lastPenAt = performance.now();
+      if (tool === 'erase' || penErase) { hoverP = pos(e); redraw(); }
+    });
+    ink.addEventListener('pointerleave', () => { if (hoverP) { hoverP = null; redraw(); } });
     const down = (e) => {
-      const eraserEnd = e.pointerType === 'pen' && (e.button === 5 || (e.buttons & 32) !== 0);
+      if (e.pointerType === 'pen') lastPenAt = performance.now();
+      if (e.pointerType === 'touch' && performance.now() - lastPenAt < 2500) { e.preventDefault(); return; }   // a resting palm is not writing
+      const eraserEnd = e.pointerType === 'pen' && (e.button === 5 || (e.buttons & 34) !== 0);                 // eraser end (32) or side button (2)
       if (e.button && e.button !== 0 && !eraserEnd) return;
+      downType = e.pointerType;
       const p = pos(e);
       closeMenus();
       if (eraserEnd) { penErase = true; drawing = true; eraseAt(p); ink.setPointerCapture && ink.setPointerCapture(e.pointerId); e.preventDefault(); return; }
@@ -835,22 +877,28 @@
       }
       if (tool === 'spot' && !drawing) return;
       if (!drawing) return;
+      if (downType && e.pointerType !== downType) return;                          // another finger/pen touching must not bend this stroke
       const p = pos(e);
       if (tool === 'spot') { spot = p; redraw(); }
-      else if (tool === 'erase' || penErase) eraseAt(p);
+      else if (tool === 'erase' || penErase) { eraseAt(p); hoverP = p; }
       else if (cur) {
-        if (cur.t === 'pen' || cur.t === 'hi') cur.p.push(p); else cur.p = [cur.p[0], p];
+        if (cur.t === 'pen' || cur.t === 'hi') {
+          // a pen reports many points between two frames: keep them all, so fast strokes stay smooth
+          const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+          (evs.length ? evs : [e]).forEach((ev) => { const q = pos(ev), l = cur.p[cur.p.length - 1]; if (!l || Math.hypot(q.x - l.x, q.y - l.y) > 0.6) cur.p.push(q); });
+        } else cur.p = [cur.p[0], p];
         redraw();
       }
       e.preventDefault();
     };
-    const up = () => {
+    const up = (e) => {
       if (!drawing) return;
-      drawing = false; if (penErase) { penErase = false; return; }
+      if (e && downType && e.pointerType && e.pointerType !== downType) return;
+      drawing = false; downType = ''; if (penErase) { penErase = false; redraw(); return; }
       if (cur) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; cur = null; redraw(); syncUndo(); }
     };
     function eraseAt(p) {
-      const hit = strokes.filter((st) => near(st, p));
+      const hit = strokes.filter((st) => near(st, p, eraseR));
       if (!hit.length) return;
       strokes = strokes.filter((st) => !hit.includes(st));
       undoS.push({ del: hit }); redoS = []; redraw(); syncUndo();
@@ -1753,7 +1801,7 @@
       toolSetter = setTool;
       tool = id; spot = null; laser = []; if (!lensPin) lensOff();
       ink.style.pointerEvents = id === 'none' ? 'none' : 'auto';
-      ink.style.cursor = id === 'point' || id === 'gpen' ? 'crosshair' : id === 'erase' ? 'cell' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
+      ink.style.cursor = id === 'point' || id === 'gpen' ? 'crosshair' : id === 'erase' ? 'none' : id === 'laser' || id === 'zoom' || HAND_TOOLS.includes(id) ? 'none' : 'crosshair';
       if (hand && !HAND_TOOLS.includes(id)) hand.hidden = true;
       row.querySelectorAll('[data-a]').forEach((x) => x.classList.toggle('on', x.dataset.a === id || (x.dataset.a === 'draw' && SHAPES.includes(id))));
       redraw();
@@ -2201,7 +2249,8 @@
     const blank = stage && stage.querySelector('.ts-blank');
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); if (blank) blank.remove(); else nextStep(); }
     if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); if (blank) blank.remove(); else prevStep(); }
-    if ((e.key === '[' || e.key === ']') && sizeSetter) sizeSetter(size + (e.key === ']' ? 1 : -1), true);
+    if ((e.key === '[' || e.key === ']') && tool === 'erase') { eraseR = Math.max(6, Math.min(60, eraseR + (e.key === ']' ? 4 : -4))); redraw(); }
+    else if ((e.key === '[' || e.key === ']') && sizeSetter) sizeSetter(size + (e.key === ']' ? 1 : -1), true);
     // presenter-clicker keys: «black screen» (B or .), «white screen» (W or ,), «start» (F5)
     if (['b', 'B', '.', 'w', 'W', ','].includes(e.key) && stage) {
       e.preventDefault();
