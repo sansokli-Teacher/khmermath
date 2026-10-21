@@ -5,6 +5,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#f2f6fb",
   "theme_color": "#2260d6",
   "lang": "km",

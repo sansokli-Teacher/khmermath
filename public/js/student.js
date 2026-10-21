@@ -1096,3 +1096,24 @@ async function doSubmit(auto) {
 }
 
 boot();
+
+
+// Phone full screen. Android Chrome: a ⛶ button in the exam toolbar. iPhone Safari cannot go full screen from a web page,
+// so it is told once how to add the site to the home screen, which opens it without the browser bars.
+(function phoneFullScreen() {
+  const btn = document.getElementById('rd-full');
+  if (btn && Integrity.fullscreenSupported()) {
+    btn.hidden = false;
+    btn.addEventListener('click', () => { if (Integrity.isFullscreen()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {} } else Integrity.goFullscreen(); });
+    const sync = () => { btn.textContent = Integrity.isFullscreen() ? '⛶ ចេញពីពេញអេក្រង់' : '⛶ ពេញអេក្រង់'; };
+    document.addEventListener('fullscreenchange', sync); document.addEventListener('webkitfullscreenchange', sync); sync();
+  }
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  let seen = false; try { seen = localStorage.getItem('iosHintSeen') === '1'; } catch {}
+  if (ios && !navigator.standalone && !seen && !Integrity.fullscreenSupported()) {
+    const d = document.createElement('div'); d.className = 'ios-hint'; d.setAttribute('role', 'note');
+    d.innerHTML = '<div style="flex:1">📱 ដើម្បីប្រឡងពេញអេក្រង់លើ iPhone៖ ចុចប៊ូតុង <b>ចែករំលែក</b> (ប្រអប់មានព្រួញឡើង) រួចជ្រើស <b>«បន្ថែមទៅអេក្រង់ដើម»</b> ហើយបើកពីរូបតំណាងនោះ។</div><button type="button" aria-label="បិទ">✕</button>';
+    d.querySelector('button').onclick = () => { d.remove(); try { localStorage.setItem('iosHintSeen', '1'); } catch {} };
+    document.body.append(d);
+  }
+})();
