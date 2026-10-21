@@ -1102,9 +1102,18 @@ boot();
 // so it is told once how to add the site to the home screen, which opens it without the browser bars.
 (function phoneFullScreen() {
   const btn = document.getElementById('rd-full');
-  if (btn && Integrity.fullscreenSupported()) {
-    btn.hidden = false;
-    btn.addEventListener('click', () => { if (Integrity.isFullscreen()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {} } else Integrity.goFullscreen(); });
+  const supported = Integrity.fullscreenSupported();
+  const standalone = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+  const howTo = () => Exam.notify(/iPhone|iPad|iPod/.test(navigator.userAgent)
+    ? 'iPhone: ចុច «ចែករំលែក» (ប្រអប់មានព្រួញឡើង) → «បន្ថែមទៅអេក្រង់ដើម» ហើយបើកពីរូបតំណាងនោះ ទើបពេញអេក្រង់។'
+    : 'ទូរស័ព្ទនេះមិនអនុញ្ញាតពេញអេក្រង់ពីគេហទំព័រទេ។ សូមប្រើ Chrome ឬបន្ថែមគេហទំព័រទៅអេក្រង់ដើម (ម៉ឺនុយ ⋮ → Add to Home screen)។');
+  if (btn && !standalone) {
+    btn.hidden = false;                                         // always visible; when the browser cannot do it, it explains what to do
+    btn.addEventListener('click', () => {
+      if (!supported) return howTo();
+      if (Integrity.isFullscreen()) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {} }
+      else Integrity.goFullscreen().then((ok) => { if (!ok) howTo(); });
+    });
     const sync = () => { btn.textContent = Integrity.isFullscreen() ? '⛶ ចេញពីពេញអេក្រង់' : '⛶ ពេញអេក្រង់'; };
     document.addEventListener('fullscreenchange', sync); document.addEventListener('webkitfullscreenchange', sync); sync();
   }
