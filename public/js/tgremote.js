@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var KEY = 'km_tg_remote_v1', room = null, ack = 0, inflight = false, lastSent = '', lastPush = 0, phoneAt = 0, timer = 0, modal = null, autoAsked = false;
+  var KEY = 'km_tg_remote_v1', room = null, net = null, phoneOn = false, linkMode = 'wait', lastSent = '', lastPush = 0, timer = 0, modal = null, autoAsked = false;
   try { room = JSON.parse(sessionStorage.getItem(KEY)); } catch (e) { room = null; }
   if (window.TG_STUDENT || !$('tg-remote')) { if ($('tg-remote')) $('tg-remote').hidden = true; return; }
 
@@ -12,7 +12,7 @@
     return fetch(path, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (d) { if (!r.ok) { var e = new Error(d.error || 'Request failed'); e.status = r.status; throw e; } return d; }); });
   }
   function link() { return location.origin + '/remote.html?c=' + room.code + '&k=' + room.ctl; }
-  function connected() { return phoneAt && Date.now() - phoneAt < 8000; }
+  function connected() { return !!room && phoneOn; }
 
   function paintBtn() {
     var b = $('tg-remote'); if (!b) return;
@@ -24,20 +24,25 @@
     }
   }
 
+  // publish the game state when it changes (about 4 times a second is plenty); the link itself is instant
   function tick() {
-    if (!room || inflight) return;
+    if (!room || !net) return;
     var S = null; try { S = window.TGX ? window.TGX.state() : { idle: 1 }; } catch (e) { S = { idle: 1 }; }
-    var s = JSON.stringify(S), now = Date.now(), send = s !== lastSent || now - lastPush > 4000;
-    inflight = true;
-    post('/api/remote/sync', { code: room.code, host: room.host, state: send ? s : undefined, ack: ack }).then(function (d) {
-      if (send) { lastSent = s; lastPush = now; }
-      phoneAt = d.phone_at || 0;
-      (d.cmds || []).forEach(function (c) { if (c.id > ack) { ack = c.id; try { window.TGX && window.TGX.run(c.c); } catch (e) {} } });
-      paintBtn();
-    }).catch(function (e) { if (e.status === 404) { stop(); } }).then(function () { inflight = false; });
+    var s = JSON.stringify(S), now = Date.now();
+    if (s !== lastSent || now - lastPush > 4000) { lastSent = s; lastPush = now; net.pushState(s); }
   }
-  function run() { if (!timer) timer = setInterval(tick, 700); }
-  function stop() { if (timer) clearInterval(timer); timer = 0; room = null; ack = 0; lastSent = ''; phoneAt = 0; save(); paintBtn(); if (modal) { modal.remove(); modal = null; } }
+  function connect() {
+    if (net || !room) return;
+    net = new RcNet({
+      role: 'host', code: room.code, key: room.host,
+      onCmd: function (id, c) { try { window.TGX && window.TGX.run(c); } catch (e) {} net.done(id); setTimeout(tick, 60); },   // do what the phone asked, answer at once, then publish the result
+      onPhone: function (on) { phoneOn = on; paintBtn(); },
+      onLink: function (m) { linkMode = m; paintBtn(); },
+      onGone: function () { stop(); },
+    });
+    timer = setInterval(tick, 250); tick();
+  }
+  function stop() { if (timer) clearInterval(timer); timer = 0; if (net) net.close(); net = null; room = null; phoneOn = false; lastSent = ''; save(); paintBtn(); if (modal) { modal.remove(); modal = null; } }
 
   function qr(url, size) {
     var q = qrcode(0, 'M'); q.addData(url); q.make();
@@ -64,11 +69,11 @@
   }
 
   function begin() {
-    if (room) { run(); openModal(); return; }
-    post('/api/remote/create', {}).then(function (d) { room = d; ack = 0; lastSent = ''; save(); run(); openModal(); }).catch(function (e) { alert(e.status === 401 ? 'Please log in as a teacher first.' : e.message); });
+    if (room) { connect(); openModal(); return; }
+    post('/api/remote/create', {}).then(function (d) { room = d; lastSent = ''; save(); connect(); openModal(); }).catch(function (e) { alert(e.status === 401 ? 'Please log in as a teacher first.' : e.message); });
   }
   $('tg-remote').addEventListener('click', begin);
-  if (room) { run(); paintBtn(); }
+  if (room) { connect(); paintBtn(); }
   // opened from the games wizard with «control from phone» on: show the QR as soon as the game starts
   if (/[?&]remote=1/.test(location.search)) {
     var w = setInterval(function () { if (window.TGX && window.TGX.active() && !autoAsked) { autoAsked = true; clearInterval(w); if (!room) begin(); else openModal(); } }, 400);

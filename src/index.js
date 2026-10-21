@@ -183,6 +183,7 @@ const ROUTES = [
   ['POST', '/api/game/reset', game.resetQuestion],
   ['POST', '/api/game/config', game.saveConfig],
   ['POST', '/api/remote/create', remote.create],
+  ['GET', '/api/remote/ws', remote.ws],
   ['POST', '/api/remote/sync', remote.sync],
   ['GET', '/api/remote/state', remote.state],
   ['POST', '/api/remote/cmd', remote.cmd],
@@ -224,7 +225,10 @@ const CSP = [
   "font-src 'self' data:", "connect-src 'self'", "media-src 'self' blob: data:", "object-src 'none'", "base-uri 'self'",
   "form-action 'self'", "frame-ancestors 'self'", "frame-src https://khmermath.org https://cba.khmermath.org",
 ].join('; ');
+export { RemoteRoom } from './remote_do.js';
+
 function withSecurityHeaders(res) {
+  if (res.status === 101) return res;   // a WebSocket upgrade must pass through untouched
   const h = new Headers(res.headers);
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('X-Frame-Options', 'SAMEORIGIN');

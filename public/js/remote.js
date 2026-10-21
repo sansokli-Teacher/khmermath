@@ -1,94 +1,172 @@
-// Phone controller for the team game: shows the teams, the board and the open question, and sends the teacher's taps to the game
-// that runs on the computer (see js/tgremote.js and src/api/remote.js).
+// Phone controller for the team game: shows the teams, the board and the open question, and sends the teacher's taps to the game that
+// runs on the computer (js/tgremote.js ↔ js/rcnet.js ↔ src/remote_do.js). Every tap reacts at once on the phone (pressed state,
+// vibration, "sending…"), and is confirmed when the game screen has carried it out.
 (function () {
   'use strict';
   var root = document.getElementById('rc'), q = new URLSearchParams(location.search), CODE = q.get('c'), KEY = q.get('k');
-  var seq = 0, S = null, alive = false, failures = 0, last = '', busy = {}, showScores = false, lastSig = '';
-  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]; }); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); };
   var kh = function (n) { return String(n).replace(/\d/g, function (d) { return '០១២៣៤៥៦៧៨៩'[d]; }); };
-  if (!CODE || !KEY) { root.innerHTML = '<div class="rc-msg"><h1>Game Remote</h1><p>Open this page by scanning the QR code on the game screen.</p></div>'; return; }
+  var FACES = [['#ff6b81', '#e8456b'], ['#2fd4a0', '#2fa66b'], ['#ffb347', '#ff8a3d'], ['#4dabf7', '#1c7ed6'], ['#b57cf5', '#8a4fe0'], ['#ff7eb3', '#e0518c']];
+  if (!CODE || !KEY) { root.innerHTML = '<div class="msg"><h1>Game Remote</h1><p>Open this page by scanning the QR code on the game screen.</p></div>'; return; }
 
-  function send(c) {
-    if (navigator.vibrate) try { navigator.vibrate(18); } catch (e) {}
-    var k = c.t + (c.i != null ? ':' + c.i : '') + (c.k != null ? ':' + c.k : '');
-    if (busy[k]) return; busy[k] = 1; setTimeout(function () { delete busy[k]; }, 450);
-    fetch('/api/remote/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: CODE, k: KEY, c: c }) }).catch(function () {});
+  var S = null, hostOn = false, linkM = 'wait', net = null, pending = {}, idKey = {}, cidKey = {}, cidN = 0, menu = '', showScores = false, opening = '', openingAt = 0, saving = 0, shown = {}, ring = {}, lastSig = '', toastT = 0, gone = false;
+
+  // ---------- feedback ----------
+  function toast(text, kind) {
+    var t = document.getElementById('toast'); if (!t) return;
+    t.textContent = text; t.className = 'toast show ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, kind === 'bad' ? 2800 : 1100);
   }
-  window.rcSend = send;
+  function buzz(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
+  var keyOf = function (c) { return c.t + ':' + (c.i != null ? c.i : c.k != null ? c.k : ''); };
 
-  function poll() {
-    fetch('/api/remote/state?c=' + encodeURIComponent(CODE) + '&k=' + encodeURIComponent(KEY) + '&seq=' + seq, { cache: 'no-store' })
-      .then(function (r) { if (r.status === 404) throw new Error('gone'); return r.json(); })
-      .then(function (d) { failures = 0; alive = !!d.host_alive; if (d.state) { S = d.state; seq = d.seq; } else if (d.seq !== seq) { seq = d.seq; } draw(); setTimeout(poll, 700); })
-      .catch(function (e) {
-        if (e.message === 'gone') { root.innerHTML = '<div class="rc-msg"><h1>Remote closed</h1><p>This remote link is no longer active. Scan a new QR code on the game screen.</p></div>'; return; }
-        failures++; alive = false; draw(); setTimeout(poll, Math.min(4000, 700 + failures * 500));
-      });
+  function send(c, el) {
+    var key = keyOf(c);
+    if (pending[key] && Date.now() - pending[key] < 600) return;        // double tap
+    pending[key] = Date.now(); buzz(18);
+    if (el) el.classList.add('sending');
+    var cid = ++cidN; cidKey[cid] = key;
+    // optimistic changes: the screen answers before the game screen does
+    if (c.t === 'open') { opening = 'card ' + kh(c.i + 1); openingAt = Date.now(); }
+    else if (c.t === 'spin') { opening = 'Spinning…'; openingAt = Date.now(); }
+    else if (c.t === 'go') { opening = 'Next question…'; openingAt = Date.now(); }
+    else if (c.t === 'show' && S && S.card) shown[S.card.i] = 1;
+    else if (c.t === 'ok' || c.t === 'bad' || c.t === 'pick' || c.t === 'sp') { saving = Date.now(); }
+    net.cmd(c, cid);
+    setTimeout(function () {                                           // nothing came back: say so
+      if (pending[key]) { delete pending[key]; if (opening && c.t === 'open') opening = ''; saving = 0; toast('No answer from the game screen — is it open?', 'bad'); lastSig = ''; draw(); }
+    }, 3200);
+    if (c.t === 'open' || c.t === 'spin' || c.t === 'go' || c.t === 'show' || saving) { lastSig = ''; draw(); }
   }
+  function sent(cid, r) {
+    var key = cidKey[cid]; if (!key) return;
+    if (!r.ok) { delete pending[key]; toast('Could not send', 'bad'); lastSig = ''; draw(); return; }
+    idKey[r.id] = key;
+    if (r.delivered === false) { toast('The game screen is offline', 'bad'); }
+    if (linkM !== 'live') { setTimeout(function () { clearKey(key); }, 500); }   // polling: no ack message, the next state shows the result
+  }
+  function clearKey(key, flash) {
+    delete pending[key];
+    var el = root.querySelector('[data-k="' + key + '"]'); if (el) { el.classList.remove('sending'); if (flash !== false) { el.classList.add('flash'); setTimeout(function () { el.classList.remove('flash'); }, 450); } }
+  }
+  function acked(id) { var key = idKey[id]; if (!key) return; delete idKey[id]; clearKey(key); }
 
-  function btn(cls, label, c, extra) { return '<button type="button" class="b ' + cls + '" data-c=\'' + esc(JSON.stringify(c)) + '\'' + (extra || '') + '>' + label + '</button>'; }
+  // ---------- link ----------
+  net = new RcNet({
+    role: 'ctl', code: CODE, key: KEY,
+    onState: function (s) {
+      S = s;
+      if (!s.card) { shown = {}; ring = {}; }
+      if (s.card || s.fin) { opening = ''; } if (!s.card) saving = 0;
+      if (opening && Date.now() - openingAt > 5000) opening = '';
+      draw();
+    },
+    onHost: function (on) { hostOn = on; lastSig = ''; draw(); },
+    onLink: function (m) { linkM = m; lastSig = ''; draw(); },
+    onSent: sent, onAck: acked,
+    onGone: function () { gone = true; root.innerHTML = '<div class="msg"><h1>Remote closed</h1><p>This remote link is no longer active. Scan a new QR code on the game screen.</p></div>'; net.close(); },
+  });
 
+  // ---------- pieces ----------
+  function btn(cls, label, c, extra) {
+    var key = keyOf(c), on = pending[key] ? ' sending' : '';
+    return '<button type="button" class="b ' + cls + on + '" data-k="' + esc(key) + '" data-c=\'' + esc(JSON.stringify(c)) + '\'' + (extra || '') + '><span>' + label + '</span></button>';
+  }
+  function chipHtml() {
+    var live = linkM === 'live', txt = !hostOn ? 'Game screen offline' : live ? 'Live' : linkM === 'poll' ? 'Connected' : 'Connecting…';
+    return '<span class="chip ' + (hostOn && linkM !== 'wait' ? (live ? 'live' : 'poll') : 'off') + '"><i></i>' + txt + '</span>';
+  }
   function teamsHtml() {
     return '<div class="teams">' + S.teams.map(function (t, i) {
-      return '<div class="team' + (i === S.turn && !S.fin ? ' turn' : '') + '" style="--c:' + esc(t.c) + '"><b>' + esc(t.n) + '</b><span>' + kh(S.style === 'boat' ? Math.min(t.st, S.finish) + '/' + S.finish : t.s) + '</span>'
+      var turn = i === S.turn && !S.fin;
+      return '<div class="team' + (turn ? ' turn' : '') + '" style="--c:' + esc(t.c) + '">' + (turn ? '<em>TURN</em>' : '') + '<b>' + esc(t.n) + '</b><span>' + kh(S.style === 'boat' ? Math.min(t.st, S.finish) + '/' + S.finish : t.s) + '</span>'
         + (showScores ? '<div class="adj">' + btn('mini', '−', { t: 'score', k: i, d: -1 }) + btn('mini', '+', { t: 'score', k: i, d: 1 }) + '</div>' : '') + '</div>';
     }).join('') + '</div>';
   }
+  function overlayHtml() { return opening ? '<div class="busy"><div class="spin"></div><b>' + esc(opening) + '</b></div>' : ''; }
   function pickHtml(card, label) {
-    if (!card.pick || !card.pick.length) return '';
-    return '<div class="pick"><p>' + label + '</p>' + card.pick.map(function (p) { return btn('pickb', esc(p.n), { t: 'pick', k: p.k }); }).join('') + '</div>';
+    return '<div class="pick"><p>' + label + '</p>' + card.pick.map(function (p) { return btn('pickb', esc(p.n), { t: 'pick', k: p.k }); }).join('') + btn('ghost', 'Cancel', { t: 'other' }) + '</div>';
   }
-  function cardHtml(c) {
-    if (c.k === 's') {
-      return '<div class="card sp"><div class="sic">' + esc(c.icon) + '</div><h2>' + esc(c.name) + '</h2><p>' + esc(c.desc) + '</p>'
-        + (c.go ? btn('big ok', 'OK', { t: 'sp' }) : pickHtml(c, 'Choose the team')) + btn('ghost', '✕ Close card', { t: 'close' }) + '</div>';
-    }
-    var o = c.o ? '<div class="opts">' + c.o.map(function (x, i) { return '<div class="opt' + (i === c.ck ? ' key' : '') + '"><b>' + 'កខគឃ'[i] + '</b><span>' + esc(x) + '</span></div>'; }).join('') + '</div>' : '';
-    var timer = c.left !== undefined && (c.left > 0 || c.over) ? '<div class="tm' + (c.over ? ' over' : c.left <= 5 ? ' hot' : '') + '"><span id="tleft">' + (c.over ? '0' : c.left) + '</span><small>s</small></div>' : '';
-    return '<div class="card"><div class="chead"><span>' + esc(c.n || '') + '</span>' + timer + '</div>'
-      + '<div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 The figure is on the screen</p>' : '') + o
-      + '<div class="ans"><small>Answer (only you see this)</small><div>' + esc(c.a) + '</div></div>'
-      + '<div class="row2">' + btn('' + (c.rev ? ' done' : ''), c.rev ? '👁 Shown' : '👁 Show answer', { t: 'show' }) + btn('', '+15 s', { t: 'plus' }) + '</div>'
-      + '<div class="row2">' + btn('ok', '✔ Correct +' + kh(c.p || S.pts), { t: 'ok' }) + btn('bad', '✖ Wrong', { t: 'bad' }) + '</div>'
-      + btn('other', 'Other team ✔…', { t: 'other' }) + pickHtml(c, 'Which team answered right?') + btn('ghost', '✕ Close card', { t: 'close' }) + '</div>';
+  function ringHtml(c) {
+    var left = c.over ? 0 : c.left, total = Math.max(ring[c.i] || 0, left, 1); ring[c.i] = total;
+    var C = 2 * Math.PI * 26, off = C * (1 - left / total);
+    return '<div class="ring' + (c.over ? ' over' : left <= 5 ? ' hot' : '') + '"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="bg"/><circle cx="32" cy="32" r="26" class="fg" id="ringfg" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg><b id="tleft">' + left + '</b></div>';
   }
   function boardHtml() {
-    if (S.fin) return '';
-    var who = S.teams[S.turn] ? S.teams[S.turn].n : '';
-    if (S.style === 'wheel') return '<div class="turnbar" style="--c:' + esc(S.teams[S.turn].c) + '">Turn: ' + esc(who) + '</div>' + btn('huge', S.spinning ? '…' : '🎡 SPIN', { t: 'spin' }, S.spinning || !S.rem ? ' disabled' : '') + '<p class="note">' + kh(S.rem) + ' questions left</p>';
-    if (S.style === 'boat') return '<div class="turnbar" style="--c:' + esc(S.teams[S.turn].c) + '">Turn: ' + esc(who) + '</div>' + btn('huge', '▶ Next question', { t: 'go' }, !S.rem ? ' disabled' : '') + '<p class="note">' + kh(S.rem) + ' questions left</p>';
-    return '<div class="turnbar" style="--c:' + esc(S.teams[S.turn].c) + '">Turn: ' + esc(who) + ' — pick a card</div><div class="grid">' + S.tiles.map(function (t, i) {
-      if (t.d) return '<button type="button" class="tile done" disabled style="' + (t.b >= 0 && S.teams[t.b] ? '--c:' + esc(S.teams[t.b].c) : '') + '">' + (t.sp ? '★' : t.r === 'ok' ? '✓' : '✗') + '</button>';
-      return btn('tile', kh(i + 1), { t: 'open', i: i });
+    var who = S.teams[S.turn], bar = '<div class="turnbar" style="--c:' + esc(who.c) + '"><small>Now playing</small><b>' + esc(who.n) + '</b></div>';
+    if (S.style === 'wheel') return bar + '<div class="center">' + btn('huge', S.spinning || opening ? 'Spinning…' : '🎡<br>SPIN', { t: 'spin' }, S.spinning || !S.rem || opening ? ' disabled' : '') + '<p class="note">' + kh(S.rem) + ' questions left</p></div>';
+    if (S.style === 'boat') return bar + '<div class="center">' + btn('huge', opening ? 'Loading…' : '▶<br>Next question', { t: 'go' }, !S.rem || opening ? ' disabled' : '') + '<p class="note">' + kh(S.rem) + ' questions left</p></div>';
+    return bar + '<p class="hint">Tap a card to open it on the screen</p><div class="grid">' + S.tiles.map(function (t, i) {
+      if (t.d) return '<div class="tile done" style="' + (t.b >= 0 && S.teams[t.b] ? '--c:' + esc(S.teams[t.b].c) : '') + '">' + (t.sp ? '★' : t.r === 'ok' ? '✓' : '✗') + '</div>';
+      var f = FACES[i % FACES.length];
+      return btn('tile', kh(i + 1), { t: 'open', i: i }, ' style="--f1:' + f[0] + ';--f2:' + f[1] + '"' + (opening ? ' disabled' : ''));
     }).join('') + '</div>';
+  }
+  function questionHtml(c) {
+    var opts = c.o ? '<div class="opts">' + c.o.map(function (x, i) { return '<div class="opt' + (i === c.ck ? ' key' : '') + '"><b>' + 'កខគឃ'[i] + '</b><span>' + esc(x) + '</span>' + (i === c.ck ? '<i>✓</i>' : '') + '</div>'; }).join('') + '</div>' : '';
+    var rev = c.rev || shown[c.i], dis = saving ? ' disabled' : '';
+    var top = '<div class="qtop"><div><small>' + esc(c.n || '') + '</small></div>' + (c.left !== undefined ? ringHtml(c) : '') + '</div>';
+    var body = '<div class="qscroll"><div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 The figure is on the screen</p>' : '') + opts
+      + '<div class="ans"><small>Answer · only you can see this</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div></div>';
+    var dock = c.pick && c.pick.length ? '<div class="dock">' + pickHtml(c, 'Which team answered right?') + '</div>'
+      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' done' : ''), rev ? '👁 Shown' : '👁 Show answer', { t: 'show' }, rev ? ' disabled' : '') + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'Other team', { t: 'other' }) + '</div>'
+        + '<div class="row2">' + btn('bad', '✖ Wrong', { t: 'bad' }, dis) + btn('ok', '✔ Correct +' + kh(c.p || S.pts), { t: 'ok' }, dis) + '</div></div>';
+    return '<section class="qwrap">' + top + body + '</section>' + dock + (saving ? '<div class="busy light"><div class="spin"></div><b>Saving…</b></div>' : '');
+  }
+  function specialHtml(c) {
+    return '<section class="sp"><div class="sic">' + esc(c.icon) + '</div><h2>' + esc(c.name) + '</h2><p>' + esc(c.desc) + '</p>'
+      + (c.pick && c.pick.length ? pickHtml(c, 'Choose the team') : c.go ? btn('big ok', 'OK', { t: 'sp' }) : '') + btn('ghost', '✕ Close card', { t: 'close' }) + '</section>';
   }
   function finalHtml() {
     var top = S.rank[0] ? S.rank[0].s : 0;
-    return '<div class="card fin"><h2>🏆 Game over</h2>' + S.rank.map(function (r, i) { return '<div class="rank" style="--c:' + esc(r.c) + '"><span>' + (i === 0 || r.s === top ? '🥇' : kh(i + 1)) + '</span><b>' + esc(r.n) + '</b><em>' + kh(r.s) + '</em></div>'; }).join('')
-      + '<p class="note">The result is on the game screen. You can close this page.</p></div>';
+    return '<section class="fin"><div class="trophy">🏆</div><h2>Game over</h2>' + S.rank.map(function (r, i) { return '<div class="rank" style="--c:' + esc(r.c) + '"><span>' + (r.s === top ? '🥇' : kh(i + 1)) + '</span><b>' + esc(r.n) + '</b><em>' + kh(r.s) + '</em></div>'; }).join('') + '<p class="note">The result is on the game screen. You can close this page.</p></section>';
+  }
+  function sheetHtml() {
+    if (menu === 'menu') return '<div class="sheet-back" data-close="1"><div class="sheet"><i class="grip"></i><h3>Menu</h3>' + '<button type="button" class="b soft" data-act="scores"><span>± ' + (showScores ? 'Hide score buttons' : 'Adjust scores') + '</span></button>' + '<button type="button" class="b endb" data-act="end"><span>■ End the game</span></button>' + '<button type="button" class="b ghost" data-close="1"><span>Close</span></button></div></div>';
+    if (menu === 'end') return '<div class="sheet-back" data-close="1"><div class="sheet"><i class="grip"></i><h3>End the game?</h3><p class="note">The result is shown on the game screen.</p>' + btn('endb', '■ Yes, end the game', { t: 'end' }) + '<button type="button" class="b ghost" data-close="1"><span>Keep playing</span></button></div></div>';
+    return '';
   }
 
+  // ---------- draw ----------
   function draw() {
-    var banner = alive ? '' : '<div class="off">' + (failures ? 'No connection — retrying…' : 'The game screen is not connected') + '</div>';
-    if (!S || S.idle) { root.innerHTML = '<header><b>📱 Game Remote</b><i class="dot ' + (alive ? 'on' : '') + '"></i></header>' + banner + '<div class="rc-msg"><h1>Ready</h1><p>Start the game on the computer. This phone will show the controls.</p></div>'; lastSig = ''; return; }
-    var sig = JSON.stringify([S, alive, failures > 0, showScores]);
-    var sigNoTimer = JSON.stringify([S.card ? Object.assign({}, S.card, { left: 0, over: 0 }) : null, S.turn, S.teams, S.tiles, S.fin, S.spinning, S.rem, alive, failures > 0, showScores]);
-    if (sigNoTimer === lastSig) { var tl = document.getElementById('tleft'); if (tl && S.card) { tl.textContent = S.card.over ? '0' : S.card.left; var tm = tl.parentNode; tm.className = 'tm' + (S.card.over ? ' over' : S.card.left <= 5 ? ' hot' : ''); } return; }
-    lastSig = sigNoTimer;
-    var body = S.fin ? finalHtml() : S.card ? cardHtml(S.card) : boardHtml();
-    root.innerHTML = '<header><b>📱 Game Remote</b><button type="button" class="lnk" id="scoreBtn">' + (showScores ? 'Done' : '± Scores') + '</button><i class="dot ' + (alive ? 'on' : '') + '"></i></header>' + banner + teamsHtml() + '<main>' + body + '</main>'
-      + (S.fin ? '' : '<footer>' + btn('end', '■ End game', { t: 'end' }, ' data-confirm="End the game and show the result?"') + '</footer>');
+    if (gone) return;
+    if (!S || S.idle) {
+      var sigI = 'idle' + hostOn + linkM; if (sigI === lastSig) return; lastSig = sigI;
+      root.innerHTML = '<header class="top"><b>📱 Game Remote</b>' + chipHtml() + '</header><div class="msg"><div class="pulse">🎮</div><h1>Ready</h1><p>' + (hostOn ? 'Start the game on the computer. This phone will show the controls.' : 'Waiting for the game screen…') + '</p></div><div id="toast" class="toast"></div>';
+      return;
+    }
+    var c = S.card;
+    var sig = JSON.stringify([c ? Object.assign({}, c, { left: 0, over: 0 }) : null, S.turn, S.teams, S.tiles, S.fin, S.spinning, S.rem, hostOn, linkM, showScores, menu, opening, saving > 0, c ? shown[c.i] : 0, Object.keys(pending).join()]);
+    if (sig === lastSig) { // only the clock moved
+      var tl = document.getElementById('tleft'), fg = document.getElementById('ringfg');
+      if (tl && c && c.left !== undefined) {
+        var left = c.over ? 0 : c.left, total = Math.max(ring[c.i] || 0, left, 1); ring[c.i] = total; tl.textContent = left;
+        if (fg) fg.setAttribute('stroke-dashoffset', (2 * Math.PI * 26 * (1 - left / total)).toFixed(1));
+        var rg = tl.parentNode; rg.className = 'ring' + (c.over ? ' over' : left <= 5 ? ' hot' : '');
+      }
+      return;
+    }
+    var scr = S.fin ? 'fin' : c ? 'card' + c.i : 'board', scroll = window.scrollY, fresh = scr !== root.getAttribute('data-scr');
+    lastSig = sig;
+    var body = S.fin ? finalHtml() : c ? (c.k === 's' ? specialHtml(c) : questionHtml(c)) : boardHtml();
+    root.setAttribute('data-scr', scr);
+    root.className = (c && c.k === 'q' ? 'has-dock ' : '') + (fresh ? 'enter' : '');
+    root.innerHTML = '<header class="top"><b>📱 Game Remote</b>' + chipHtml() + '<button type="button" class="menu" data-act="menu" aria-label="Menu">⋯</button></header>'
+      + (hostOn ? '' : '<div class="off">The game screen is not connected. Open the game on the computer.</div>') + teamsHtml() + '<main>' + body + '</main>' + overlayHtml() + sheetHtml() + '<div id="toast" class="toast"></div>';
+    if (!fresh) window.scrollTo(0, scroll);
     if (window.renderMathInElement) try { window.renderMathInElement(root, { delimiters: [{ left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }], throwOnError: false }); } catch (e) {}
   }
 
+  // ---------- taps ----------
   root.addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
-    if (b.id === 'scoreBtn') { showScores = !showScores; lastSig = ''; draw(); return; }
-    var c = b.getAttribute('data-c'); if (!c || b.disabled) return;
-    var conf = b.getAttribute('data-confirm'); if (conf && !window.confirm(conf)) return;
-    send(JSON.parse(c));
+    var close = e.target.closest('[data-close]'); if (close && (e.target === close || close.classList.contains('b'))) { menu = ''; lastSig = ''; draw(); return; }
+    var a = e.target.closest('[data-act]');
+    if (a) { var act = a.getAttribute('data-act'); if (act === 'menu') menu = 'menu'; else if (act === 'scores') { showScores = !showScores; menu = ''; } else if (act === 'end') menu = 'end'; lastSig = ''; draw(); return; }
+    var b = e.target.closest('button[data-c]'); if (!b || b.disabled) return;
+    var c = JSON.parse(b.getAttribute('data-c'));
+    if (c.t === 'end') menu = '';
+    send(c, b);
   });
   // keep the phone awake while it is the remote
   try { if (navigator.wakeLock) { var lock = function () { navigator.wakeLock.request('screen').catch(function () {}); }; lock(); document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') lock(); }); } } catch (e) {}
-  poll();
+  draw();
 })();

@@ -19,3 +19,12 @@ database_id = "e2c4bb28-e80c-430d-bbd5-36af9696563e"
 # Weekly backup of the whole system (see src/lib/backup.js)
 [triggers]
 crons = ["0 20 * * SUN"]
+
+# Phone remote for the team game: one Durable Object per room (see src/remote_do.js)
+[[durable_objects.bindings]]
+name = "REMOTE"
+class_name = "RemoteRoom"
+
+[[migrations]]
+tag = "v1-remote-rooms"
+new_sqlite_classes = ["RemoteRoom"]
