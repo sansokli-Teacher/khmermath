@@ -359,3 +359,33 @@ a { color: inherit; text-decoration: none; }
 .dealt-g.done b::after { content: ' ✓'; }
 .chips .qtype { width: 120px; min-height: 44px; border-radius: 12px; text-align: center; font-weight: 700; }
 .chips .qtype.on { border-color: var(--brand); background: #edf3ff; }
+
+/* ---------- game question bank (teaching mode) ---------- */
+.gw-tools { display: inline-flex; gap: 8px; }
+.qb-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.qb-top select { min-height: 44px; border-radius: 12px; max-width: 100%; }
+.qb-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+.qb-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.qb-row.off { opacity: .6; background: #f6f6f6; }
+.qb-n { color: var(--brand); font-size: 18px; }
+.qb-q { font-weight: 600; line-height: 1.7; }
+.qb-og { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; margin-top: 4px; font-size: 15px; }
+.qb-og .ok { color: #14532d; font-weight: 700; }
+.qb-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.qb-del { background: var(--bad); }
+.qb-edit { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+.qb-form { display: flex; flex-direction: column; gap: 10px; }
+.qb-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 14px; }
+.qb-form textarea, .qb-form input[type=text], .qb-form select { width: 100%; border-radius: 10px; }
+.qb-sym { display: flex; flex-wrap: wrap; gap: 4px; }
+.qb-sym button { min-height: 32px; padding: 0 10px; border-radius: 8px; background: #f1eee6; font-weight: 600; }
+.qb-opt { display: grid; grid-template-columns: 24px 26px 1fr; gap: 6px; align-items: center; }
+.qb-two { display: grid; grid-template-columns: 1fr 160px; gap: 10px; }
+.qb-prev { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid var(--line); align-self: start; }
+.qb-pq { font-weight: 700; font-size: 18px; line-height: 1.8; }
+.qb-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.qb-po { padding: 6px 10px; border: 2px solid #e1e8f0; border-radius: 10px; }
+.qb-po.ok { border-color: #2f9e44; background: #ebfbee; }
+.qb-fig svg { max-width: 100%; height: 150px; background: #fff; }
+.qb-actions { display: flex; gap: 8px; }
+@media (max-width: 860px) { .qb-edit { grid-template-columns: 1fr; } .qb-row { grid-template-columns: 30px 1fr; } .qb-btns { grid-column: 1 / 3; flex-direction: row; } }

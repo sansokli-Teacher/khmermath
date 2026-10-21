@@ -73,3 +73,4 @@
 .tgp-act button { min-height: 44px; padding: 0 22px; border-radius: 99px; border: 0; font-weight: 800; font-size: 16px; box-shadow: none; background: #1f2547; color: #fff; }
 .tgp-act .tgp-skip { background: #e3ded0; color: #1f2547; } .tgp-act .tgp-again { background: #e8590c; }
 .tgp-fw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+.tgl-tools { display: inline-flex; gap: 8px; }

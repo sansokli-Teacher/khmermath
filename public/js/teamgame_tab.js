@@ -138,6 +138,8 @@ render.teamgame = async function () {
   const lessonBox = h('div', { class: 'tgl-lessons' });
   const qnBox = h('div', { class: 'tgl-chips' });
   const allBtn = h('button', { type: 'button', class: 'tgl-ghost' }, 'ជ្រើសទាំងអស់');
+  const qBtn = h('button', { type: 'button', class: 'tgl-ghost', title: 'មើលបញ្ជីសំណួរ កែ ឬលុប' }, '✎ សំណួរ');
+  qBtn.onclick = () => document.querySelector('[data-tab="gamebank"]').click();
   function drawLessons() {
     lessonBox.innerHTML = '';
     if (!lessons.length) { lessonBox.appendChild(h('p', { class: 'tgl-hint' }, `មិនទាន់មានសំណួរហ្គេមសម្រាប់ថ្នាក់ទី ${tgKh(gradeNow())} ទេ។`)); return; }
@@ -233,7 +235,7 @@ render.teamgame = async function () {
       h('label', { class: 'tgl-f' }, [h('span', {}, 'ថ្នាក់'), sel]),
       lessonBox,
       h('div', { class: 'tgl-qn' }, [h('span', {}, 'ចំនួនសំណួរ'), qnBox]),
-    ]), allBtn),
+    ]), h('span', { class: 'tgl-tools' }, [qBtn, allBtn])),
     step(2, 'ជ្រើសហ្គេម', styleBox),
     step(3, 'ក្រុម', h('div', { class: 'tgl-body' }, [
       h('div', { class: 'tgl-trow' }, [

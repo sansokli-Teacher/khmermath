@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, kh, gradeOf, fullName } from './api.js';
 import Modal from './Modal.jsx';
+import QuestionBank from './QuestionBank.jsx';
 
 // «ហ្គេម» in teaching mode: class → lesson → game style → teams → ▶ Start.
 // The lesson defaults to the one last taught in that class; absent students (crossed out in the Spin) stay out of the teams.
@@ -38,6 +39,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
   const [noTeam, setNoTeam] = useState(false);
   const [deal, setDeal] = useState(0);            // bump to deal the teams again
   const [err, setErr] = useState('');
+  const [bankOpen, setBankOpen] = useState(false);
 
   const grade = cls ? parseInt(gradeOf(cls), 10) || 7 : 7;
   useEffect(() => { loadBank().then(setBank); }, []);
@@ -98,7 +100,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
 
       {step === 1 && (
         <div className="gw-pane">
-          <div className="gw-row"><b>មេរៀនដែលត្រូវលេង</b><button className="btn ghost sm" onClick={() => setPicked(lessons.map((L) => L.n))}>ជ្រើសទាំងអស់</button></div>
+          <div className="gw-row"><b>មេរៀនដែលត្រូវលេង</b><span className="gw-tools"><button className="btn ghost sm" onClick={() => setBankOpen(true)}>✎ សំណួរ</button><button className="btn ghost sm" onClick={() => setPicked(lessons.map((L) => L.n))}>ជ្រើសទាំងអស់</button></span></div>
           {!bank ? <div className="spinner" /> : !lessons.length ? <p className="muted">មិនទាន់មានសំណួរហ្គេមសម្រាប់ថ្នាក់ទី {kh(grade)} ទេ។</p> : (
             <div className="gw-lessons">{lessons.map((L) => (
               <button key={L.n} className={`gw-lesson${picked.includes(L.n) ? ' on' : ''}`} onClick={() => togglePick(L.n)}>
@@ -142,6 +144,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
       )}
 
       {err && <p className="alert">{err}</p>}
+      {bankOpen && <QuestionBank lesson={picked[0]} onClose={() => { setBankOpen(false); loadBank().then(setBank); }} />}
       <div className="gw-bar">
         <button className="btn ghost" onClick={() => (step > 0 && !(step === 1 && given) ? setStep(step - 1) : onClose())}>{step > 0 && !(step === 1 && given) ? '← ថយក្រោយ' : 'បោះបង់'}</button>
         {step > 0 && <button className="btn primary big" disabled={!canNext || (step >= 1 && students === null && step === 3)} onClick={next}>{step === lastStep ? '▶ ចាប់ផ្ដើមហ្គេម' : 'បន្ទាប់ →'}</button>}

@@ -8,6 +8,7 @@ import Wheel from './Wheel.jsx';
 import Modal from './Modal.jsx';
 import Clock from './Clock.jsx';
 import GameWizard from './GameWizard.jsx';
+import QuestionBank from './QuestionBank.jsx';
 
 const HUES = { 7: ['#2a6df0', '#5b3fe0'], 8: ['#0e9f8a', '#1565c0'], 9: ['#e8590c', '#c2255c'], 10: ['#7048e8', '#ae3ec9'], 11: ['#f08c00', '#e8590c'], 12: ['#d6336c', '#862e9c'] };
 const hue = (c) => HUES[parseInt(gradeOf(c), 10)] || HUES[7];
@@ -18,6 +19,7 @@ export default function App() {
   const [sheet, setSheet] = useState(null); // class whose actions are open
   const [view, setView] = useState(null); // { type: 'att' | 'lessons' | 'wheel', cls }
   const [wizard, setWizard] = useState(null); // { cls? } while the game wizard is open
+  const [bankOpen, setBankOpen] = useState(false);
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
   const [fs, setFs] = useState(!!document.fullscreenElement);
@@ -107,6 +109,11 @@ export default function App() {
                 <span className="tool-ic" aria-hidden="true">🎮</span><b>លេងហ្គេម</b><small>ជ្រើសថ្នាក់ មេរៀន ហ្គេម ក្រុម</small>
               </button>
             </li>
+            <li style={{ '--i': 1 }}>
+              <button className="tool t-qwheel" onClick={() => setBankOpen(true)}>
+                <span className="tool-ic" aria-hidden="true">📚</span><b>សំណួរហ្គេម</b><small>មើលបញ្ជី កែ ឬលុបសំណួរ</small>
+              </button>
+            </li>
           </ul>
         </section>
       </main>
@@ -139,6 +146,7 @@ export default function App() {
         </div>
       )}
 
+      {bankOpen && <QuestionBank onClose={() => setBankOpen(false)} />}
       {wizard && <GameWizard classes={classes} cls={wizard.cls} onClose={() => setWizard(null)} />}
     </div>
   );
