@@ -84,7 +84,7 @@
   }
   function overlayHtml() { return opening ? '<div class="busy"><div class="spin"></div><b>' + esc(opening) + '</b></div>' : ''; }
   function pickHtml(card, label) {
-    return '<div class="pick"><p>' + label + '</p>' + card.pick.map(function (p) { return btn('pickb', esc(p.n), { t: 'pick', k: p.k }); }).join('') + btn('ghost', 'Cancel', { t: 'other' }) + '</div>';
+    return '<div class="pick"><p>' + label + '</p>' + card.pick.map(function (p) { return btn('pickb', esc(p.n), { t: 'pick', k: p.k }); }).join('') + btn('ghost', 'បោះបង់', { t: 'other' }) + '</div>';
   }
   function ringHtml(c) {
     var left = c.over ? 0 : c.left, total = Math.max(ring[c.i] || 0, left, 1); ring[c.i] = total;
@@ -105,16 +105,16 @@
     var opts = c.o ? '<div class="opts">' + c.o.map(function (x, i) { return '<div class="opt' + (i === c.ck ? ' key' : '') + '"><b>' + 'កខគឃ'[i] + '</b><span>' + esc(x) + '</span>' + (i === c.ck ? '<i>✓</i>' : '') + '</div>'; }).join('') + '</div>' : '';
     var rev = c.rev || shown[c.i], dis = saving ? ' disabled' : '';
     var top = '<div class="qtop"><div><small>' + esc(c.n || '') + '</small></div>' + (c.left !== undefined ? ringHtml(c) : '') + '</div>';
-    var body = '<div class="qscroll"><div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 The figure is on the screen</p>' : '') + opts
-      + '<div class="ans"><small>Answer · only you can see this</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div></div>';
-    var dock = c.pick && c.pick.length ? '<div class="dock">' + pickHtml(c, 'Which team answered right?') + '</div>'
-      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' done' : ''), rev ? '👁 Shown' : '👁 Show answer', { t: 'show' }, rev ? ' disabled' : '') + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'Other team', { t: 'other' }) + '</div>'
-        + '<div class="row2">' + btn('bad', '✖ Wrong', { t: 'bad' }, dis) + btn('ok', '✔ Correct +' + kh(c.p || S.pts), { t: 'ok' }, dis) + '</div></div>';
+    var ans = '<div class="ans' + (rev ? ' on' : '') + '"><small>' + (rev ? '✓ ចម្លើយ — បានបង្ហាញលើអេក្រង់ហើយ' : 'ចម្លើយ — មានតែលោកគ្រូអ្នកគ្រូឃើញ') + '</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div>';
+    var body = '<div class="qscroll">' + ans + '<div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 រូបភាពនៅលើអេក្រង់</p>' : '') + opts + '</div>';
+    var dock = c.pick && c.pick.length ? '<div class="dock">' + pickHtml(c, 'ក្រុមណាឆ្លើយត្រូវ?') + '</div>'
+      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' done' : ''), rev ? '👁 បានបង្ហាញ' : 'បង្ហាញចម្លើយ', { t: 'show' }, rev ? ' disabled' : '') + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'ក្រុមផ្សេងឆ្លើយត្រូវ…', { t: 'other' }) + '</div>'
+        + '<div class="row2">' + btn('bad', '✖ មិនត្រូវ', { t: 'bad' }, dis) + btn('ok', '✔ ត្រឹមត្រូវ +' + kh(c.p || S.pts), { t: 'ok' }, dis) + '</div></div>';
     return '<section class="qwrap">' + top + body + '</section>' + dock + (saving ? '<div class="busy light"><div class="spin"></div><b>Saving…</b></div>' : '');
   }
   function specialHtml(c) {
     return '<section class="sp"><div class="sic">' + esc(c.icon) + '</div><h2>' + esc(c.name) + '</h2><p>' + esc(c.desc) + '</p>'
-      + (c.pick && c.pick.length ? pickHtml(c, 'Choose the team') : c.go ? btn('big ok', 'OK', { t: 'sp' }) : '') + btn('ghost', '✕ Close card', { t: 'close' }) + '</section>';
+      + (c.pick && c.pick.length ? pickHtml(c, 'ជ្រើសរើសក្រុម') : c.go ? btn('big ok', 'យល់ព្រម', { t: 'sp' }) : '') + btn('ghost', '✕ បិទកាត', { t: 'close' }) + '</section>';
   }
   function finalHtml() {
     var top = S.rank[0] ? S.rank[0].s : 0;
