@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, kh, gradeOf, fullName } from './api.js';
 import Modal from './Modal.jsx';
 import QuestionBank from './QuestionBank.jsx';
+import DealPopup from './DealPopup.jsx';
 
 // «ហ្គេម» in teaching mode: class → lesson → game style → teams → ▶ Start.
 // The lesson defaults to the one last taught in that class; absent students (crossed out in the Spin) stay out of the teams.
@@ -40,6 +41,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
   const [deal, setDeal] = useState(0);            // bump to deal the teams again
   const [err, setErr] = useState('');
   const [bankOpen, setBankOpen] = useState(false);
+  const [popup, setPopup] = useState(false);        // the divide-groups pop-up
 
   const grade = cls ? parseInt(gradeOf(cls), 10) || 7 : 7;
   useEffect(() => { loadBank().then(setBank); }, []);
@@ -74,6 +76,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     return t;
   }, [present, nTeams, deal]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const palette = useMemo(() => shuffle(['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4']), [deal]);   // new random colours for every deal
   const other = OTHERS.find((o) => o.k === style);
   const lastStep = other ? 2 : 3;
   const styleName = (STYLES.find((s) => s.k === style) || other || {}).t;
@@ -140,10 +143,10 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
               <div className="gw-row">
                 <b>ចំនួនក្រុម</b>
                 <div className="gw-stepper"><button disabled={nTeams <= 2} onClick={() => setNTeams(nTeams - 1)}>−</button><output>{kh(teams.length)}</output><button disabled={nTeams >= 8} onClick={() => setNTeams(nTeams + 1)}>+</button></div>
-                <button className="btn ghost sm" onClick={() => setDeal(deal + 1)}>🔀 ចែកម្ដងទៀត</button>
+                <button className="btn primary" onClick={() => { setDeal(deal + 1); setPopup(true); }}>👥 ចែកក្រុម</button>
               </div>
               <div className="gw-teams">{teams.map((t, i) => (
-                <div key={i} className="gw-team"><b>ក្រុមទី {kh(i + 1)} <small>{kh(t.length)} នាក់</small></b><span>{t.join(' · ')}</span></div>))}
+                <div key={i} className="gw-team" style={{ borderTop: `6px solid ${palette[i % palette.length]}` }}><b style={{ color: palette[i % palette.length] }}>ក្រុមទី {kh(i + 1)} <small>{kh(t.length)} នាក់</small></b><span>{t.join(' · ')}</span></div>))}
               </div>
             </>
           )}
@@ -151,6 +154,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
       )}
 
       {err && <p className="alert">{err}</p>}
+      {popup && !noTeam && <DealPopup key={deal} teams={teams} colors={palette} cname={cls ? cls.name : ''} onAgain={() => setDeal((d) => d + 1)} onClose={() => setPopup(false)} />}
       {bankOpen && <QuestionBank lesson={picked[0]} onClose={() => { setBankOpen(false); loadBank().then(setBank); }} />}
       <div className="gw-bar">
         <button className="btn ghost" onClick={() => (step > 0 && !(step === 1 && given) ? setStep(step - 1) : onClose())}>{step > 0 && !(step === 1 && given) ? '← ថយក្រោយ' : 'បោះបង់'}</button>
