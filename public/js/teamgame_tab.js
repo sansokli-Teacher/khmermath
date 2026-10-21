@@ -224,7 +224,7 @@ render.teamgame = async function () {
   go.onclick = () => {
     if (!tgNoTeam && !teams.some((t) => t.length)) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: curCls().name, groups: teams })); } catch {}
-    location.href = `teamgame.html?wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}${tgNoTeam ? '&nt=1' : ''}`;
+    location.href = `teamgame.html?from=exam&wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}${tgNoTeam ? '&nt=1' : ''}`;
   };
 
   const step = (n, title, body, right) => h('section', { class: 'tgl-step' }, [h('div', { class: 'tgl-sh' }, [h('span', { class: 'tgl-n' }, tgKh(n)), h('h3', {}, title), right || null]), body]);

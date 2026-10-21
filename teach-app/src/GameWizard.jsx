@@ -81,7 +81,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     if (other) { location.href = other.href(cls); return; }
     if (!present.length && !noTeam) { setErr('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។'); return; }
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: cls.name, groups: teams })); } catch { /* storage blocked */ }
-    location.href = `/teamgame.html?wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}${noTeam ? '&nt=1' : ''}`;
+    location.href = `/teamgame.html?from=teach&wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}${noTeam ? '&nt=1' : ''}`;
   };
   const next = () => { setErr(''); if (step === lastStep) start(); else setStep(step + 1); };
   const togglePick = (n) => setPicked((p) => (p.includes(n) ? (p.length > 1 ? p.filter((x) => x !== n) : p) : [...p, n]));

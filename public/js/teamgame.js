@@ -255,13 +255,13 @@
   function snapshot() { hist.push(JSON.stringify(G)); if (hist.length > 40) hist.shift(); }
   function showPlay() { bgm('main', 0.32); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
   function showSetup() { if (window.TG_STUDENT) { location.href = 'student.html'; return; }  try { if (window.KmSound) KmSound.stop(); } catch (e) {} stopTimer(); closePop(); $('tg').classList.remove('tg-live'); document.documentElement.classList.remove('tg-noscroll'); if (document.fullscreenElement) document.exitFullscreen(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
-  function refreshResume() { var g = load(GAME, null); $('tg-resume').hidden = !(g && g.tiles && !g.finished && g.tiles.some(function (t) { return !t.done; })); }
+  function refreshResume() { $('tg-resume').hidden = true; }   // «Edit» ends the old game, so there is no game to resume
   function remaining() { return G.tiles.filter(function (t) { return !t.done; }).length; }
 
   function renderAll() { renderScore(); renderBoard(); renderTurn(); $('tg-undo').disabled = !hist.length; }
   function renderTurn() {
     var box = $('tg-turn'); box.innerHTML = '';
-    if (G.finished) { box.appendChild(el('b', '', 'ហ្គេមបានបញ្ចប់')); return; }
+    if (G.finished) { box.appendChild(el('b', '', 'Game over')); return; }
     if (G.teams.length === 1) { box.appendChild(el('b', '', '🙋 សិស្សជ្រើសលេខ')); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត')); return; }
     var dot = el('span', 'dot'); dot.style.background = G.teams[G.turn].color; box.appendChild(dot);
     box.appendChild(document.createTextNode('វេនរបស់ ')); box.appendChild(el('b', '', G.teams[G.turn].name)); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត'));
@@ -507,10 +507,14 @@
       var li = el('li'); li.style.setProperty('--c', r.t.color); li.appendChild(el('span', 'm', medals[place] || khNum(place + 1) + '.')); li.appendChild(el('span', 'n', r.t.name)); li.appendChild(el('b', 's', khNum(r.t.score))); list.appendChild(li);
     });
     if (list.children.length) card.appendChild(list);
-    var acts = el('div', 'tg-acts'), png = el('button', 'btn btn-primary btn-sm', '⬇ ទាញយក PNG'), again = el('button', 'btn btn-ghost btn-sm', 'លេងម្ដងទៀត'), close = el('button', 'btn btn-ghost btn-sm', 'បិទ');
-    [png, again, close].forEach(function (b) { b.type = 'button'; acts.appendChild(b); }); card.appendChild(acts);
+    // after the result: back to where the teacher came from (the exam site or teaching mode), play again, or save the picture
+    var from = (/[?&]from=(exam|teach)/.exec(location.search) || [])[1] || 'exam';
+    var acts = el('div', 'tg-acts'), png = el('button', 'btn btn-ghost btn-sm', '⬇ PNG'), again = el('button', 'btn btn-ghost btn-sm', '↻ Replay');
+    var toExam = el('a', 'btn ' + (from === 'exam' ? 'btn-primary' : 'btn-ghost') + ' btn-sm', 'Exam'), toTeach = el('a', 'btn ' + (from === 'teach' ? 'btn-primary' : 'btn-ghost') + ' btn-sm', 'Teaching');
+    toExam.href = 'teacher.html'; toTeach.href = 'teach/';
+    if (window.TG_STUDENT) { toExam.href = 'student.html'; toExam.textContent = 'Back'; toExam.className = 'btn btn-primary btn-sm'; }
+    [png, again, window.TG_STUDENT ? null : toTeach, toExam].forEach(function (b) { if (!b) return; if (b.tagName === 'BUTTON') b.type = 'button'; acts.appendChild(b); }); card.appendChild(acts);
     png.addEventListener('click', downloadResult); again.addEventListener('click', function () { card.className = 'tg-card'; startGame(); });
-    close.addEventListener('click', function () { closePop(); card.className = 'tg-card'; });
     $('tg-pop').hidden = false; sfx.win(); fireworks(4200);
   }
   var FONT = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
@@ -597,9 +601,14 @@
   });
   $('tg-start').addEventListener('click', startGame);
   $('tg-resume').addEventListener('click', function () { var g = load(GAME, null); if (!g) return; G = g; hist = []; showPlay(); });
-  $('tg-back').addEventListener('click', showSetup);
+  // Edit: back to the settings to change the game; the game that was running ends (nothing is kept to resume)
+  $('tg-back').addEventListener('click', function () {
+    if (!window.TG_STUDENT && G && !G.finished && !confirm('Edit the game? The current game will end.')) return;
+    try { localStorage.removeItem(GAME); } catch (e) {}
+    hist = []; showSetup();
+  });
   $('tg-undo').addEventListener('click', function () { if (!hist.length) return; closePop(); G = JSON.parse(hist.pop()); saveGame(); renderAll(); });
-  $('tg-end').addEventListener('click', function () { if (G.finished || confirm('បញ្ចប់ហ្គេមឥឡូវនេះ ហើយបង្ហាញលទ្ធផល?')) finishGame(); });
+  $('tg-end').addEventListener('click', function () { if (G.finished || confirm('End the game now and show the result?')) finishGame(); });
   $('tg-sndbtn').addEventListener('click', function () { G.mute = !G.mute; this.setAttribute('aria-pressed', !G.mute); this.textContent = G.mute ? '🔇' : '🔊'; saveGame(); });
   $('tg-full').addEventListener('click', function () { var st = $('tg'); if (document.fullscreenElement) document.exitFullscreen(); else if (st.requestFullscreen) st.requestFullscreen(); });
   if (!document.fullscreenEnabled) $('tg-full').hidden = true;
@@ -702,7 +711,7 @@
     var load = document.createElement('div'); load.className = 'tg-loading'; load.textContent = 'កំពុងរៀបចំហ្គេម…'; $('tg').parentNode.insertBefore(load, $('tg'));
     var link = document.querySelector('.tgx-top .btn'); if (link) { link.href = 'student.html'; link.textContent = '← ត្រឡប់'; }
     var brand = document.querySelector('.tgx-brand'); if (brand) brand.href = 'student.html';
-    $('tg-back').textContent = '← ទំព័រសិស្ស';
+    $('tg-back').textContent = '← Back'; $('tg-back').title = 'Back to the student page';
     var tries = 0, t = setInterval(function () {
       if (BANK === null && ++tries < 60) return;
       clearInterval(t);

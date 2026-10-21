@@ -429,3 +429,10 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .gx-noteam:has(input:checked) { border-style: solid; border-color: var(--teal); background: var(--teal-soft); }
 .gx-qcustom { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-3); margin-left: 6px; }
 .gx-qcustom input { width: 90px; height: 44px; border-radius: 99px; border: 2px solid var(--line-2); padding: 0 12px; font: inherit; text-align: center; background: var(--surface-2); }
+
+/* play bar: signs for undo / sound / full screen, then Edit and End */
+.tg-bar #tg-undo, .tg-bar #tg-sndbtn, .tg-bar #tg-full { min-width: 44px; padding-left: 10px; padding-right: 10px; font-size: 18px; }
+.tg-bar #tg-back { color: #1f2547; }
+.tg-bar #tg-end { color: #fff; background: #c92a2a; border-color: #c92a2a; }
+.tg-bar #tg-end:hover { background: #a61e1e; }
+.tg-card .tg-acts a.btn { text-decoration: none; display: inline-flex; align-items: center; }
