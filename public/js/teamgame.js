@@ -621,7 +621,7 @@
   });
   $('tg-undo').addEventListener('click', function () { if (!hist.length) return; closePop(); G = JSON.parse(hist.pop()); saveGame(); renderAll(); });
   $('tg-end').addEventListener('click', function () { if (G.finished || confirm('End the game now and show the result?')) finishGame(); });
-  $('tg-sndbtn').addEventListener('click', function () { G.mute = !G.mute; this.setAttribute('aria-pressed', !G.mute); this.textContent = G.mute ? '🔇' : '🔊'; saveGame(); });
+  $('tg-sndbtn').addEventListener('click', function () { G.mute = !G.mute; this.setAttribute('aria-pressed', !G.mute); this.textContent = G.mute ? '🔇' : '🔊'; if (G.mute) { try { if (window.KmSound) KmSound.stop(); } catch (e) {} } else if (!G.finished && !$('tg-play').hidden) bgm('main', 0.32); saveGame(); });   // muting must also stop the music that is already playing
   $('tg-full').addEventListener('click', function () { var st = $('tg'); if (document.fullscreenElement) document.exitFullscreen(); else if (st.requestFullscreen) st.requestFullscreen(); });
   if (!document.fullscreenEnabled) $('tg-full').hidden = true;
   $('tg-pop').addEventListener('click', function (e) { if (e.target === this && !$('tg-card').classList.contains('final')) closePop(); });
