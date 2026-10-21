@@ -330,7 +330,7 @@ def make_slides(n, tex):
     units = top_level_units(tex)
     slides = []
     sec_titles = [u['title'] for u in units if u['kind'] == 'subsection']
-    slides.append({'k': 'title', 'html': f'<p class="ts-kicker">ថ្នាក់ទី ៧ · មេរៀនទី {kh(n)}</p><h1>{inline(title)}</h1><p class="ts-sub">{kh(len(sec_titles))} ផ្នែក</p>'})
+    slides.append({'k': 'title', 'html': f'<p class="ts-kicker">ថ្នាក់ទី ៧ · មេរៀនទី {kh(n)}</p><h1>{inline(title)}</h1>'})
 
     sec = sub = ''
     mode = 'lesson'
@@ -394,9 +394,9 @@ def make_slides(n, tex):
         if kind == 'subsection':
             flush_ex()
             sec, sub = ttl, ''
-            slides.append({'k': 'title', 'html': f'<p class="ts-kicker">ផ្នែក</p><h1>{inline(ttl)}</h1>'})
+            slides.append({'k': 'title', 'html': f'<h1>{inline(ttl)}</h1>'})
             if text:
-                add('', inline(ttl), parse_blocks(text), 'ផ្នែក')
+                add('', inline(ttl), parse_blocks(text), '')
             continue
         if kind == 'subsubsection':
             flush_ex()

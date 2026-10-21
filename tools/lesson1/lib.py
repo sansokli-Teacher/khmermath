@@ -297,7 +297,7 @@ def slide(kick=None, h2=None, body='', k=None, c=None):
 
 
 def part(n, title, hook=''):
-    return {'k': 'title', 'html': f'<p class="ts-kicker">ផ្នែក</p><h1>{n}. {title}</h1>{hook}'}
+    return {'k': 'title', 'html': f'<h1>{n}. {title}</h1>{hook}'}
 
 
 def key(kick, title, body):

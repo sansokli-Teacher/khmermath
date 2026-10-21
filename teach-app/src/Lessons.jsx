@@ -25,8 +25,8 @@ export default function Lessons({ cls, students, onBack }) {
       grade === '7' ? fetch('/data/lessons_g7.json?v=2').then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
-        .then(() => loadScript('/js/slides/g7l01.js?v=20261024v'))
-        .then(() => loadScript('/js/teachshow.js?v=20261025c')),
+        .then(() => loadScript('/js/slides/g7l01.js?v=20261025a'))
+        .then(() => loadScript('/js/teachshow.js?v=20261025d')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -39,7 +39,7 @@ export default function Lessons({ cls, students, onBack }) {
   const hasDeck = (n) => (grade === '7' && n > 1) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
   const start = async (n, partIdx) => {
     const lesson = data[n];
-    if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261025b`); } catch { /* falls back to the part board */ } }
+    if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261025c`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;

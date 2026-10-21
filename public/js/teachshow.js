@@ -1587,8 +1587,7 @@
     const end = document.createElement('div');
     end.className = 'ts-wid';
     const dl = mk('ts-dl', '⬇', openExport); dl.title = 'ទាញយកស្លាយជា PDF ឬ PowerPoint (ទាំងមេរៀន ឬមួយផ្នែក)';
-    const cdb = mk('ts-cd', '🃏', toggleCard); cdb.title = 'កាតលំហាត់ — សរសេរលំហាត់ថ្មីលើស្លាយ (ឧ. លំហាត់ក្រុម)';
-    end.append(toolsMenu(), cdb, dl, mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
+    end.append(toolsMenu(), dl, mk('ts-fs', '⛶', toggleFs), mk('ts-exit', '✕', close));
     bar.append(end);
     bar._nav = nav;   // the page / arrows sit in the bottom-right corner of the slide (added to the stage in open())
     return bar;
