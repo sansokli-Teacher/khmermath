@@ -9,7 +9,7 @@
   var FACES = [['#ff6b81', '#e8456b'], ['#2fd4a0', '#2fa66b'], ['#ffb347', '#ff8a3d'], ['#4dabf7', '#1c7ed6'], ['#b57cf5', '#8a4fe0'], ['#ff7eb3', '#e0518c']];
   if (!CODE || !KEY) { root.innerHTML = '<div class="msg"><h1>Game Remote</h1><p>Open this page by scanning the QR code on the game screen.</p></div>'; return; }
 
-  var S = null, hostOn = false, linkM = 'wait', net = null, pending = {}, idKey = {}, cidKey = {}, cidN = 0, menu = '', showScores = false, opening = '', openingAt = 0, saving = 0, shown = {}, ring = {}, lastSig = '', toastT = 0, gone = false;
+  var S = null, hostOn = false, linkM = 'wait', net = null, pending = {}, idKey = {}, cidKey = {}, cidN = 0, menu = '', showScores = false, opening = '', openingAt = 0, saving = 0, shown = {}, shownAt = {}, ring = {}, lastSig = '', toastT = 0, gone = false;
 
   // ---------- feedback ----------
   function toast(text, kind) {
@@ -17,11 +17,11 @@
     t.textContent = text; t.className = 'toast show ' + (kind || ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, kind === 'bad' ? 2800 : 1100);
   }
   function buzz(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
-  var keyOf = function (c) { return c.t + ':' + (c.i != null ? c.i : c.k != null ? c.k : ''); };
+  var keyOf = function (c) { return c.t + ':' + (c.i != null ? c.i : c.k != null ? c.k : c.d != null ? c.d : ''); };
 
   function send(c, el) {
     var key = keyOf(c);
-    if (pending[key] && Date.now() - pending[key] < 600) return;        // double tap
+    if (pending[key] && Date.now() - pending[key] < (c.t === 'show' ? 250 : 600)) return;        // double tap
     pending[key] = Date.now(); buzz(18);
     if (el) el.classList.add('sending');
     var cid = ++cidN; cidKey[cid] = key;
@@ -29,7 +29,7 @@
     if (c.t === 'open') { opening = 'card ' + kh(c.i + 1); openingAt = Date.now(); }
     else if (c.t === 'spin') { opening = 'Spinning…'; openingAt = Date.now(); }
     else if (c.t === 'go') { opening = 'Next question…'; openingAt = Date.now(); }
-    else if (c.t === 'show' && S && S.card) shown[S.card.i] = revealed(S.card) ? 0 : 1;   // show / hide: the phone answers before the screen does
+    else if (c.t === 'show' && S && S.card) { shown[S.card.i] = c.d ? 1 : 0; shownAt[S.card.i] = Date.now(); }   // the phone answers before the screen does
     else if (c.t === 'ok' || c.t === 'bad' || c.t === 'pick' || c.t === 'sp') { saving = Date.now(); }
     net.cmd(c, cid);
     setTimeout(function () {                                           // nothing came back: say so
@@ -68,7 +68,7 @@
   });
 
   // is the answer shown on the screen? (the phone's own tap counts until the screen confirms it)
-  function revealed(c) { return shown[c.i] !== undefined ? !!shown[c.i] : !!c.rev; }
+  function revealed(c) { if (shown[c.i] !== undefined && Date.now() - (shownAt[c.i] || 0) > 2500) delete shown[c.i]; return shown[c.i] !== undefined ? !!shown[c.i] : !!c.rev; }   // an unconfirmed tap expires: the screen has the last word
 
   // ---------- pieces ----------
   function btn(cls, label, c, extra) {
@@ -109,10 +109,10 @@
     var opts = c.o ? '<div class="opts">' + c.o.map(function (x, i) { return '<div class="opt' + (i === c.ck ? ' key' : '') + '"><b>' + 'កខគឃ'[i] + '</b><span>' + esc(x) + '</span>' + (i === c.ck ? '<i>✓</i>' : '') + '</div>'; }).join('') + '</div>' : '';
     var rev = revealed(c), dis = saving ? ' disabled' : '';
     var top = '<div class="qtop"><div><small>' + esc(c.n || '') + '</small></div>' + (c.left !== undefined ? ringHtml(c) : '') + '</div>';
-    var ans = '<div class="ans' + (rev ? ' on' : '') + '"><small>' + (rev ? '✓ ចម្លើយ — កំពុងបង្ហាញលើអេក្រង់' : 'ចម្លើយ — មានតែលោកគ្រូអ្នកគ្រូឃើញ') + '</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div>';
+    var ans = '<div class="ans' + (rev ? ' on' : '') + '"><small>' + (rev ? '✓ ចម្លើយ — កំពុងបង្ហាញលើអេក្រង់' : 'ចម្លើយ — មានតែលោកគ្រូអ្នកគ្រូឃើញ') + '</small><div>' + (c.o && c.ck >= 0 ? '<b class="lt">' + 'កខគឃ'[c.ck] + '.</b> ' : '') + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div>';
     var body = '<div class="qscroll">' + ans + '<div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 រូបភាពនៅលើអេក្រង់</p>' : '') + opts + '</div>';
     var dock = c.pick && c.pick.length ? '<div class="dock">' + pickHtml(c, 'ក្រុមណាឆ្លើយត្រូវ?') + '</div>'
-      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' on' : ''), rev ? '🙈 លាក់ចម្លើយ' : '👁 បង្ហាញចម្លើយ', { t: 'show' }) + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'ក្រុមផ្សេងឆ្លើយត្រូវ…', { t: 'other' }) + '</div>'
+      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' on' : ''), rev ? '🙈 លាក់ចម្លើយ' : '👁 បង្ហាញចម្លើយ', { t: 'show', d: rev ? 0 : 1 }) + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'ក្រុមផ្សេងឆ្លើយត្រូវ…', { t: 'other' }) + '</div>'
         + '<div class="row2">' + btn('bad', '✖ មិនត្រូវ', { t: 'bad' }, dis) + btn('ok', '✔ ត្រឹមត្រូវ +' + kh(c.p || S.pts), { t: 'ok' }, dis) + '</div></div>';
     return '<section class="qwrap">' + top + body + '</section>' + dock + (saving ? '<div class="busy light"><div class="spin"></div><b>Saving…</b></div>' : '');
   }

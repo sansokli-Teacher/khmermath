@@ -769,7 +769,7 @@
       if (c.t === 'open') { var tiles = $('tg-board').querySelectorAll('.tg-tile'); if (openTileIdx < 0 && tiles[c.i] && !tiles[c.i].disabled) tiles[c.i].click(); }
       else if (c.t === 'spin') { if (openTileIdx < 0) press('.tg-spin', $('tg-board')); }
       else if (c.t === 'go') { if (openTileIdx < 0) press('.tg-go-q', $('tg-board')); }
-      else if (c.t === 'show') press('[data-rc="show"]');   // toggles: show / hide the answer on the screen
+      else if (c.t === 'show') { var an = card.querySelector('.tg-a'); if (an && (c.d === undefined || (c.d === 1) === an.hidden)) press('[data-rc="show"]'); }   // d=1 show, d=0 hide (only if it is not already so)
       else if (c.t === 'ok') press('[data-rc="ok"]');
       else if (c.t === 'bad') press('[data-rc="bad"]');
       else if (c.t === 'other') { if (!card.querySelector('.tg-pickbtn')) press('[data-rc="other"]'); else press('[data-rc="other"]'); }
