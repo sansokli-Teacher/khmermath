@@ -964,3 +964,9 @@ body.teach-show-on { overflow: hidden; }
 .sp-chip.off { border-color: #e03131; background: #fff1f1; color: #c92a2a; text-decoration: line-through; opacity: .85; }
 .sp-rok { min-height: 0; height: 38px; border-radius: 99px; border: 0; background: #2f5fe3; color: #fff; font-weight: 800; box-shadow: none; }
 .pp-abs { background: #fff1f1; color: #c92a2a; border: 1.5px solid #e03131 !important; }
+
+/* the groups that were dealt stay listed under the wheel after the banner is closed */
+.sp-dealt { max-height: 34%; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
+.sp-dealt[hidden] { display: none; }
+.sp-dg { padding: 4px 10px; border-radius: 10px; border-left: 6px solid var(--c); background: #fff; color: #1f2547; font-size: 13px; line-height: 1.5; }
+.sp-dg b { color: var(--c); }

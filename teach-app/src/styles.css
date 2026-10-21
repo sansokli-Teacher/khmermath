@@ -349,3 +349,13 @@ a { color: inherit; text-decoration: none; }
 .gw-team { padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .gw-team small { color: var(--muted); font-weight: 600; }
 .gw-bar { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 0 18px; background: var(--bg); }
+
+/* the dealt groups stay listed under the wheel (also after the board is closed) */
+.wheel-dealt { width: 100%; margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.dealt-g { padding: 8px 14px 10px; border-radius: 14px; background: #fff; border-top: 6px solid var(--c); box-shadow: var(--shadow); display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.dealt-g b { color: var(--c); font-size: 18px; } .dealt-g small { color: var(--muted); }
+.dealt-g span { flex-basis: 100%; font-size: 15px; line-height: 1.7; }
+.dealt-g.done { opacity: .55; }
+.dealt-g.done b::after { content: ' ✓'; }
+.chips .qtype { width: 120px; min-height: 44px; border-radius: 12px; text-align: center; font-weight: 700; }
+.chips .qtype.on { border-color: var(--brand); background: #edf3ff; }

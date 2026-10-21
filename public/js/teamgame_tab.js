@@ -79,9 +79,14 @@ render.teamgame = async function () {
       lessonBox.appendChild(b);
     });
   }
-  function drawQn() {
+  const qIn = h('input', { type: 'number', min: '1', max: '100', 'aria-label': 'វាយចំនួនសំណួរ', placeholder: 'វាយចំនួន' });
+  qIn.oninput = () => { const v = parseInt(qIn.value, 10); if (v >= 1) { tgQn = Math.min(100, v); drawQn(true); drawBar(); } };
+  function drawQn(typing) {
     qnBox.innerHTML = '';
     [5, 10, 15, 20].forEach((n) => { const b = h('button', { type: 'button', class: tgQn === n ? 'on' : '' }, tgKh(n)); b.onclick = () => { tgQn = n; drawQn(); drawBar(); }; qnBox.appendChild(b); });
+    if (!typing) qIn.value = [5, 10, 15, 20].includes(tgQn) ? '' : String(tgQn);
+    qIn.classList.toggle('on', ![5, 10, 15, 20].includes(tgQn));
+    qnBox.appendChild(qIn);
   }
   allBtn.onclick = () => { picked = lessons.map((L) => L.n); drawLessons(); drawBar(); };
   async function loadLessons() {

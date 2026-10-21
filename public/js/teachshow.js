@@ -1072,7 +1072,8 @@
     csel.append(new Option('— ជ្រើសថ្នាក់ —', ''));
     crow.append(Object.assign(document.createElement('span'), { textContent: 'ថ្នាក់' }), csel);
     const rp = document.createElement('div'); rp.className = 'sp-roster'; rp.hidden = true;
-    wrap.append(crow, modes, bar, stageW, info, pop, fw, gear, rp);
+    const dealt = document.createElement('div'); dealt.className = 'sp-dealt'; dealt.hidden = true;
+    wrap.append(crow, modes, bar, stageW, info, dealt, pop, fw, gear, rp);
     const c = cv.getContext('2d');
     const pal = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4', '#c92a2a', '#087f5b'];
     const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };
@@ -1080,7 +1081,8 @@
     let roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
     const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
     const live = () => roster.filter((n) => !absent.has(n));
-    const makeGroups = () => { const size = +gsel.value || 6, R = live(), n = Math.max(1, Math.ceil(R.length / size)), g = Array.from({ length: n }, () => []); shuffle(R).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
+    const makeGroups = () => { st.dealt = false; for (let k = PPAL.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [PPAL[k], PPAL[j]] = [PPAL[j], PPAL[k]]; }   // a new random colour set for every deal
+      const size = +gsel.value || 6, R = live(), n = Math.max(1, Math.ceil(R.length / size)), g = Array.from({ length: n }, () => []); shuffle(R).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
     makeGroups();
     // what is on the wheel right now
     const items = () => {
@@ -1093,6 +1095,8 @@
       list = items();
       modeBtns.forEach((b) => b.classList.toggle('on', b.dataset.m === st.mode));
       gsel.style.display = dvd.style.display = st.mode === 'group' ? '' : 'none';
+      dealt.hidden = !(st.mode === 'group' && st.dealt);
+      if (!dealt.hidden) dealt.innerHTML = st.groups.map((g, k) => `<div class="sp-dg" style="--c:${PPAL[k % PPAL.length]}"><b>ក្រុម ${kh(k + 1)}</b> <span>${esc(g.join(' · '))}</span></div>`).join('');
       abBtn.textContent = absent.size ? `✕ អវត្តមាន ${kh(absent.size)}` : '✕ អវត្តមាន';
       const total = st.mode === 'one' ? live().length : st.groups.length;
       info.textContent = `${cname ? cname + ' · ' : ''}${st.mode === 'one' ? 'សិស្ស' : 'ក្រុម'} ${kh(list.length)}/${kh(total)}${list.length ? '' : ' — អស់ហើយ ចុច ↺'}`;
@@ -1203,6 +1207,7 @@
     document.addEventListener('fullscreenchange', () => { if (fsRoot && !document.fullscreenElement) exitFull(); });
     const showGroups = (again) => {
       if (again) makeGroups();
+      st.dealt = true; refresh();   // the groups stay listed under the wheel after the banner is closed
       const id = ++gRun, n = st.groups.length, calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       openPop(); pop.classList.add('big');
       const total = st.groups.reduce((a, g) => a + g.length, 0), tch = teacherName();
@@ -1246,7 +1251,7 @@
       };
       if (calm) { cards.forEach((c, i) => lock(i, false)); finale(); } else requestAnimationFrame(frame);
     };
-    dvd.onclick = () => { if (st.spin) return; if (st.mode !== 'group') { st.mode = 'group'; st.used.clear(); st.ang = 0; } showGroups(false); refresh(); };
+    dvd.onclick = () => { if (st.spin) return; if (st.mode !== 'group') { st.mode = 'group'; st.used.clear(); st.ang = 0; } showGroups(true); refresh(); };
 
     hub.onclick = () => {
       if (st.spin || !list.length) return;

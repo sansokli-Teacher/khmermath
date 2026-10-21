@@ -675,7 +675,7 @@
   (function () {
     var q = new URLSearchParams(location.search);
     if (q.get('wiz') !== '1' || q.get('student') === '1') return;
-    var grade = parseInt(q.get('grade'), 10) || 7, qn = Math.max(5, Math.min(30, parseInt(q.get('n'), 10) || 10));
+    var grade = parseInt(q.get('grade'), 10) || 7, qn = Math.max(1, Math.min(100, parseInt(q.get('n'), 10) || 10));
     var want = (q.get('l') || '').split(',').map(function (x) { return parseInt(x, 10); }).filter(function (x) { return x > 0; });
     var load = document.createElement('div'); load.className = 'tg-loading'; load.textContent = 'កំពុងរៀបចំហ្គេម…'; $('tg').parentNode.insertBefore(load, $('tg'));
     var tries = 0, t = setInterval(function () {

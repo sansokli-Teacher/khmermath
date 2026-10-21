@@ -51,3 +51,5 @@
 .tgl-o { border: 1px solid #e3ded0; border-radius: 16px; padding: 14px; background: #fff; }
 .tgl-o p { color: #6b7280; margin: 6px 0 10px; }
 @media (max-width: 640px) { .tgl-go { width: 100%; } .tgl-bar { bottom: 6px; } }
+.tgl-chips input { width: 110px; min-height: 40px; border-radius: 99px; border: 2px solid #e3ded0; padding: 0 14px; font-weight: 800; text-align: center; box-shadow: none; }
+.tgl-chips input.on { border-color: #1f2547; background: #edf3ff; }

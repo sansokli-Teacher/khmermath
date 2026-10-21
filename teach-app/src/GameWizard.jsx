@@ -106,7 +106,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
               </button>))}
             </div>
           )}
-          <div className="gw-row"><b>ចំនួនសំណួរ</b><div className="chips">{QN.map((n) => <button key={n} className={qn === n ? 'on' : ''} onClick={() => setQn(n)}>{kh(n)}</button>)}</div></div>
+          <div className="gw-row"><b>ចំនួនសំណួរ</b><div className="chips">{QN.map((n) => <button key={n} className={qn === n ? 'on' : ''} onClick={() => setQn(n)}>{kh(n)}</button>)}<input className={`qtype${QN.includes(qn) ? '' : ' on'}`} type="number" min="1" max="100" placeholder="វាយចំនួន" aria-label="វាយចំនួនសំណួរ" value={QN.includes(qn) ? '' : qn} onChange={(e) => { const v = parseInt(e.target.value, 10); if (v >= 1) setQn(Math.min(100, v)); }} /></div></div>
         </div>
       )}
 

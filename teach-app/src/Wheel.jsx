@@ -108,7 +108,8 @@ export default function Wheel({ cls, students }) {
   const makeGroups = useCallback(() => {
     const here = people.filter((p) => !mem.off.includes(p.id));
     const n = Math.max(1, Math.min(groupN, here.length || 1));
-    const gs = Array.from({ length: n }, (_, i) => ({ id: `g${i}`, n: `ក្រុមទី ${kh(i + 1)}`, people: [] }));
+    const pal = shuffle(COLORS);   // a new random colour set for every deal
+    const gs = Array.from({ length: n }, (_, i) => ({ id: `g${i}`, n: `ក្រុមទី ${kh(i + 1)}`, people: [], c: pal[i % pal.length] }));
     shuffle(here).forEach((p, i) => gs[i % n].people.push(p));
     setGroups(gs);
     saveMem({ ...mem, doneG: [] });
@@ -210,6 +211,16 @@ export default function Wheel({ cls, students }) {
           <canvas ref={canvasRef} className="wheel-canvas" aria-label="កង់ឈ្មោះសិស្ស" />
           <button className="hub" onClick={spin} disabled={spinning || !items.length}>SPIN</button>
         </div>
+        {mode === 'group' && groups.length > 0 && (
+          <div className="wheel-dealt">
+            {groups.map((g, k) => (
+              <div key={g.id} className={`dealt-g${(mem.doneG || []).includes(g.id) ? ' done' : ''}`} style={{ '--c': g.c || COLORS[k % COLORS.length] }}>
+                <b>{g.n}</b> <small>{kh(g.people.length)} នាក់</small>
+                <span>{g.people.map((p) => p.n).join(' · ')}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {!items.length && <p className="wheel-empty">{mode === 'one' ? 'សិស្សត្រូវបានជ្រើសអស់ហើយ។' : 'ក្រុមទាំងអស់ត្រូវបានជ្រើសហើយ។'} <button className="link" onClick={reset}>ចាប់ផ្តើមឡើងវិញ</button></p>}
       </div>
 
@@ -267,7 +278,7 @@ export default function Wheel({ cls, students }) {
             <p>👥 បែងចែកក្រុមរួចរាល់! · {kh(groups.reduce((n, g) => n + g.people.length, 0))} នាក់</p>
             <div className="board-grid">
               {groups.map((g, k) => (
-                <div className="board-g" key={g.id} style={{ '--c': COLORS[k % COLORS.length] }}>
+                <div className="board-g" key={g.id} style={{ '--c': g.c || COLORS[k % COLORS.length] }}>
                   <b>{g.n}</b><span>{kh(g.people.length)} នាក់</span>
                   <ol>{g.people.map((p) => <li key={p.id}>{p.n}</li>)}</ol>
                 </div>
