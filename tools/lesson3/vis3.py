@@ -4,6 +4,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lesson1'))
 from lib import *
 
 POS, NEG = BLUE, RED
+MATHFONT = "font-family=\"'Times New Roman','STIX Two Text','Cambria Math',serif\" font-style=\"italic\""
+
+
+def M(x, y, t, size=26, fill=NAVY, anchor='middle', weight=700):
+    """numbers and letters of the maths in a picture: italic Times, like the maths on the page (Mathcad style)"""
+    t = str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}" {MATHFONT}>{t}</text>'
 
 
 def sg(v):
@@ -31,13 +38,13 @@ class NL:
         for v in range(s.lo, s.hi + 1):
             b += line(s.X(v), y - 12, s.X(v), y + 12, NAVY, 3)
             if numbers and (v - s.lo) % every == 0:
-                b += T(s.X(v), y + 50, sg(v), size, NEG if v < 0 else POS if v > 0 else NAVY)
+                b += M(s.X(v), y + 50, sg(v), size + 2, NEG if v < 0 else POS if v > 0 else NAVY)
         return b
 
     def pt(s, v, col, r=15, label=None, dy=-38, size=30):
         b = circ(s.X(v), s.y, r, col, '#fff', 3)
         if label:
-            b += T(s.X(v), s.y + dy, label, size, col)
+            b += M(s.X(v), s.y + dy, label, size, col)
         return b
 
     def hop(s, a, b_, col, text='', h=64, below=False, size=26, w=5):
@@ -53,7 +60,7 @@ class NL:
         out = f'<path d="{d}" fill="none" stroke="{col}" stroke-width="{w}" stroke-linecap="round"/>'
         out += f'<polygon points="{xb},{ya} {hx+px},{hy+py} {hx-px},{hy-py}" fill="{col}"/>'
         if text:
-            out += T(cx, y + sgn_ * (h + 14) + (14 if below else -4), text, size, col)
+            out += M(cx, y + sgn_ * (h + 14) + (14 if below else -4), text, size + 2, col)
         return out
 
     def brace(s, a, b_, col, text, up=True, size=26):
@@ -75,11 +82,11 @@ def thermometer():
     b += rvg(0, f'<rect x="122" y="{Y(-60)}" width="16" height="{bot+54-Y(-60)}" fill="{BLUE}"/>', until=3)
     b += rvg(3, f'<rect x="122" y="{Y(40)}" width="16" height="{bot+54-Y(40)}" fill="{RED}"/>')
     for t in range(-60, 61, 20):
-        b += line(190, Y(t), 214, Y(t), NAVY, 3) + T(228, Y(t) + 10, sg(t), 28, NEG if t < 0 else POS if t > 0 else NAVY, 'start')
+        b += line(190, Y(t), 214, Y(t), NAVY, 3) + M(228, Y(t) + 10, sg(t), 30, NEG if t < 0 else POS if t > 0 else NAVY, 'start')
     b += line(190, Y(0), 970, Y(0), NAVY, 3, '10 8')
-    b += rvg(1, line(330, Y(-60), 520, Y(-60), NEG, 4) + T(540, Y(-60) + 14, '−60°C', 48, NEG, 'start'))
+    b += rvg(1, line(330, Y(-60), 520, Y(-60), NEG, 4) + M(540, Y(-60) + 14, '−60°C', 52, NEG, 'start'))
     b += rvg(2, T(540, Y(-60) + 54, '៦០ អង្សាក្រោមសូន្យ', 28, NAVY, 'start'))
-    b += rvg(3, line(330, Y(40), 520, Y(40), POS, 4) + T(540, Y(40) + 14, '+40°C', 48, POS, 'start') + T(540, Y(40) + 54, '៤០ អង្សាលើសូន្យ', 28, NAVY, 'start'))
+    b += rvg(3, line(330, Y(40), 520, Y(40), POS, 4) + M(540, Y(40) + 14, '+40°C', 52, POS, 'start') + T(540, Y(40) + 54, '៤០ អង្សាលើសូន្យ', 28, NAVY, 'start'))
     return svg(1000, 520, b, '56vh')
 
 
@@ -100,7 +107,7 @@ def abs_distance():
     nl = NL(-3, 3, y=150)
     b = nl.base(size=32) + nl.brace(-3, 0, NEG, 'ចម្ងាយ 3 ឯកតា') + nl.brace(0, 3, POS, 'ចម្ងាយ 3 ឯកតា')
     b += nl.pt(-3, NEG) + nl.pt(3, POS) + nl.pt(0, NAVY)
-    b += rvg(1, T(nl.X(-1.5), 250, '|−3| = 3', 40, NEG) + T(nl.X(1.5), 250, '|3| = 3', 40, POS))
+    b += rvg(1, M(nl.X(-1.5), 250, '|−3| = 3', 44, NEG) + M(nl.X(1.5), 250, '|3| = 3', 44, POS))
     return svg(1000, 290, b, '46vh')
 
 
@@ -133,7 +140,7 @@ def plot_points(points, lo, hi, labelmap=None, with_axis_name=True, steps=True):
     b = nl.base(size=32)
     cols = {'A': ORANGE, 'B': PURPLE, 'C': GREEN, 'D': RED}
     for k, (name, v) in enumerate(points.items()):
-        g = nl.pt(v, cols.get(name, BLUE), 16) + T(nl.X(v), 66, f'{name}({sg(v)})', 36, cols.get(name, BLUE))
+        g = nl.pt(v, cols.get(name, BLUE), 16) + M(nl.X(v), 66, f'{name}({sg(v)})', 40, cols.get(name, BLUE))
         b += rvg(k + 1, g) if steps else g
     b += T(nl.x0 - 50, 190, "x'", 32, GREY) + T(nl.x1 + 50, 190, 'x', 32, GREY)
     return svg(1000, 230, b, '40vh')
@@ -160,7 +167,7 @@ def marbles_add(a, b_):
     sb = 1 if b_ > 0 else -1
     g1, e1 = row(na, sa, 60, 60)
     g2, e2 = row(nb, sb, e1 + 70, 60)
-    out = g1 + T(e1 + 22, 72, '+', 44, NAVY) + g2
+    out = g1 + M(e1 + 22, 72, '+', 46, NAVY) + g2
     tot, _ = row(na + nb, sa, 60, 160)
     out += rvg(1, tot + T(60 + (na + nb) * 58 + 10, 172, f'= {na+nb} គ្រាប់', 30, NAVY, 'start'))
     return out
@@ -195,7 +202,7 @@ def zero_pairs_add(np_, nn):
         b += eg
     res, sign = (left, 1) if left else (extra, -1)
     rg, _ = row(res, sign, 230, 240)
-    b += rvg(2, T(60, 252, 'សល់ ៖', 30, GREY, 'start') + rg + T(230 + res * 58 + 10, 252, f'= {sgn(res if sign > 0 else -res)}', 40, POS if sign > 0 else NEG, 'start'))
+    b += rvg(2, T(60, 252, 'សល់ ៖', 30, GREY, 'start') + rg + M(230 + res * 58 + 10, 252, f'= {sgn(res if sign > 0 else -res)}', 44, POS if sign > 0 else NEG, 'start'))
     return svg(820, 300, b, '42vh')
 
 
@@ -220,8 +227,8 @@ def subtract_box(total, take, sign, y0=60):
 
 
 def subtract_two():
-    b = subtract_box(4, 2, 1, 70) + rvg(2, T(1180, 86, '4 − 2 = 2', 42, POS, 'end'))
-    b += subtract_box(8, 2, -1, 230) + rvg(2, T(1180, 246, '(−8) − (−2) = −6', 42, NEG, 'end'))
+    b = subtract_box(4, 2, 1, 70) + rvg(2, M(1180, 86, '4 − 2 = 2', 46, POS, 'end'))
+    b += subtract_box(8, 2, -1, 230) + rvg(2, M(1180, 246, '(−8) − (−2) = −6', 46, NEG, 'end'))
     return svg(1200, 320, b, '46vh')
 
 
@@ -238,15 +245,15 @@ def subtract_zero_pairs():
     cross = ''.join(f'<line x1="{x + i*130 + 58 - 22}" y1="38" x2="{x + i*130 + 58 + 22}" y2="82" stroke="{GREY}" stroke-width="5"/>' for i in range(3))
     b += rvg(2, cross + T(x + 190, 196, 'យកឃ្លីដក 3 គ្រាប់ចេញ', 28, GREY))
     r9, _ = row(9, 1, 60, 280)
-    b += rvg(3, r9 + T(60 + 9 * 58 + 20, 292, '= 9', 44, POS, 'start'))
+    b += rvg(3, r9 + M(60 + 9 * 58 + 20, 292, '= 9', 48, POS, 'start'))
     return svg(1100, 340, b, '42vh')
 
 
 # ------------------------------------------------------------------ 5. multiplication / division sign rules
 def sign_grid(op='×'):
     LP, LN = '#8ec5ff', '#ff9b9b'                       # light tints: this picture sits on the dark «key» panel
-    b = T(130, 70, op, 52, '#fff') + T(330, 70, '( + )', 44, LP) + T(540, 70, '( − )', 44, LN)
-    b += T(130, 178, '( + )', 44, LP) + T(130, 300, '( − )', 44, LN)
+    b = M(130, 70, op, 52, '#fff') + M(330, 70, '( + )', 44, LP) + M(540, 70, '( − )', 44, LN)
+    b += M(130, 178, '( + )', 44, LP) + M(130, 300, '( − )', 44, LN)
     cells = [(330, 178, '+', GREEN, 1), (540, 178, '−', RED, 2), (330, 300, '−', RED, 3), (540, 300, '+', GREEN, 4)]
     for x, y, sym, col, st in cells:
         b += rvg(st, rect(x - 92, y - 58, 184, 108, col, 20) + T(x, y + 22, sym, 76, '#fff', weight=800))
@@ -262,9 +269,9 @@ def pattern_mult():
         y = 40 + i * 62
         col = NEG if v < 0 else NAVY if v == 0 else POS
         line_ = f'(−3) × {sg(k)} = {sg(v)}'
-        g = T(300, y + 14, line_, 38, col, 'middle')
+        g = M(300, y + 14, line_, 42, col, 'middle')
         if i:
-            g += T(500, y - 14, '+3', 30, GREEN, 'start') + f'<polygon points="478,{y-34} 490,{y-12} 466,{y-12}" fill="{GREEN}"/>'
+            g += M(500, y - 14, '+3', 32, GREEN, 'start') + f'<polygon points="478,{y-34} 490,{y-12} 466,{y-12}" fill="{GREEN}"/>'
         b += rvg(i + 1, g)
     b += rvg(7, rect(60, 40 + 4 * 62 - 28, 480, 124, 'none', 12, GOLD, 5))
     return svg(760, 440, b, '50vh')
@@ -291,7 +298,7 @@ def week_chart():
         top = y0 - v * unit if v > 0 else y0
         h = abs(v) * unit
         b += rect(x, top, bw, h, col, 8)
-        b += T(x + bw / 2, (y0 - v * unit - 12) if v > 0 else (y0 - v * unit + 38), sgn(v), 36, col)
+        b += M(x + bw / 2, (y0 - v * unit - 12) if v > 0 else (y0 - v * unit + 38), sgn(v), 40, col)
         b += T(x + bw / 2, 372, name, 26, NAVY)
         if name in ('ព្រហស្បតិ៍', 'សៅរ៍'):
             b += rvg(1, f'<rect x="{x-14}" y="30" width="{bw+28}" height="360" rx="18" fill="none" stroke="{GOLD}" stroke-width="5" stroke-dasharray="10 7"/>')
