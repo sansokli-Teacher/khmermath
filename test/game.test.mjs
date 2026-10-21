@@ -82,3 +82,12 @@ test('every question gets an answer time: suggested from the question, or the te
   assert.equal(cleanEdit({ q: 'x', a: '1', t: 'y', tm: '' }, { t: 'y', lv: 'easy' }).data.tm, 0);
   assert.ok(cleanEdit({ q: 'x', a: '1', t: 'y', tm: 2 }, { t: 'y', lv: 'easy' }).error);
 });
+
+import { cleanDeep, repairedJson } from '../src/lib/mathfix.js';
+test('lost backslashes in saved questions are repaired (a tab where \\text was, a bell where \\alpha was)', async () => {
+  assert.equal(cleanDeep('x \x09ext{cm} \x07lpha \x0crac{1}{2} \x08ar{z}'), 'x \\text{cm} \\alpha \\frac{1}{2} \\bar{z}');
+  assert.deepEqual(cleanDeep({ stem_text: 'a\x09imes b', options: ['\x0crac12', 'ok'], n: 3 }), { stem_text: 'a\\times b', options: ['\\frac12', 'ok'], n: 3 });
+  assert.equal(cleanDeep('line one\nline two'), 'line one\nline two');            // real line breaks stay
+  const req = repairedJson(new Request('http://x/api/tests/1/questions', { method: 'POST', body: JSON.stringify({ stem_text: 'a\x09imes b' }) }));
+  assert.equal((await req.json()).stem_text, 'a\\times b');
+});

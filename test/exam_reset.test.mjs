@@ -58,3 +58,30 @@ test('reset after the exam time needs minutes, then the student gets exactly tha
   assert.ok([25, 26].includes(row(env, 's1').extra_minutes));    // 15 minutes since the end + 10 more (rounded up to a whole minute)
   assert.ok(row(env, 's2').submitted_at);
 });
+
+import * as integrity from '../src/api/integrity.js';
+
+test('a long press on a phone and a keyboard resizing the window are not incidents; the same on a desktop still are', () => {
+  const phone = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 Chrome/155 Mobile Safari/537.36', desktop = 'Mozilla/5.0 (Windows NT 10.0) Chrome/155';
+  assert.equal(integrity.countsEvent('contextmenu', 0, null, phone), false);
+  assert.equal(integrity.countsEvent('contextmenu', 0, null, desktop), true);
+  assert.equal(integrity.countsEvent('split_view', 0, '390x500 from 390x800', phone), false);       // only the height changed
+  assert.equal(integrity.countsEvent('split_view', 0, '250x800 from 390x800', phone), true);        // the width really shrank
+  assert.equal(integrity.countsEvent('fullscreen_exit', 0, null, phone), true);
+  assert.equal(integrity.countsEvent('tab_hidden', 500, null, phone), false);                       // short glance away
+});
+
+test('unlocking gives the locked minutes back once, and «unlock all» does it for everyone', async () => {
+  const env = await setup({ endedMinutesAgo: -30 });
+  env.raw.prepare("UPDATE results SET submitted_at = NULL, submit_type = NULL, locked = 1")
+    .run();
+  const at = new Date(Date.now() - 7 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+  env.raw.prepare("INSERT INTO exam_events (session_id, student_id, at, kind, detail) VALUES (1, 's1', ?, 'locked', 'auto'), (1, 's2', ?, 'locked', 'auto')").run(at, at);
+  const one = await call(integrity.lockStudent, env, { student_id: 's1', locked: false });
+  assert.ok([7, 8].includes(one.d.given_back));                    // 7 minutes, rounded up to a whole minute
+  assert.equal(row(env, 's1').extra_minutes, one.d.given_back);
+  const all = await call(integrity.unlockAll, env, {});
+  assert.equal(all.d.count, 1);                                   // s1 was already unlocked
+  assert.ok([7, 8].includes(row(env, 's2').extra_minutes));
+  assert.equal(env.raw.prepare('SELECT COUNT(*) c FROM results WHERE locked = 1').get().c, 0);
+});

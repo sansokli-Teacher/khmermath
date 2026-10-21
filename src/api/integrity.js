@@ -28,6 +28,20 @@ export function counts(kind, dur) {
   return false;
 }
 
+// Whether one reported event is an incident, once we know what device it came from. A phone fires «contextmenu» on any long press and
+// «split_view» when its keyboard or browser bar changes the window height; those are not cheating (6 of 36 students were locked by them on exam day).
+const MOBILE = /Mobile|Android|iPhone|iPad|iPod/i;
+export function countsEvent(kind, dur, detail, ua) {
+  if (!counts(kind, dur)) return false;
+  const mobile = MOBILE.test(String(ua || ''));
+  if (kind === 'contextmenu' && mobile) return false;
+  if (kind === 'split_view') {                                   // «WxH from WxH»: only a real narrowing of the window counts
+    const m = /(\d+)x(\d+) from (\d+)x(\d+)/.exec(String(detail || ''));
+    if (m && !(Number(m[1]) < Number(m[3]) * 0.75)) return false;
+  }
+  return true;
+}
+
 async function studentSession(req, env) {
   const s = await requireStudent(req, env);
   if (!s) return null;
@@ -45,6 +59,7 @@ export async function postEvents(req, env) {
   if (!res || res.submitted_at) return json({ ok: true });
   if (!(await allow(env, `ev:${sessionId}:${stu.id}`, 120, 60))) return json({ ok: true, throttled: true });
 
+  const ua = req.headers.get('User-Agent') || '';
   const list = (Array.isArray(body.events) ? body.events : []).slice(0, 40);
   const last = await env.DB.prepare('SELECT at FROM exam_events WHERE session_id = ?1 AND student_id = ?2 AND counted = 1 ORDER BY id DESC LIMIT 1').bind(sessionId, stu.id).first();
   let lastCounted = last ? Date.parse(last.at.replace(' ', 'T') + 'Z') : 0;
@@ -57,7 +72,7 @@ export async function postEvents(req, env) {
     // the client's own timestamp is trusted only within a minute of now (a phone clock can be wrong)
     const t = Number(e.t) && Math.abs(Date.now() - Number(e.t)) < 60000 ? Number(e.t) : Date.now();
     let counted = 0;
-    if (counts(kind, dur) && t - lastCounted >= GAP_MS) { counted = 1; lastCounted = t; violations++; }
+    if (countsEvent(kind, dur, e.detail, ua) && t - lastCounted >= GAP_MS) { counted = 1; lastCounted = t; violations++; }
     stmts.push(env.DB.prepare('INSERT INTO exam_events (session_id, student_id, at, kind, detail, dur_ms, counted) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
       .bind(sessionId, stu.id, new Date(t).toISOString().replace('T', ' ').slice(0, 19), kind, e.detail ? String(e.detail).slice(0, 120) : null, dur || null, counted));
   }
@@ -87,25 +102,57 @@ export async function setIntegrity(req, env, params) {
 export async function lockStudent(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
-  const { student_id, locked, note } = await req.json();
+  const body = await req.json();
+  const { student_id, locked, note } = body;
   if (!student_id) return err('student_id is required.', 400);
   const row = await env.DB.prepare('SELECT violations FROM results WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, student_id).first();
   if (!row) return err('Student has not started.', 404);
   const who = g.t.display_name || g.t.username;
+  let given = 0;
   if (locked) {
     await env.DB.batch([
       env.DB.prepare("UPDATE results SET locked = 1, lock_reason = ?3 WHERE session_id = ?1 AND student_id = ?2").bind(g.ses.id, student_id, `by ${who}`),
       env.DB.prepare("INSERT INTO exam_events (session_id, student_id, kind, detail) VALUES (?1, ?2, 'locked', ?3)").bind(g.ses.id, student_id, `locked by ${who}`),
     ]);
   } else {
+    given = body.compensate === false ? 0 : await giveBackLockedTime(env, g.ses.id, student_id);
     await env.DB.batch([
       env.DB.prepare("UPDATE results SET locked = 0, lock_reason = NULL, lock_base = violations WHERE session_id = ?1 AND student_id = ?2").bind(g.ses.id, student_id),
       env.DB.prepare("INSERT INTO exam_events (session_id, student_id, kind, detail) VALUES (?1, ?2, 'unlocked', ?3)").bind(g.ses.id, student_id, `unlocked by ${who}${note ? ': ' + String(note).slice(0, 80) : ''}`),
     ]);
   }
   await audit(env, g.t, locked ? 'session.lock' : 'session.unlock', `session ${g.ses.id}, ${student_id}`);
-  return json({ ok: true });
+  return json({ ok: true, ...(locked ? {} : { given_back: typeof given === 'number' ? given : 0 }) });
 }
+
+// While a student was locked their clock kept running; unlocking gives that time back (1–30 minutes, once per lock).
+export async function giveBackLockedTime(env, sessionId, studentId) {
+  const ev = await env.DB.prepare("SELECT at FROM exam_events WHERE session_id = ?1 AND student_id = ?2 AND kind = 'locked' ORDER BY id DESC LIMIT 1").bind(sessionId, studentId).first();
+  if (!ev) return 0;
+  const since = Math.ceil((Date.now() - Date.parse(ev.at.replace(' ', 'T') + 'Z')) / 60000);
+  const m = Math.max(1, Math.min(30, since));
+  await env.DB.prepare('UPDATE results SET extra_minutes = extra_minutes + ?3 WHERE session_id = ?1 AND student_id = ?2').bind(sessionId, studentId, m).run();
+  return m;
+}
+
+// Unlock every locked student of a session in one go (each gets their locked minutes back).
+export async function unlockAll(req, env, params) {
+  const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const { results } = await env.DB.prepare('SELECT student_id FROM results WHERE session_id = ?1 AND locked = 1 AND submitted_at IS NULL').bind(g.ses.id).all();
+  const who = g.t.display_name || g.t.username;
+  let minutes = 0;
+  for (const r of results) {
+    minutes += await giveBackLockedTime(env, g.ses.id, r.student_id);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE results SET locked = 0, lock_reason = NULL, lock_base = violations WHERE session_id = ?1 AND student_id = ?2").bind(g.ses.id, r.student_id),
+      env.DB.prepare("INSERT INTO exam_events (session_id, student_id, kind, detail) VALUES (?1, ?2, 'unlocked', ?3)").bind(g.ses.id, r.student_id, `unlocked by ${who} (all)`),
+    ]);
+  }
+  await audit(env, g.t, 'session.unlock_all', `session ${g.ses.id}, ${results.length} students`);
+  return json({ ok: true, count: results.length, minutes });
+}
+
 
 export async function studentActivity(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'view'); if (g.resp) return g.resp;

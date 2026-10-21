@@ -71,13 +71,13 @@ const Integrity = (() => {
         const land = innerWidth >= innerHeight;
         if (land !== base.land) { base = { w: innerWidth, h: innerHeight, land }; return; }
         if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-        if (innerWidth < base.w * 0.75 || innerHeight < base.h * 0.7) { log('split_view', `${innerWidth}x${innerHeight} from ${base.w}x${base.h}`); flush(); }
+        if (innerWidth < base.w * 0.75) { log('split_view', `${innerWidth}x${innerHeight} from ${base.w}x${base.h}`); flush(); }
         base = { w: Math.max(innerWidth, base.w * 0.9), h: Math.max(innerHeight, base.h * 0.9), land };   // allow growing back
       }, 700);
     });
 
     for (const t of ['copy', 'cut']) on(document, t, (e) => { e.preventDefault(); log(t); });
-    on(document, 'contextmenu', (e) => { e.preventDefault(); log('contextmenu'); });
+    on(document, 'contextmenu', (e) => { e.preventDefault(); if (!isTouch()) log('contextmenu'); });   // a long press on a phone is not an incident
     on(document, 'dragstart', (e) => e.preventDefault());
     on(document, 'selectstart', (e) => { if (!/INPUT|TEXTAREA/.test((e.target.tagName || ''))) e.preventDefault(); });
     on(window, 'beforeprint', () => log('print'));

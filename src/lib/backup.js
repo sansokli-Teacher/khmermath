@@ -62,7 +62,7 @@ export async function runBackup(env, { reason = 'manual' } = {}) {
   let stored = false;
   if (slim.length <= 1_300_000) {                         // keep under D1's 2 MB row limit once base64-encoded
     await env.DB.prepare('INSERT INTO backups (reason, size_bytes, data_b64) VALUES (?1, ?2, ?3)').bind(reason, slim.length, toBase64(slim)).run();
-    await env.DB.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY id DESC LIMIT 4)').run();
+    await env.DB.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY id DESC LIMIT 10)').run();
     stored = true;
   }
   const sent = await sendTelegram(env, full, `exam-backup-${stamp}.json.gz`, `💾 Backup ${stamp} (${reason}) — ${(full.length / 1024).toFixed(0)} KB`);

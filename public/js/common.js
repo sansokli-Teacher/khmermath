@@ -75,11 +75,15 @@ Exam.fmtDateTime = function (iso) {
   }
   const d = new Date(s);
   if (isNaN(d.getTime())) return iso;
-  try {
-    return d.toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return d.toLocaleString();
-  }
+  return Exam.khDate(d) + ' · ' + Exam.khTime(d);
+};
+
+// Khmer dates and times written out ourselves: many browsers have no km-KH locale data and fall back to English («Oct 21, 2026, 7:14 AM»)
+Exam.khDigits = (v) => String(v).replace(/\d/g, (c) => '០១២៣៤៥៦៧៨៩'[c]);
+Exam.khDate = (d) => `${Exam.khDigits(d.getDate())} ${['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'][d.getMonth()]} ${Exam.khDigits(d.getFullYear())}`;
+Exam.khTime = (d) => {
+  const h = d.getHours(), h12 = h % 12 || 12, part = h < 12 ? 'ព្រឹក' : h < 17 ? 'រសៀល' : 'ល្ងាច';
+  return `${Exam.khDigits(h12)}:${Exam.khDigits(String(d.getMinutes()).padStart(2, '0'))} ${part}`;
 };
 
 Exam.fmtTimeOnly = function (iso) {
@@ -90,11 +94,7 @@ Exam.fmtTimeOnly = function (iso) {
   }
   const d = new Date(s);
   if (isNaN(d.getTime())) return iso;
-  try {
-    return d.toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return d.toLocaleTimeString();
-  }
+  return Exam.khTime(d);
 };
 
 // In-page replacement for window.alert/confirm: native dialogs look out of

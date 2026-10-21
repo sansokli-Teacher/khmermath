@@ -1,6 +1,6 @@
 // Exam Khmer — Worker entry point. Plain fetch handler, no router library,
 // matching the style of /counter/src/index.js on khmermath.org's Cloudflare account.
-import { err } from './lib/http.js';
+import { err, json } from './lib/http.js';
 import * as teacher from './api/teacher.js';
 import * as classes from './api/classes.js';
 import * as tests from './api/tests.js';
@@ -20,6 +20,8 @@ import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 import * as game from './api/game.js';
 import * as remote from './api/remote.js';
+import { repairedJson } from './lib/mathfix.js';
+import { watch, logError } from './lib/watch.js';
 import * as live from './api/live.js';
 import * as attendance from './api/attendance.js';
 
@@ -173,10 +175,12 @@ const ROUTES = [
   ['POST', '/api/admin/backup-check', extras.backupSelfCheck],
   ['POST', '/api/sessions/:sessionId/integrity', integrity.setIntegrity],
   ['POST', '/api/sessions/:sessionId/lock', integrity.lockStudent],
+  ['POST', '/api/sessions/:sessionId/unlock-all', integrity.unlockAll],
   ['GET', '/api/sessions/:sessionId/activity', integrity.studentActivity],
   ['POST', '/api/sessions/:sessionId/notes', integrity.addSessionNote],
   ['DELETE', '/api/sessions/:sessionId/notes/:noteId', integrity.deleteSessionNote],
   ['GET', '/api/overview', sessions.overview],
+  ['GET', '/api/health', async (req, env) => { const t = Date.now(); const r = await env.DB.prepare('SELECT 1 AS ok').first(); return json({ ok: !!(r && r.ok), db_ms: Date.now() - t, at: new Date().toISOString() }); }],
   ['GET', '/api/game/bank', game.bank],
   ['GET', '/api/game/admin', game.admin],
   ['POST', '/api/game/question', game.saveQuestion],
@@ -204,6 +208,7 @@ const ROUTES = [
 export default {
   // Weekly backup (cron in wrangler.toml): Sunday 20:00 UTC = Monday 03:00 in Cambodia.
   async scheduled(event, env, ctx) {
+    if (event.cron === '*/10 * * * *') { ctx.waitUntil(watch(env).catch(() => {})); return; }   // pre-exam backups + failure alert
     ctx.waitUntil((async () => {
       await runBackup(env, { reason: 'weekly' });
       // prove the backup we just made can be read; tell the owner if not
@@ -256,8 +261,11 @@ async function handle(req, env, ctx) {
         if (!match) continue;
         const params = Object.fromEntries(route.keys.map((key, i) => [key, match[i + 1]]));
         try {
-          return await route.handler(req, env, params, ctx);
+          // question text coming in through the test / bank API is repaired of lost-backslash damage before it is stored
+          const safeReq = req.method !== 'GET' && /^\/api\/(tests|questions|bank)\b/.test(url.pathname) ? repairedJson(req) : req;
+          return await route.handler(safeReq, env, params, ctx);
         } catch (e) {
+          ctx && ctx.waitUntil && ctx.waitUntil(logError(env, url.pathname, 500, e.message));
           return err(e.message || 'Something went wrong.', 500);
         }
       }

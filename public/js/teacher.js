@@ -1417,6 +1417,21 @@ render.schedule = async function (preSelectedTestId = null) {
         return h('option', { value: t.id, selected: isSel ? true : null }, `${t.title} ${qCount} — ${statusText}`);
       });
 
+  // a class that signs in with the ID only: say so, and offer the date-of-birth check when the roster has the dates
+  const idNote = h('div', { style: 'margin-top:6px;' });
+  async function checkIdentity() {
+    const sel = document.getElementById('sch-class'); idNote.innerHTML = '';
+    const c = sel && classes.find((x) => String(x.id) === sel.value); if (!c || c.require_dob) return;
+    let withDob = 0, total = 0;
+    try { const { students } = await api(`/api/classes/${c.id}/students`); total = students.length; withDob = students.filter((s) => s.dob).length; } catch { return; }
+    const ok = total && withDob / total >= 0.9;
+    idNote.append(h('div', { class: 'badge warn', style: 'display:block;white-space:normal;padding:8px 10px;' }, [
+      `⚠ ថ្នាក់នេះចូលតែដោយអត្តលេខ — សិស្សអាចចូលជំនួសគ្នាបាន (អត្តលេខងាយទាយ)។ ${ok ? `សិស្ស ${withDob}/${total} នាក់មានថ្ងៃកំណើតរួចហើយ។ ` : `មានតែ ${withDob}/${total} នាក់ដែលមានថ្ងៃកំណើត — សូមបញ្ចូលថ្ងៃកំណើតសិស្សជាមុនសិន។ `}`,
+      ok ? h('button', { type: 'button', class: 'btn-sm', onclick: async (ev) => { ev.currentTarget.disabled = true; try { await api(`/api/classes/${c.id}/settings`, { method: 'POST', body: { require_dob: true } }); c.require_dob = 1; Exam.notify('បានបើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើតសម្រាប់ថ្នាក់នេះ។'); checkIdentity(); } catch (e) { Exam.notify(e.message); } } }, '🔐 បើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើត') : null,
+    ]));
+  }
+  setTimeout(() => { const sel = document.getElementById('sch-class'); if (sel) { sel.addEventListener('change', checkIdentity); checkIdentity(); } }, 0);
+
   const form = h('div', { class: 'card' }, [
     h('h3', {}, 'កំណត់ពេលប្រឡងថ្មី'),
     tests.length === 0 ? h('p', { class: 'muted' }, 'សូមបង្កើតតេស្ត ១ នៅផ្ទាំង «តេស្ត» ជាមុនសិន។') : null,
@@ -1424,6 +1439,7 @@ render.schedule = async function (preSelectedTestId = null) {
     h('select', { id: 'sch-test' }, testOptions),
     h('label', {}, 'ថ្នាក់'),
     h('select', { id: 'sch-class' }, classes.filter((c) => c.my_role !== 'reviewer').map((c) => h('option', { value: c.id }, c.name))),
+    idNote,
     h('label', {}, 'កាលបរិច្ឆេទប្រឡង (Date)'),
     dateInput,
     h('div', { class: 'row', style: 'gap: 12px; margin-top: 8px;' }, [
@@ -1684,7 +1700,7 @@ async function renderAnalysis(session) {
   }
   const questionsCard = h('div', { class: 'card no-print', style: 'overflow-x:auto;' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;' }, [
-      h('h2', { style: 'margin:0;' }, '📊 ការវិភាគសំណួរ'),
+      h('h2', { style: 'margin:0;' }, ['📊 ការវិភាគសំណួរ', (() => { const n2 = stats.filter((x) => x.flags.some((f) => /⚠|🔍/.test(f[0]))).length; return n2 ? h('span', { class: 'badge warn', style: 'margin-left:10px;font-size:13px;' }, `${n2} សំណួរគួរពិនិត្យ`) : null; })()]),
       h('a', { class: 'btn secondary btn-sm', target: '_blank', href: `classreport.html?session=${session.id}` }, '🖨 របាយការណ៍ថ្នាក់'),
       h('div', { class: 'row', style: 'gap:6px;' }, [
         h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'order'; drawQuestions(); } }, 'តាមលំដាប់'),
@@ -2053,12 +2069,35 @@ async function renderGradingSession(container) {
   const polMode = h('select', {}, [['lock', '🔒 តឹងរ៉ឹង (ជាប់សោ)'], ['warn', '⚠ ព្រមាន'], ['log', '📝 កត់ត្រាតែប៉ុណ្ណោះ']].map(([v, l]) => h('option', { value: v, selected: session.integrity_mode === v ? 'selected' : null }, l)));
   const polMax = h('input', { type: 'number', min: '1', max: '20', value: session.max_violations || 3, style: 'width:70px;' });
   const lockedCount = session.roster.filter((x) => x.locked).length;
+  // who needs the teacher right now: locked, lost connection, or never started
+  const attentionRow = (ses) => {
+    if (ses.phase === 'closed' || ses.phase === 'upcoming') return null;
+    const nowMs = Date.now(), seenAgo = (x) => (x.last_seen ? nowMs - Date.parse(x.last_seen.replace(' ', 'T') + 'Z') : Infinity);
+    const live = ses.roster.filter((x) => x.started_at && !x.submitted_at);
+    const groups = [
+      ['🔒', 'ជាប់សោ', ses.roster.filter((x) => x.locked && !x.submitted_at)],
+      ['🟠', 'បាត់ការតភ្ជាប់', live.filter((x) => !x.locked && seenAgo(x) > 150000)],
+      ['⚪', 'មិនទាន់ចូល', ses.roster.filter((x) => !x.started_at && !x.submitted_at)],
+    ].filter(([, , list]) => list.length);
+    if (!groups.length) return h('div', { class: 'muted', style: 'margin-top:8px;' }, '✓ គ្រប់គ្នាកំពុងប្រឡងធម្មតា');
+    return h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;' }, groups.map(([ic, label, list]) => h('details', { class: 'badge', style: 'cursor:pointer;padding:6px 10px;' }, [
+      h('summary', {}, `${ic} ${label} ${list.length} នាក់`), h('div', { class: 'muted', style: 'margin-top:4px;font-weight:600;' }, list.map((x) => `${x.surname} ${x.first_name}`).join(' · ')),
+    ])));
+  };
   const integrityCard = h('div', { class: 'card no-print' }, [
     h('div', { class: 'row', style: 'gap:10px;align-items:center;flex-wrap:wrap;' }, [
       h('strong', {}, '🛡 ការការពារភាពស្មោះត្រង់'), polMode, h('span', { class: 'muted' }, 'ជាប់សោបន្ទាប់ពី'), polMax, h('span', { class: 'muted' }, 'លើក'),
       h('button', { class: 'secondary btn-sm', onclick: async () => { try { await api(`/api/sessions/${selectedSessionId}/integrity`, { method: 'POST', body: { mode: polMode.value, max_violations: Number(polMax.value) } }); Exam.notify('បានរក្សាទុក — មានអនុភាពភ្លាមៗលើសិស្សដែលកំពុងប្រឡង។'); } catch (e) { Exam.notify(e.message); } } }, 'រក្សាទុក'),
       lockedCount ? h('span', { class: 'badge warn' }, `🔒 កំពុងជាប់សោ ${lockedCount} នាក់ — ចុចលើជួររបស់គេដើម្បីដោះសោ`) : null,
+      lockedCount ? h('button', { class: 'btn-sm', onclick: async (ev) => {
+        const b = ev.currentTarget; if (b.disabled) return;
+        if (!(await Exam.confirm(`ដោះសោសិស្ស ${lockedCount} នាក់ទាំងអស់? (ម្នាក់ៗនឹងទទួលបានពេលដែលបាត់បង់ពេលជាប់សោវិញ)`))) return;
+        b.disabled = true;
+        try { const r = await api(`/api/sessions/${selectedSessionId}/unlock-all`, { method: 'POST', body: {} }); Exam.notify(`បានដោះសោ ${r.count} នាក់ (បន្ថែមពេលសរុប ${r.minutes} នាទី)`); } catch (e) { Exam.notify(e.message); }
+        refresh();
+      } }, '🔓 ដោះសោទាំងអស់') : null,
     ]),
+    attentionRow(session),
   ]);
   container.append(headerCard, stageCard, integrityCard, toolsCard, tableCard);
   if (hasWriting && session.my_role !== 'reviewer' && session.roster.some((r) => r.submitted_at)) {
@@ -2157,7 +2196,7 @@ async function openActivity(session, stu, onDone) {
     ]),
     canEdit ? h('div', { class: 'row', style: 'gap:8px;margin-bottom:10px;' }, [
       d.result && d.result.locked
-        ? h('button', { onclick: async () => { await api(`/api/sessions/${session.id}/lock`, { method: 'POST', body: { student_id: stu.id, locked: false } }); reopen(); } }, '🔓 ដោះសោឱ្យបន្តប្រឡង')
+        ? h('button', { onclick: async (ev) => { const b = ev.currentTarget; if (b.disabled) return; b.disabled = true; const r = await api(`/api/sessions/${session.id}/lock`, { method: 'POST', body: { student_id: stu.id, locked: false } }); if (r.given_back) Exam.notify(`បានដោះសោ ហើយបន្ថែមពេល ${r.given_back} នាទីដែលសិស្សបាត់បង់ពេលជាប់សោ`); reopen(); } }, '🔓 ដោះសោឱ្យបន្តប្រឡង (ទទួលបានពេលដែលបាត់វិញ)')
         : (stu.started_at && !stu.submitted_at ? h('button', { class: 'danger', onclick: async () => { await api(`/api/sessions/${session.id}/lock`, { method: 'POST', body: { student_id: stu.id, locked: true } }); reopen(); } }, '🔒 ចាក់សោសិស្សនេះ') : null),
     ]) : null,
     h('h3', {}, 'កំណត់ហេតុសកម្មភាព'),

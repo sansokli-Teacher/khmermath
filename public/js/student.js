@@ -162,7 +162,7 @@ async function homeworkCard(holder) {
     holder.append(h('div', { class: 'card', style: 'margin:12px 0;border:2px solid #1c7ed6' }, [
       h('div', { style: 'font-weight:700;margin-bottom:6px' }, '📚 កិច្ចការផ្ទះ — ហ្គេមសំណួរ'),
       ...games.map((g) => {
-        const dl = new Date(g.deadline).toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' });
+        const dl = Exam.fmtDateTime(new Date(g.deadline).toISOString());
         const btn = g.open ? h('button', { type: 'button', onclick: async () => {
           try {
             const r = await api('/api/student/games/join', { method: 'POST', body: { code: g.code } });
@@ -884,9 +884,19 @@ function startTimer() {
   clearInterval(timerInterval);
   const bar = document.getElementById('timer-bar');
   const clockEl = document.getElementById('timer-clock');
+  const warned = new Set();
+  const timeWarn = (mins) => {                                  // a gentle banner (not a pop-up): 10, 5 and 1 minute left
+    let b = document.getElementById('time-warn');
+    if (!b) { b = document.createElement('div'); b.id = 'time-warn'; b.setAttribute('role', 'status'); b.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:200;padding:12px 20px;border-radius:14px;background:#f08c00;color:#fff;font-weight:800;font-size:17px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:92vw;text-align:center'; document.body.append(b); }
+    b.style.background = mins <= 1 ? '#e03131' : '#f08c00';
+    b.textContent = `⏰ នៅសល់ ${Exam.khDigits(mins)} នាទី — ពិនិត្យចម្លើយ ហើយចុច «បញ្ជូន» ពេលរួចរាល់`;
+    b.hidden = false; try { navigator.vibrate && navigator.vibrate(mins <= 1 ? [200, 100, 200] : 150); } catch {}
+    clearTimeout(b._t); b._t = setTimeout(() => { b.hidden = true; }, 9000);
+  };
   const tick = () => {
     const remaining = testState.end_at - now();
     clockEl.textContent = fmtClock(remaining);
+    if (remaining > 0) { const m = [1, 5, 10].find((x) => remaining <= x * 60000); if (m && !warned.has(m)) { [1, 5, 10].filter((x) => x >= m).forEach((x) => warned.add(x)); timeWarn(m); } }   // the nearest threshold only
     bar.classList.toggle('low', remaining < 5 * 60 * 1000);
     if (remaining <= 0) {
       clearInterval(timerInterval);
