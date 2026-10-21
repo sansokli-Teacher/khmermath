@@ -453,7 +453,7 @@
           stopTimer(); tm.classList.remove('over'); if (left > 5) tm.classList.remove('hot');
           timerId = setInterval(function () {
             left--; paint(); if (left <= 5 && left > 0) { tm.classList.add('hot'); sfx.tick(); }
-            if (left <= 0) { stopTimer(); tm.classList.add('over'); sfx.end(); if (ans.hidden && typeof show !== 'undefined' && show) show.click(); }   // time is up: show the answer, the teacher marks it
+            if (left <= 0) { stopTimer(); tm.classList.add('over'); sfx.end(); }   // time is up: beep and mark the timer; the teacher clicks «បង្ហាញចម្លើយ» when ready
           }, 1000);
         };
         addTime = function (sec) { left += sec; total += sec; paint(); run(); };
