@@ -316,3 +316,36 @@ a { color: inherit; text-decoration: none; }
 .board-g b { font-size: 20px; color: var(--c); }
 .board-g span { float: right; color: var(--muted); font-size: 14px; }
 .board-g ol { margin: 6px 0 0; padding-left: 22px; font-size: 17px; line-height: 1.7; }
+
+/* ---------- game wizard ---------- */
+.act.game span { background: #e7f5ff; }
+.gw-steps { list-style: none; margin: 0 0 16px; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.gw-steps li { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 99px; background: #f1eee6; color: var(--muted); font-weight: 600; font-size: 14px; }
+.gw-steps li span { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #fff; font-size: 13px; }
+.gw-steps li.on { background: var(--navy); color: #fff; } .gw-steps li.on span { background: var(--brand); color: #fff; }
+.gw-steps li.done span { background: #2f9e44; color: #fff; }
+.gw-pane { display: flex; flex-direction: column; gap: 14px; padding-bottom: 14px; }
+.gw-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.gw-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 44vh; overflow: auto; }
+.gw-lesson { min-height: 52px; padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; text-align: left; font-weight: 600; display: flex; flex-direction: column; justify-content: center; }
+.gw-lesson small { color: var(--brand); font-weight: 700; }
+.gw-lesson.on { border-color: var(--brand); background: #edf3ff; }
+.gw-styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.gw-style { border-radius: 16px; border: 3px solid transparent; background: #fff; overflow: hidden; text-align: left; padding: 0 0 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px; }
+.gw-style img { width: 100%; height: 110px; object-fit: cover; }
+.gw-style b, .gw-style small { padding: 0 12px; } .gw-style small { color: var(--muted); }
+.gw-style.on { border-color: var(--brand); }
+.gw-sub { margin: 4px 0 0; color: var(--muted); font-weight: 700; }
+.gw-others { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.gw-other { min-height: 64px; padding: 8px 14px; border-radius: 14px; border: 2px solid var(--line); background: #fff; display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 10px; text-align: left; align-items: center; }
+.gw-other span { grid-row: 1 / 3; font-size: 28px; } .gw-other small { color: var(--muted); }
+.gw-other.on { border-color: var(--brand); background: #edf3ff; }
+.gw-stepper { display: flex; align-items: center; gap: 10px; }
+.gw-stepper button { width: 44px; height: 44px; border-radius: 50%; font-size: 24px; font-weight: 800; background: var(--brand); color: #fff; }
+.gw-stepper button:disabled { background: #cfd4e6; }
+.gw-stepper output { min-width: 34px; text-align: center; font-size: 26px; font-weight: 800; }
+.gw-note { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fff1f1; color: var(--bad); font-weight: 600; }
+.gw-teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; max-height: 36vh; overflow: auto; }
+.gw-team { padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.gw-team small { color: var(--muted); font-weight: 600; }
+.gw-bar { position: sticky; bottom: 0; display: flex; justify-content: space-between; gap: 10px; padding: 12px 0 18px; background: var(--bg); }

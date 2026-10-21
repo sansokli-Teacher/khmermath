@@ -7,7 +7,7 @@ import Lessons from './Lessons.jsx';
 import Wheel from './Wheel.jsx';
 import Modal from './Modal.jsx';
 import Clock from './Clock.jsx';
-import { GAMES, launchGame } from './Games.jsx';
+import GameWizard from './GameWizard.jsx';
 
 const HUES = { 7: ['#2a6df0', '#5b3fe0'], 8: ['#0e9f8a', '#1565c0'], 9: ['#e8590c', '#c2255c'], 10: ['#7048e8', '#ae3ec9'], 11: ['#f08c00', '#e8590c'], 12: ['#d6336c', '#862e9c'] };
 const hue = (c) => HUES[parseInt(gradeOf(c), 10)] || HUES[7];
@@ -17,7 +17,7 @@ export default function App() {
   const [classes, setClasses] = useState(null);
   const [sheet, setSheet] = useState(null); // class whose actions are open
   const [view, setView] = useState(null); // { type: 'att' | 'lessons' | 'wheel', cls }
-  const [pickGame, setPickGame] = useState(null);
+  const [wizard, setWizard] = useState(null); // { cls? } while the game wizard is open
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
   const [fs, setFs] = useState(!!document.fullscreenElement);
@@ -59,8 +59,6 @@ export default function App() {
   }, [view && view.cls.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFs = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}));
-  const go = async (game, cls) => { try { await launchGame(game, cls); } catch (e) { setError(e.message); } };
-  const startGame = (g) => { if (classes.length === 1) go(g, classes[0]); else setPickGame(g); };
 
   if (error) return <div className="boot"><p>{error}</p><a className="btn ghost" href="/teacher?classic=1">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a></div>;
   if (!classes) return <div className="boot"><div className="spinner" /><p>កំពុងផ្ទុក…</p></div>;
@@ -104,13 +102,11 @@ export default function App() {
         <section>
           <div className="sec-hd"><h2>🎮 ម៉ូដហ្គេម</h2><p>លេងជាក្រុមជាមួយសិស្សក្នុងថ្នាក់</p></div>
           <ul className="game-row">
-            {GAMES.map((g, i) => (
-              <li key={g.k} style={{ '--i': i }}>
-                <button className={`tool t-${g.k}`} disabled={!classes.length} onClick={() => startGame(g)}>
-                  <span className="tool-ic" aria-hidden="true">{g.ic}</span><b>{g.t}</b><small>{g.d}</small>
-                </button>
-              </li>
-            ))}
+            <li style={{ '--i': 0 }}>
+              <button className="tool t-cards" disabled={!classes.length} onClick={() => setWizard({})}>
+                <span className="tool-ic" aria-hidden="true">🎮</span><b>លេងហ្គេម</b><small>ជ្រើសថ្នាក់ មេរៀន ហ្គេម ក្រុម</small>
+              </button>
+            </li>
           </ul>
         </section>
       </main>
@@ -120,6 +116,7 @@ export default function App() {
           <div className="act-row">
             <button className="act att" onClick={() => setView({ type: 'att', cls: sheet })}><span>✋</span><b>វត្តមាន</b><small>ចុះឈ្មោះសិស្សថ្ងៃនេះ</small></button>
             <button className="act les" onClick={() => setView({ type: 'lessons', cls: sheet })}><span>📖</span><b>ស្លាយមេរៀន</b><small>ជ្រើសមេរៀន និងផ្នែក</small></button>
+            <button className="act game" onClick={() => { const c = sheet; setSheet(null); setWizard({ cls: c }); }}><span>🎮</span><b>ហ្គេម</b><small>លេងជាក្រុមជាមួយមេរៀន</small></button>
             <button className="act spin" onClick={() => setView({ type: 'wheel', cls: sheet })}><span>🎡</span><b>កង់ចាប់ឈ្មោះ</b><small>ចាប់ឈ្មោះ ឬបែងចែកក្រុម</small></button>
           </div>
         </Modal>
@@ -142,13 +139,7 @@ export default function App() {
         </div>
       )}
 
-      {pickGame && (
-        <Modal title={pickGame.t} sub="លេងជាមួយថ្នាក់ណា?" onClose={() => setPickGame(null)}>
-          <ul className="pick-list">
-            {classes.map((c) => <li key={c.id}><button onClick={() => go(pickGame, c)}><b>{c.name}</b><small>{kh(c.student_count)} សិស្ស</small></button></li>)}
-          </ul>
-        </Modal>
-      )}
+      {wizard && <GameWizard classes={classes} cls={wizard.cls} onClose={() => setWizard(null)} />}
     </div>
   );
 }

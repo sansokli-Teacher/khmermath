@@ -671,6 +671,27 @@
   loadCfg(); (function () { var m = /[?&]style=(wheel|cards|boat)/.exec(location.search); if (m) $('tg-style').value = m[1]; })(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
   if (/[?&]import=1/.test(location.search) && !$('tg-import').hidden) $('tg-import').click();   // opened from the teacher dashboard: teams come from the class
 
+  /* ---------- teaching-mode wizard: ?wiz=1&import=1&style=..&grade=..&l=1,2&n=20[&nt=1] -> class, lessons, style and teams are already chosen, so start straight away ---------- */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get('wiz') !== '1' || q.get('student') === '1') return;
+    var grade = parseInt(q.get('grade'), 10) || 7, qn = Math.max(5, Math.min(30, parseInt(q.get('n'), 10) || 10));
+    var want = (q.get('l') || '').split(',').map(function (x) { return parseInt(x, 10); }).filter(function (x) { return x > 0; });
+    var load = document.createElement('div'); load.className = 'tg-loading'; load.textContent = 'កំពុងរៀបចំហ្គេម…'; $('tg').parentNode.insertBefore(load, $('tg'));
+    var tries = 0, t = setInterval(function () {
+      if (BANK === null && ++tries < 60) return;
+      clearInterval(t); load.remove();
+      var ls = ((BANK && BANK.lessons) || []).filter(function (L) { return (L.g || 7) === grade; });
+      if (!ls.length) return;   // no questions for this grade: leave the setup page open
+      mode = 'lesson'; applyMode(); curClass = grade; $('tg-class').value = String(grade);
+      var all = ls.map(function (L) { return L.n; }), chosen = all.filter(function (n) { return want.indexOf(n) >= 0; });
+      selLessons = chosen.length ? chosen : all.slice(0, 1);
+      setQn(qn); renderLessons();
+      if ($('tg-noteam')) $('tg-noteam').checked = q.get('nt') === '1';
+      startGame();
+    }, 150);
+  })();
+
   /* ---------- student mode: ?student=1&style=cards|wheel|boat&grade=7&p=name1|name2&n=10 -> starts straight away ---------- */
   (function () {
     var q = new URLSearchParams(location.search);

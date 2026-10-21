@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { kh, gradeOf, loadScript } from './api.js';
+import { rememberLesson } from './GameWizard.jsx';
 
 // Grade 7 lessons + their parts come from public/data/lessons_g7.json (built from the lesson sources).
 // Lesson 1 has a hand-made deck; every other lesson gets a board with one slide per part to draw on.
@@ -39,6 +40,7 @@ export default function Lessons({ cls, students, onBack }) {
   const hasDeck = (n) => (grade === '7' && n > 1) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
   const start = async (n, partIdx) => {
     const lesson = data[n];
+    rememberLesson(cls, grade, n);   // the game wizard starts from the lesson last taught
     if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261025c`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};

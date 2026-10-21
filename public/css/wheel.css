@@ -367,10 +367,10 @@
 }
 
 /* name wheel: the same dark teardrop button as the teaching-mode Spin; its tip points at the winner, so the separate triangle is gone */
-.wheel-pointer { display: none; }
-.wheel-hub {
+.wheel-box .wheel-pointer { display: none; }
+button.wheel-hub {
   width: 26%; height: auto; aspect-ratio: 100 / 110; padding: 8% 0 0; box-sizing: border-box; border: 0; border-radius: 0; box-shadow: none; transform: translate(-50%, -64%);
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23505766'/><stop offset='.55' stop-color='%23262a35'/><stop offset='1' stop-color='%23101319'/></linearGradient><radialGradient id='h' cx='.32' cy='.3' r='.5'><stop offset='0' stop-color='white' stop-opacity='.55'/><stop offset='1' stop-color='white' stop-opacity='0'/></radialGradient></defs><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23g)' stroke='white' stroke-width='3.2'/><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23h)'/></svg>") center / 100% 100% no-repeat;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23505766'/><stop offset='.55' stop-color='%23262a35'/><stop offset='1' stop-color='%23101319'/></linearGradient><radialGradient id='h' cx='.32' cy='.3' r='.5'><stop offset='0' stop-color='white' stop-opacity='.55'/><stop offset='1' stop-color='white' stop-opacity='0'/></radialGradient></defs><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23g)' stroke='white' stroke-width='3.2'/><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23h)'/></svg>") center / 100% 100% no-repeat !important;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); color: #fff; text-shadow: 0 2px 5px rgba(0, 0, 0, .7); position: absolute; display: grid; place-items: center; line-height: 1;
 }
-.wheel-hub:hover:not(:disabled) { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) brightness(1.2); }
+button.wheel-hub:hover:not(:disabled) { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) brightness(1.2); background-color: transparent; }
