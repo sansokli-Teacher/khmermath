@@ -1,0 +1,53 @@
+/* teacher page · tab «ហ្គេមក្រុម»: the game lobby (class + lessons, game, teams, one big Start bar) */
+.tgl { display: flex; flex-direction: column; gap: 16px; max-width: 1100px; }
+.tgl-step { background: #fff; border: 1px solid var(--line, #e3ded0); border-radius: 20px; padding: 18px 20px 20px; box-shadow: 0 6px 22px rgba(31, 37, 71, .06); }
+.tgl-sh { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.tgl-sh h3 { margin: 0; flex: 1; font-size: 20px; color: #1f2547; }
+.tgl-n { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #2f5fe3; color: #fff; font-weight: 800; }
+.tgl-body { display: flex; flex-direction: column; gap: 14px; }
+.tgl-f { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1f2547; }
+.tgl-f select { max-width: 320px; min-height: 46px; border-radius: 12px; }
+.tgl-lessons { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; max-height: 270px; overflow: auto; padding: 2px; }
+.tgl-lesson { min-height: 48px; padding: 8px 14px; border-radius: 12px; border: 2px solid #e3ded0; background: #fff; color: #1f2547; text-align: left; font-weight: 600; box-shadow: none; display: flex; flex-direction: column; justify-content: center; }
+.tgl-lesson small { color: #2f5fe3; font-weight: 700; }
+.tgl-lesson.on { border-color: #2f5fe3; background: #edf3ff; }
+.tgl-hint { color: #6b7280; margin: 0; }
+.tgl-qn { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1f2547; flex-wrap: wrap; }
+.tgl-chips { display: flex; gap: 8px; }
+.tgl-chips button { min-height: 40px; min-width: 46px; border-radius: 99px; border: 2px solid #e3ded0; background: #fff; color: #1f2547; font-weight: 800; box-shadow: none; }
+.tgl-chips button.on { background: #1f2547; border-color: #1f2547; color: #fff; }
+.tgl-ghost { min-height: 38px; padding: 0 14px; border-radius: 99px; border: 1.5px solid #bcd0f3; background: #fff; color: #2f5fe3; font-weight: 700; box-shadow: none; }
+.tgl-ghost:disabled { opacity: .5; }
+.tgl-styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.tgl-style { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 0 0 12px; border: 3px solid transparent; border-radius: 18px; overflow: hidden; background: #fff; text-align: left; color: #1f2547; box-shadow: 0 6px 20px rgba(31, 37, 71, .14); transition: transform .15s, box-shadow .15s; }
+.tgl-style:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(31, 37, 71, .2); }
+.tgl-style img { width: 100%; height: 130px; object-fit: cover; display: block; }
+.tgl-style b { padding: 6px 14px 0; font-size: 19px; }
+.tgl-style small { padding: 0 14px; color: #6b7280; font-size: 14px; line-height: 1.5; }
+.tgl-style i { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; display: none; place-items: center; border-radius: 50%; background: #2f5fe3; color: #fff; font-style: normal; font-weight: 800; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); }
+.tgl-style.on { border-color: #2f5fe3; box-shadow: 0 0 0 4px rgba(47, 95, 227, .18), 0 12px 28px rgba(31, 37, 71, .2); }
+.tgl-style.on i { display: grid; }
+.tgl-trow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tgl-stepper { display: flex; align-items: center; gap: 10px; }
+.tgl-stepper button { width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 24px; font-weight: 800; background: #2f5fe3; color: #fff; box-shadow: none; }
+.tgl-stepper button:disabled { background: #cfd4e6; }
+.tgl-stepper output { min-width: 36px; text-align: center; font-size: 28px; font-weight: 800; color: #1f2547; }
+.tgl-sw { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #1f2547; }
+.tgl-sw input { width: 20px; height: 20px; accent-color: #2f5fe3; }
+.tgl-info { margin: 0; color: #6b7280; }
+.tgl-teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.tgl-team { border-radius: 14px; background: #f7f9fc; border-top: 6px solid var(--c); padding: 8px 14px 12px; }
+.tgl-th { display: flex; justify-content: space-between; align-items: baseline; color: var(--c); }
+.tgl-th span { color: #6b7280; font-size: 14px; }
+.tgl-team p { margin: 6px 0 0; font-size: 14.5px; line-height: 1.7; color: #1f2547; }
+.tgl-bar { position: sticky; bottom: 10px; z-index: 5; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 16px; border-radius: 18px; background: #1f2547; color: #fff; box-shadow: 0 12px 32px rgba(31, 37, 71, .4); }
+.tgl-sum { flex: 1; min-width: 200px; font-weight: 700; }
+.tgl-link { color: #c7d0f0; font-weight: 600; text-decoration: underline; }
+.tgl-go { min-height: 52px; padding: 0 30px; border-radius: 99px; background: #e8590c; color: #fff; font-size: 18px; font-weight: 800; box-shadow: 0 6px 18px rgba(232, 89, 12, .5); }
+.tgl-go:disabled { background: #6b7280; box-shadow: none; }
+.tgl-more { margin-top: 24px; max-width: 1100px; }
+.tgl-more h3 { margin: 0 0 10px; color: #1f2547; }
+.tgl-more-g { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.tgl-o { border: 1px solid #e3ded0; border-radius: 16px; padding: 14px; background: #fff; }
+.tgl-o p { color: #6b7280; margin: 6px 0 10px; }
+@media (max-width: 640px) { .tgl-go { width: 100%; } .tgl-bar { bottom: 6px; } }
