@@ -128,17 +128,24 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
 
       {step === 3 && !other && (
         <div className="gw-pane">
-          <div className="gw-row">
-            <b>ចំនួនក្រុម</b>
-            <div className="gw-stepper"><button disabled={noTeam || nTeams <= 2} onClick={() => setNTeams(nTeams - 1)}>−</button><output>{kh(noTeam ? 0 : teams.length)}</output><button disabled={noTeam || nTeams >= 8} onClick={() => setNTeams(nTeams + 1)}>+</button></div>
-            <button className="btn ghost sm" disabled={noTeam} onClick={() => setDeal(deal + 1)}>🔀 ចែកម្ដងទៀត</button>
+          <div className="gw-mode" role="radiogroup" aria-label="របៀបលេង">
+            <button type="button" role="radio" aria-checked={!noTeam} className={!noTeam ? 'on' : ''} onClick={() => setNoTeam(false)}><b>👥 លេងជាក្រុម</b><small>ចែកសិស្សជាក្រុម ហើយប្រកួតគ្នា</small></button>
+            <button type="button" role="radio" aria-checked={noTeam} className={noTeam ? 'on' : ''} onClick={() => setNoTeam(true)}><b>🙋 លេងម្នាក់ៗ</b><small>លោកគ្រូអ្នកគ្រូហៅសិស្សម្នាក់ៗ មិនមានក្រុម</small></button>
           </div>
-          <label className="check"><input type="checkbox" checked={noTeam} onChange={(e) => setNoTeam(e.target.checked)} /> 🙋 លេងដោយគ្មានក្រុម — លោកគ្រូអ្នកគ្រូហៅសិស្សម្នាក់ៗ</label>
           {students && absentIds.length > 0 && <p className="gw-note">✕ មិនដាក់សិស្សអវត្តមាន {kh(students.length - present.length)} នាក់ (ដែលបានគូសក្នុងកង់ចាប់ឈ្មោះ)</p>}
-          {!noTeam && (
-            <div className="gw-teams">{teams.map((t, i) => (
-              <div key={i} className="gw-team"><b>ក្រុមទី {kh(i + 1)} <small>{kh(t.length)} នាក់</small></b><span>{t.join(' · ')}</span></div>))}
-            </div>
+          {noTeam ? (
+            <p className="gw-solo">សិស្សទាំង {kh(present.length)} នាក់លេងជាមួយគ្នា — ចុច «ចាប់ផ្ដើមហ្គេម» ដើម្បីបន្ត។ ចង់លេងជាក្រុម សូមចុច «👥 លេងជាក្រុម» ខាងលើ។</p>
+          ) : (
+            <>
+              <div className="gw-row">
+                <b>ចំនួនក្រុម</b>
+                <div className="gw-stepper"><button disabled={nTeams <= 2} onClick={() => setNTeams(nTeams - 1)}>−</button><output>{kh(teams.length)}</output><button disabled={nTeams >= 8} onClick={() => setNTeams(nTeams + 1)}>+</button></div>
+                <button className="btn ghost sm" onClick={() => setDeal(deal + 1)}>🔀 ចែកម្ដងទៀត</button>
+              </div>
+              <div className="gw-teams">{teams.map((t, i) => (
+                <div key={i} className="gw-team"><b>ក្រុមទី {kh(i + 1)} <small>{kh(t.length)} នាក់</small></b><span>{t.join(' · ')}</span></div>))}
+              </div>
+            </>
           )}
         </div>
       )}
