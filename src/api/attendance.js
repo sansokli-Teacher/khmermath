@@ -3,7 +3,7 @@ import { needClass, TEACH_DENIED } from '../lib/access.js';
 import { ensureColumns } from '../lib/schema.js';
 
 const MARKS = new Set(['ok', 'A', 'L']);
-export const MAX_PERIOD = 10;   // teaching periods in a school day
+export const MAX_PERIOD = 11;   // teaching periods in a school day (the school timetable has 11)
 
 export async function getAttendance(req, env) {
   const url = new URL(req.url);

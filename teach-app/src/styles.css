@@ -417,3 +417,12 @@ a { color: inherit; text-decoration: none; }
 .gw-remote input { width: 24px; height: 24px; margin-top: 2px; accent-color: var(--brand); }
 .gw-remote span { display: flex; flex-direction: column; } .gw-remote small { color: var(--muted); }
 .gw-remote:has(input:checked) { border-style: solid; border-color: var(--brand); background: #edf3ff; }
+
+/* attendance: the timetable on the period buttons, the running period, and the locked state after submitting */
+.period { width: auto; min-width: 78px; height: auto; padding: 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.15; flex: 0 0 auto; }
+.period b { font-size: 18px; } .period small { font-size: 11px; font-weight: 600; opacity: .8; white-space: nowrap; }
+.period.live { border-color: #2f9e44; box-shadow: 0 0 0 2px rgba(47, 158, 68, .35); }
+.period.live::after { content: 'ឥឡូវនេះ'; font-size: 10px; font-weight: 800; color: #2f9e44; }
+.period.on.live::after { color: #fff; }
+.att-done { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; padding: 12px 16px; border-radius: 14px; background: #ebfbee; border: 1.5px solid #2f9e44; color: #1f7a3a; font-weight: 700; }
+.stu.locked { opacity: .78; } .stu.locked .seg button { cursor: default; }

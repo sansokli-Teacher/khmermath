@@ -970,3 +970,14 @@ body.teach-show-on { overflow: hidden; }
 .sp-dealt[hidden] { display: none; }
 .sp-dg { padding: 4px 10px; border-radius: 10px; border-left: 6px solid var(--c); background: #fff; color: #1f2547; font-size: 13px; line-height: 1.5; }
 .sp-dg b { color: var(--c); }
+
+/* Lesson 2: the division ladder used to break a number into prime factors (30 | 2 / 15 | 3 / 5 | 5 / 1) */
+.ts-slide .ladder { display: inline-block; font-size: 1.55em; font-variant-numeric: tabular-nums; margin: .15em .6em; text-align: left; }
+.ts-slide .ladder .lr { display: grid; grid-template-columns: 3.4em 2.2em; line-height: 1.25; }
+.ts-slide .ladder .lv { text-align: right; padding-right: .55em; border-right: 3px solid #1f4a5f; color: #1f4a5f; font-weight: 700; }
+.ts-slide .ladder .lp { text-align: left; padding-left: .55em; color: #e03131; font-weight: 800; }
+
+/* classic teaching room: the timetable on the period buttons */
+.att-period { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; padding: 4px 8px; }
+.att-period small { font-size: 10px; font-weight: 600; opacity: .8; white-space: nowrap; }
+.att-period.live { box-shadow: 0 0 0 2px rgba(47, 158, 68, .45); }

@@ -8,11 +8,17 @@
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   };
 
+  // the school timetable: 11 teaching periods; attendance opens on the one running now (in a break: the next one)
+  const SCHEDULE = [['07:30', '08:15'], ['08:20', '09:05'], ['09:25', '10:10'], ['10:15', '11:00'], ['12:30', '13:15'], ['13:20', '14:05'], ['14:25', '15:10'], ['15:15', '16:00'], ['16:10', '16:55'], ['17:10', '17:55'], ['18:10', '18:55']];
+  const mins = (t) => { const [a, b] = t.split(':').map(Number); return a * 60 + b; };
+  const periodAt = () => { const d = new Date(), now = d.getHours() * 60 + d.getMinutes(); const i = SCHEDULE.findIndex(([, e]) => now <= mins(e)); return i < 0 ? SCHEDULE.length : i + 1; };
+  const isLive = (n) => { const d = new Date(), now = d.getHours() * 60 + d.getMinutes(), [s, e] = SCHEDULE[n - 1]; return now >= mins(s) && now <= mins(e); };
+
   let roomOn = false;
   let cls = null;
   let hostEl = null;
   let day = today();
-  let period = 1;
+  let period = periodAt();
   let students = [];
   let rows = {};
   let saved = {};
@@ -172,13 +178,14 @@
     host.innerHTML = '';
     const dayIn = h('input', { type: 'date', value: day });
     dayIn.onchange = async () => { day = dayIn.value || today(); await loadMarks(); paint(); };
-    const periods = h('div', { class: 'att-periods' }, Array.from({ length: 10 }, (_, i) => {
+    const periods = h('div', { class: 'att-periods' }, SCHEDULE.map(([s, e], i) => {
       const n = i + 1;
       return h('button', {
         type: 'button',
-        class: `att-period${n === period ? ' on' : ''}`,
+        class: `att-period${n === period ? ' on' : ''}${day === today() && isLive(n) ? ' live' : ''}`,
+        title: `${s}–${e}`,
         onclick: async () => { period = n; await loadMarks(); paint(); },
-      }, kh(n));
+      }, [h('b', {}, kh(n)), h('small', {}, `${s}–${e}`)]);
     }));
     saveBtn = h('button', { type: 'button', class: 'att-save', onclick: submitAtt }, 'ចុះវត្តមាន');
     const att = h('section', { class: 'desk-card desk-att' }, [
@@ -213,7 +220,7 @@
     roomOn = true;
     hostEl = host || document.getElementById('teach-work') || hostEl;
     if (hostEl) hostEl.innerHTML = '<p class="teach-loading">កំពុងផ្ទុកវត្តមាន និងស្លាយ…</p>';
-    if (switched) { day = today(); period = 1; rows = {}; students = []; }
+    if (switched) { day = today(); period = periodAt(); rows = {}; students = []; }
     try {
       students = (await api(`/api/classes/${c.id}/students`)).students || [];
     } catch (e) {

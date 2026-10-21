@@ -54,14 +54,14 @@ test('attendance (teaching-mode data) is refused for a teacher without teaching 
   assert.equal((await attendance.getAttendance(await as(env, 'boss', {}, url), env)).status, 200);
 });
 
-test('attendance keeps ten teaching periods a day apart (period 9 and 10 are not folded into 8)', async () => {
+test('attendance keeps eleven teaching periods a day apart (periods 9, 10 and 11 are not folded into 8)', async () => {
   const env = await setup();
   const cid = env.raw.prepare('SELECT id FROM classes').get().id;
   env.raw.prepare("INSERT INTO students (id, class_id, surname, first_name) VALUES ('s1', ?, 'A', 'One')").run(cid);
   const save = async (period, mark) => (await attendance.saveAttendance(await as(env, 'boss', { class_id: cid, day: '2026-10-20', period, rows: [{ student_id: 's1', mark }] }), env)).status;
-  assert.equal(await save(8, 'ok'), 200); assert.equal(await save(9, 'L'), 200); assert.equal(await save(10, 'A'), 200);
+  assert.equal(await save(8, 'ok'), 200); assert.equal(await save(9, 'L'), 200); assert.equal(await save(10, 'A'), 200); assert.equal(await save(11, 'ok'), 200);
   const get = async (period) => (await (await attendance.getAttendance(await as(env, 'boss', {}, `http://x/api/attendance?class_id=${cid}&day=2026-10-20&period=${period}`), env)).json());
   assert.equal((await get(8)).rows[0].mark, 'ok'); assert.equal((await get(9)).rows[0].mark, 'L'); assert.equal((await get(10)).rows[0].mark, 'A');
-  assert.equal((await get(10)).period, 10);
-  assert.equal((await get(99)).period, 10);                           // anything beyond the last period is the last period
+  assert.equal((await get(11)).rows[0].mark, 'ok'); assert.equal((await get(10)).period, 10);
+  assert.equal((await get(99)).period, 11);                           // anything beyond the last period is the last period
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, kh, fullName, todayISO, PERIODS } from './api.js';
+import { api, kh, fullName, todayISO, SCHEDULE, periodAt, isLive } from './api.js';
 
 const MARKS = [
   { m: 'ok', t: 'មាន', cls: 'ok' },
@@ -12,7 +12,8 @@ const snap = (students, rows) => JSON.stringify(students.map((s) => { const r = 
 
 export default function Attendance({ cls, students }) {
   const [day, setDay] = useState(todayISO());
-  const [period, setPeriod] = useState(1);
+  const [period, setPeriod] = useState(() => periodAt());      // opens on the period that is running now
+  const [editing, setEditing] = useState(false);                // after submitting, the list is locked until the teacher presses «កែប្រែ»
   const [rows, setRows] = useState({});
   const [saved, setSaved] = useState('');
   const [recorded, setRecorded] = useState(true); // false = nothing stored yet for this day + period
@@ -34,6 +35,7 @@ export default function Attendance({ cls, students }) {
       for (const r of data.rows || []) next[String(r.student_id)] = { mark: r.mark || 'ok', note: r.note || '' };
       setRows(next);
       setRecorded((data.rows || []).length > 0);
+      setEditing(false);
       setSaved(snap(students, next));
       setNoteOpen({});
       setState('ready');
@@ -58,8 +60,9 @@ export default function Attendance({ cls, students }) {
     return () => window.removeEventListener('beforeunload', warn);
   }, [changed]);
 
-  const set = (id, patch) => setRows((r) => ({ ...r, [id]: { ...(r[id] || blank), ...patch } }));
-  const markAll = (mark) => setRows(Object.fromEntries(students.map((s) => [s.id, { ...(rows[s.id] || blank), mark }])));
+  const locked = loaded && recorded && !editing && !changed;
+  const set = (id, patch) => { if (locked) return; setRows((r) => ({ ...r, [id]: { ...(r[id] || blank), ...patch } })); };
+  const markAll = (mark) => { if (locked) return; setRows(Object.fromEntries(students.map((s) => [s.id, { ...(rows[s.id] || blank), mark }]))); };
   const guard = (fn) => () => { if (!changed || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) fn(); };
 
   const count = useMemo(() => {
@@ -78,6 +81,7 @@ export default function Attendance({ cls, students }) {
       });
       setSaved(snap(students, rows));
       setRecorded(true);
+      setEditing(false);
       setState('ready');
       setFlash(true);
       setTimeout(() => setFlash(false), 2500);
@@ -100,13 +104,21 @@ export default function Attendance({ cls, students }) {
         <div className="field grow">
           <label>ម៉ោងសិក្សា</label>
           <div className="periods">
-            {Array.from({ length: PERIODS }, (_, i) => i + 1).map((n) => (
-              <button key={n} className={`period${n === period ? ' on' : ''}`} onClick={guard(() => setPeriod(n))}>{kh(n)}</button>
+            {SCHEDULE.map(({ n, s, e }) => (
+              <button key={n} className={`period${n === period ? ' on' : ''}${day === todayISO() && isLive(n) ? ' live' : ''}`} onClick={guard(() => setPeriod(n))} title={`${s}–${e}`}>
+                <b>{kh(n)}</b><small>{s}–{e}</small>
+              </button>
             ))}
           </div>
         </div>
-        <button className="btn ghost" onClick={() => markAll('ok')}>✓ មានវត្តមានទាំងអស់</button>
+        <button className="btn ghost" disabled={locked} onClick={() => markAll('ok')}>✓ មានវត្តមានទាំងអស់</button>
       </div>
+      {locked && (
+        <div className="att-done" role="status">
+          <span>✓ បានចុះវត្តមានម៉ោងទី {kh(period)} ({SCHEDULE[period - 1].s}–{SCHEDULE[period - 1].e}) រួចរាល់</span>
+          <button className="btn primary" onClick={() => setEditing(true)}>✎ កែប្រែ</button>
+        </div>
+      )}
 
       <div className="stats">
         {[{ k: 'all', t: 'សរុប', n: students.length, c: 'all' }, ...MARKS.map((x) => ({ k: x.m, t: x.t, n: count[x.m], c: x.cls }))].map((x) => (
@@ -125,16 +137,16 @@ export default function Attendance({ cls, students }) {
             const r = rows[s.id] || blank;
             const open = noteOpen[s.id] || !!r.note;
             return (
-              <li key={s.id} className={`stu m-${r.mark}`}>
+              <li key={s.id} className={`stu m-${r.mark}${locked ? ' locked' : ''}`}>
                 <span className="stu-n">{kh(i + 1)}</span>
                 <div className="stu-who"><b>{fullName(s)}</b><small>{s.id}</small></div>
                 <div className="seg" role="group" aria-label={`វត្តមាន ${fullName(s)}`}>
                   {MARKS.map((x) => (
-                    <button key={x.m} className={`${x.cls}${r.mark === x.m ? ' on' : ''}`} aria-pressed={r.mark === x.m} onClick={() => set(s.id, { mark: x.m })}>{x.t}</button>
+                    <button key={x.m} className={`${x.cls}${r.mark === x.m ? ' on' : ''}`} aria-pressed={r.mark === x.m} disabled={locked} onClick={() => set(s.id, { mark: x.m })}>{x.t}</button>
                   ))}
                 </div>
-                <button className={`note-btn${r.note ? ' has' : ''}`} title="កំណត់ចំណាំ" aria-label="កំណត់ចំណាំ" onClick={() => setNoteOpen((o) => ({ ...o, [s.id]: !open }))}>✎</button>
-                {open && <input className="note" type="text" maxLength={400} placeholder="កំណត់ចំណាំ…" value={r.note} onChange={(e) => set(s.id, { note: e.target.value })} autoFocus={!r.note} />}
+                <button className={`note-btn${r.note ? ' has' : ''}`} title="កំណត់ចំណាំ" aria-label="កំណត់ចំណាំ" disabled={locked} onClick={() => setNoteOpen((o) => ({ ...o, [s.id]: !open }))}>✎</button>
+                {open && <input className="note" type="text" maxLength={400} placeholder="កំណត់ចំណាំ…" value={r.note} readOnly={locked} onChange={(e) => set(s.id, { note: e.target.value })} autoFocus={!r.note && !locked} />}
               </li>
             );
           })}
@@ -148,7 +160,7 @@ export default function Attendance({ cls, students }) {
             : flash ? '✓ បានចុះវត្តមានរួចរាល់'
             : changed ? 'មានការផ្លាស់ប្តូរមិនទាន់រក្សាទុក'
             : !recorded ? 'មិនទាន់បានចុះវត្តមានសម្រាប់ម៉ោងនេះ — ចុច «ចុះវត្តមាន» ដើម្បីរក្សាទុក'
-            : 'បានរក្សាទុករួចរាល់'}
+            : 'បានរក្សាទុករួចរាល់ — ចុច «កែប្រែ» ដើម្បីកែ'}
         </span>
         <button className="btn primary" disabled={!unsaved || state === 'saving'} onClick={save}>{state === 'saving' ? 'កំពុងរក្សាទុក…' : err ? 'សាកម្តងទៀត' : 'ចុះវត្តមាន'}</button>
       </div>
