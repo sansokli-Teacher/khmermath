@@ -392,7 +392,9 @@ td input[type=number] { width: 70px; padding: 6px 8px; }
 .save-status { font-size: 12px; font-weight: 600; padding: 1px 9px; border-radius: 99px; background: var(--good-soft); color: var(--good); white-space: nowrap; }
 .save-status.busy { background: var(--warn-soft); color: var(--warn); }
 .save-status.bad { background: var(--bad-soft); color: var(--bad); animation: pulse 1.2s infinite; }
-.question-nav button.flagged::after { content: '🚩'; font-size: 9px; position: absolute; margin: -22px 0 0 20px; }
+/* a question the student marked (🏳 ចំណាំ): the number shows an amber ring and a flag on its corner */
+.question-nav button.flagged { border-color: #f08c00; box-shadow: 0 0 0 2px rgba(240, 140, 0, .35); }
+.question-nav button.flagged::after { content: '🚩'; position: absolute; top: -9px; right: -8px; margin: 0; font-size: 15px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35)); pointer-events: none; }
 .flag-btn { background: transparent; color: var(--muted); border: 1.5px solid var(--line); padding: 4px 12px; font-size: 13px; }
 .flag-btn.on { background: #fff4dc; color: #8a5a0d; border-color: #e9c46a; }
 .question-nav button { position: relative; }

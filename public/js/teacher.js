@@ -1867,7 +1867,11 @@ async function renderGradingSession(container) {
     if (s.submitted_at || !(s.started_at || s.extra_minutes)) return [];
     const mini = 'padding:4px 8px;font-size:12px;';
     return [
-      h('button', { class: 'secondary btn-sm', style: mini, title: 'បន្ថែមពេល ៥ នាទីឱ្យសិស្សនេះ', onclick: async () => { await api(`/api/sessions/${selectedSessionId}/extend`, { method: 'POST', body: { student_id: s.id, minutes: 5 } }); refresh(); } }, "+5'"),
+      h('button', { class: 'secondary btn-sm', style: mini, title: 'បន្ថែមពេល ៥ នាទីឱ្យសិស្សនេះ', onclick: async (ev) => {
+        const b = ev.currentTarget; if (b.disabled) return; b.disabled = true;            // one press = one +5' (a double click used to add 10)
+        try { const r = await api(`/api/sessions/${selectedSessionId}/extend`, { method: 'POST', body: { student_id: s.id, minutes: 5 } }); Exam.notify(`បានបន្ថែម ៥ នាទីឱ្យ ${s.surname} ${s.first_name} (សរុបបន្ថែម ${r.extra_minutes} នាទី)`); } catch (e) { Exam.notify(e.message); }
+        refresh();
+      } }, "+5'"),
       s.started_at ? h('button', { class: 'secondary btn-sm', style: mini, title: 'បញ្ជូនចម្លើយជំនួសសិស្ស', onclick: async () => {
         if (!(await Exam.confirm(`បញ្ជូនចម្លើយដែលបានរក្សាទុករបស់ ${s.surname} ${s.first_name} ជំនួសគាត់ឥឡូវនេះ?`))) return;
         try { await api(`/api/sessions/${selectedSessionId}/force-submit`, { method: 'POST', body: { student_id: s.id } }); refresh(); } catch (e) { Exam.notify(e.message); }
@@ -1911,12 +1915,21 @@ async function renderGradingSession(container) {
         if (!confirm(`តើលោកគ្រូពិតជាចង់អនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តឡើងវិញឬ?
 
 (ចម្លើយដែលសិស្សបានជ្រើសរើសពីមុន នៅតែរក្សាទុកដដែល ដោយសិស្សគ្រាន់តែចូលទៅធ្វើបន្ត)`)) return;
+        // when the exam time is already over, say how long this student may continue (counted from now); others stay finished
+        let minutes;
+        const over = Date.now() >= Date.parse(session.scheduled_end) + (s.extra_minutes || 0) * 60000;
+        if (over) {
+          const ans = prompt('ការប្រឡងបានផុតម៉ោងហើយ។ ឱ្យសិស្សនេះបន្តប្រឡងបានប៉ុន្មាននាទី? (១–១២០)', '10');
+          if (ans === null) return;
+          minutes = Math.round(Number(ans));
+          if (!(minutes >= 1 && minutes <= 120)) { Exam.notify('សូមបញ្ចូលចំនួននាទីពី ១ ដល់ ១២០។'); return; }
+        }
         try {
-          await api(`/api/sessions/${selectedSessionId}/reset-student`, {
+          const r = await api(`/api/sessions/${selectedSessionId}/reset-student`, {
             method: 'POST',
-            body: { student_id: s.id },
+            body: { student_id: s.id, ...(minutes ? { minutes } : {}) },
           });
-          await Exam.notify(`បានអនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តជោគជ័យ!`);
+          await Exam.notify(`បានអនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្ត${minutes ? ` ${minutes} នាទី (ដល់ម៉ោង ${new Date(r.until).toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit' })})` : ''} ជោគជ័យ!`);
           renderGradingSession(container);
         } catch (e) {
           Exam.notify(e.message);

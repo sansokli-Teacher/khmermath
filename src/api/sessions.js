@@ -220,16 +220,31 @@ export async function setWritingScoresBulk(req, env, params) {
 export async function resetStudentSession(req, env, params) {
   const g = await needSession(req, env, params.sessionId, 'edit'); if (g.resp) return g.resp;
   await ensureColumns(env);
-  const { student_id } = await req.json();
+  const { student_id, minutes } = await req.json();
   if (!student_id) return err('student_id is required.', 400);
-
+  const sid = String(student_id);
+  const ses = await env.DB.prepare('SELECT scheduled_start, scheduled_end, duration_minutes, status FROM test_sessions WHERE id = ?1').bind(params.sessionId).first();
+  const endMs = ses.scheduled_end ? Date.parse(ses.scheduled_end) : Date.parse(ses.scheduled_start) + ses.duration_minutes * 60000;
+  const row = await env.DB.prepare('SELECT extra_minutes FROM results WHERE session_id = ?1 AND student_id = ?2').bind(params.sessionId, sid).first();
+  const deadline = endMs + ((row && row.extra_minutes) || 0) * 60000;
+  const m = Math.round(Number(minutes));
+  // the exam is already over for this student: they need time, or they would be turned away again at once
+  if (Date.now() >= deadline && !(m >= 1 && m <= 120)) {
+    return err('ការប្រឡងបានផុតម៉ោងហើយ។ សូមកំណត់ចំនួននាទីដែលត្រូវឱ្យសិស្សនេះបន្ត (១–១២០ នាទី)។', 409);
+  }
   // Clear submitted_at and submit_type so the student can re-enter their open test
   // Previously saved answers in `responses` table are preserved so they don't lose work!
   await env.DB.prepare(
     "UPDATE results SET submitted_at = NULL, submit_type = NULL WHERE session_id = ?1 AND student_id = ?2"
-  ).bind(params.sessionId, student_id).run();
-
-  return json({ ok: true });
+  ).bind(params.sessionId, sid).run();
+  let until = deadline;
+  if (m >= 1 && m <= 120 && Date.now() + m * 60000 > deadline) {            // give exactly the time asked for, counted from now
+    const extra = Math.ceil((Date.now() + m * 60000 - endMs) / 60000);
+    await env.DB.prepare('UPDATE results SET extra_minutes = ?3 WHERE session_id = ?1 AND student_id = ?2').bind(params.sessionId, sid, extra).run();
+    until = endMs + extra * 60000;
+  }
+  await audit(env, g.t, 'session.reset_student', `session ${params.sessionId}, ${sid}${m >= 1 ? ` +${m}m (until ${new Date(until).toISOString()})` : ''}`);
+  return json({ ok: true, until: new Date(until).toISOString() });
 }
 
 // Per-question statistics and every student's answers, for the teacher's review.
@@ -327,12 +342,17 @@ export async function extendSession(req, env, params) {
   if (student_id) {
     const stu = await env.DB.prepare('SELECT id FROM students WHERE id = ?1 AND class_id = ?2').bind(String(student_id), g.ses.class_id).first();
     if (!stu) return err('Student not found.', 404);
-    await env.DB.prepare(
-      `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, extra_minutes) VALUES (?1, ?2, 0, 0, ?3)
-       ON CONFLICT(session_id, student_id) DO UPDATE SET extra_minutes = extra_minutes + ?3`,
-    ).bind(g.ses.id, stu.id, m).run();
-    await audit(env, g.t, 'session.extend_student', `session ${g.ses.id}, ${stu.id} +${m}m`);
-    return json({ ok: true });
+    const detail = `session ${g.ses.id}, ${stu.id} +${m}m`;
+    const dup = await env.DB.prepare("SELECT 1 FROM audit_log WHERE action = 'session.extend_student' AND detail = ?1 AND at >= datetime('now', '-4 seconds')").bind(detail).first();
+    if (!dup) {
+      await env.DB.prepare(
+        `INSERT INTO results (session_id, student_id, mcq_score, mcq_max, extra_minutes) VALUES (?1, ?2, 0, 0, ?3)
+         ON CONFLICT(session_id, student_id) DO UPDATE SET extra_minutes = extra_minutes + ?3`,
+      ).bind(g.ses.id, stu.id, m).run();
+      await audit(env, g.t, 'session.extend_student', detail);
+    }
+    const now = await env.DB.prepare('SELECT extra_minutes FROM results WHERE session_id = ?1 AND student_id = ?2').bind(g.ses.id, stu.id).first();
+    return json({ ok: true, extra_minutes: now ? now.extra_minutes : m, duplicate: !!dup });
   }
   const ses = await env.DB.prepare('SELECT * FROM test_sessions WHERE id = ?1').bind(g.ses.id).first();
   if (ses.status === 'closed') return err('ការប្រឡងនេះត្រូវបានបិទដោយដៃ។', 400);
