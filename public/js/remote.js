@@ -29,7 +29,7 @@
     if (c.t === 'open') { opening = 'card ' + kh(c.i + 1); openingAt = Date.now(); }
     else if (c.t === 'spin') { opening = 'Spinning…'; openingAt = Date.now(); }
     else if (c.t === 'go') { opening = 'Next question…'; openingAt = Date.now(); }
-    else if (c.t === 'show' && S && S.card) shown[S.card.i] = 1;
+    else if (c.t === 'show' && S && S.card) shown[S.card.i] = revealed(S.card) ? 0 : 1;   // show / hide: the phone answers before the screen does
     else if (c.t === 'ok' || c.t === 'bad' || c.t === 'pick' || c.t === 'sp') { saving = Date.now(); }
     net.cmd(c, cid);
     setTimeout(function () {                                           // nothing came back: say so
@@ -56,6 +56,7 @@
     onState: function (s) {
       S = s;
       if (!s.card) { shown = {}; ring = {}; }
+      else if (shown[s.card.i] !== undefined && !!shown[s.card.i] === !!s.card.rev) delete shown[s.card.i];   // the screen caught up
       if (s.card || s.fin) { opening = ''; } if (!s.card) saving = 0;
       if (opening && Date.now() - openingAt > 5000) opening = '';
       draw();
@@ -65,6 +66,9 @@
     onSent: sent, onAck: acked,
     onGone: function () { gone = true; root.innerHTML = '<div class="msg"><h1>Remote closed</h1><p>This remote link is no longer active. Scan a new QR code on the game screen.</p></div>'; net.close(); },
   });
+
+  // is the answer shown on the screen? (the phone's own tap counts until the screen confirms it)
+  function revealed(c) { return shown[c.i] !== undefined ? !!shown[c.i] : !!c.rev; }
 
   // ---------- pieces ----------
   function btn(cls, label, c, extra) {
@@ -103,12 +107,12 @@
   }
   function questionHtml(c) {
     var opts = c.o ? '<div class="opts">' + c.o.map(function (x, i) { return '<div class="opt' + (i === c.ck ? ' key' : '') + '"><b>' + 'កខគឃ'[i] + '</b><span>' + esc(x) + '</span>' + (i === c.ck ? '<i>✓</i>' : '') + '</div>'; }).join('') + '</div>' : '';
-    var rev = c.rev || shown[c.i], dis = saving ? ' disabled' : '';
+    var rev = revealed(c), dis = saving ? ' disabled' : '';
     var top = '<div class="qtop"><div><small>' + esc(c.n || '') + '</small></div>' + (c.left !== undefined ? ringHtml(c) : '') + '</div>';
-    var ans = '<div class="ans' + (rev ? ' on' : '') + '"><small>' + (rev ? '✓ ចម្លើយ — បានបង្ហាញលើអេក្រង់ហើយ' : 'ចម្លើយ — មានតែលោកគ្រូអ្នកគ្រូឃើញ') + '</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div>';
+    var ans = '<div class="ans' + (rev ? ' on' : '') + '"><small>' + (rev ? '✓ ចម្លើយ — កំពុងបង្ហាញលើអេក្រង់' : 'ចម្លើយ — មានតែលោកគ្រូអ្នកគ្រូឃើញ') + '</small><div>' + esc(c.a) + '</div>' + (c.s ? '<small class="sol">' + esc(c.s) + '</small>' : '') + '</div>';
     var body = '<div class="qscroll">' + ans + '<div class="qtext">' + esc(c.q) + '</div>' + (c.fig ? '<p class="note">🖼 រូបភាពនៅលើអេក្រង់</p>' : '') + opts + '</div>';
     var dock = c.pick && c.pick.length ? '<div class="dock">' + pickHtml(c, 'ក្រុមណាឆ្លើយត្រូវ?') + '</div>'
-      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' done' : ''), rev ? '👁 បានបង្ហាញ' : 'បង្ហាញចម្លើយ', { t: 'show' }, rev ? ' disabled' : '') + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'ក្រុមផ្សេងឆ្លើយត្រូវ…', { t: 'other' }) + '</div>'
+      : '<div class="dock"><div class="row3">' + btn('soft' + (rev ? ' on' : ''), rev ? '🙈 លាក់ចម្លើយ' : '👁 បង្ហាញចម្លើយ', { t: 'show' }) + btn('soft', '+15 s', { t: 'plus' }) + btn('soft', 'ក្រុមផ្សេងឆ្លើយត្រូវ…', { t: 'other' }) + '</div>'
         + '<div class="row2">' + btn('bad', '✖ មិនត្រូវ', { t: 'bad' }, dis) + btn('ok', '✔ ត្រឹមត្រូវ +' + kh(c.p || S.pts), { t: 'ok' }, dis) + '</div></div>';
     return '<section class="qwrap">' + top + body + '</section>' + dock + (saving ? '<div class="busy light"><div class="spin"></div><b>Saving…</b></div>' : '');
   }
@@ -135,7 +139,7 @@
       return;
     }
     var c = S.card;
-    var sig = JSON.stringify([c ? Object.assign({}, c, { left: 0, over: 0 }) : null, S.turn, S.teams, S.tiles, S.fin, S.spinning, S.rem, hostOn, linkM, showScores, menu, opening, saving > 0, c ? shown[c.i] : 0, Object.keys(pending).join()]);
+    var sig = JSON.stringify([c ? Object.assign({}, c, { left: 0, over: 0 }) : null, S.turn, S.teams, S.tiles, S.fin, S.spinning, S.rem, hostOn, linkM, showScores, menu, opening, saving > 0, c ? shown[c.i] : -1, Object.keys(pending).join()]);
     if (sig === lastSig) { // only the clock moved
       var tl = document.getElementById('tleft'), fg = document.getElementById('ringfg');
       if (tl && c && c.left !== undefined) {
