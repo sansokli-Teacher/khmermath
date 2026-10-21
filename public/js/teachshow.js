@@ -1036,11 +1036,13 @@
     const gsel = document.createElement('select'); gsel.title = 'ចំនួនសិស្សក្នុងមួយក្រុម';
     [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((n) => gsel.append(new Option(`${kh(n)} នាក់/ក្រុម`, n)));
     gsel.value = 6;
-    const dvd = document.createElement('button'); dvd.type = 'button'; dvd.className = 'sp-dvd'; dvd.textContent = 'ចែកក្រុម'; dvd.title = 'ចែកថ្នាក់ជាក្រុមៗ ហើយបង្ហាញទាំងអស់';
+    const dvd = document.createElement('button'); dvd.type = 'button'; dvd.className = 'sp-dvd'; dvd.textContent = '👥 ចែកក្រុម'; dvd.title = 'ចែកថ្នាក់ជាក្រុមៗ ហើយបង្ហាញទាំងអស់';
     const rep = document.createElement('label'); rep.className = 'sp-chk'; rep.innerHTML = '<input type="checkbox" checked><span>មិនជាន់</span>';
     const snb = document.createElement('button'); snb.type = 'button'; snb.className = 'sp-snd'; snb.textContent = '🔊'; snb.title = 'សំឡេង';
     const rst = document.createElement('button'); rst.type = 'button'; rst.className = 'sp-rst'; rst.textContent = '↺'; rst.title = 'ចាប់ផ្ដើមឡើងវិញ';
-    bar.append(...modeBtns, gsel, dvd, rep, snb, rst);
+    bar.append(rep, snb, rst);
+    const abBtn = document.createElement('button'); abBtn.type = 'button'; abBtn.className = 'sp-ab'; abBtn.textContent = '✕ អវត្តមាន'; abBtn.title = 'គូសឈ្មោះសិស្សដែលអវត្តមាន';
+    const modes = document.createElement('div'); modes.className = 'sp-modes'; modes.append(...modeBtns, gsel, dvd, abBtn);
     const stageW = document.createElement('div'); stageW.className = 'sp-wheel';
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 640;
     const hub = document.createElement('button'); hub.type = 'button'; hub.className = 'sp-hub'; hub.textContent = 'SPIN';
@@ -1064,26 +1066,35 @@
     bar.hidden = true;
     const gear = document.createElement('button'); gear.type = 'button'; gear.className = 'sp-gear'; gear.textContent = '⚙'; gear.title = 'ជម្រើស';
     gear.onclick = () => { bar.hidden = !bar.hidden; gear.classList.toggle('on', !bar.hidden); };
-    wrap.append(bar, stageW, info, pop, fw, gear);
+    // choose the class first (the teacher's own classes), then spin: picking one loads its students onto the wheel
+    const crow = document.createElement('div'); crow.className = 'sp-cls';
+    const csel = document.createElement('select'); csel.title = 'ជ្រើសថ្នាក់';
+    csel.append(new Option('— ជ្រើសថ្នាក់ —', ''));
+    crow.append(Object.assign(document.createElement('span'), { textContent: 'ថ្នាក់' }), csel);
+    const rp = document.createElement('div'); rp.className = 'sp-roster'; rp.hidden = true;
+    wrap.append(crow, modes, bar, stageW, info, pop, fw, gear, rp);
     const c = cv.getContext('2d');
     const pal = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4', '#c92a2a', '#087f5b'];
     const st = { mode: 'one', sound: true, ang: 0, spin: false, used: new Set(), groups: [] };
-    const roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
+    const absent = new Set();   // students the teacher crossed out: they leave the wheel and the groups
+    let roster = names.length ? names.slice() : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ', 'សិស្ស ឃ'];
     const shuffle = (a) => { a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
-    const makeGroups = () => { const size = +gsel.value || 6, n = Math.max(1, Math.ceil(roster.length / size)), g = Array.from({ length: n }, () => []); shuffle(roster).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
+    const live = () => roster.filter((n) => !absent.has(n));
+    const makeGroups = () => { const size = +gsel.value || 6, R = live(), n = Math.max(1, Math.ceil(R.length / size)), g = Array.from({ length: n }, () => []); shuffle(R).forEach((nm, k) => g[k % n].push(nm)); st.groups = g; };
     makeGroups();
     // what is on the wheel right now
     const items = () => {
       const noRep = rep.querySelector('input').checked;
-      if (st.mode === 'one') return roster.map((n, k) => ({ id: 'o' + k, label: n, members: [n] })).filter((x) => !(noRep && st.used.has(x.id)));
+      if (st.mode === 'one') return live().map((n) => ({ id: 'o:' + n, label: n, members: [n] })).filter((x) => !(noRep && st.used.has(x.id)));
       return st.groups.map((g, k) => ({ id: 'g' + k, label: `ក្រុម ${kh(k + 1)}`, members: g })).filter((x) => !(noRep && st.used.has(x.id)));
     };
     let list = items();
     const refresh = () => {
       list = items();
       modeBtns.forEach((b) => b.classList.toggle('on', b.dataset.m === st.mode));
-      gsel.style.display = st.mode === 'group' ? '' : 'none';
-      const total = st.mode === 'one' ? roster.length : st.groups.length;
+      gsel.style.display = dvd.style.display = st.mode === 'group' ? '' : 'none';
+      abBtn.textContent = absent.size ? `✕ អវត្តមាន ${kh(absent.size)}` : '✕ អវត្តមាន';
+      const total = st.mode === 'one' ? live().length : st.groups.length;
       info.textContent = `${cname ? cname + ' · ' : ''}${st.mode === 'one' ? 'សិស្ស' : 'ក្រុម'} ${kh(list.length)}/${kh(total)}${list.length ? '' : ' — អស់ហើយ ចុច ↺'}`;
       draw();
     };
@@ -1114,15 +1125,15 @@
       fc = fw.getContext('2d'); fc.setTransform(dpr, 0, 0, dpr, 0, 0); fwBox = { w: r.width, h: r.height };
     };
     const addBurst = (x, y, n = 46) => {
-      const hue = Math.random() * 360;
-      for (let k = 0; k < n; k++) { const a = Math.PI * 2 * k / n + Math.random() * .2, v = 1.6 + Math.random() * 3.2; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 40, w: 2 + Math.random() * 2 }); }
+      const hue = [8, 40, 52, 130, 190, 280, 330][Math.floor(Math.random() * 7)];
+      for (let k = 0; k < n; k++) { const a = Math.PI * 2 * k / n + Math.random() * .2, v = 2.2 + Math.random() * 3.6; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, hue: hue + Math.random() * 40, w: 2 + Math.random() * 2 }); }
     };
     const fwLoop = (now) => {
       fwRaf = 0;
-      fc.clearRect(0, 0, fwBox.w, fwBox.h);
+      fc.globalCompositeOperation = 'destination-out'; fc.fillStyle = 'rgba(0,0,0,.22)'; fc.fillRect(0, 0, fwBox.w, fwBox.h); fc.globalCompositeOperation = 'lighter';
       if (now < fwUntil && now >= nextBurst) { addBurst(fwBox.w * (.15 + Math.random() * .7), fwBox.h * (.12 + Math.random() * .5)); snd.boom(st.sound); nextBurst = now + 380 + Math.random() * 260; }
       parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += .045; q.vx *= .992; q.life -= .011; fc.globalAlpha = Math.max(0, q.life); fc.fillStyle = `hsl(${q.hue} 95% 60%)`; fc.beginPath(); fc.arc(q.x, q.y, q.w, 0, Math.PI * 2); fc.fill(); });
-      fc.globalAlpha = 1;
+      fc.globalAlpha = 1; fc.globalCompositeOperation = 'source-over';
       parts = parts.filter((q) => q.life > 0);
       if (now < fwUntil || parts.length) fwRaf = requestAnimationFrame(fwLoop); else fc.clearRect(0, 0, fwBox.w, fwBox.h);
     };
@@ -1143,8 +1154,9 @@
       pop.innerHTML = `<div class="pp-card"><div class="pp-k">${group ? '🎉 ក្រុមដែលត្រូវបានជ្រើស' : '🎉 សិស្សដែលត្រូវបានជ្រើស'}</div>
         <div class="pp-name">${esc(it.label)}</div>
         ${group ? `<ul class="pp-mem">${it.members.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
-        <div class="pp-act">${group ? '<button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button>' : ''}<button type="button" class="pp-again">បង្វិលម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
+        <div class="pp-act">${group ? '<button type="button" class="pp-png">⬇ ទាញយក PNG</button><button type="button" class="pp-copy">📋 ចម្លងរូបភាព</button>' : ''}${group ? '' : '<button type="button" class="pp-abs">✕ អវត្តមាន</button>'}<button type="button" class="pp-again">បង្វិលម្ដងទៀត</button><button type="button" class="pp-ok">បិទ</button></div></div>`;
       pop.querySelector('.pp-ok').onclick = () => { closePop(); refresh(); };
+      const pa = pop.querySelector('.pp-abs'); if (pa) pa.onclick = () => { absent.add(it.members[0]); st.used.delete(it.id); closePop(true); refresh(); };
       pop.querySelector('.pp-again').onclick = () => { closePop(true); refresh(); hub.click(); };
       if (group) wirePoster([{ title: it.label, items: it.members.map((n) => ({ n })) }], 'ក្រុមដែលត្រូវបានជ្រើស', 'group');
       snd.fanfare(st.sound);
@@ -1260,6 +1272,36 @@
     rep.querySelector('input').onchange = refresh;
     snb.onclick = () => { st.sound = !st.sound; snb.textContent = st.sound ? '🔊' : '🔇'; };
     rst.onclick = () => { if (st.spin) return; st.used.clear(); if (st.mode === 'group') makeGroups(); closePop(true); refresh(); };
+    fetch('/api/classes').then((r) => (r.ok ? r.json() : null)).then((d) => {
+      ((d && d.classes) || []).forEach((k) => csel.append(new Option(k.name, k.id)));
+      const cur = [...csel.options].find((o) => o.value && o.text === cname); if (cur) csel.value = cur.value;
+    }).catch(() => {});
+    // the roster panel: tap a name to cross it out (absent) or bring it back
+    const drawRoster = () => {
+      rp.innerHTML = '';
+      const hd = document.createElement('div'); hd.className = 'sp-rh'; hd.innerHTML = `<b>ចុចឈ្មោះដែលអវត្តមាន</b><span>${kh(absent.size)}/${kh(roster.length)}</span>`;
+      const box = document.createElement('div'); box.className = 'sp-rc';
+      roster.forEach((n) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'sp-chip' + (absent.has(n) ? ' off' : ''); b.textContent = n;
+        b.onclick = () => { if (absent.has(n)) absent.delete(n); else absent.add(n); if (st.mode === 'group') makeGroups(); drawRoster(); refresh(); };
+        box.append(b);
+      });
+      const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'sp-rok'; ok.textContent = 'រួចរាល់';
+      ok.onclick = () => { rp.hidden = true; };
+      rp.append(hd, box, ok);
+    };
+    abBtn.onclick = () => { if (st.spin) return; closePop(true); drawRoster(); rp.hidden = false; };
+    csel.onchange = async () => {
+      if (st.spin || !csel.value) return;
+      try {
+        const r = await fetch(`/api/classes/${csel.value}/students`), d = await r.json();
+        const nm = ((d && d.students) || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
+        cname = csel.options[csel.selectedIndex].text;
+        const t = wrap.closest('.ts-float') && wrap.closest('.ts-float').querySelector('.ts-fbar b'); if (t) t.textContent = `Spin · ${cname}`;
+        roster = nm.length ? nm : ['(ថ្នាក់នេះមិនទាន់មានសិស្ស)']; absent.clear(); rp.hidden = true;
+        st.used.clear(); st.ang = 0; closePop(true); makeGroups(); refresh();
+      } catch { info.textContent = 'ទាញបញ្ជីសិស្សមិនបាន'; }
+    };
     refresh();
     return wrap;
   }

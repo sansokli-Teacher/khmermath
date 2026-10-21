@@ -925,3 +925,42 @@ body.teach-show-on { overflow: hidden; }
 .ts-pp-cover .pp-meta { margin-top: .1em; color: #333; font-size: .95em; }
 .ts-pp-cover .pp-meta b { color: var(--pp); }
 .ts-theme-purple .ts-slide .ts-exh { font-style: italic; text-decoration: underline; text-underline-offset: .18em; }
+
+/* ===== Spin, in the look of the name-wheel tab: cream card, white ring, dark pointer, glossy blue button ===== */
+.ts-wspin .sp { background: linear-gradient(165deg, #fbfaf6, #eaf0fb); }
+.sp-cls { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #1f2547; }
+.sp-cls select { flex: 1; min-width: 0; height: 34px; padding: 0 8px; border-radius: 10px; border: 1.5px solid #d6d0c0; background: #fff; color: #1f2547; font-weight: 700; font-size: 14px; box-shadow: none; }
+.sp .sp-bar button, .sp .sp-bar select { background: rgba(31, 37, 71, .08); color: #1f2547; }
+.sp .sp-bar button.on { background: #2f5fe3; color: #fff; }
+.sp .sp-chk { color: #1f2547; }
+.sp .sp-info { color: #4b5563; }
+.sp .sp-wheel canvas { box-sizing: border-box; border: 6px solid #fff; border-radius: 50%; filter: none; box-shadow: 0 10px 28px rgba(31, 37, 71, .3); }
+.sp .sp-ptr { display: none; }   /* no separate triangle: the teardrop's tip points at the winner */
+/* the dark teardrop button, glossier: a lit gradient body, a white rim line, a highlight, a soft glow that breathes while it waits */
+.sp .sp-hub {
+  --hw: min(28cqmin, 120px); width: var(--hw); height: calc(var(--hw) * 1.1); padding: calc(var(--hw) * .27) 0 0 !important; box-sizing: border-box;
+  border: 0; border-radius: 0; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23505766'/><stop offset='.55' stop-color='%23262a35'/><stop offset='1' stop-color='%23101319'/></linearGradient><radialGradient id='h' cx='.32' cy='.3' r='.5'><stop offset='0' stop-color='white' stop-opacity='.55'/><stop offset='1' stop-color='white' stop-opacity='0'/></radialGradient></defs><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23g)' stroke='white' stroke-width='3.2'/><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23h)'/></svg>") center / 100% 100% no-repeat;
+  transform: translate(-50%, -64%); color: #fff; font-family: 'Inter', 'Kantumruy Pro', system-ui, sans-serif; font-weight: 900; letter-spacing: .06em; font-size: clamp(13px, 4.4cqmin, 21px);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, .7); box-shadow: none; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); animation: sp-breathe 2.4s ease-in-out infinite;
+}
+.sp .sp-hub:hover:not(:disabled) { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) brightness(1.2); }
+.sp .sp-hub:disabled { animation: none; }
+@keyframes sp-breathe { 0%, 100% { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); } 50% { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) drop-shadow(0 0 10px rgba(255, 255, 255, .55)); } }
+@media (prefers-reduced-motion: reduce) { .sp .sp-hub { animation: none; } }
+.sp .sp-gear { color: #1f2547; }
+
+/* Spin, kept simple: class + wheel + one row (mode, divide, absent); the rest is behind the gear */
+.sp .sp-bar { position: absolute; left: 8px; bottom: 40px; z-index: 4; padding: 6px; border-radius: 12px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+.sp-modes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sp-modes button, .sp-modes select { min-height: 0; height: 32px; padding: 0 12px; border-radius: 99px; border: 1.5px solid #d6d0c0; background: #fff; color: #1f2547; font-weight: 800; font-size: 13px; box-shadow: none; }
+.sp-modes button.on { background: #1f2547; border-color: #1f2547; color: #fff; }
+.sp-modes .sp-dvd { background: #2f5fe3; border-color: #2f5fe3; color: #fff; }
+.sp-modes .sp-ab { margin-left: auto; border-color: #e03131; color: #c92a2a; }
+.sp-roster { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fbfaf6; }
+.sp-roster[hidden] { display: none; }
+.sp-rh { display: flex; justify-content: space-between; align-items: center; color: #1f2547; font-size: 14px; }
+.sp-rc { flex: 1; overflow: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+.sp-chip { min-height: 0; padding: 6px 12px; border-radius: 99px; border: 1.5px solid #2f5fe3; background: #fff; color: #1f2547; font-weight: 700; font-size: 14px; box-shadow: none; }
+.sp-chip.off { border-color: #e03131; background: #fff1f1; color: #c92a2a; text-decoration: line-through; opacity: .85; }
+.sp-rok { min-height: 0; height: 38px; border-radius: 99px; border: 0; background: #2f5fe3; color: #fff; font-weight: 800; box-shadow: none; }
+.pp-abs { background: #fff1f1; color: #c92a2a; border: 1.5px solid #e03131 !important; }

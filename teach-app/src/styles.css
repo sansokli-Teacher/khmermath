@@ -290,3 +290,29 @@ a { color: inherit; text-decoration: none; }
   .note { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- Spin: the dark teardrop button (its tip points at the winner, so no separate triangle), fireworks, absent chips, group board ---------- */
+.hub {
+  width: 26%; height: auto; aspect-ratio: 100 / 110; padding: 8% 0 0 !important; box-sizing: border-box; border: 0; border-radius: 0; box-shadow: none; transform: translate(-50%, -64%);
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23505766'/><stop offset='.55' stop-color='%23262a35'/><stop offset='1' stop-color='%23101319'/></linearGradient><radialGradient id='h' cx='.32' cy='.3' r='.5'><stop offset='0' stop-color='white' stop-opacity='.55'/><stop offset='1' stop-color='white' stop-opacity='0'/></radialGradient></defs><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23g)' stroke='white' stroke-width='3.2'/><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='url(%23h)'/></svg>") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); display: grid; place-items: center; line-height: 1; letter-spacing: .06em; text-shadow: 0 2px 5px rgba(0, 0, 0, .7); animation: hub-breathe 2.4s ease-in-out infinite;
+}
+.hub:disabled { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'><path d='M50 3 C50 3 10 41 10 70 a40 40 0 0 0 80 0 C90 41 50 3 50 3Z' fill='%23596070' stroke='white' stroke-width='3.2'/></svg>") center / 100% 100% no-repeat; animation: none; }
+.hub:not(:disabled):hover { transform: translate(-50%, -64%); background-color: transparent; filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) brightness(1.2); }
+@keyframes hub-breathe { 0%, 100% { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)); } 50% { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .45)) drop-shadow(0 0 10px rgba(255, 255, 255, .55)); } }
+@media (prefers-reduced-motion: reduce) { .hub { animation: none; } }
+.wheel-fw { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 70; pointer-events: none; }
+.away2 { display: flex; flex-direction: column; gap: 8px; }
+.away2-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.chips2 { display: flex; flex-wrap: wrap; gap: 6px; max-height: 210px; overflow: auto; }
+.chip2 { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--brand); background: #fff; color: var(--ink); font-weight: 600; }
+.chip2.off { border-color: var(--bad); background: #fff1f1; color: var(--bad); text-decoration: line-through; opacity: .85; }
+.more summary { cursor: pointer; font-weight: 600; min-height: 36px; display: flex; align-items: center; color: var(--muted); }
+.more[open] { display: flex; flex-direction: column; gap: 12px; }
+.win .absent-btn { border-color: #ff8787; color: #ffc9c9; }
+.win-card.board { width: min(94vw, 980px); max-height: 90vh; overflow: auto; }
+.board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 14px 0 20px; text-align: left; }
+.board-g { border-radius: 16px; background: #fff; color: var(--ink); overflow: hidden; border-top: 8px solid var(--c); padding: 10px 14px 12px; }
+.board-g b { font-size: 20px; color: var(--c); }
+.board-g span { float: right; color: var(--muted); font-size: 14px; }
+.board-g ol { margin: 6px 0 0; padding-left: 22px; font-size: 17px; line-height: 1.7; }
