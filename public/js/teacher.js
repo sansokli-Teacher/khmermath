@@ -1417,6 +1417,30 @@ render.schedule = async function (preSelectedTestId = null) {
         return h('option', { value: t.id, selected: isSel ? true : null }, `${t.title} ${qCount} — ${statusText}`);
       });
 
+  async function bulkDob(c, done) {
+    const { students } = await api(`/api/classes/${c.id}/students`);
+    const missing = students.filter((s) => !s.dob);
+    if (!missing.length) return Exam.notify('សិស្សទាំងអស់មានថ្ងៃកំណើតរួចហើយ។');
+    const inputs = missing.map((s) => h('input', { type: 'date', style: 'width:100%;' }));
+    const back = h('div', { class: 'modal-back', style: 'align-items:flex-start;overflow:auto;', onclick: (e) => { if (e.target === back) back.remove(); } });
+    const save = h('button', { onclick: async () => {
+      save.disabled = true; let n = 0;
+      for (let i = 0; i < missing.length; i++) {
+        if (!inputs[i].value) continue;
+        const s = missing[i];
+        try { await api(`/api/classes/${c.id}/students`, { method: 'POST', body: { id: s.id, surname: s.surname, first_name: s.first_name, gender: s.gender, dob: inputs[i].value } }); n++; } catch (e) { Exam.notify(e.message); }
+      }
+      back.remove(); Exam.notify(`បានរក្សាទុកថ្ងៃកំណើត ${n} នាក់`); done();
+    } }, '💾 រក្សាទុក');
+    back.append(h('div', { class: 'modal-box', style: 'text-align:left;max-width:560px;margin:20px auto;' }, [
+      h('h2', { style: 'margin:0 0 8px;' }, `📅 ថ្ងៃកំណើត — ${c.name}`),
+      h('p', { class: 'muted' }, `សិស្ស ${missing.length} នាក់ខ្វះថ្ងៃកំណើត។ បញ្ចូលតែអ្នកដែលអ្នកដឹង — ទុកទទេបានសម្រាប់អ្នកផ្សេង។`),
+      h('table', {}, [h('tbody', {}, missing.map((s, i) => h('tr', {}, [h('td', {}, s.id), h('td', {}, `${s.surname} ${s.first_name}`), h('td', {}, inputs[i])])))]),
+      h('div', { class: 'row', style: 'gap:8px;margin-top:12px;' }, [save, h('button', { class: 'secondary', onclick: () => back.remove() }, 'បោះបង់')]),
+    ]));
+    document.body.append(back);
+  }
+
   // a class that signs in with the ID only: say so, and offer the date-of-birth check when the roster has the dates
   const idNote = h('div', { style: 'margin-top:6px;' });
   async function checkIdentity() {
@@ -1427,6 +1451,7 @@ render.schedule = async function (preSelectedTestId = null) {
     const ok = total && withDob / total >= 0.9;
     idNote.append(h('div', { class: 'badge warn', style: 'display:block;white-space:normal;padding:8px 10px;' }, [
       `⚠ ថ្នាក់នេះចូលតែដោយអត្តលេខ — សិស្សអាចចូលជំនួសគ្នាបាន (អត្តលេខងាយទាយ)។ ${ok ? `សិស្ស ${withDob}/${total} នាក់មានថ្ងៃកំណើតរួចហើយ។ ` : `មានតែ ${withDob}/${total} នាក់ដែលមានថ្ងៃកំណើត — សូមបញ្ចូលថ្ងៃកំណើតសិស្សជាមុនសិន។ `}`,
+      !ok ? h('button', { type: 'button', class: 'btn-sm', onclick: () => bulkDob(c, checkIdentity) }, '📅 បញ្ចូលថ្ងៃកំណើតសិស្សដែលខ្វះ') : null,
       ok ? h('button', { type: 'button', class: 'btn-sm', onclick: async (ev) => { ev.currentTarget.disabled = true; try { await api(`/api/classes/${c.id}/settings`, { method: 'POST', body: { require_dob: true } }); c.require_dob = 1; Exam.notify('បានបើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើតសម្រាប់ថ្នាក់នេះ។'); checkIdentity(); } catch (e) { Exam.notify(e.message); } } }, '🔐 បើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើត') : null,
     ]));
   }
@@ -1874,6 +1899,7 @@ async function renderGradingSession(container) {
         h('a', { class: 'btn secondary btn-sm', href: `scan.html?session=${selectedSessionId}`, title: 'ស្កេនសន្លឹកចម្លើយ OMR នៃតេស្តលើក្រដាស' }, '📷 ស្កេនសន្លឹក OMR'),
         h('button', { class: 'secondary btn-sm', onclick: () => window.print() }, '🖨 បោះពុម្ពតារាងពិន្ទុ'),
         h('button', { class: 'secondary btn-sm', onclick: () => exportSessionToExcel(session) }, '📥 ទាញយកលទ្ធផលជា Excel (.xlsx)'),
+        h('button', { class: 'secondary btn-sm', onclick: () => exportClassAllExams(session.class_id, session.class_name) }, '📊 លទ្ធផលថ្នាក់ទាំងអស់ (គ្រប់ការប្រឡង)'),
       ]),
     ]),
   ]);
@@ -2069,6 +2095,20 @@ async function renderGradingSession(container) {
   const polMode = h('select', {}, [['lock', '🔒 តឹងរ៉ឹង (ជាប់សោ)'], ['warn', '⚠ ព្រមាន'], ['log', '📝 កត់ត្រាតែប៉ុណ្ណោះ']].map(([v, l]) => h('option', { value: v, selected: session.integrity_mode === v ? 'selected' : null }, l)));
   const polMax = h('input', { type: 'number', min: '1', max: '20', value: session.max_violations || 3, style: 'width:70px;' });
   const lockedCount = session.roster.filter((x) => x.locked).length;
+  // a student has just been locked: a short beep and a message, so the teacher need not stare at the list
+  {
+    const now = new Set(session.roster.filter((x) => x.locked && !x.submitted_at).map((x) => x.id));
+    const seen = (window.__lockSeen ||= {});
+    const prev = seen[session.id];
+    if (prev) {
+      const fresh = session.roster.filter((x) => now.has(x.id) && !prev.has(x.id));
+      if (fresh.length) {
+        Exam.notify(`🔒 ជាប់សោថ្មី៖ ${fresh.map((x) => `${x.surname} ${x.first_name}`).join(', ')}`);
+        try { const ac = new (window.AudioContext || window.webkitAudioContext)(), o = ac.createOscillator(), gn = ac.createGain(); o.frequency.value = 880; gn.gain.value = 0.15; o.connect(gn); gn.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.25); } catch {}
+      }
+    }
+    seen[session.id] = now;
+  }
   // who needs the teacher right now: locked, lost connection, or never started
   const attentionRow = (ses) => {
     if (ses.phase === 'closed' || ses.phase === 'upcoming') return null;
@@ -2165,6 +2205,29 @@ function suspicionCard(session) {
     } }, 'ពិនិត្យឥឡូវនេះ')]),
     out,
   ]);
+}
+
+// One sheet for a class: a row per student, a column per exam, so the teacher sees the whole term at a glance.
+async function exportClassAllExams(classId, className) {
+  if (typeof XLSX === 'undefined') return Exam.notify('មិនទាន់ដំណើរការបណ្ណាល័យ Excel នៅឡើយទេ។');
+  const d = await api('/api/export');
+  const sessions = d.sessions.filter((s) => s.class_id === classId).sort((a, b) => String(a.scheduled_start).localeCompare(String(b.scheduled_start)));
+  const students = d.students.filter((s) => s.class_id === classId).sort((a, b) => `${a.surname}${a.first_name}`.localeCompare(`${b.surname}${b.first_name}`, 'km'));
+  const by = new Map(d.results.map((r) => [`${r.session_id}:${r.student_id}`, r]));
+  const rows = students.map((s) => {
+    const row = { 'អត្តលេខ': s.id, 'គោត្តនាម': s.surname, 'នាម': s.first_name };
+    let sum = 0, n = 0;
+    for (const ses of sessions) {
+      const r = by.get(`${ses.id}:${s.id}`);
+      const label = `${ses.test_title} (${String(ses.scheduled_start).slice(0, 10)})`;
+      if (r && r.submitted_at) { const v = (r.mcq_score || 0) + (r.writing_score || 0); row[label] = v; sum += v; n++; } else row[label] = '';
+    }
+    row['ចំនួនការប្រឡងដែលបានធ្វើ'] = n; row['ពិន្ទុសរុប'] = sum;
+    return row;
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ '': '' }]), 'Results');
+  XLSX.writeFile(wb, `លទ្ធផល_${className}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 // ---------- activity during the exam ----------

@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/exam.test.mjs test/game.test.mjs test/live.test.mjs test/live_api.test.mjs test/omr.test.mjs test/teacher_signup.test.mjs test/teach_access.test.mjs test/remote.test.mjs test/exam_reset.test.mjs test/watch.test.mjs",
+    "deploy": "npm test && wrangler deploy",
+    "smoke": "node tools/smoke_exam.mjs http://localhost:8799",
     "build:teach": "cd teach-app && npm install && npm run build"
   }
 }
