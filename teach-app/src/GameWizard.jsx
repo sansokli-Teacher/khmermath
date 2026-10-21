@@ -42,6 +42,8 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
   const [err, setErr] = useState('');
   const [bankOpen, setBankOpen] = useState(false);
   const [popup, setPopup] = useState(false);        // the divide-groups pop-up
+  const [remote, setRemote] = useState(() => { try { return localStorage.getItem('teach_remote_pref') === '1'; } catch { return false; } });   // control the game from a phone
+  const toggleRemote = (v) => { setRemote(v); try { localStorage.setItem('teach_remote_pref', v ? '1' : '0'); } catch { /* storage blocked */ } };
 
   const grade = cls ? parseInt(gradeOf(cls), 10) || 7 : 7;
   useEffect(() => { loadBank().then(setBank); }, []);
@@ -86,7 +88,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     if (other) { location.href = other.href(cls); return; }
     if (!present.length && !noTeam) { setErr('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។'); return; }
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: cls.name, groups: teams })); } catch { /* storage blocked */ }
-    location.href = `/teamgame.html?from=teach&wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}${noTeam ? '&nt=1' : ''}`;
+    location.href = `/teamgame.html?from=teach&wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}${noTeam ? '&nt=1' : ''}${remote ? '&remote=1' : ''}`;
   };
   const next = () => { setErr(''); if (step === lastStep) start(); else setStep(step + 1); };
   const togglePick = (n) => setPicked((p) => (p.includes(n) ? (p.length > 1 ? p.filter((x) => x !== n) : p) : [...p, n]));
@@ -136,6 +138,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
             <button type="button" role="radio" aria-checked={noTeam} className={noTeam ? 'on' : ''} onClick={() => setNoTeam(true)}><b>🙋 លេងម្នាក់ៗ</b><small>លោកគ្រូអ្នកគ្រូហៅសិស្សម្នាក់ៗ មិនមានក្រុម</small></button>
           </div>
           {students && absentIds.length > 0 && <p className="gw-note">✕ មិនដាក់សិស្សអវត្តមាន {kh(students.length - present.length)} នាក់ (ដែលបានគូសក្នុងកង់ចាប់ឈ្មោះ)</p>}
+          <label className="gw-remote"><input type="checkbox" checked={remote} onChange={(e) => toggleRemote(e.target.checked)} /><span><b>📱 Control from my phone</b><small>A QR code appears when the game starts. Scan it: the computer shows the game, the phone is the remote.</small></span></label>
           {noTeam ? (
             <p className="gw-solo">សិស្សទាំង {kh(present.length)} នាក់លេងជាមួយគ្នា — ចុច «ចាប់ផ្ដើមហ្គេម» ដើម្បីបន្ត។ ចង់លេងជាក្រុម សូមចុច «👥 លេងជាក្រុម» ខាងលើ។</p>
           ) : (

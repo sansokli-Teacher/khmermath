@@ -19,6 +19,7 @@ import * as profile from './api/profile.js';
 import { runBackup } from './lib/backup.js';
 import * as settings from './api/settings.js';
 import * as game from './api/game.js';
+import * as remote from './api/remote.js';
 import * as live from './api/live.js';
 import * as attendance from './api/attendance.js';
 
@@ -181,6 +182,10 @@ const ROUTES = [
   ['POST', '/api/game/question', game.saveQuestion],
   ['POST', '/api/game/reset', game.resetQuestion],
   ['POST', '/api/game/config', game.saveConfig],
+  ['POST', '/api/remote/create', remote.create],
+  ['POST', '/api/remote/sync', remote.sync],
+  ['GET', '/api/remote/state', remote.state],
+  ['POST', '/api/remote/cmd', remote.cmd],
   ['POST', '/api/live/create', live.create],
   ['GET', '/api/live/host/:code', live.hostState],
   ['POST', '/api/live/host/:code/action', live.hostAction],

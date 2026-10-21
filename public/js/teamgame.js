@@ -400,7 +400,7 @@
   function closePop() { stopTimer(); if (flipBtn) { flipBtn.classList.remove('flip'); flipBtn = null; } $('tg-pop').hidden = true; openTileIdx = -1; stopFw(); if (G && !G.finished && !$('tg-play').hidden) bgm('main', 0.32); }
   function teamBtns(card, label, exclude, cb) {
     var wrap = el('div', 'tg-pick'); wrap.appendChild(el('small', '', label));
-    G.teams.forEach(function (t, i) { if (i === exclude) return; var b = el('button', 'tg-pickbtn', t.name); b.type = 'button'; b.style.setProperty('--c', t.color); b.addEventListener('click', function () { cb(i); }); wrap.appendChild(b); });
+    G.teams.forEach(function (t, i) { if (i === exclude) return; var b = el('button', 'tg-pickbtn', t.name); b.type = 'button'; b.setAttribute('data-team', i); b.style.setProperty('--c', t.color); b.addEventListener('click', function () { cb(i); }); wrap.appendChild(b); });
     card.appendChild(wrap); return wrap;
   }
   function finishTurn(tileIdx, res, by, afterFn) {
@@ -460,21 +460,21 @@
         run();
       }
       var acts = el('div', 'tg-acts');
-      if (t.a) { var show = el('button', 'btn btn-ghost btn-sm', 'បង្ហាញចម្លើយ'); show.type = 'button'; show.addEventListener('click', function () { ans.hidden = !ans.hidden; card.classList.toggle('revealed', !ans.hidden); if (!ans.hidden && t.s && !ans.dataset.m) { ans.dataset.m = 1; var sl = ans.querySelector('.tg-sol'); if (sl) sl.hidden = false; } show.textContent = ans.hidden ? 'បង្ហាញចម្លើយ' : 'លាក់ចម្លើយ'; }); acts.appendChild(show); }
-      var ok = el('button', 'btn btn-primary btn-sm', '✔ ត្រឹមត្រូវ +' + khNum(t.p)); ok.type = 'button';
+      if (t.a) { var show = el('button', 'btn btn-ghost btn-sm', 'បង្ហាញចម្លើយ'); show.type = 'button'; show.setAttribute('data-rc', 'show'); show.addEventListener('click', function () { ans.hidden = !ans.hidden; card.classList.toggle('revealed', !ans.hidden); if (!ans.hidden && t.s && !ans.dataset.m) { ans.dataset.m = 1; var sl = ans.querySelector('.tg-sol'); if (sl) sl.hidden = false; } show.textContent = ans.hidden ? 'បង្ហាញចម្លើយ' : 'លាក់ចម្លើយ'; }); acts.appendChild(show); }
+      var ok = el('button', 'btn btn-primary btn-sm', '✔ ត្រឹមត្រូវ +' + khNum(t.p)); ok.type = 'button'; ok.setAttribute('data-rc', 'ok');
       ok.addEventListener('click', function () { snapshot(); sfx.right(); var r = card.getBoundingClientRect(); miniBurst(r.left + r.width / 2, r.top + 80); finishTurn(i, 'ok', G.turn, function () { team.score += t.p; }); });
-      var bad = el('button', 'btn btn-ghost btn-sm', '✖ មិនត្រូវ'); bad.type = 'button'; bad.addEventListener('click', function () { snapshot(); sfx.wrong(); finishTurn(i, 'bad', G.turn); });
-      var other = el('button', 'btn btn-ghost btn-sm', 'ក្រុមផ្សេងឆ្លើយត្រូវ…'); other.type = 'button'; var pickBox = null;
+      var bad = el('button', 'btn btn-ghost btn-sm', '✖ មិនត្រូវ'); bad.type = 'button'; bad.setAttribute('data-rc', 'bad'); bad.addEventListener('click', function () { snapshot(); sfx.wrong(); finishTurn(i, 'bad', G.turn); });
+      var other = el('button', 'btn btn-ghost btn-sm', 'ក្រុមផ្សេងឆ្លើយត្រូវ…'); other.type = 'button'; other.setAttribute('data-rc', 'other'); var pickBox = null;
       other.addEventListener('click', function () {
         if (pickBox) { pickBox.remove(); pickBox = null; return; }
         pickBox = teamBtns(card, 'ឱ្យពិន្ទុទៅក្រុម៖', G.turn, function (k) { snapshot(); sfx.right(); finishTurn(i, 'ok', k, function () { G.teams[k].score += t.p; }); });
       });
-      if (addTime) { var plus = el('button', 'btn btn-ghost btn-sm', '+15 s'); plus.type = 'button'; plus.addEventListener('click', function () { addTime(15); }); acts.appendChild(plus); }
+      if (addTime) { var plus = el('button', 'btn btn-ghost btn-sm', '+15 s'); plus.type = 'button'; plus.setAttribute('data-rc', 'plus'); plus.addEventListener('click', function () { addTime(15); }); acts.appendChild(plus); }
       acts.appendChild(ok); acts.appendChild(bad); if (G.teams.length > 1) acts.appendChild(other); card.appendChild(acts);
     } else {
       var sp = SPECIALS[t.sp]; if (G.style === 'boat' && BOAT_SP[t.sp]) sp = BOAT_SP[t.sp]; sfx[t.sp === 'bomb' ? 'bomb' : 'special']();
       card.classList.add('special', 'sp-' + t.sp); card.appendChild(el('div', 'tg-sicon', sp.icon)); card.appendChild(el('div', 'tg-sname', sp.name)); card.appendChild(el('div', 'tg-sdesc', sp.desc));
-      var acts2 = el('div', 'tg-acts'), go = el('button', 'btn btn-primary btn-sm', 'យល់ព្រម'); go.type = 'button'; acts2.appendChild(go); card.appendChild(acts2);
+      var acts2 = el('div', 'tg-acts'), go = el('button', 'btn btn-primary btn-sm', 'យល់ព្រម'); go.type = 'button'; go.setAttribute('data-rc', 'sp'); acts2.appendChild(go); card.appendChild(acts2);
       var apply = function (fn) { snapshot(); finishTurn(i, 'sp', G.turn, fn); };
       if (t.sp === 'bomb') go.addEventListener('click', function () { apply(function () { team.score = G.style === 'boat' ? Math.max(0, team.score - 2 * G.pts) : 0; }); });
       else if (t.sp === 'double') go.addEventListener('click', function () { apply(function () { team.score = G.style === 'boat' ? team.score + 2 * G.pts : (team.score > 0 ? team.score * 2 : team.score + G.pts); }); });
@@ -738,4 +738,47 @@
       load.remove(); startGame();
     }, 150);
   })();
+
+  /* ---------- phone remote bridge: lets js/tgremote.js publish the game state and press the same buttons a teacher would ---------- */
+  window.TGX = {
+    active: function () { return !!G && !$('tg-play').hidden; },
+    state: function () {
+      if (!G || $('tg-play').hidden) return { idle: 1 };
+      var S = { style: G.style, finish: G.finish, pts: G.pts, turn: G.turn, fin: !!G.finished, rem: remaining(), spinning: !!spinning,
+        teams: G.teams.map(function (t) { return { n: t.name, c: t.color, s: t.score, st: steps(t) }; }),
+        tiles: G.tiles.map(function (t) { return { d: t.done ? 1 : 0, r: t.res || '', b: t.by === undefined || t.by === null ? -1 : t.by, sp: t.k === 's' ? 1 : 0 }; }) };
+      if (G.finished) S.rank = ranking().map(function (r) { return { n: r.t.name, c: r.t.color, s: r.t.score }; });
+      if (openTileIdx >= 0 && G.tiles[openTileIdx]) {
+        var t = G.tiles[openTileIdx], card = $('tg-card'), a = card.querySelector('.tg-a'), tm = card.querySelector('.tg-timer span'), c = { i: openTileIdx, k: t.k };
+        if (t.k === 'q') {
+          c.n = t.n; c.q = t.q || ''; c.o = t.o || null; c.ck = t.ck === undefined ? -1 : t.ck; c.a = t.a || ''; c.s = t.s || ''; c.fig = t.f ? 1 : 0; c.p = t.p;
+          c.rev = a ? (a.hidden ? 0 : 1) : 0;
+          if (tm) c.left = parseInt(tm.textContent.replace(/[០-៩]/g, function (d) { return '០១២៣៤៥៦៧៨៩'.indexOf(d); }), 10) || 0; c.over = card.querySelector('.tg-timer.over') ? 1 : 0;
+        } else {
+          var nm = card.querySelector('.tg-sname'), ds = card.querySelector('.tg-sdesc'), ic = card.querySelector('.tg-sicon'), go = card.querySelector('[data-rc="sp"]');
+          c.name = nm ? nm.textContent : ''; c.desc = ds ? ds.textContent : ''; c.icon = ic ? ic.textContent : ''; c.go = go && !go.hidden ? 1 : 0;
+        }
+        c.pick = [].map.call(card.querySelectorAll('.tg-pickbtn'), function (b) { return { k: parseInt(b.getAttribute('data-team'), 10), n: b.textContent }; });
+        S.card = c;
+      }
+      return S;
+    },
+    run: function (c) {
+      if (!G || $('tg-play').hidden) return;
+      var card = $('tg-card'), press = function (sel, root) { var b = (root || card).querySelector(sel); if (b && !b.disabled && !b.hidden) b.click(); return !!b; };
+      if (c.t === 'open') { var tiles = $('tg-board').querySelectorAll('.tg-tile'); if (openTileIdx < 0 && tiles[c.i] && !tiles[c.i].disabled) tiles[c.i].click(); }
+      else if (c.t === 'spin') { if (openTileIdx < 0) press('.tg-spin', $('tg-board')); }
+      else if (c.t === 'go') { if (openTileIdx < 0) press('.tg-go-q', $('tg-board')); }
+      else if (c.t === 'show') { var a = card.querySelector('.tg-a'); if (a && a.hidden) press('[data-rc="show"]'); }
+      else if (c.t === 'ok') press('[data-rc="ok"]');
+      else if (c.t === 'bad') press('[data-rc="bad"]');
+      else if (c.t === 'other') { if (!card.querySelector('.tg-pickbtn')) press('[data-rc="other"]'); else press('[data-rc="other"]'); }
+      else if (c.t === 'pick') press('.tg-pickbtn[data-team="' + c.k + '"]');
+      else if (c.t === 'plus') press('[data-rc="plus"]');
+      else if (c.t === 'sp') press('[data-rc="sp"]');
+      else if (c.t === 'close') press('.tg-x');
+      else if (c.t === 'score') { var tm = G.teams[c.k]; if (tm && (c.d === 1 || c.d === -1)) { snapshot(); tm.score += c.d * G.pts; saveGame(); renderAll(); } }
+      else if (c.t === 'end') { if (!G.finished) finishGame(); }
+    },
+  };
 })();

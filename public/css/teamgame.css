@@ -436,3 +436,21 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .tg-bar #tg-end { color: #fff; background: #c92a2a; border-color: #c92a2a; }
 .tg-bar #tg-end:hover { background: #a61e1e; }
 .tg-card .tg-acts a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* phone remote: pairing panel */
+.tg-bar #tg-remote.rc-on { color: #1f7a3a; border-color: #2f9e44; background: #ebfbee; }
+.rc-back { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 40, .65); backdrop-filter: blur(4px); }
+.rc-card { position: relative; width: min(94vw, 460px); max-height: 94vh; overflow: auto; padding: 24px 24px 20px; border-radius: 24px; background: #fff; text-align: center; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
+.rc-card h2 { margin: 0 0 4px; font-size: 24px; color: #1f2547; }
+.rc-sub { margin: 0 0 14px; color: #5b6b7b; font-size: 15px; line-height: 1.5; }
+.rc-body { display: grid; place-items: center; margin-bottom: 10px; }
+.rc-qr { padding: 12px; border-radius: 16px; background: #fff; border: 2px solid #e3ded0; box-sizing: border-box; line-height: 0; }
+.rc-status { min-height: 28px; margin: 6px 0 10px; font-weight: 800; color: #6b7280; }
+.rc-status.ok { color: #1f7a3a; }
+.rc-linkrow { display: flex; gap: 8px; }
+.rc-link { flex: 1; min-width: 0; min-height: 42px; border-radius: 10px; border: 1.5px solid #d6d0c0; padding: 0 10px; font-size: 13px; }
+.rc-copy { min-height: 42px; padding: 0 14px; border-radius: 10px; border: 0; background: #2f5fe3; color: #fff; font-weight: 700; }
+.rc-act { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
+.rc-act button { min-height: 44px; padding: 0 22px; border-radius: 99px; border: 0; font-weight: 800; }
+.rc-done { background: #1f2547; color: #fff; } .rc-stop { background: #fff1f1; color: #c92a2a; border: 1.5px solid #e03131 !important; }
+.rc-x { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #f1eee6; font-size: 16px; }

@@ -19,7 +19,7 @@ const TG_STYLES = [
   { k: 'boat', ic: '🚣', t: 'ប្រណាំងទូកង', d: 'ឆ្លើយត្រូវ ទូកទៅមុខ ដល់ទីបញ្ចប់មុនគេឈ្នះ', img: 'img/play/boat.jpg' },
 ];
 const TG_COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
-let tgStyle = 'cards', tgQn = 20, tgNoTeam = false;
+let tgStyle = 'cards', tgQn = 20, tgNoTeam = false, tgRemote = false;
 let tgBank = null;
 
 // ---- the «divide groups» pop-up: a banner, then each group is filled one by one (names shuffle, then lock with a crash and a burst) ----
@@ -191,6 +191,7 @@ render.teamgame = async function () {
   const again = h('button', { type: 'button', class: 'tgl-deal' }, '👥 ចែកក្រុម');
   const absent = h('input', { type: 'checkbox', id: 'tg-skip' }); absent.checked = tgSkipAbsent;
   const noTeam = h('input', { type: 'checkbox' }); noTeam.checked = tgNoTeam;
+  const remoteCb = h('input', { type: 'checkbox' }); remoteCb.checked = tgRemote; remoteCb.onchange = () => { tgRemote = remoteCb.checked; };
   const info = h('p', { class: 'tgl-info' });
   const preview = h('div', { class: 'tgl-teams' });
   function draw() {
@@ -226,7 +227,7 @@ render.teamgame = async function () {
   go.onclick = () => {
     if (!tgNoTeam && !teams.some((t) => t.length)) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: curCls().name, groups: teams })); } catch {}
-    location.href = `teamgame.html?from=exam&wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}${tgNoTeam ? '&nt=1' : ''}`;
+    location.href = `teamgame.html?from=exam&wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}${tgNoTeam ? '&nt=1' : ''}${tgRemote ? '&remote=1' : ''}`;
   };
 
   const step = (n, title, body, right) => h('section', { class: 'tgl-step' }, [h('div', { class: 'tgl-sh' }, [h('span', { class: 'tgl-n' }, tgKh(n)), h('h3', {}, title), right || null]), body]);
@@ -242,6 +243,7 @@ render.teamgame = async function () {
         h('div', { class: 'tgl-stepper' }, [minus, out, plus]), again,
         h('label', { class: 'tgl-sw' }, [absent, h('span', {}, 'មិនរួមសិស្សអវត្តមាន')]),
         h('label', { class: 'tgl-sw' }, [noTeam, h('span', {}, '🙋 លេងដោយគ្មានក្រុម')]),
+        h('label', { class: 'tgl-sw', title: 'A QR code appears when the game starts: scan it and the phone becomes the remote' }, [remoteCb, h('span', {}, '📱 Control from my phone')]),
       ]),
       info, preview,
     ])),

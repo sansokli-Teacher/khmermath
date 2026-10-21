@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/exam.test.mjs test/game.test.mjs test/live.test.mjs test/live_api.test.mjs test/omr.test.mjs test/teacher_signup.test.mjs test/teach_access.test.mjs",
+    "test": "node --test test/exam.test.mjs test/game.test.mjs test/live.test.mjs test/live_api.test.mjs test/omr.test.mjs test/teacher_signup.test.mjs test/teach_access.test.mjs test/remote.test.mjs",
     "build:teach": "cd teach-app && npm install && npm run build"
   }
 }
