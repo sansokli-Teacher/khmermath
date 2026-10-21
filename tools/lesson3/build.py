@@ -9,6 +9,8 @@ sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(HERE, '..', 'lesson2')
 from vis3 import *
 from lib import stepify, slide, key, ex, prac, sol, m, dm, p, hl, fig, rvd
 from tidy_sol import rebuild
+sys.path.insert(0, os.path.join(HERE, '..', 'lesson12'))
+from animate import animate_deck
 
 OUT = os.path.join(HERE, '..', '..', 'public', 'js', 'slides', 'g7', 'lesson3.js')
 base = json.load(open(os.path.join(HERE, 'base_deck.json'), encoding='utf-8'))
@@ -107,6 +109,7 @@ for n, s_ in enumerate(base, 1):
     out.extend(after.get(n, []))
 out = rebuild(out)                                                    # exercise solutions: one group of sub-questions per slide
 out = [stepify(x) if x.get('k') == 'sol' and 'data-step' not in x['html'] else x for x in out]
+out = animate_deck(out)                                               # lines draw themselves, points pop in
 js = ('// Hand-designed deck for Grade 7 Lesson 3: tools/lesson3/*.py — do not edit by hand.\n'
       + "window.TEACH_SLIDES = window.TEACH_SLIDES || {};\n"
       + "window.TEACH_SLIDES['7-3'] = " + json.dumps(out, ensure_ascii=False) + ';\n')

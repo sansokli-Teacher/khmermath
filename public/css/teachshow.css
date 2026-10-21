@@ -713,6 +713,25 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide div.rv:not(.rv-hide) { animation: tsRise .45s ease both; }
 @keyframes tsRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ts-slide [data-step], .ts-slide [data-until] { transition: none; } .ts-slide div.rv:not(.rv-hide) { animation: none; } }
+/* drawing animations inside the pictures (the pencil that draws a line, the pencil that makes a point): they start the moment their step is revealed */
+@keyframes penDraw { from { stroke-dashoffset: var(--len, 600); } to { stroke-dashoffset: 0; } }
+@keyframes penMove { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 600px), var(--dy, 0px)); } }
+@keyframes penDown { from { transform: translate(0, var(--dy, -120px)); } to { transform: translate(0, 0); } }
+@keyframes dotPop { 0%, 78% { transform: scale(0); } 100% { transform: scale(1); } }
+.ts-slide .rv-hide [class*="pen-"] { animation: none !important; }          /* while hidden nothing runs, so the animation begins again each time the step appears */
+@keyframes penPop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes penLate { from { opacity: 0; } to { opacity: 1; } }
+@keyframes penIn { from { transform: translate(var(--dx, 0px), var(--dy, 0px)); } to { transform: translate(0, 0); } }
+@keyframes penSpin { from { transform: rotate(0deg); } to { transform: rotate(var(--rot, 360deg)); } }
+@keyframes penTwinkle { from { opacity: .25; } to { opacity: 1; } }
+@keyframes penWave { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+@keyframes penSlide { from { transform: translateX(0); } to { transform: translateX(70px); } }
+.ts-slide .pen-slide { animation: penSlide 2.4s ease-in-out infinite alternate; }
+.ts-slide .pen-pop { transform-box: fill-box; transform-origin: center; animation: penPop .4s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--d, .4s); }
+.ts-slide .pen-spin { transform-box: fill-box; transform-origin: center; }
+.ts-slide .pen-twinkle { animation: penTwinkle 2.2s ease-in-out infinite alternate; }
+.ts-slide .pen-wave { animation: penWave 2.6s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .ts-slide [class*="pen-"] { animation: none !important; stroke-dashoffset: 0 !important; transform: none !important; } }
 /* reveal chips for the new Section 4 pictures */
 .ts-slide .stepcard { display: inline-block; margin: .2em .35em; padding: .25em .8em; border-radius: .6em; font-weight: 800; }
 .ts-slide .stepcard.a { background: #dbeafe; color: #1f4a5f; border: 2px solid #1c7ed6; }

@@ -81,25 +81,58 @@ def compass(left_foot, opening, h=190, pencil_right=True):
     return b
 
 
+def _compass(Lw, H, open_anim=None, hinge_open_deg=18):
+    """a drawing compass in its own coordinates: needle tip at (0, 0), pencil foot at (Lw, 0), hinge above the middle.
+    The right leg hangs from the hinge in its own group, so it can swing open (CSS animation named open_anim) around the hinge."""
+    hx, hy = Lw / 2, -H
+    left = _leg((hx, hy), (0, 0), '#aeb5be', '#6b7280', 13) + poly([(-3.5, 0), (3.5, 0), (0, 20)], '#3d4349')                  # left leg and the steel needle
+    # the right leg, drawn relative to the hinge so that it turns about it
+    rx, ry = Lw / 2, H
+    leg = _leg((0, 0), (rx, ry), '#aeb5be', '#6b7280', 13)
+    pen = poly([(rx - 9, ry - 34), (rx + 9, ry - 34), (rx + 3, ry + 2), (rx - 3, ry + 2)], '#ffd43b', '#a87a00', 1.5) + poly([(rx - 3, ry), (rx + 3, ry), (rx, ry + 14)], '#2b2b2b')   # pencil lead holder and lead
+    style = f' style="animation:{open_anim} both"' if open_anim else ''
+    right = f'<g transform="translate({hx} {hy})"><g class="pen-open"{style}>{leg}{pen}</g></g>'
+    top = f'<circle cx="{hx}" cy="{hy}" r="14" fill="#868e96" stroke="#495057" stroke-width="2.5"/><rect x="{hx - 6}" y="{hy - 52}" width="12" height="40" rx="5" fill="#adb5bd" stroke="#6b7280" stroke-width="1.6"/>'
+    return left + right + top
+
+
 def compass_transfer():
-    """the book's three steps: (1) open the compass to AB, (2) put the needle on A' of line xy, (3) mark B' with the pencil foot"""
-    L = 190
-    b = ''
-    # panel 1: the segment AB and the compass opened to its length
-    y1 = 270
-    b += seg(60, 60 + L, y1, BLUE, 7) + lab(60, y1 + 54, 'A', BLUE, 36) + lab(60 + L, y1 + 54, 'B', BLUE, 36) + compass((60, y1), L, 170)
-    b += lab(160, 360, '(1)', RED, 34)
-    # panel 2: the line xy, A' marked, the compass needle on A'
-    px = 380
-    b += dline(px - 30, y1, px + 280, y1, GREY, 4, False) + lab(px - 24, y1 + 50, 'x', GREY, 34) + lab(px + 276, y1 + 50, 'y', GREY, 34)
-    b += dot(px + 20, y1, BLUE, 9) + lab(px + 20, y1 + 54, "A'", BLUE, 36) + compass((px + 20, y1), L, 170)
-    b += lab(px + 120, 360, '(2)', RED, 34)
-    # panel 3: the pencil foot marks B' on xy; A'B' = AB
-    qx = 710
-    b += dline(qx - 30, y1, qx + 280, y1, GREY, 4, False) + lab(qx - 24, y1 + 50, 'x', GREY, 34) + lab(qx + 276, y1 + 50, 'y', GREY, 34)
-    b += seg(qx + 20, qx + 20 + L, y1, GREEN, 7) + lab(qx + 20, y1 + 54, "A'", GREEN, 36) + lab(qx + 20 + L, y1 + 54, "B'", GREEN, 36)
-    b += f'<path d="M {qx + 20 + L} {y1 - 24} Q {qx + 20 + L + 10} {y1} {qx + 20 + L} {y1 + 24}" fill="none" stroke="#222" stroke-width="3"/>' + lab(qx + 130, 360, '(3)', RED, 34)
-    return svgd(1000, 380, b, '48vh')
+    """the book's construction of A'B' = AB, animated step by step with the compass shown at every step:
+    (1) open the compass to AB (needle on A, pencil on B), (2) carry it to A' on the line xy keeping the opening, (3) swing the pencil foot across xy to mark B'"""
+    k = uid('ct')
+    L, H = 240, 170
+    A, B = (130, 250), (130 + 240, 250)
+    Ap, Bp = (560, 480), (560 + 240, 480)
+    dx, dy = Ap[0] - A[0], Ap[1] - A[1]
+    fl = 42                                                      # how high the compass is held in the air while it moves
+    arc_len = L * math.radians(10)
+    css = (f'@keyframes {k}o{{from{{transform:rotate(20deg)}}to{{transform:rotate(0deg)}}}}'
+           f'@keyframes {k}a{{0%,55%{{transform:translate(0px,-{fl}px)}}100%{{transform:translate(0px,0px)}}}}'
+           f'@keyframes {k}b{{0%{{transform:translate(0px,0px)}}16%{{transform:translate(0px,-{fl}px)}}78%{{transform:translate({dx}px,{dy - fl}px)}}100%{{transform:translate({dx}px,{dy}px)}}}}'
+           f'@keyframes {k}c{{0%{{transform:rotate(-5deg)}}72%{{transform:rotate(5deg)}}100%{{transform:rotate(0deg)}}}}'
+           f'@keyframes {k}d{{0%{{stroke-dashoffset:{arc_len + 4:.0f}}}72%,100%{{stroke-dashoffset:0}}}}'
+           f'@keyframes {k}e{{0%,75%{{opacity:0}}100%{{opacity:1}}}}')
+    b = f'<style>{css}</style>'
+    # the segment AB and the line xy with A'
+    b += seg(A[0], B[0], A[1], BLUE, 8) + lab(A[0], A[1] + 56, 'A', BLUE, 40) + lab(B[0], B[1] + 56, 'B', BLUE, 40)
+    b += dline(60, Ap[1], 940, Ap[1], GREY, 4, True) + lab(78, Ap[1] + 52, 'x', GREY, 36) + lab(924, Ap[1] + 52, 'y', GREY, 36)
+    b += dot(Ap[0], Ap[1], BLUE, 9) + lab(Ap[0], Ap[1] + 56, "A'", BLUE, 40)
+    cap = lambda t, col=RED: T(940, 70, t, 32, col, 'end')
+    # step 1: the compass opens in the air, then is put on AB
+    c1 = _compass(L, H, f'{k}o 1.5s ease-in-out')
+    b += rvg(1, f'<g class="pen-c" style="animation:{k}a 2.8s ease-in-out both"><g transform="translate({A[0]} {A[1]})">{c1}</g></g>' + cap("(១) បើករង្វះដែកឈានវាស់ប្រវែង AB".replace('AB', 'AB')), until=2)
+    # step 2: lift it, carry it to A' (the opening stays), put the needle on A'
+    c2 = _compass(L, H)
+    b += rvg(2, f'<g class="pen-c" style="animation:{k}b 3.4s ease-in-out both"><g transform="translate({A[0]} {A[1]})">{c2}</g></g>' + cap("(២) ដៅចំណុច A' ដោយរក្សារង្វះដែកឈានឱ្យនៅដដែល"), until=3)
+    # step 3: the pencil foot swings across the line and leaves the mark B'
+    b += rvg(3, f'<path class="pen-arc" d="M {Bp[0] - L + L * math.cos(math.radians(5)):.1f} {Bp[1] - L * math.sin(math.radians(5)):.1f} A {L} {L} 0 0 1 {Bp[0] - L + L * math.cos(math.radians(5)):.1f} {Bp[1] + L * math.sin(math.radians(5)):.1f}" fill="none" stroke="#222" stroke-width="4" stroke-linecap="round" style="stroke-dasharray:{arc_len + 4:.0f};animation:{k}d 2.4s ease-in-out both"/>'
+             f'<g transform="translate({Ap[0]} {Ap[1]})"><g class="pen-swing" style="animation:{k}c 2.4s ease-in-out both">{c2}</g></g>' + cap("(៣) ចុងម្ខាងទៀតគូសលើ xy ត្រង់ B'"), until=4)
+    # step 4: the result: A'B' = AB
+    b += rvg(4, f'<g transform="translate({Ap[0]} {Ap[1]})">{c2}</g>' + seg(Ap[0], Bp[0], Ap[1], GREEN, 8, False) + dot(Bp[0], Bp[1], GREEN, 9) + lab(Bp[0], Bp[1] + 56, "B'", GREEN, 40)
+             + M(500, 70, "A'B' = AB", 46, RED, 'middle', 700))
+    return svgd(1000, 560, b, '60vh')
+
+
 
 
 def polygons_segments():
@@ -129,8 +162,8 @@ def superpose(equal=True):
     y = 220
     b += dline(60, y, 940, y, GREY, 4, True) + lab(70, y + 54, 'x', GREY, 36) + lab(930, y + 54, 'y', GREY, 36)
     b += rvg(1, seg(200, 200 + la, y - 14, BLUE, 8, False) + lab(200, y - 34, 'A', BLUE, 34, 'end') + lab(200 + la, y - 34, 'B', BLUE, 34))
-    b += rvg(2, seg(200, 200 + lc, y + 16, GREEN, 8, False) + lab(200, y + 56, 'C(A)', GREEN, 30, 'end') + lab(200 + lc, y + 56, 'D', GREEN, 34, 'middle')
-             + (lab(200 + la + 10, y + 56, 'B', BLUE, 34, 'start') if not equal else ''))
+    b += rvg(2, f'<g class="pen-glide" style="--dx:{540 - 200}px;--dy:{70 - (y + 16)}px;animation:penIn 1.6s ease-in-out both">' + seg(200, 200 + lc, y + 16, GREEN, 8, False) + '</g>'
+             + lab(200, y + 56, 'C(A)', GREEN, 30, 'end') + lab(200 + lc, y + 56, 'D', GREEN, 34, 'middle') + (lab(200 + la + 10, y + 56, 'B', BLUE, 34, 'start') if not equal else ''))
     b += rvg(3, M(500, 330, 'AB = CD' if equal else 'CD < AB', 44, RED, 'middle', 700))
     return svgd(1000, 360, b, '46vh')
 
@@ -179,9 +212,9 @@ def sum_segments():
     y = 200
     x = 100
     b += dline(60, y, 940, y, GREY, 3, True)
-    b += rvg(1, seg(x, x + a, y, BLUE, 8, False) + at(x, y, 'A', BLUE) + at(x + a, y, 'B', BLUE))
-    b += rvg(2, seg(x + a, x + a + c, y, GREEN, 8, False) + at(x + a + c, y, 'D', GREEN))
-    b += rvg(3, seg(x + a + c, x + a + c + e, y, ORANGE, 8, False) + at(x + a + c + e, y, 'F', ORANGE))
+    b += rvg(1, f'<g class="pen-glide" style="--dx:{80 - x}px;--dy:{50 - y}px;animation:penIn 1.3s ease-in-out both">{seg(x, x + a, y, BLUE, 8, False)}</g>' + at(x, y, 'A', BLUE) + at(x + a, y, 'B', BLUE))
+    b += rvg(2, f'<g class="pen-glide" style="--dx:{400 - (x + a)}px;--dy:{50 - y}px;animation:penIn 1.3s ease-in-out both">{seg(x + a, x + a + c, y, GREEN, 8, False)}</g>' + at(x + a + c, y, 'D', GREEN))
+    b += rvg(3, f'<g class="pen-glide" style="--dx:{740 - (x + a + c)}px;--dy:{50 - y}px;animation:penIn 1.3s ease-in-out both">{seg(x + a + c, x + a + c + e, y, ORANGE, 8, False)}</g>' + at(x + a + c + e, y, 'F', ORANGE))
     b += rvg(4, dim(x, x + a + c + e, y - 54, 'AF = AB + BD + DF', RED, 34))
     return svgd(1000, 300, b, '40vh')
 
@@ -191,7 +224,7 @@ def diff_segments():
     a, c = 400, 230
     y = 120
     b = seg(120, 120 + a, y, BLUE, 8, False) + dot(120, y, BLUE, 9) + lab(120, y - 26, 'A(C)', BLUE, 36) + at(120 + a, y, 'B', BLUE)
-    b += rvg(1, seg(120, 120 + c, y + 40, GREEN, 8, False) + dot(120 + c, y, GREEN, 9) + lab(120 + c, y - 26, 'D', GREEN, 36))
+    b += rvg(1, f'<g class="pen-glide" style="--dx:420px;--dy:-70px;animation:penIn 1.4s ease-in-out both">' + seg(120, 120 + c, y + 40, GREEN, 8, False) + '</g>' + dot(120 + c, y, GREEN, 9) + lab(120 + c, y - 26, 'D', GREEN, 36))
     b += rvg(2, seg(120 + c, 120 + a, y + 80, RED, 10, False) + dim(120 + c, 120 + a, y + 130, 'DB = AB − CD', RED, 34, up=False))
     return svgd(1000, 290, b, '38vh')
 
@@ -221,8 +254,9 @@ def runners_track():
     b = poly([(40, y), (960, y), (960, y + 30), (40, y + 30)], '#d9480f', None, 0) + f'<line x1="40" y1="{y + 15}" x2="960" y2="{y + 15}" stroke="#fff" stroke-width="2" stroke-dasharray="14 10" opacity=".7"/>'
     cols = [BLUE, GREEN, PURPLE, RED]
     for k, nm in enumerate('ABCD'):
-        b += _athlete(X[k], y, cols[k], 0.8) if k < 3 else ''
         b += lab(X[k], y + 78, nm, NAVY, 38)
+    b += rvg(0, ''.join(_athlete(X[k], y, cols[k], 0.8) for k in range(3)), until=3)                               # waiting at A, B and C
+    b += rvg(3, ''.join(f'<g class="pen-run" style="--dx:{X[k + 1] - X[k]:.0f}px;--dy:0px;animation:penMove {1.1 + (X[k + 1] - X[k]) / 330:.2f}s ease-in-out {sum(1.1 + (X[j + 1] - X[j]) / 330 for j in range(k)):.2f}s both">{_athlete(X[k], y, cols[k], 0.8)}</g>' for k in range(3)))      # the relay, one runner after the other
     for k in (0, 3):                                                                                   # the start and the finish flags
         fx = X[k] - 44 if k == 0 else X[k]
         b += line(fx, y, fx, y - 150, '#444', 5) + poly([(fx, y - 150), (fx + (62 if k == 0 else -62), y - 132), (fx, y - 114)], '#fcc419' if k == 0 else RED, '#444', 1.5)
@@ -269,20 +303,24 @@ def quarters():
     return svgd(1000, 300, b, '40vh')
 
 
-def _wheel(cx, cy, r, spokes=12, tire='#222'):
+def _wheel(cx, cy, r, spokes=12, tire='#222', spin=None):
+    """a wheel; spin = (degrees, seconds) turns it while the vehicle moves"""
     b = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{tire}" stroke-width="{max(4, r * .12):.1f}"/><circle cx="{cx}" cy="{cy}" r="{r * .88:.1f}" fill="none" stroke="#adb5bd" stroke-width="1.5"/>'
     for k in range(spokes):
         a = k * 2 * math.pi / spokes
         b += f'<line x1="{cx}" y1="{cy}" x2="{cx + r * .88 * math.cos(a):.1f}" y2="{cy + r * .88 * math.sin(a):.1f}" stroke="#ced4da" stroke-width="1.2"/>'
-    return b + f'<circle cx="{cx}" cy="{cy}" r="{r * .12:.1f}" fill="#495057"/>'
+    b += f'<circle cx="{cx}" cy="{cy}" r="{r * .12:.1f}" fill="#495057"/>'
+    if spin:
+        return f'<g class="pen-spin" style="--rot:{spin[0]:.0f}deg;animation:penSpin {spin[1]}s linear both">{b}</g>'
+    return b
 
 
-def bicycle(x, y, col=BLUE, flip=False):
+def bicycle(x, y, col=BLUE, spin=None):
     """a bicycle with a rider, wheels on the ground at y"""
     r = 36
     wx1, wx2 = x - 56, x + 56
     wy = y - r
-    b = _wheel(wx1, wy, r) + _wheel(wx2, wy, r)
+    b = _wheel(wx1, wy, r, spin=spin) + _wheel(wx2, wy, r, spin=spin)
     top = (x + 4, wy - 46)
     b += f'<path d="M {wx1} {wy} L {x - 10} {wy - 44} L {wx2 - 8} {wy - 50} L {wx2} {wy} M {x - 10} {wy - 44} L {x + 8} {wy} L {wx1} {wy}" fill="none" stroke="{col}" stroke-width="6" stroke-linejoin="round"/>'
     b += line(wx2 - 8, wy - 50, wx2 - 14, wy - 70, '#444', 5) + line(wx2 - 20, wy - 72, wx2 - 4, wy - 72, '#444', 5) + line(x - 10, wy - 44, x - 14, wy - 56, '#444', 5) + line(x - 24, wy - 57, x - 4, wy - 57, '#222', 7)
@@ -291,11 +329,11 @@ def bicycle(x, y, col=BLUE, flip=False):
     return b
 
 
-def motorbike(x, y, col=RED):
+def motorbike(x, y, col=RED, spin=None):
     r = 40
     wx1, wx2 = x - 72, x + 72
     wy = y - r
-    b = _wheel(wx1, wy, r, 14, '#1f1f1f') + _wheel(wx2, wy, r, 14, '#1f1f1f')
+    b = _wheel(wx1, wy, r, 14, '#1f1f1f', spin) + _wheel(wx2, wy, r, 14, '#1f1f1f', spin)
     b += f'<path d="M {wx1} {wy} L {x - 36} {wy - 54} L {x + 30} {wy - 54} L {x + 50} {wy - 6} L {wx2} {wy}" fill="none" stroke="#555" stroke-width="7" stroke-linejoin="round"/>'
     b += poly([(x - 44, wy - 56), (x + 28, wy - 56), (x + 40, wy - 22), (x - 20, wy - 14), (x - 52, wy - 30)], col, '#7a0f0f', 2)
     b += poly([(x - 60, wy - 64), (x + 8, wy - 64), (x + 8, wy - 72), (x - 60, wy - 72)], '#222')
@@ -317,10 +355,15 @@ def road_meeting():
     for nm, x, col in (('A', xa, BLUE), ('B', xb, RED)):                                    # the two villages: a little house and a tree
         b += poly([(x - 34, y - 6), (x + 34, y - 6), (x + 34, y - 52), (x - 34, y - 52)], '#f1e0b0', '#a3874a', 2) + poly([(x - 42, y - 52), (x + 42, y - 52), (x, y - 92)], col, '#444', 2)
         b += lab(x, y + 80, 'ភូមិ ' + nm, NAVY, 28) if False else TM(x, y + 82, 'ភូមិ', nm, 32, NAVY)
-    b += bicycle(xm - 135, y, BLUE) + motorbike(xm + 135, y, RED)
-    b += rvg(1, dim(xa, xm, y - 170, 'x', BLUE, 36) + dim(xm, xb, y - 170, '3x', RED, 36))
-    b += rvg(2, dim(xa, xb, y - 230, 'x + 3x = 24.6 km', NAVY, 34))
-    b += rvg(3, M(500, y + 140, '4x = 24.6  ⟹  x = 6.15 km,  3x = 18.45 km', 34, RED, 'middle', 700))
+    D = 130                                                   # the cyclist's travel in px; the motorcyclist travels 3 x D (same time, three times the speed)
+    bx0, mx0 = xm - 92 - D - 14, xm + 112 + 3 * D + 14           # start positions: the front wheels meet at xm (a hand's width apart)
+    b += rvg(0, bicycle(bx0, y, BLUE) + motorbike(mx0, y, RED), until=1)
+    turns_b, turns_m = D / (2 * math.pi * 36) * 360, 3 * D / (2 * math.pi * 40) * 360
+    b += rvg(1, f'<g class="pen-go" style="--dx:{D}px;--dy:0px;animation:penMove 3.4s ease-in-out both">{bicycle(bx0, y, BLUE, (turns_b, 3.4))}</g>'
+             f'<g class="pen-go" style="--dx:-{3 * D}px;--dy:0px;animation:penMove 3.4s ease-in-out both">{motorbike(mx0, y, RED, (-turns_m, 3.4))}</g>')
+    b += rvg(2, dim(xa, xm, y - 170, 'x', BLUE, 36) + dim(xm, xb, y - 170, '3x', RED, 36))
+    b += rvg(3, dim(xa, xb, y - 230, 'x + 3x = 24.6 km', NAVY, 34))
+    b += rvg(4, M(500, y + 140, '4x = 24.6  ⟹  x = 6.15 km,  3x = 18.45 km', 34, RED, 'middle', 700))
     return svgd(1000, 410, f'<g transform="translate(0 20)">{b}</g>', '50vh')
 
 
@@ -382,7 +425,8 @@ def ex3_sphere_rod():
     L = math.hypot(ux, uy)
     ux, uy = ux / L, uy / L
     o1, o2 = (A[0] - ux * 110, A[1] - uy * 110), (B[0] + ux * 110, B[1] + uy * 110)
-    b += line(o1[0], o1[1], A[0], A[1], '#adb5bd', 11) + line(B[0], B[1], o2[0], o2[1], '#adb5bd', 11)
+    rod = line(o1[0], o1[1], A[0], A[1], '#adb5bd', 11) + line(B[0], B[1], o2[0], o2[1], '#adb5bd', 11)
+    b += f'<g class="pen-rod" style="--dx:{-ux * 170:.0f}px;--dy:{-uy * 170:.0f}px;animation:penIn 1.8s ease-out both">{rod}</g>'
     b += f'<line x1="{A[0]}" y1="{A[1]}" x2="{B[0]}" y2="{B[1]}" stroke="#e9ecef" stroke-width="4" stroke-dasharray="8 7" opacity=".8"/>'
     b += dot(A[0], A[1], RED, 9) + lab(A[0] - 34, A[1] - 6, 'A', RED, 38) + dot(B[0], B[1], RED, 9) + lab(B[0] + 40, B[1] + 10, 'B', RED, 38)
     # right: a plane with a line through two of its points: the line lies in the plane
@@ -529,7 +573,7 @@ def ex10_snail_well():
         y = ybot - h * sc
         prev = heights[k - 1] if k else 0
         last = k == len(steps) - 1
-        b += rvg(k + 1, line(x0 + 85, ybot - prev * sc, x0 + 85, y, GREEN if h >= prev else RED, 5) + snail(x0 + 85, y, .9), until=None if last else k + 2)     # the snail is where it is now, not everywhere it has been
+        b += rvg(k + 1, line(x0 + 85, ybot - prev * sc, x0 + 85, y, GREEN if h >= prev else RED, 5) + f'<g class="pen-snail" style="--dx:0px;--dy:{-(h - prev) * sc}px;animation:penMove 1.6s ease-in-out both">{snail(x0 + 85, ybot - prev * sc, .9)}</g>', until=None if last else k + 2)     # the snail crawls from where it was to where it is now
         b += rvg(k + 1, T(560, 120 + k * 52, txt, 30, GREEN if k % 2 == 0 else RED, 'start'))
     b += rvg(5, T(560, 120 + 5 * 52 + 20, 'ឡើងផុតក្នុង ៣ យប់', 34, NAVY, 'start'))
     return svgd(1000, 420, b, '52vh', defs)

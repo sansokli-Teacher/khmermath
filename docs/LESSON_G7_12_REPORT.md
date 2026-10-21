@@ -29,3 +29,14 @@
 - The book's exercise 11 says 6 rows of 4 cannot be made with 10 trees and needs at least 11. I did not prove that (it matches the known orchard-planting
   results, but I did not check it independently). The slide follows the book.
 - Khmer wording I wrote: «រូបធរណីមាត្រក្នុងជីវិតប្រចាំថ្ងៃ», «ស្នាមចុចនៃខ្មៅដៃ», «ប្រើដែកឈានផ្ទេរប្រវែង», «ផ្ទៃរាបស្មើនៅជុំវិញខ្លួន» and the slide titles with «រូប ៖». Check against MoEYS terms.
+
+## Animations (added 2026-10-21, after the first deploy)
+- Slide ១៦ (ruler + pencil): a properly shaded pencil slides along the ruler and the line draws behind its tip (step 1). The pencil on the point slide comes down and leaves the dot.
+- Slide ៥១ (compass construction A'B' = AB): four steps with the compass on screen in each: it opens in the air and is put on AB; it is lifted and carried to A'
+  (the opening stays); the pencil foot swings across xy and marks B'; the result A'B' = AB.
+- Every picture in Lessons 12 and 3: lines and curves draw themselves, points pop in, arrowheads arrive when the line reaches them (tools/lesson12/animate.py).
+- Hand-made movements: the relay (runner A to B, B to C, C to D), the cyclist and the motorcyclist travelling 1 : 3 with turning wheels, the snail crawling up and slipping back,
+  the rod sliding into the ball, the segments gliding onto the line (compare, add, subtract), solids popping in, twinkling stars, rippling water, the sheet sliding on the table.
+- Animations respect «reduce motion» and restart each time a step is revealed.
+- Not animated beyond the general draw-on: the compass in exercises 2 and 4 (arcs only, no compass drawing), the plane pictures, the pentagram (lines draw one after another).
+- Checked by taking frames during the animation of: ruler + pencil, compass construction (all 4 steps), relay, road, flower, Lesson 3 addition. The rest were not watched.

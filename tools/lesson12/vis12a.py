@@ -128,8 +128,7 @@ def solids():
     b1, d1 = box3d(60, 330, 200, 130, 120)
     b2, d2 = can3d(520, 330, 95, 200)
     b3, d3 = pyramid3d(790, 330, 230, 230)
-    body = b1 + b2 + b3
-    body += T(180, 400, 'ប្រលេពីប៉ែតកែង', 34, NAVY) + T(520, 400, 'ស៊ីឡាំង', 34, NAVY) + T(800, 400, 'ពីរ៉ាមីត', 34, NAVY)
+    body = ''.join(f'<g class="pen-pop" style="--d:{d}s">{o}{t}</g>' for o, t, d in ((b1, T(180, 400, 'ប្រលេពីប៉ែតកែង', 34, NAVY), .1), (b2, T(520, 400, 'ស៊ីឡាំង', 34, NAVY), .5), (b3, T(800, 400, 'ពីរ៉ាមីត', 34, NAVY), .9)))
     return svgd(1000, 430, body, '52vh', d1 + d2 + d3)
 
 
@@ -143,24 +142,30 @@ def point_notations():
     return svgd(1000, 190, b, '28vh')
 
 
-def pencil_dot():
-    """a sharp pencil tip touching paper leaves a mark: a point (shaded illustration)"""
-    i = uid('pc')
-    defs = lg(i + 'w', [(0, '#f6d9a8'), (1, '#d9b27a')], 0, 0, 0, 1) + lg(i + 'y', [(0, '#ffe066'), (.5, '#ffd43b'), (1, '#e8a900')], 0, 0, 0, 1)
-    b = poly([(80, 330), (860, 330), (940, 250), (160, 250)], '#fff', '#c9ced6', 2) + poly([(80, 330), (860, 330), (860, 342), (80, 342)], '#d5dbe3')   # sheet of paper
-    # pencil, tip at (520, 262), leaning to the upper right
-    ang = math.radians(-62)
+def pencil_shape(i, deg=-60, body=165):
+    """a sharpened wooden pencil with the tip of the lead at the origin (0, 0), leaning `deg` degrees: lead, sharpened wood, striped body, metal ferrule, eraser.
+    Returns (svg group, gradient defs). Shaded like a real pencil: three light-to-dark stripes along the body."""
+    ca, sa = math.cos(math.radians(deg)), math.sin(math.radians(deg))
     def P(u, v):
-        ca, sa = math.cos(ang), math.sin(ang)
-        return (520 + u * ca - v * sa, 292 + u * sa + v * ca)
-    cone = [P(0, 0), P(70, -22), P(70, 22)]
-    body = [P(70, -22), P(250, -22), P(250, 22), P(70, 22)]
-    b += poly(body, f'url(#{i}y)', '#a87a00', 2) + poly(cone, f'url(#{i}w)', '#a88255', 2)
-    b += poly([P(0, 0), P(24, -8), P(24, 8)], '#3b3b3b')
-    b += poly([P(250, -22), P(292, -22), P(292, 22), P(250, 22)], '#e8a0a8', '#b86070', 2)
-    b += dot(520, 292, '#111', 6)
-    b += rvg(1, arrow(720, 190, 548, 280, RED, 5) + T(730, 176, 'ស្នាមចុច = ចំណុច', 34, RED, 'start'))
-    return svgd(1000, 340, b, '44vh', defs)
+        return (u * ca - v * sa, u * sa + v * ca)
+    W = 15                                                                       # half the pencil's width
+    defs = (lg(i + 'a', [(0, '#ffe98a'), (1, '#ffd43b')], 0, 0, 0, 1) + lg(i + 'b', [(0, '#f2b705'), (1, '#e09a00')], 0, 0, 0, 1) + lg(i + 'c', [(0, '#c27d00'), (1, '#8f5a00')], 0, 0, 0, 1)
+            + lg(i + 'w', [(0, '#f6dcae'), (1, '#d8b27a')], 0, 0, 0, 1) + lg(i + 'm', [(0, '#f1f3f5'), (.5, '#adb5bd'), (1, '#6c757d')], 0, 0, 0, 1) + lg(i + 'e', [(0, '#ffc9d4'), (1, '#e64980')], 0, 0, 0, 1))
+    g = ''
+    cone, lead, bodyl, fer, er = 92, 26, body, 34, 36
+    g += poly([P(0, 0), P(lead, -4), P(lead, 4)], '#2b2b2b')                                              # graphite
+    g += poly([P(0, 0), P(cone, -W), P(cone, W)], f'url(#{i}w)', '#a88255', 1.5)                           # sharpened wood
+    g += poly([P(lead, -4), P(cone, -W), P(cone, W), P(lead, 4)], 'none', None, 0) if False else ''
+    g += poly([P(lead - 2, -5), P(lead + 8, -8), P(lead + 8, 8), P(lead - 2, 5)], '#3a3a3a')              # the lead near its end is a little wider
+    for k, (v0, v1, fill) in enumerate(((-W, -W / 3, 'a'), (-W / 3, W / 3, 'b'), (W / 3, W, 'c'))):        # three faces of the hexagonal body
+        g += poly([P(cone, v0), P(cone + bodyl, v0), P(cone + bodyl, v1), P(cone, v1)], f'url(#{i}{fill})', '#8f5a00', .8)
+    g += poly([P(cone + bodyl, -W), P(cone + bodyl + fer, -W), P(cone + bodyl + fer, W), P(cone + bodyl, W)], f'url(#{i}m)', '#6c757d', 1.2)
+    for t in (8, 17, 26):
+        g += poly([P(cone + bodyl + t, -W), P(cone + bodyl + t + 1.6, -W), P(cone + bodyl + t + 1.6, W), P(cone + bodyl + t, W)], '#868e96')
+    g += poly([P(cone + bodyl + fer, -W + 1), P(cone + bodyl + fer + er, -W + 3), P(cone + bodyl + fer + er, W - 3), P(cone + bodyl + fer, W - 1)], f'url(#{i}e)', '#a61e4d', 1.2)
+    return g, defs
+
+
 
 
 def night_sky_dot():
@@ -168,7 +173,7 @@ def night_sky_dot():
     import random
     rr = random.Random(12)
     for _ in range(46):
-        b += f'<circle cx="{rr.randint(70,930)}" cy="{rr.randint(30,240)}" r="{rr.choice([1.5,2,2.5,3])}" fill="#fff" opacity="{rr.choice([.5,.7,.9])}"/>'
+        b += f'<circle class="pen-twinkle" style="animation-delay:-{rr.random() * 2.2:.2f}s" cx="{rr.randint(70,930)}" cy="{rr.randint(30,240)}" r="{rr.choice([1.5,2,2.5,3])}" fill="#fff"/>'
     b += rvg(1, f'<circle cx="500" cy="120" r="34" fill="#ffd43b" opacity=".18"/><circle cx="500" cy="120" r="10" fill="#fff6bf"/>' + T(500, 200, 'ផ្កាយនៅលើមេឃ', 32, '#ffe9a8'))
     return svgd(1000, 270, b, '34vh')
 
@@ -222,22 +227,42 @@ def flower_lines():
 
 # ------------------------------------------------------------------ lines
 def ruler_pencil_line():
-    """a ruler and a pencil: moving the pencil tip along the ruler draws a straight line d"""
+    """a ruler and a pencil: pencil tip against the ruler, moving along it, draws a straight line d (animated on the first step)"""
     i = uid('rl')
-    defs = lg(i + 'r', [(0, '#fff3bf'), (1, '#f1d570')], 0, 0, 0, 1) + lg(i + 'y', [(0, '#ffe066'), (.5, '#ffd43b'), (1, '#e8a900')], 0, 0, 0, 1)
-    b = poly([(40, 250), (960, 250), (960, 300), (40, 300)], '#fff', '#c9ced6', 2)                # paper
-    b += poly([(120, 120), (900, 120), (900, 176), (120, 176)], f'url(#{i}r)', '#b08d1a', 2)       # ruler
-    for k in range(0, 79):
-        x = 130 + k * 10
-        h = 22 if k % 10 == 0 else 14 if k % 5 == 0 else 8
-        b += f'<line x1="{x}" y1="120" x2="{x}" y2="{120 + h}" stroke="#5c4a00" stroke-width="1.4"/>'
+    pg, pdefs = pencil_shape(i)
+    defs = lg(i + 'r', [(0, '#fff3bf'), (1, '#f1d570')], 0, 0, 0, 1) + pdefs
+    x0, x1, yl = 190, 850, 330                                                                   # the line is drawn from x0 to x1 along the ruler's lower edge
+    L = x1 - x0
+    b = poly([(40, yl - 130), (960, yl - 130), (960, yl + 70), (40, yl + 70)], '#fff', '#c9ced6', 2)   # paper
+    b += poly([(110, yl - 104), (910, yl - 104), (910, yl - 4), (110, yl - 4)], f'url(#{i}r)', '#b08d1a', 2)  # ruler
+    for k in range(0, 80):
+        x = 120 + k * 10
+        h = 24 if k % 10 == 0 else 15 if k % 5 == 0 else 9
+        b += f'<line x1="{x}" y1="{yl - 104}" x2="{x}" y2="{yl - 104 + h}" stroke="#5c4a00" stroke-width="1.4"/>'
         if k % 10 == 0:
-            b += M(x, 160, k // 10, 18, '#5c4a00', 'middle', 600)
-    b += line(150, 188, 640, 188, NAVY, 5)                                                         # the drawn line
-    b += poly([(640, 188), (680, 150), (700, 164), (656, 196)], '#e9d4a8', '#9c7a3c', 1.5) + poly([(680, 150), (790, 40), (812, 64), (700, 164)], f'url(#{i}y)', '#a87a00', 2) + poly([(640, 188), (652, 183), (656, 196)], '#333')
-    b += lab(812, 205, 'd', RED, 44) if False else ''
-    b += lab(180, 222, '(d)', RED, 40, 'start')
-    return svgd(1000, 330, b, '44vh', defs)
+            b += M(x, yl - 104 + 52, k // 10, 24, '#5c4a00', 'middle', 600)
+    # step 1: the pencil slides along the ruler and the line grows behind its tip (both run for the same time, so the tip stays on the end of the line)
+    b += rvg(0, f'<g transform="translate({x0} {yl})">{pg}</g>', until=1)                          # before the first step: the pencil waits at the left end
+    b += rvg(1, f'<line class="pen-draw" x1="{x0}" y1="{yl}" x2="{x1}" y2="{yl}" stroke="{NAVY}" stroke-width="5" stroke-linecap="round" style="stroke-dasharray:{L};--len:{L};animation:penDraw 3.4s ease-in-out both"/>'
+             f'<g class="pen-move" style="--dx:{L}px;--dy:0px;animation:penMove 3.4s ease-in-out both"><g transform="translate({x0} {yl})">{pg}</g></g>')
+    b += rvg(2, TM(x1 + 30, yl + 70, 'បន្ទាត់', '(d)', 40, RED, 'end'))
+    return svgd(1000, 410, b, '54vh', defs)
+
+
+def pencil_dot():
+    """a sharp pencil touches the paper and leaves a mark: a point (animated on the first step)"""
+    i = uid('pc')
+    pg, pdefs = pencil_shape(i)
+    px, py = 480, 330
+    b = poly([(80, 330), (860, 330), (940, 250), (160, 250)], '#fff', '#c9ced6', 2) + poly([(80, 330), (860, 330), (860, 342), (80, 342)], '#d5dbe3')   # sheet of paper
+    b += f'<ellipse cx="{px + 6}" cy="{py + 4}" rx="30" ry="6" fill="#000" opacity=".12"/>'
+    b += rvg(0, f'<g transform="translate({px} {py - 120})">{pg}</g>', until=1)                    # the pencil above the paper
+    b += rvg(1, f'<g class="pen-down" style="--dx:0px;--dy:-120px;animation:penDown 1.6s ease-in both"><g transform="translate({px} {py})">{pg}</g></g>'
+             f'<circle class="pen-dot" cx="{px}" cy="{py}" r="7" fill="#111" style="transform-box:fill-box;transform-origin:center;animation:dotPop 1.9s ease-out both"/>')
+    b += rvg(2, arrow(730, 220, 520, 316, RED, 5) + T(740, 206, 'ស្នាមចុច = ចំណុច', 34, RED, 'start'))
+    return svgd(1000, 380, b, '50vh', pdefs)
+
+
 
 
 def string_tight():
@@ -252,7 +277,7 @@ def string_tight():
     b = b.replace(f'<path d="M {A[0]} {A[1]} Q 500 250 {B[0]} {B[1]}" fill="none" stroke="{RED}" stroke-width="6"/>', rvg(0, f'<path d="M {A[0]} {A[1]} Q 500 250 {B[0]} {B[1]}" fill="none" stroke="{RED}" stroke-width="6"/>', until=1))
     for P, nm in ((A, 'A'), (B, 'B')):
         b += f'<circle cx="{P[0]}" cy="{P[1]}" r="17" fill="url(#{i}p)" stroke="#4b5563" stroke-width="2"/>' + lab(P[0], P[1] - 34, nm, NAVY, 42)
-    b += rvg(1, arrow(120, 120, 70, 120, GREY, 5) + arrow(880, 120, 930, 120, GREY, 5) + T(500, 250, 'ខ្សែអំបោះត្រួតស៊ីគ្នា', 32, NAVY))
+    b += rvg(1, f'<g class="pen-in" style="--dx:60px;--dy:0px;animation:penIn .9s ease-out both">{arrow(120, 120, 70, 120, GREY, 5)}</g><g class="pen-in" style="--dx:-60px;--dy:0px;animation:penIn .9s ease-out both">{arrow(880, 120, 930, 120, GREY, 5)}</g>' + T(500, 250, 'ខ្សែអំបោះត្រួតស៊ីគ្នា', 32, NAVY))
     return svgd(1000, 320, b, '44vh', defs)
 
 
@@ -396,8 +421,8 @@ def surfaces_room():
     b += poly([(80, 90), (330, 90), (330, 200), (80, 200)], f'url(#{i}b)', '#8d99a6', 5) + f'<rect x="80" y="200" width="250" height="10" fill="#6b7785"/>' + ''.join(f'<path d="M {110} {120 + j*26} h {120 + (j%2)*50}" stroke="#4263eb" stroke-width="3" opacity=".55" stroke-linecap="round"/>' for j in range(3)) + T(205, 260, 'ក្តារខៀន', 28, NAVY)
     b += ''.join(poly(q, '#6b3f16') for q in ([(410, 252), (424, 252), (424, 296), (410, 296)], [(676, 252), (690, 252), (690, 296), (676, 296)], [(500, 200), (512, 200), (512, 232), (500, 232)], [(740, 200), (752, 200), (752, 232), (740, 232)]))
     b += poly([(400, 250), (700, 250), (760, 200), (460, 200)], f'url(#{i}t)', '#6b3f16', 3) + T(580, 316, 'ផ្ទៃតុ', 28, NAVY)
-    b += rvg(1, poly([(470, 238), (560, 238), (600, 206), (510, 206)], '#fff', '#adb5bd', 2) + arrow(540, 222, 640, 222, RED, 4))
-    b += f'<rect x="790" y="140" width="150" height="90" rx="8" fill="url(#{i}a)"/>' + ''.join(f'<path d="M {800 + k*10} {160 + j*24} q 14 -6 28 0 t 28 0" fill="none" stroke="#fff" stroke-width="2" opacity=".55"/>' for j in range(3) for k in (0, 5)) + T(865, 260, 'ផ្ទៃទឹក', 28, NAVY)
+    b += rvg(1, '<g class="pen-slide">' + poly([(470, 238), (560, 238), (600, 206), (510, 206)], '#fff', '#adb5bd', 2) + arrow(540, 222, 640, 222, RED, 4) + '</g>')
+    b += f'<rect x="790" y="140" width="150" height="90" rx="8" fill="url(#{i}a)"/>' + ''.join(f'<path class="pen-wave" style="animation-delay:-{(j * 2 + (k > 0)) * .45:.2f}s" d="M {800 + k*10} {160 + j*24} q 14 -6 28 0 t 28 0" fill="none" stroke="#fff" stroke-width="2" opacity=".55"/>' for j in range(3) for k in (0, 5)) + T(865, 260, 'ផ្ទៃទឹក', 28, NAVY)
     return svgd(1000, 330, b, '44vh', defs)
 
 
