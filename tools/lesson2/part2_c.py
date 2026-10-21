@@ -41,7 +41,8 @@ def build():
     # ------------------------------------------------------------ 7  exercises (the book's 11 exercises)
     S.append({'k': 'title', 'html': '<h1>7. លំហាត់</h1><p class="ts-sub">១១ លំហាត់</p>'})
     book = json.load(open(os.path.join(os.path.dirname(__file__), 'book_exercises.json'), encoding='utf-8'))
-    S.extend(book)
+    from tidy_sol import rebuild
+    S.extend(rebuild(book))
 
     # ------------------------------------------------------------ summary and the end
     sm = ('<table class="tbl sm"><tr><th>ប្រធានបទ</th><th>ចំណុចសំខាន់</th></tr>'
