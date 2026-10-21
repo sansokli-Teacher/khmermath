@@ -343,6 +343,11 @@ def motorbike(x, y, col=RED, spin=None):
     return b
 
 
+def facing_left(svg_group, cx):
+    """mirror a vehicle drawn facing right about its own centre line, so it faces left (it drives from B towards A)"""
+    return f'<g transform="translate({2 * cx:.1f} 0) scale(-1 1)">{svg_group}</g>'
+
+
 def road_meeting():
     """a cyclist leaves village A, a motorcyclist leaves village B; they meet when the motorcyclist has gone 3x and the cyclist x: x + 3x = 24.6 km"""
     total, x_ = 24.6, 24.6 / 4
@@ -356,15 +361,17 @@ def road_meeting():
         b += poly([(x - 34, y - 6), (x + 34, y - 6), (x + 34, y - 52), (x - 34, y - 52)], '#f1e0b0', '#a3874a', 2) + poly([(x - 42, y - 52), (x + 42, y - 52), (x, y - 92)], col, '#444', 2)
         b += lab(x, y + 80, 'ភូមិ ' + nm, NAVY, 28) if False else TM(x, y + 82, 'ភូមិ', nm, 32, NAVY)
     D = 130                                                   # the cyclist's travel in px; the motorcyclist travels 3 x D (same time, three times the speed)
-    bx0, mx0 = xm - 92 - D - 14, xm + 112 + 3 * D + 14           # start positions: the front wheels meet at xm (a hand's width apart)
-    b += rvg(0, bicycle(bx0, y, BLUE) + motorbike(mx0, y, RED), until=1)
+    bx0, mx0 = xm - 92 - D - 34, xm + 112 + 3 * D + 34           # start positions: the front wheels end at xm, a little apart
+    b += TM(xa + 30, y - 175, 'អ្នកជិះកង់', 'A → B', 30, BLUE, 'start') + TM(xb - 30, y - 175, 'អ្នកជិះម៉ូតូ', 'B → A', 30, RED, 'end')       # who goes which way
+    b += rvg(0, bicycle(bx0, y, BLUE) + facing_left(motorbike(mx0, y, RED), mx0), until=1)          # the cyclist drives A to B (faces right), the motorcyclist B to A (faces left)
     turns_b, turns_m = D / (2 * math.pi * 36) * 360, 3 * D / (2 * math.pi * 40) * 360
     b += rvg(1, f'<g class="pen-go" style="--dx:{D}px;--dy:0px;animation:penMove 3.4s ease-in-out both">{bicycle(bx0, y, BLUE, (turns_b, 3.4))}</g>'
-             f'<g class="pen-go" style="--dx:-{3 * D}px;--dy:0px;animation:penMove 3.4s ease-in-out both">{motorbike(mx0, y, RED, (-turns_m, 3.4))}</g>')
-    b += rvg(2, dim(xa, xm, y - 170, 'x', BLUE, 36) + dim(xm, xb, y - 170, '3x', RED, 36))
-    b += rvg(3, dim(xa, xb, y - 230, 'x + 3x = 24.6 km', NAVY, 34))
+             f'<g class="pen-go" style="--dx:-{3 * D}px;--dy:0px;animation:penMove 3.4s ease-in-out both">{facing_left(motorbike(mx0, y, RED, (turns_m, 3.4)), mx0)}</g>'     # mirrored, so a positive turn looks counter-clockwise: the wheels roll to the left
+             f'')
+    b += rvg(2, dim(xa, xm, y - 215, 'x', BLUE, 36) + dim(xm, xb, y - 215, '3x', RED, 36))
+    b += rvg(3, dim(xa, xb, y - 275, 'x + 3x = 24.6 km', NAVY, 34))
     b += rvg(4, M(500, y + 140, '4x = 24.6  ⟹  x = 6.15 km,  3x = 18.45 km', 34, RED, 'middle', 700))
-    return svgd(1000, 410, f'<g transform="translate(0 20)">{b}</g>', '50vh')
+    return svgd(1000, 470, f'<g transform="translate(0 60)">{b}</g>', '54vh')
 
 
 def road_two_thirds():
