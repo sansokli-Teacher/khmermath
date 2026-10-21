@@ -43,6 +43,13 @@ export function cleanEdit(input, base) {
   return { data: out };
 }
 
+// A teacher's own fixes/deletes sit on top of the shared edits and win over them; each one is flagged `mine` so the editor can show it.
+export function overlayEdits(shared, mine) {
+  const m = new Map(shared);
+  for (const [k, v] of mine) m.set(k, { ...v, mine: true });
+  return m;
+}
+
 // base: { class, lessons:[{n,title,qs:[...]}] }, edits: Map("lesson:i" -> {bq, data, off}), cfg: { enabled, lessons }
 export function mergeBank(base, edits, cfg, { admin = false } = {}) {
   const enabled = cfg.enabled !== false;
@@ -60,7 +67,7 @@ export function mergeBank(base, edits, cfg, { admin = false } = {}) {
       if (!admin && off) return;
       const q = { ...bq, ...(applied || {}) };
       if (admin) {
-        q.i = i; q.edited = !!applied; q.stale = stale; q.off = off;
+        q.i = i; q.edited = !!applied; q.stale = stale; q.off = off; q.mine = !!(e && e.mine);
         q.orig = { t: bq.t, q: bq.q, lv: bq.lv, h: bq.h, s: bq.s, a: bq.a, o: bq.o, k: bq.k };
       }
       qs.push(q);

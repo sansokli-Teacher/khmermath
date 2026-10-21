@@ -17,7 +17,7 @@ render.gamebank = async function () {
 
   root.appendChild(h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'សំណួរហ្គេមក្រុម'),
-    h('p', { class: 'muted' }, 'នេះជាធនាគារសំណួរតែមួយ ដែលហ្គេមនៅ exam.khmermath.org និង khmermath.org ប្រើទាំងពីរ។ ពេលអ្នករក្សាទុកការកែ ហ្គេមទាំងពីរទទួលបានការកែភ្លាម (ក្នុងរយៈពេលតិចជាង ១ នាទី)។' + (can ? '' : ' (គ្រូដទៃអាចមើលបានតែប៉ុណ្ណោះ មានតែម្ចាស់ប្រព័ន្ធទេដែលកែបាន។)')),
+    h('p', { class: 'muted' }, gbData.is_owner ? 'នេះជាធនាគារសំណួរតែមួយ ដែលហ្គេមនៅ exam.khmermath.org និង khmermath.org ប្រើទាំងពីរ។ ការកែ ឬលុបរបស់អ្នក (ជាម្ចាស់) ប៉ះពាល់ដល់គ្រូទាំងអស់ និងសិស្ស ហើយមានសុពលភាពក្នុងរយៈពេលតិចជាង ១ នាទី។' : 'នេះជាបញ្ជីសំណួរហ្គេម។ អ្នកអាចកែ ឬលុបសំណួរណាក៏បាន — ការកែ និងការលុបរបស់អ្នកប្រើតែក្នុងហ្គេមរបស់អ្នកប៉ុណ្ណោះ មិនប៉ះពាល់គ្រូដទៃ ឬសិស្សទេ។ សំណួរដែលលុបអាចស្ដារវិញបាន។'),
   ]));
 
   // ---- which lessons the games offer ----
@@ -42,12 +42,12 @@ render.gamebank = async function () {
     })),
   ]);
   const lockCb = h('input', { type: 'checkbox' }); lockCb.checked = !!gbData.config.locked; lockCb.disabled = !can;
-  root.appendChild(h('div', { class: 'card', style: 'border:2px solid #f08c00' }, [
+  if (gbData.is_owner) root.appendChild(h('div', { class: 'card', style: 'border:2px solid #f08c00' }, [
     h('h3', { style: 'margin-top:0' }, '🛡️ ថ្ងៃប្រឡង — ការពារប្រព័ន្ធប្រឡង'),
     h('p', { class: 'muted' }, 'ពេលបើក៖ ហ្គេមសំណួរផ្ទាល់បិទទាំងស្រុង (គ្មានអ្នកណាបង្កើត ឬចូលបន្ទប់បាន) ហើយហ្គេមផ្សេងទៀតប្រើសំណួរដែលមានស្រាប់ក្នុងគេហទំព័រ ដោយមិនហៅប្រព័ន្ធប្រឡង។ វាការពារកុំឱ្យអ្នកលេងហ្គេមផ្សេងប្រើកូតាឥតគិតថ្លៃរបស់ Cloudflare អស់ មុនពេលសិស្សប្រឡង។ ការកែសំណួរក្នុងពេលនេះនឹងមិនបង្ហាញលើហ្គេមទេ រហូតដល់បិទការចាក់សោ។'),
     h('label', { style: 'display:flex;gap:8px;align-items:center;font-weight:700' }, [lockCb, 'ចាក់សោហ្គេមសាធារណៈ (បើកនៅថ្ងៃប្រឡង)']),
   ]));
-  root.appendChild(gamesCard);
+  if (gbData.is_owner) root.appendChild(gamesCard);
   const cfgCard = h('div', { class: 'card' }, [
     h('h3', { style: 'margin-top:0' }, 'មេរៀនដែលអនុញ្ញាតឱ្យលេង'),
     h('label', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:10px' }, [on, h('b', {}, 'បើកហ្គេម (បិទទាំងអស់ពេលមិនចង់ឱ្យសិស្សលេង)')]),
@@ -63,12 +63,12 @@ render.gamebank = async function () {
     };
     cfgCard.appendChild(h('div', { class: 'row', style: 'margin-top:12px;gap:8px;flex-wrap:wrap' }, [save, all, none]));
   }
-  root.appendChild(cfgCard);
+  if (gbData.is_owner) root.appendChild(cfgCard);
 
   // ---- the questions ----
   const sel = h('select', { 'aria-label': 'មេរៀន' }, gbData.lessons.map((L) => h('option', { value: L.n }, `${L.g && L.g !== 7 ? `ថ្នាក់ទី ${gbKh(L.g)} · ` : ''}មេរៀនទី ${gbKh(L.d || L.n)} · ${L.title}`)));
   sel.value = gbLesson; sel.onchange = () => { gbLesson = Number(sel.value); render.gamebank(); };
-  const flt = h('select', { 'aria-label': 'តម្រង' }, [['all', 'សំណួរទាំងអស់'], ['edited', 'ដែលបានកែ'], ['off', 'ដែលបានលាក់'], ['fig', 'ដែលមានរូប']].map(([v, t]) => h('option', { value: v }, t)));
+  const flt = h('select', { 'aria-label': 'តម្រង' }, [['all', 'សំណួរទាំងអស់'], ['edited', 'ដែលបានកែ'], ['off', 'ដែលបានលុប'], ['fig', 'ដែលមានរូប']].map(([v, t]) => h('option', { value: v }, t)));
   flt.value = gbFilter; flt.onchange = () => { gbFilter = flt.value; render.gamebank(); };
   const L = gbData.lessons.find((x) => x.n === gbLesson);
   const list = h('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:12px' });
@@ -78,14 +78,17 @@ render.gamebank = async function () {
 };
 
 function gbRow(L, q, can) {
-  const badges = [q.f ? '🖼 មានរូប' : '', q.edited ? '✎ កែរួច' : '', q.off ? '🚫 លាក់' : '', q.stale ? '⚠ សំណួរដើមបានប្តូរ (ការកែមិនប្រើ)' : '', gbLv[q.lv] || ''].filter(Boolean);
+  const badges = [q.f ? '🖼 មានរូប' : '', q.mine ? '👤 របស់ខ្ញុំ' : '', q.edited ? '✎ កែរួច' : '', q.off ? '🗑 បានលុប' : '', q.stale ? '⚠ សំណួរដើមបានប្តូរ (ការកែមិនប្រើ)' : '', gbLv[q.lv] || ''].filter(Boolean);
   const body = h('div', { style: 'min-width:0' }, [
     gbMath(h('div', { style: 'font-weight:600;line-height:1.7' }), q.q),
     q.o ? h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px;font-size:15px' }, q.o.map((o, k) => gbMath(h('div', { style: k === q.k ? 'color:#14532d;font-weight:700' : '' }, ''), `${'កខគឃ'[k]}. ${o}${k === q.k ? ' ✓' : ''}`))) : gbMath(h('div', { style: 'color:#14532d;font-weight:700;margin-top:4px' }), `ចម្លើយ៖ ${q.a}`),
     h('small', { class: 'muted' }, badges.join(' · ')),
   ]);
   const btns = h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:start' }, [h('button', { class: 'secondary btn-sm', type: 'button', onclick: () => gbEdit(L, q, can) }, can ? '✎ កែ' : '👁 មើល')]);
-  if (can) btns.appendChild(h('button', { class: 'secondary btn-sm', type: 'button', onclick: async () => { await gbSave(L, q, gbFields(q), !q.off); } }, q.off ? 'បង្ហាញវិញ' : 'លាក់'));
+  if (can) btns.appendChild(h('button', { class: 'secondary btn-sm', type: 'button', onclick: async () => {
+    if (!q.off && !(await Exam.modal(gbData.is_owner ? 'លុបសំណួរនេះចេញពីហ្គេមរបស់គ្រូទាំងអស់ និងសិស្ស? (អាចស្ដារវិញបាន)' : 'លុបសំណួរនេះចេញពីហ្គេមរបស់អ្នក? (អាចស្ដារវិញបាន)'))) return;
+    await gbSave(L, q, gbFields(q), !q.off);
+  } }, q.off ? '↩ ស្ដារវិញ' : '🗑 លុប'));
   return h('div', { style: `display:grid;grid-template-columns:44px 1fr auto;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:${q.off ? '#f6f6f6' : '#fff'};${q.off ? 'opacity:.7' : ''}` }, [
     h('b', { style: 'font-size:18px;color:var(--brand)' }, gbKh(q.i + 1)), body, btns]);
 }
@@ -93,7 +96,7 @@ function gbRow(L, q, can) {
 const gbFields = (q) => ({ t: q.t, q: q.q, lv: q.lv, h: q.h || '', s: q.s || '', a: q.a, o: q.o, k: q.k });
 
 async function gbSave(L, q, fields, off) {
-  try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: !!off } }); await render.gamebank(); } catch (e) { Exam.notify(e.message); }
+  try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: !!off } }); if (typeof tgBank !== 'undefined') tgBank = null; await render.gamebank(); } catch (e) { Exam.notify(e.message); }
 }
 
 function gbEdit(L, q, can) {
@@ -130,7 +133,7 @@ function gbEdit(L, q, can) {
     f.o ? h('div', { style: 'margin-top:10px' }, [h('b', { style: 'font-size:14px' }, 'ជម្រើស (ចុចរង្វង់ដើម្បីជ្រើសចម្លើយត្រឹមត្រូវ)'), ...opts.map((o, k) => h('div', { style: 'display:grid;grid-template-columns:24px 28px 1fr;gap:6px;align-items:center;margin-top:4px' }, [radios[k], h('b', {}, 'កខគឃ'[k]), o]))]) : field('ចម្លើយ', a_),
     field('ដំណោះស្រាយ (បង្ហាញពេលបង្ហាញចម្លើយ)', s_),
     field('គន្លឹះ', h_), field('ផ្នែក', t_),
-    h('label', { style: 'display:flex;gap:10px;align-items:center;margin-top:10px' }, ['កម្រិត', lv, h('label', { style: 'display:flex;gap:6px;align-items:center;margin-left:14px' }, [off, 'លាក់សំណួរនេះពីហ្គេម'])]),
+    h('label', { style: 'display:flex;gap:10px;align-items:center;margin-top:10px' }, ['កម្រិត', lv, h('label', { style: 'display:flex;gap:6px;align-items:center;margin-left:14px' }, [off, 'លុបសំណួរនេះពីហ្គេម'])]),
     q.edited || q.stale ? h('small', { class: 'muted', style: 'display:block;margin-top:8px' }, ['សំណួរដើម៖ ', gbMath(h('span'), q.orig.q)]) : null,
   ]);
   const overlay = h('div', { style: 'position:fixed;inset:0;background:rgba(15,23,28,.5);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto' });
@@ -141,7 +144,7 @@ function gbEdit(L, q, can) {
     can ? h('button', { type: 'button', onclick: async () => {
       const fields = { t: t_.value, q: q_.value, lv: lv.value, h: h_.value, s: s_.value };
       if (f.o) { fields.o = opts.map((o) => o.value); fields.k = radios.findIndex((r) => r.checked); } else fields.a = a_.value;
-      try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: off.checked } }); close(); render.gamebank(); } catch (e) { Exam.notify(e.message); }
+      try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: off.checked } }); if (typeof tgBank !== 'undefined') tgBank = null; close(); render.gamebank(); } catch (e) { Exam.notify(e.message); }
     } }, 'រក្សាទុក') : null,
   ]);
   overlay.appendChild(h('div', { class: 'card', style: 'max-width:1100px;width:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px' }, [

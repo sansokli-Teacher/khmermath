@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeBank, cleanEdit, baseKey } from '../src/lib/gamebank.js';
+import { mergeBank, cleanEdit, baseKey, overlayEdits } from '../src/lib/gamebank.js';
 
 const base = { class: 'g7', lessons: [
   { n: 1, title: 'A', qs: [{ t: 'x', q: 'one \\(1\\)', lv: 'easy', h: '', s: 's', a: '\\(2\\)', o: ['\\(1\\)', '\\(2\\)', '\\(3\\)', '\\(4\\)'], k: 1 }, { t: 'x', q: 'two', lv: 'easy', h: '', s: '', a: '5' }] },
@@ -47,4 +47,22 @@ test('cleanEdit keeps the answer in step with the chosen option and rejects bad 
   assert.ok(cleanEdit({ q: 'q', o: ['a', 'b', 'c', 'd'], k: 9 }, b).error);
   assert.ok(cleanEdit({ q: 'q', a: '' }, base.lessons[0].qs[1]).error);
   assert.equal(cleanEdit({ q: 'q', a: ' 9 ' }, base.lessons[0].qs[1]).data.a, '9');
+});
+
+test("a teacher's own fix and delete sit on top of the shared bank and are flagged mine", () => {
+  const shared = new Map([['1:1', { bq: baseKey(base.lessons[0].qs[1]), data: { q: 'shared fix', a: '6', t: 'x', lv: 'easy', h: '', s: '' }, off: false }]]);
+  const mine = new Map([
+    ['1:1', { bq: baseKey(base.lessons[0].qs[1]), data: { q: 'my fix', a: '6', t: 'x', lv: 'easy', h: '', s: '' }, off: false }],
+    ['1:0', { bq: baseKey(base.lessons[0].qs[0]), data: {}, off: true }],
+  ]);
+  const edits = overlayEdits(shared, mine);
+  const pub = mergeBank(base, edits, { enabled: true, lessons: null });
+  assert.equal(pub.lessons[0].qs.length, 1);          // the question I deleted is gone from my games
+  assert.equal(pub.lessons[0].qs[0].q, 'my fix');     // my fix wins over the shared one
+  const adm = mergeBank(base, edits, { enabled: true, lessons: null }, { admin: true });
+  assert.equal(adm.lessons[0].qs[0].mine, true);
+  assert.equal(adm.lessons[0].qs[1].mine, true);
+  // other teachers still see the shared bank
+  assert.equal(mergeBank(base, shared, { enabled: true, lessons: null }).lessons[0].qs[1].q, 'shared fix');
+  assert.equal(mergeBank(base, shared, { enabled: true, lessons: null }).lessons[0].qs.length, 2);
 });

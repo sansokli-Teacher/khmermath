@@ -1,13 +1,13 @@
 // Team-game question bank: public read for the games, owner-only edits.
 //   GET  /api/game/bank       public — the bank both games play (enabled lessons, fixes applied, hidden questions removed)
 //   GET  /api/game/admin      teacher — everything, for the editor
-//   POST /api/game/question   owner  — save a fix to one question  { lesson, i, fields, off }
-//   POST /api/game/reset      owner  — remove the fix (back to the base question)  { lesson, i }
+//   POST /api/game/question   teacher — save a fix / delete (off) of one question  { lesson, i, fields, off }: the owner changes the shared bank, other teachers their own copy
+//   POST /api/game/reset      teacher — remove the fix (back to the shared question)  { lesson, i }
 //   POST /api/game/config     owner  — which lessons the games offer + a master switch  { enabled, lessons }
 import { json, err } from '../lib/http.js';
 import { authTeacher, needAdmin } from '../lib/access.js';
 import { audit } from '../lib/audit.js';
-import { mergeBank, cleanEdit, baseKey } from '../lib/gamebank.js';
+import { mergeBank, cleanEdit, baseKey, overlayEdits } from '../lib/gamebank.js';
 
 let tableReady = false;
 export async function ensureTable(env) {
@@ -16,6 +16,10 @@ export async function ensureTable(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_edits (
       lesson INTEGER NOT NULL, idx INTEGER NOT NULL, bq TEXT NOT NULL, data TEXT NOT NULL, off INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now')), updated_by TEXT, PRIMARY KEY (lesson, idx))`),
+    // each teacher's own fixes / deleted questions: they only change that teacher's games, never the shared bank
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_user_edits (
+      teacher_id INTEGER NOT NULL, lesson INTEGER NOT NULL, idx INTEGER NOT NULL, bq TEXT NOT NULL, data TEXT NOT NULL, off INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (teacher_id, lesson, idx))`),
   ]);
   tableReady = true;
 }
@@ -33,6 +37,15 @@ export async function loadEdits(env) {
   for (const r of results) m.set(`${r.lesson}:${r.idx}`, { bq: r.bq, data: JSON.parse(r.data), off: !!r.off, at: r.updated_at });
   return m;
 }
+export async function loadUserEdits(env, teacherId) {
+  await ensureTable(env);
+  const { results } = await env.DB.prepare('SELECT lesson, idx, bq, data, off, updated_at FROM game_user_edits WHERE teacher_id = ?1').bind(teacherId).all();
+  const m = new Map();
+  for (const r of results) m.set(`${r.lesson}:${r.idx}`, { bq: r.bq, data: JSON.parse(r.data), off: !!r.off, at: r.updated_at });
+  return m;
+}
+// the owner edits the shared bank (everyone plays it); every other teacher edits a personal copy
+const isOwner = (t) => t.role === 'owner';
 export async function loadCfg(env) {
   const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'game_config'").first();
   let c = {};
@@ -64,6 +77,13 @@ export function _forgetLock() { lockAt = 0; }
 export async function bank(req, env) {
   if (await isLocked(env)) return json({ error: 'locked' }, 503, { 'Cache-Control': 'public, max-age=60', ...cors(req) });
   const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
+  // a logged-in teacher (not the owner) plays the shared bank with their own fixes and deleted questions applied
+  const t = req.headers.get('Cookie') ? await authTeacher(req, env) : null;
+  if (t && !isOwner(t)) {
+    const out = mergeBank(base, overlayEdits(edits, await loadUserEdits(env, t.id)), cfg);
+    out.closed = !cfg.enabled; out.games = cfg.games;
+    return json(out, 200, { 'Cache-Control': 'private, no-store', Vary: 'Cookie' });
+  }
   const out = mergeBank(base, edits, cfg);
   out.closed = !cfg.enabled;
   out.games = cfg.games;
@@ -73,10 +93,13 @@ export async function bank(req, env) {
 export async function admin(req, env) {
   const t = await authTeacher(req, env);
   if (!t) return err('Not logged in.', 401);
-  const [base, edits, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
+  const [base, shared, cfg] = await Promise.all([loadBase(req, env), loadEdits(env), loadCfg(env)]);
+  const edits = isOwner(t) ? shared : overlayEdits(shared, await loadUserEdits(env, t.id));
   const out = mergeBank(base, edits, cfg, { admin: true });
   out.config = { enabled: cfg.enabled, lessons: cfg.lessons, games: cfg.games, locked: cfg.locked };
-  out.can_edit = t.role === 'owner';
+  out.can_edit = true;                       // everyone can fix / delete: the owner for all, other teachers for their own games
+  out.scope = isOwner(t) ? 'shared' : 'mine';
+  out.is_owner = isOwner(t);
   return json(out);
 }
 
@@ -89,13 +112,21 @@ async function target(req, env, b) {
 }
 
 export async function saveQuestion(req, env) {
-  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const t = await authTeacher(req, env); if (!t) return err('Not logged in.', 401);
+  const g = { t };
   const b = await req.json();
   const tg = await target(req, env, b);
   if (!tg) return err('រកមិនឃើញសំណួរ។', 404);
   const { data, error } = cleanEdit(b.fields, tg.q);
   if (error) return err(error, 400);
   await ensureTable(env);
+  if (!isOwner(t)) {
+    await env.DB.prepare(
+      `INSERT INTO game_user_edits (teacher_id, lesson, idx, bq, data, off, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
+       ON CONFLICT(teacher_id, lesson, idx) DO UPDATE SET bq = ?4, data = ?5, off = ?6, updated_at = datetime('now')`,
+    ).bind(t.id, tg.lesson, tg.i, baseKey(tg.q), JSON.stringify(data), b.off ? 1 : 0).run();
+    return json({ ok: true, scope: 'mine' });
+  }
   await env.DB.prepare(
     `INSERT INTO game_edits (lesson, idx, bq, data, off, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), ?6)
      ON CONFLICT(lesson, idx) DO UPDATE SET bq = ?3, data = ?4, off = ?5, updated_at = datetime('now'), updated_by = ?6`,
@@ -105,9 +136,14 @@ export async function saveQuestion(req, env) {
 }
 
 export async function resetQuestion(req, env) {
-  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const t = await authTeacher(req, env); if (!t) return err('Not logged in.', 401);
+  const g = { t };
   const b = await req.json();
   await ensureTable(env);
+  if (!isOwner(t)) {
+    await env.DB.prepare('DELETE FROM game_user_edits WHERE teacher_id = ?1 AND lesson = ?2 AND idx = ?3').bind(t.id, Number(b.lesson), Number(b.i)).run();
+    return json({ ok: true, scope: 'mine' });
+  }
   await env.DB.prepare('DELETE FROM game_edits WHERE lesson = ?1 AND idx = ?2').bind(Number(b.lesson), Number(b.i)).run();
   await audit(env, g.t, 'game.reset', `lesson ${b.lesson} q${Number(b.i) + 1}`);
   return json({ ok: true });
