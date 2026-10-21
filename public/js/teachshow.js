@@ -2157,7 +2157,7 @@
   const LESSON_THEMES = {};
   // lessons whose generated deck gets the same first slide as Lesson 1: the school (logo, name), the teacher, the class, the school year.
   // The lesson's own cover (title + objectives) then comes second, exactly like Lesson 1. Add "grade-lesson" keys to give more lessons this.
-  const BRANDED_LESSONS = new Set(['7-2']);
+  const BRANDED_LESSONS = new Set(['7-2', '7-3']);
   function brandSlide() {
     return {
       k: 'title', c: 'brand',
