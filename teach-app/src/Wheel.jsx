@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, kh, fullName, todayISO } from './api.js';
+import { api, kh, fullName, todayISO, PERIODS } from './api.js';
 
 const SONGS = [
   { id: '', t: 'គ្មានបទ (សំឡេងចុច)' },
@@ -122,7 +122,7 @@ export default function Wheel({ cls, students }) {
   const syncAbsent = async () => {
     try {
       const out = new Set();
-      for (let p = 1; p <= 8; p++) {
+      for (let p = 1; p <= PERIODS; p++) {
         const d = await api(`/api/attendance?class_id=${cls.id}&day=${todayISO()}&period=${p}`);
         (d.rows || []).forEach((r) => { if (r.mark === 'A') out.add(String(r.student_id)); });
       }

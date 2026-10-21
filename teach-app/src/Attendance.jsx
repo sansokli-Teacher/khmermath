@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, kh, fullName, todayISO } from './api.js';
+import { api, kh, fullName, todayISO, PERIODS } from './api.js';
 
 const MARKS = [
   { m: 'ok', t: 'មាន', cls: 'ok' },
@@ -100,7 +100,7 @@ export default function Attendance({ cls, students }) {
         <div className="field grow">
           <label>ម៉ោងសិក្សា</label>
           <div className="periods">
-            {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: PERIODS }, (_, i) => i + 1).map((n) => (
               <button key={n} className={`period${n === period ? ' on' : ''}`} onClick={guard(() => setPeriod(n))}>{kh(n)}</button>
             ))}
           </div>

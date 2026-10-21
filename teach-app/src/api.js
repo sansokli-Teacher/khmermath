@@ -15,6 +15,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
+export const PERIODS = 10;   // teaching periods in a school day
 const KH = '០១២៣៤៥៦៧៨៩';
 export const kh = (n) => String(n ?? '').replace(/\d/g, (d) => KH[d]);
 export const fromKh = (s) => String(s ?? '').replace(/[០-៩]/g, (d) => String(KH.indexOf(d)));

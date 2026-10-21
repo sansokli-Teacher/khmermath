@@ -3,12 +3,13 @@ import { needClass, TEACH_DENIED } from '../lib/access.js';
 import { ensureColumns } from '../lib/schema.js';
 
 const MARKS = new Set(['ok', 'A', 'L']);
+export const MAX_PERIOD = 10;   // teaching periods in a school day
 
 export async function getAttendance(req, env) {
   const url = new URL(req.url);
   const classId = url.searchParams.get('class_id');
   const day = String(url.searchParams.get('day') || '').slice(0, 10);
-  const period = Math.max(1, Math.min(8, Number(url.searchParams.get('period')) || 1));
+  const period = Math.max(1, Math.min(MAX_PERIOD, Number(url.searchParams.get('period')) || 1));
   if (!classId || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return err('class_id and day are required.', 400);
   await ensureColumns(env);
   const g = await needClass(req, env, classId, 'view'); if (g.resp) return g.resp;
@@ -23,7 +24,7 @@ export async function saveAttendance(req, env) {
   const body = await req.json();
   const classId = Number(body.class_id);
   const day = String(body.day || '').slice(0, 10);
-  const period = Math.max(1, Math.min(8, Number(body.period) || 1));
+  const period = Math.max(1, Math.min(MAX_PERIOD, Number(body.period) || 1));
   const rows = Array.isArray(body.rows) ? body.rows : [];
   if (!classId || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return err('class_id and day are required.', 400);
   await ensureColumns(env);

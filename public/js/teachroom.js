@@ -172,7 +172,7 @@
     host.innerHTML = '';
     const dayIn = h('input', { type: 'date', value: day });
     dayIn.onchange = async () => { day = dayIn.value || today(); await loadMarks(); paint(); };
-    const periods = h('div', { class: 'att-periods' }, Array.from({ length: 8 }, (_, i) => {
+    const periods = h('div', { class: 'att-periods' }, Array.from({ length: 10 }, (_, i) => {
       const n = i + 1;
       return h('button', {
         type: 'button',
