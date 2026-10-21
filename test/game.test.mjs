@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeBank, cleanEdit, baseKey, overlayEdits } from '../src/lib/gamebank.js';
+import { mergeBank, cleanEdit, baseKey, overlayEdits, suggestTime } from '../src/lib/gamebank.js';
 
 const base = { class: 'g7', lessons: [
   { n: 1, title: 'A', qs: [{ t: 'x', q: 'one \\(1\\)', lv: 'easy', h: '', s: 's', a: '\\(2\\)', o: ['\\(1\\)', '\\(2\\)', '\\(3\\)', '\\(4\\)'], k: 1 }, { t: 'x', q: 'two', lv: 'easy', h: '', s: '', a: '5' }] },
@@ -65,4 +65,20 @@ test("a teacher's own fix and delete sit on top of the shared bank and are flagg
   // other teachers still see the shared bank
   assert.equal(mergeBank(base, shared, { enabled: true, lessons: null }).lessons[0].qs[1].q, 'shared fix');
   assert.equal(mergeBank(base, shared, { enabled: true, lessons: null }).lessons[0].qs.length, 2);
+});
+
+test('every question gets an answer time: suggested from the question, or the teacher\'s own', () => {
+  const short = { q: 'recall', lv: 'easy', s: 'x', o: ['a', 'b', 'c', 'd'] };
+  const long = { q: 'long \\(1\\times 2 = 2\\) '.repeat(8), lv: 'hard', s: 'a = b = c = d = e', a: '1' };
+  assert.equal(suggestTime(short), 15);
+  assert.ok(suggestTime(long) > suggestTime(short));
+  const pub = mergeBank(base, new Map(), { enabled: true, lessons: null });
+  assert.ok(pub.lessons[0].qs.every((q) => q.tm >= 15 && q.tm <= 180));
+  const own = new Map([['1:1', { bq: baseKey(base.lessons[0].qs[1]), data: { q: 'two', a: '6', t: 'x', lv: 'easy', h: '', s: '', tm: 75 }, off: false }]]);
+  const adm = mergeBank(base, own, { enabled: true, lessons: null }, { admin: true });
+  assert.equal(adm.lessons[0].qs[1].tm, 75);
+  assert.equal(adm.lessons[0].qs[1].tmSet, true);
+  assert.equal(adm.lessons[0].qs[0].tmSet, false);
+  assert.equal(cleanEdit({ q: 'x', a: '1', t: 'y', tm: '' }, { t: 'y', lv: 'easy' }).data.tm, 0);
+  assert.ok(cleanEdit({ q: 'x', a: '1', t: 'y', tm: 2 }, { t: 'y', lv: 'easy' }).error);
 });

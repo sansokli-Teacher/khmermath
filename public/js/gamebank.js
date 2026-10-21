@@ -78,7 +78,7 @@ render.gamebank = async function () {
 };
 
 function gbRow(L, q, can) {
-  const badges = [q.f ? '🖼 មានរូប' : '', q.mine ? '👤 របស់ខ្ញុំ' : '', q.edited ? '✎ កែរួច' : '', q.off ? '🗑 បានលុប' : '', q.stale ? '⚠ សំណួរដើមបានប្តូរ (ការកែមិនប្រើ)' : '', gbLv[q.lv] || ''].filter(Boolean);
+  const badges = [q.f ? '🖼 មានរូប' : '', q.mine ? '👤 របស់ខ្ញុំ' : '', `⏱ ${gbKh(q.tm)} វិ${q.tmSet ? '' : ' (ស្វ័យប្រវត្តិ)'}`, q.edited ? '✎ កែរួច' : '', q.off ? '🗑 បានលុប' : '', q.stale ? '⚠ សំណួរដើមបានប្តូរ (ការកែមិនប្រើ)' : '', gbLv[q.lv] || ''].filter(Boolean);
   const body = h('div', { style: 'min-width:0' }, [
     gbMath(h('div', { style: 'font-weight:600;line-height:1.7' }), q.q),
     q.o ? h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px;font-size:15px' }, q.o.map((o, k) => gbMath(h('div', { style: k === q.k ? 'color:#14532d;font-weight:700' : '' }, ''), `${'កខគឃ'[k]}. ${o}${k === q.k ? ' ✓' : ''}`))) : gbMath(h('div', { style: 'color:#14532d;font-weight:700;margin-top:4px' }), `ចម្លើយ៖ ${q.a}`),
@@ -93,7 +93,7 @@ function gbRow(L, q, can) {
     h('b', { style: 'font-size:18px;color:var(--brand)' }, gbKh(q.i + 1)), body, btns]);
 }
 
-const gbFields = (q) => ({ t: q.t, q: q.q, lv: q.lv, h: q.h || '', s: q.s || '', a: q.a, o: q.o, k: q.k });
+const gbFields = (q) => ({ t: q.t, q: q.q, lv: q.lv, h: q.h || '', s: q.s || '', a: q.a, o: q.o, k: q.k, tm: q.tmSet ? q.tm : 0 });
 
 async function gbSave(L, q, fields, off) {
   try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: !!off } }); if (typeof tgBank !== 'undefined') tgBank = null; await render.gamebank(); } catch (e) { Exam.notify(e.message); }
@@ -107,6 +107,7 @@ function gbEdit(L, q, can) {
   const s_ = mk('textarea', f.s, { rows: '3' });
   const h_ = mk('input', f.h, { type: 'text' });
   const t_ = mk('input', f.t, { type: 'text' });
+  const tm_ = mk('input', f.tm ? String(f.tm) : '', { type: 'number', min: '5', max: '600', placeholder: `ស្វ័យប្រវត្តិ · ${q.tmAuto} វិនាទី` });
   const lv = h('select', { disabled: can ? null : 'disabled' }, ['easy', 'medium', 'hard'].map((v) => h('option', { value: v }, gbLv[v]))); lv.value = f.lv; lv.disabled = !can;
   const opts = f.o ? f.o.map((o) => mk('input', o, { type: 'text' })) : [];
   const radios = f.o ? f.o.map((_, k) => { const r = h('input', { type: 'radio', name: 'gb-k' }); r.checked = k === f.k; r.disabled = !can; r.addEventListener('change', preview); return r; }) : [];
@@ -132,7 +133,7 @@ function gbEdit(L, q, can) {
     field('សំណួរ', q_),
     f.o ? h('div', { style: 'margin-top:10px' }, [h('b', { style: 'font-size:14px' }, 'ជម្រើស (ចុចរង្វង់ដើម្បីជ្រើសចម្លើយត្រឹមត្រូវ)'), ...opts.map((o, k) => h('div', { style: 'display:grid;grid-template-columns:24px 28px 1fr;gap:6px;align-items:center;margin-top:4px' }, [radios[k], h('b', {}, 'កខគឃ'[k]), o]))]) : field('ចម្លើយ', a_),
     field('ដំណោះស្រាយ (បង្ហាញពេលបង្ហាញចម្លើយ)', s_),
-    field('គន្លឹះ', h_), field('ផ្នែក', t_),
+    field('គន្លឹះ', h_), field('ផ្នែក', t_), field('ម៉ោងឆ្លើយក្នុងហ្គេម (វិនាទី) — ទុកទទេ = ស្វ័យប្រវត្តិ', tm_),
     h('label', { style: 'display:flex;gap:10px;align-items:center;margin-top:10px' }, ['កម្រិត', lv, h('label', { style: 'display:flex;gap:6px;align-items:center;margin-left:14px' }, [off, 'លុបសំណួរនេះពីហ្គេម'])]),
     q.edited || q.stale ? h('small', { class: 'muted', style: 'display:block;margin-top:8px' }, ['សំណួរដើម៖ ', gbMath(h('span'), q.orig.q)]) : null,
   ]);
@@ -142,7 +143,7 @@ function gbEdit(L, q, can) {
     can && (q.edited || q.stale) ? h('button', { class: 'secondary', type: 'button', onclick: async () => { if (!(await Exam.modal('ត្រឡប់ទៅសំណួរដើមវិញ?'))) return; try { await api('/api/game/reset', { method: 'POST', body: { lesson: L.n, i: q.i } }); close(); render.gamebank(); } catch (e) { Exam.notify(e.message); } } }, 'ត្រឡប់ទៅដើម') : null,
     h('button', { class: 'secondary', type: 'button', onclick: close }, can ? 'បោះបង់' : 'បិទ'),
     can ? h('button', { type: 'button', onclick: async () => {
-      const fields = { t: t_.value, q: q_.value, lv: lv.value, h: h_.value, s: s_.value };
+      const fields = { t: t_.value, q: q_.value, lv: lv.value, h: h_.value, s: s_.value, tm: tm_.value };
       if (f.o) { fields.o = opts.map((o) => o.value); fields.k = radios.findIndex((r) => r.checked); } else fields.a = a_.value;
       try { await api('/api/game/question', { method: 'POST', body: { lesson: L.n, i: q.i, fields, off: off.checked } }); if (typeof tgBank !== 'undefined') tgBank = null; close(); render.gamebank(); } catch (e) { Exam.notify(e.message); }
     } }, 'រក្សាទុក') : null,

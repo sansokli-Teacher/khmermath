@@ -19,10 +19,10 @@ function Tex({ text, className, as: Tag = 'div' }) {
   return <Tag ref={ref} className={className} />;
 }
 
-const fieldsOf = (q) => ({ t: q.t, q: q.q, lv: q.lv, h: q.h || '', s: q.s || '', a: q.a, o: q.o, k: q.k });
+const fieldsOf = (q) => ({ t: q.t, q: q.q, lv: q.lv, h: q.h || '', s: q.s || '', a: q.a, o: q.o, k: q.k, tm: q.tmSet ? q.tm : 0 });
 
 function Editor({ lesson, q, onClose, onSaved }) {
-  const [f, setF] = useState(() => ({ ...fieldsOf(q), o: q.o ? q.o.slice() : null }));
+  const [f, setF] = useState(() => ({ ...fieldsOf(q), tm: q.tmSet ? String(q.tm) : '', o: q.o ? q.o.slice() : null }));
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const last = useRef(null);
@@ -37,7 +37,7 @@ function Editor({ lesson, q, onClose, onSaved }) {
   const save = async (off) => {
     setBusy(true); setErr('');
     try {
-      const fields = { t: f.t, q: f.q, lv: f.lv, h: f.h, s: f.s };
+      const fields = { t: f.t, q: f.q, lv: f.lv, h: f.h, s: f.s, tm: f.tm };
       if (f.o) { fields.o = f.o; fields.k = f.k; } else fields.a = f.a;
       await api('/api/game/question', { method: 'POST', body: { lesson: lesson.n, i: q.i, fields, off: off ?? q.off } });
       onSaved();
@@ -62,6 +62,7 @@ function Editor({ lesson, q, onClose, onSaved }) {
           ) : <label>ចម្លើយ<input type="text" data-k="a" value={f.a} onFocus={focus} onChange={(e) => set('a', e.target.value)} /></label>}
           <label>ដំណោះស្រាយ<textarea rows="3" data-k="s" value={f.s} onFocus={focus} onChange={(e) => set('s', e.target.value)} /></label>
           <label>គន្លឹះ<input type="text" data-k="h" value={f.h} onFocus={focus} onChange={(e) => set('h', e.target.value)} /></label>
+          <label>ម៉ោងឆ្លើយក្នុងហ្គេម (វិនាទី) — ទុកទទេ = ស្វ័យប្រវត្តិ<input type="number" min="5" max="600" value={f.tm} placeholder={`ស្វ័យប្រវត្តិ · ${q.tmAuto} វិនាទី`} onChange={(e) => set('tm', e.target.value)} /></label>
           <div className="qb-two">
             <label>ផ្នែក<input type="text" value={f.t} onChange={(e) => set('t', e.target.value)} /></label>
             <label>កម្រិត<select value={f.lv} onChange={(e) => set('lv', e.target.value)}>{Object.keys(LV).map((v) => <option key={v} value={v}>{LV[v]}</option>)}</select></label>
@@ -119,7 +120,7 @@ export default function QuestionBank({ lesson: firstLesson, onClose }) {
                 <div className="qb-body">
                   <Tex text={q.q} className="qb-q" />
                   {q.o && <div className="qb-og">{q.o.map((o, k) => <Tex key={k} text={`${'កខគឃ'[k]}. ${o}${k === q.k ? ' ✓' : ''}`} className={k === q.k ? 'ok' : ''} />)}</div>}
-                  <small className="muted">{[q.mine ? '👤 របស់ខ្ញុំ' : '', q.edited ? '✎ កែរួច' : '', q.off ? '🗑 បានលុប' : '', q.f ? '🖼 មានរូប' : '', LV[q.lv] || ''].filter(Boolean).join(' · ')}</small>
+                  <small className="muted">{[q.mine ? '👤 របស់ខ្ញុំ' : '', `⏱ ${kh(q.tm)} វិ${q.tmSet ? '' : ' (ស្វ័យប្រវត្តិ)'}`, q.edited ? '✎ កែរួច' : '', q.off ? '🗑 បានលុប' : '', q.f ? '🖼 មានរូប' : '', LV[q.lv] || ''].filter(Boolean).join(' · ')}</small>
                 </div>
                 <div className="qb-btns">
                   <button className="btn ghost sm" onClick={() => setEdit(q)}>✎ កែ</button>

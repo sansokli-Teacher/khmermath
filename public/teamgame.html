@@ -96,7 +96,8 @@
             <label id="gx-finishrow">ជំហានដល់ទីបញ្ចប់ (ប្រណាំងទូកង) <input type="number" id="tg-finish" min="3" max="30" value="8"></label>
             <label>មុខកាត <select id="tg-face"><option value="img">បង្ហាញរូបភាព</option><option value="num">បង្ហាញលេខ</option></select></label>
             <label>ម៉ោងឆ្លើយ
-              <select id="tg-timer"><option value="0">មិនកំណត់</option><option value="15">១៥ វិនាទី</option><option value="30">៣០ វិនាទី</option><option value="60">៦០ វិនាទី</option><option value="90">៩០ វិនាទី</option></select></label>
+              <select id="tg-timer"><option value="auto">ស្វ័យប្រវត្តិ — ម៉ោងតាមសំណួរនីមួយៗ</option><option value="0">មិនកំណត់</option><option value="15">១៥ វិនាទី</option><option value="30">៣០ វិនាទី</option><option value="60">៦០ វិនាទី</option><option value="90">៩០ វិនាទី</option></select></label>
+            <label>ល្បឿនថ្នាក់ <select id="tg-speed"><option value="0.75">លឿន (ម៉ោង ×០.៧៥)</option><option value="1" selected>ធម្មតា</option><option value="1.5">យឺត (ម៉ោង ×១.៥)</option></select></label>
             <label class="tg-check"><input type="checkbox" id="tg-special" checked> ប្រអប់ពិសេស (💣 ✖២ 🔄 🎁 🕵 ⏭)</label>
             <label>ចំនួនប្រអប់ពិសេស <input type="number" id="tg-nspecial" min="0" max="12" value="3"></label>
             <label class="tg-check"><input type="checkbox" id="tg-sound" checked> 🔊 សំឡេង</label>
@@ -141,7 +142,7 @@
 <script src="katex/katex.min.js"></script>
 <script src="katex/contrib/auto-render.min.js"></script>
 <script src="js/sfx.js?v=20261017i"></script>
-<script src="js/teamgame.js?v=20261021c"></script>
+<script src="js/teamgame.js?v=20261021d"></script>
 <script src="js/tgui.js?v=20261021b"></script>
 </body>
 </html>
