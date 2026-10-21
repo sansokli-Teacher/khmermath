@@ -800,10 +800,13 @@
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
     ink.addEventListener('pointerdown', () => { if (hand) hand.classList.add('writing'); });
     window.addEventListener('pointerup', () => { if (hand) hand.classList.remove('writing'); });
+    let penErase = false;                                                          // the eraser end of a pen (Wacom) erases whatever tool is chosen
     const down = (e) => {
-      if (e.button && e.button !== 0) return;
+      const eraserEnd = e.pointerType === 'pen' && (e.button === 5 || (e.buttons & 32) !== 0);
+      if (e.button && e.button !== 0 && !eraserEnd) return;
       const p = pos(e);
       closeMenus();
+      if (eraserEnd) { penErase = true; drawing = true; eraseAt(p); ink.setPointerCapture && ink.setPointerCapture(e.pointerId); e.preventDefault(); return; }
       if (tool === 'zoom') {
         if (lensOn || lensPin) { lensPin = !lensPin; lens.classList.toggle('pin', lensPin); if (!lensPin) lensMove(e); }
         return;
@@ -834,7 +837,7 @@
       if (!drawing) return;
       const p = pos(e);
       if (tool === 'spot') { spot = p; redraw(); }
-      else if (tool === 'erase') eraseAt(p);
+      else if (tool === 'erase' || penErase) eraseAt(p);
       else if (cur) {
         if (cur.t === 'pen' || cur.t === 'hi') cur.p.push(p); else cur.p = [cur.p[0], p];
         redraw();
@@ -843,7 +846,7 @@
     };
     const up = () => {
       if (!drawing) return;
-      drawing = false;
+      drawing = false; if (penErase) { penErase = false; return; }
       if (cur) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; cur = null; redraw(); syncUndo(); }
     };
     function eraseAt(p) {
@@ -2194,11 +2197,25 @@
 
   function keys(e) {
     if (root && root.hidden) return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextStep(); }
-    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevStep(); }
+    if (/INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;     // typing in a box is not a clicker press
+    const blank = stage && stage.querySelector('.ts-blank');
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); if (blank) blank.remove(); else nextStep(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); if (blank) blank.remove(); else prevStep(); }
     if ((e.key === '[' || e.key === ']') && sizeSetter) sizeSetter(size + (e.key === ']' ? 1 : -1), true);
-    if (e.key === 'Escape') close();
+    // presenter-clicker keys: «black screen» (B or .), «white screen» (W or ,), «start» (F5)
+    if (['b', 'B', '.', 'w', 'W', ','].includes(e.key) && stage) {
+      e.preventDefault();
+      if (blank) blank.remove();
+      else { const el = document.createElement('div'); el.className = 'ts-blank'; el.style.cssText = `position:absolute;inset:0;z-index:60;background:${/[bB.]/.test(e.key) ? '#000' : '#fff'}`; el.onclick = () => el.remove(); stage.append(el); }
+    }
+    if (e.key === 'F5') { e.preventDefault(); if (!document.fullscreenElement) toggleFs(); }
+    // Esc closes the lesson only when pressed twice, so a clicker's «end» button cannot end the class by accident
+    if (e.key === 'Escape') {
+      if (blank) return blank.remove();
+      if (performance.now() - escAt < 2000) close(); else { escAt = performance.now(); Exam.notify('ចុច Esc ម្តងទៀតដើម្បីបិទមេរៀន'); }
+    }
   }
+  let escAt = -9999;
 
   function toggleFs() {
     try {
