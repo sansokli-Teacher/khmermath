@@ -21,6 +21,77 @@ const TG_STYLES = [
 const TG_COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4'];
 let tgStyle = 'cards', tgQn = 20, tgNoTeam = false;
 let tgBank = null;
+
+// ---- the «divide groups» pop-up: a banner, then each group is filled one by one (names shuffle, then lock with a crash and a burst) ----
+let tgAudio = null, tgRun = 0;
+const tgEsc = (t) => String(t).replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+function tgBeep(freqs, vol, len, gap) {
+  try {
+    tgAudio = tgAudio || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f, i) => { const o = tgAudio.createOscillator(), g = tgAudio.createGain(), t = tgAudio.currentTime + i * (gap || 0.12); o.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(g); g.connect(tgAudio.destination); o.start(t); o.stop(t + len + 0.02); });
+  } catch {}
+}
+function tgFireworks(cv, ms, burstsOnly) {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = r.width * dpr; cv.height = r.height * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  let parts = [], next = 0; const end = performance.now() + ms, hues = [8, 40, 52, 130, 190, 280, 330];
+  const burst = (x, y, n) => { const hu = hues[Math.floor(Math.random() * hues.length)]; for (let i = 0; i < n; i++) { const a = Math.PI * 2 * i / n + Math.random() * 0.2, v = 2.2 + Math.random() * 3.6; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, h: hu + Math.random() * 30, w: 2 + Math.random() * 2 }); } };
+  cv._burst = (x, y) => { burst(x, y, 30); if (!cv._on) loop(performance.now()); };
+  const loop = (now) => {
+    cv._on = true;
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 0, r.width, r.height); g.globalCompositeOperation = 'lighter';
+    if (!burstsOnly && now < end && now >= next) { burst(r.width * (0.12 + Math.random() * 0.76), r.height * (0.1 + Math.random() * 0.5), 46); next = now + 380 + Math.random() * 260; }
+    parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += 0.05; q.vx *= 0.99; q.life -= 0.012; g.globalAlpha = Math.max(0, q.life); g.fillStyle = `hsl(${q.h} 95% 60%)`; g.beginPath(); g.arc(q.x, q.y, q.w, 0, Math.PI * 2); g.fill(); });
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; parts = parts.filter((q) => q.life > 0);
+    if ((!burstsOnly && now < end) || parts.length) requestAnimationFrame(loop); else { cv._on = false; g.clearRect(0, 0, r.width, r.height); }
+  };
+  if (!burstsOnly) requestAnimationFrame(loop);
+}
+function tgDealPopup({ teams, colors, cname, redeal }) {
+  const id = ++tgRun, n = teams.length, calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.tgp-back').forEach((e) => e.remove());
+  const total = teams.reduce((a, t) => a + t.length, 0), d = new Date();
+  const date = `${tgKh(d.getDate())}/${tgKh(d.getMonth() + 1)}/${tgKh(d.getFullYear())}`;
+  const back = h('div', { class: 'tgp-back' });
+  back.innerHTML = `<div class="tgp-card" role="dialog" aria-modal="true"><div class="tgp-ban"><b class="tgp-title">កំពុងបែងចែកក្រុម…</b><small>${tgEsc(cname)}${cname ? ' · ' : ''}${tgKh(total)} នាក់ · ${date}</small></div>
+    <div class="tgp-grid">${teams.map((t, k) => `<div class="tgp-g wait" style="--c:${colors[k % colors.length]}"><div class="tgp-gh"><b>ក្រុម ${tgKh(k + 1)}</b><span>${tgKh(t.length)} នាក់</span></div><ol>${t.map(() => '<li class="ph">• • •</li>').join('')}</ol></div>`).join('')}</div>
+    <div class="tgp-act"><button type="button" class="tgp-skip">រំលង ▶▶</button><button type="button" class="tgp-again" hidden>🔀 ចែកម្ដងទៀត</button><button type="button" class="tgp-ok">បិទ</button></div><canvas class="tgp-fw" aria-hidden="true"></canvas></div>`;
+  document.body.appendChild(back);
+  const q = (c) => back.querySelector(c), cards = [...back.querySelectorAll('.tgp-g')], title = q('.tgp-title'), fw = q('.tgp-fw');
+  const close = () => { tgRun++; back.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  back.onmousedown = (e) => { if (e.target === back) close(); };
+  q('.tgp-ok').onclick = close;
+  q('.tgp-again').onclick = () => { close(); redeal(); };
+  const fill = (card, names) => { card.querySelector('ol').innerHTML = names.map((m) => `<li>${tgEsc(m)}</li>`).join(''); };
+  const shuf = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  let remaining = teams.flat(), cur = -1, phase = 'start', t0 = 0, last = 0, skip = false;
+  const per = calm ? 0 : Math.max(800, Math.min(1500, 9000 / Math.max(1, n))), pause = calm ? 0 : 380;
+  q('.tgp-skip').onclick = () => { skip = true; };
+  const lock = (i, fx) => {
+    const card = cards[i]; card.className = 'tgp-g done'; fill(card, teams[i]);
+    const ids = new Set(teams[i]); remaining = remaining.filter((m) => !ids.has(m));
+    if (fx) { tgBeep([160, 120, 90], 0.14, 0.25, 0.05); const r = card.getBoundingClientRect(), w = fw.getBoundingClientRect(); tgFireworks(fw, 0, true); if (fw._burst) fw._burst(r.right - w.left - 30, r.top - w.top + 26); }
+  };
+  const finale = () => { title.textContent = 'បែងចែកក្រុមរួចរាល់! 🎉'; q('.tgp-skip').hidden = true; q('.tgp-again').hidden = false; tgBeep([523, 659, 784, 1047], 0.12, 0.3); tgFireworks(fw, 3600); };
+  const frame = (now) => {
+    if (id !== tgRun) return;
+    if (skip) { for (let k = Math.max(cur, 0); k < n; k++) if (cards[k].className !== 'tgp-g done') lock(k, false); return finale(); }
+    if (phase === 'start' || (phase === 'pause' && now - t0 >= pause)) {
+      cur++; if (cur >= n) return finale();
+      phase = 'roll'; t0 = now; cards[cur].className = 'tgp-g active'; title.textContent = `កំពុងបែងចែក ក្រុមទី ${tgKh(cur + 1)}…`;
+      const gr = q('.tgp-grid'); gr.scrollTo({ top: Math.max(0, cards[cur].offsetTop - gr.offsetTop - 8), behavior: 'smooth' });
+    }
+    if (phase === 'roll') {
+      if (now - t0 >= per) { lock(cur, true); phase = 'pause'; t0 = now; }
+      else if (now - last > 80) { last = now; fill(cards[cur], shuf(remaining).slice(0, teams[cur].length)); tgBeep([700], 0.03, 0.02); }
+    }
+    requestAnimationFrame(frame);
+  };
+  if (calm) { cards.forEach((c, i) => lock(i, false)); finale(); } else requestAnimationFrame(frame);
+}
 async function tgLoadBank() {
   if (tgBank) return tgBank;
   for (const u of ['/api/game/bank', 'data/teamgame_g7.json']) {
@@ -115,12 +186,13 @@ render.teamgame = async function () {
   const out = h('output', {}, tgKh(tgTeams));
   const minus = h('button', { type: 'button', 'aria-label': 'បន្ថយ' }, '−');
   const plus = h('button', { type: 'button', 'aria-label': 'បន្ថែម' }, '+');
-  const again = h('button', { type: 'button', class: 'tgl-ghost' }, '🔀 ចែកម្ដងទៀត');
+  const again = h('button', { type: 'button', class: 'tgl-deal' }, '👥 ចែកក្រុម');
   const absent = h('input', { type: 'checkbox', id: 'tg-skip' }); absent.checked = tgSkipAbsent;
   const noTeam = h('input', { type: 'checkbox' }); noTeam.checked = tgNoTeam;
   const info = h('p', { class: 'tgl-info' });
   const preview = h('div', { class: 'tgl-teams' });
   function draw() {
+    for (let k = TG_COLORS.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [TG_COLORS[k], TG_COLORS[j]] = [TG_COLORS[j], TG_COLORS[k]]; }   // a new random colour set for every deal
     tgTeams = Math.max(2, Math.min(8, tgTeams));
     out.textContent = tgKh(tgTeams); minus.disabled = tgTeams <= 2 || tgNoTeam; plus.disabled = tgTeams >= 8 || tgNoTeam; again.disabled = tgNoTeam;
     let off = [];
@@ -135,7 +207,9 @@ render.teamgame = async function () {
     ])));
     drawBar();
   }
-  minus.onclick = () => { tgTeams--; draw(); }; plus.onclick = () => { tgTeams++; draw(); }; again.onclick = draw;
+  minus.onclick = () => { tgTeams--; draw(); }; plus.onclick = () => { tgTeams++; draw(); };
+  const deal = () => { draw(); if (teams.some((t) => t.length)) tgDealPopup({ teams, colors: TG_COLORS.slice(), cname: curCls().name, redeal: deal }); else Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។'); };
+  again.onclick = deal;
   absent.onchange = () => { tgSkipAbsent = absent.checked; draw(); };
   noTeam.onchange = () => { tgNoTeam = noTeam.checked; draw(); };
 

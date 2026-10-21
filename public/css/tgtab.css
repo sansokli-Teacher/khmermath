@@ -53,3 +53,23 @@
 @media (max-width: 640px) { .tgl-go { width: 100%; } .tgl-bar { bottom: 6px; } }
 .tgl-chips input { width: 110px; min-height: 40px; border-radius: 99px; border: 2px solid #e3ded0; padding: 0 14px; font-weight: 800; text-align: center; box-shadow: none; }
 .tgl-chips input.on { border-color: #1f2547; background: #edf3ff; }
+.tgl-deal { min-height: 46px; padding: 0 22px; border-radius: 99px; background: #2f5fe3; color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 6px 16px rgba(47, 95, 227, .4); }
+.tgl-deal:disabled { background: #cfd4e6; box-shadow: none; }
+/* the divide-groups pop-up */
+.tgp-back { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(31, 37, 71, .62); backdrop-filter: blur(4px); animation: tgp-in .25s both; }
+@keyframes tgp-in { from { opacity: 0; } to { opacity: 1; } }
+.tgp-card { position: relative; width: min(96vw, 1000px); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; background: linear-gradient(180deg, #eaf5f2, #fdf6e8); border: 6px solid #1f6f66; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); animation: tgp-pop .4s cubic-bezier(.2, 1.4, .3, 1) both; }
+@keyframes tgp-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.tgp-ban { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 16px 24px; color: #fff; background: linear-gradient(100deg, #1f6f66, #2d8f7e 60%, #3aa68f); }
+.tgp-ban b { font-size: clamp(22px, 4vw, 34px); } .tgp-ban small { font-size: 16px; opacity: .92; font-weight: 600; }
+.tgp-grid { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; padding: 18px 22px; align-content: start; }
+.tgp-g { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 16px rgba(0, 0, 0, .14); transition: transform .2s, box-shadow .2s; }
+.tgp-g.wait { opacity: .55; } .tgp-g.active { transform: scale(1.03); box-shadow: 0 0 0 3px var(--c), 0 12px 26px rgba(0, 0, 0, .25); }
+.tgp-gh { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: var(--c); color: #fff; }
+.tgp-gh b { font-size: 20px; } .tgp-gh span { opacity: .92; font-weight: 600; }
+.tgp-g ol { margin: 0; padding: 8px 14px 12px 38px; font-size: 18px; font-weight: 700; color: #1b2733; line-height: 1.6; }
+.tgp-g ol li::marker { color: var(--c); font-weight: 800; } .tgp-g .ph { color: #b8c0cc; }
+.tgp-act { flex: none; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 10px 22px 18px; }
+.tgp-act button { min-height: 44px; padding: 0 22px; border-radius: 99px; border: 0; font-weight: 800; font-size: 16px; box-shadow: none; background: #1f2547; color: #fff; }
+.tgp-act .tgp-skip { background: #e3ded0; color: #1f2547; } .tgp-act .tgp-again { background: #e8590c; }
+.tgp-fw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
