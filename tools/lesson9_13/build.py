@@ -411,6 +411,7 @@ assert 90 - 22 == 68 and 90 - 68 == 22
 for s in S:
     s.setdefault('k', '')
     s['html'] = s['html'].replace(' ។', ' ។')
+    s['html'] = re.sub(r'(\\\((?:(?!\\\)).)*\\\))\u00a0។', lambda mo: '<span style="white-space:nowrap">' + mo.group(1) + '\u00a0។</span>', s['html'])    # the full stop stays with the maths before it (never alone on a line)
 
 
 def _style_h2(html):
@@ -423,7 +424,10 @@ def _style_h2(html):
     return re.sub(r'<h2>(.*?)</h2>', f, html, flags=re.S)
 
 
+_TITLES = {'១.១': '១.១ បន្ទាត់កែងទៅនឹងចំណុចកណ្ដាលនៃអង្កត់ធ្នូ', '១.២': '១.២ អង្កត់ធ្នូស្មើគ្នា', '២': '២ បន្ទាត់ប៉ះ', '៣': '៣ លក្ខណៈនៃបន្ទាត់ប៉ះ',
+           '៤': '៤ ចតុកោណចារឹកក្រៅរង្វង់', '៥': '៥ ទីតាំងរង្វង់', '៦': '៦ បន្ទាត់ប៉ះរួម'}
 for s in S:
+    s['html'] = re.sub(r'<p class="ts-kicker">([^<]*)</p>', lambda mo: '<p class="ts-kicker">' + _TITLES.get(mo.group(1), mo.group(1)) + '</p>', s['html'])
     s['html'] = _style_h2(s['html'])
 out = [stepify(x) if x.get('k') in ('sol', 'ex', 'key', 'prac') and 'data-step' not in x['html'] else x for x in S]
 os.makedirs(os.path.dirname(OUT), exist_ok=True)

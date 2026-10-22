@@ -652,8 +652,8 @@ def vocab():
     c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -2, 28))
     R_ = pol(O, r, 0)
     c.add(seg(O, R_, RED, 5) + dot(R_, RED) + T(O[0] + 90, O[1] - 16, 'កាំ', 30, RED), 1)
-    c.add(seg(Bb, A, BLUE, 5) + dot(A, BLUE) + dot(Bb, BLUE) + lab(A, 'A', 22, -22, BLUE) + lab(Bb, 'B', -24, 22, BLUE) + T(Bb[0] - 78, Bb[1] + 44, 'អង្កត់ផ្ចិត', 28, BLUE), 2)
-    c.add(seg(C, D, GREEN, 5) + dot(C, GREEN) + dot(D, GREEN) + lab(C, 'C', -20, -22, GREEN) + lab(D, 'D', 22, 22, GREEN) + T(D[0] + 74, D[1] + 40, 'អង្កត់ធ្នូ', 28, GREEN), 3)
+    c.add(seg(Bb, A, BLUE, 5) + dot(A, BLUE) + dot(Bb, BLUE) + lab(A, 'A', 22, -22, BLUE) + lab(Bb, 'B', -24, 22, BLUE), 2)
+    c.add(seg(C, D, GREEN, 5) + dot(C, GREEN) + dot(D, GREEN) + lab(C, 'C', -20, -22, GREEN) + lab(D, 'D', 22, 22, GREEN), 3)
     return c.out()
 
 

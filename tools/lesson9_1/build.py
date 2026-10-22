@@ -3,7 +3,7 @@ This deck FOLLOWS THE MoEYS TEXTBOOK lesson 1 (12 pages): the same sections, exa
 Teaching-flow additions (marked in docs/LESSON_G9_1_REPORT.md): lesson map, the garden question, ដើមការេ / ដើមគូប, a summary and an exit ticket.
 The long deck (30 exercises with solutions, PISA tasks, extras) is archived as build_full.py -> lesson1_full.js (not loaded by the app).
 Every answer is checked numerically below; pictures come from vis_book.py (typeset maths, no self-drawing lines)."""
-import math, json, os, sys
+import math, json, os, sys, re
 from fractions import Fraction
 HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson1'))
@@ -415,6 +415,7 @@ def _style_h2(html):
 for s in S:
     s.setdefault('k', '')
     s['html'] = s['html'].replace(' ។', '\u00a0។')
+    s['html'] = re.sub(r'(\\\((?:(?!\\\)).)*\\\))\u00a0។', lambda mo: '<span style="white-space:nowrap">' + mo.group(1) + '\u00a0។</span>', s['html'])    # the full stop stays with the maths before it (never alone on a line)
     s['html'] = _style_h2(s['html'])    # the book spaces before ។: keep it with the word so a line never starts with it
 out = [stepify(x) if x.get('k') in ('sol', 'ex', 'key', 'prac') and 'data-step' not in x['html'] else x for x in S]
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
