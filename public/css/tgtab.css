@@ -58,11 +58,11 @@
 /* the divide-groups pop-up */
 .tgp-back { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(31, 37, 71, .62); backdrop-filter: blur(4px); animation: tgp-in .25s both; }
 @keyframes tgp-in { from { opacity: 0; } to { opacity: 1; } }
-.tgp-card { position: relative; width: min(96vw, 1000px); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; background: linear-gradient(180deg, #eaf5f2, #fdf6e8); border: 6px solid #1f6f66; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); animation: tgp-pop .4s cubic-bezier(.2, 1.4, .3, 1) both; }
+.tgp-card { position: relative; width: min(96vw, 1500px); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; background: linear-gradient(180deg, #eaf5f2, #fdf6e8); border: 6px solid #1f6f66; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); animation: tgp-pop .4s cubic-bezier(.2, 1.4, .3, 1) both; }
 @keyframes tgp-pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .tgp-ban { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 16px 24px; color: #fff; background: linear-gradient(100deg, #1f6f66, #2d8f7e 60%, #3aa68f); }
 .tgp-ban b { font-size: clamp(22px, 4vw, 34px); } .tgp-ban small { font-size: 16px; opacity: .92; font-weight: 600; }
-.tgp-grid { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; padding: 18px 22px; align-content: start; }
+.tgp-grid { flex: 1; min-height: 0; overflow: auto; grid-auto-rows: max-content; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 14px; padding: 18px 22px; align-content: start; }
 .tgp-g { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 16px rgba(0, 0, 0, .14); transition: transform .2s, box-shadow .2s; }
 .tgp-g.wait { opacity: .55; } .tgp-g.active { transform: scale(1.03); box-shadow: 0 0 0 3px var(--c), 0 12px 26px rgba(0, 0, 0, .25); }
 .tgp-gh { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: var(--c); color: #fff; }
@@ -74,3 +74,8 @@
 .tgp-act .tgp-skip { background: #e3ded0; color: #1f2547; } .tgp-act .tgp-again { background: #e8590c; }
 .tgp-fw { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
 .tgl-tools { display: inline-flex; gap: 8px; }
+
+/* every group card is as tall as its names (never squeezed to the window height); the grid scrolls instead; smaller type on short windows */
+.tgp-g { min-height: min-content; }
+@media (max-height: 760px) { .tgp-g ol { font-size: 16px; line-height: 1.45; padding-top: 6px; padding-bottom: 8px; } .tgp-gh { padding: 6px 12px; } .tgp-gh b { font-size: 18px; } }
+@media (max-height: 760px) { .tgp-ban { padding: 8px 18px; } .tgp-ban b { font-size: 24px; } .tgp-ban small { font-size: 14px; } .tgp-grid { padding: 10px 16px; gap: 10px; } .tgp-act { padding: 6px 18px 10px; } .tgp-act button { min-height: 36px; } .tgp-card { max-height: 96vh; } }
