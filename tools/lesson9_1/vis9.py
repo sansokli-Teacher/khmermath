@@ -19,6 +19,16 @@ def TMX(x, y, parts, size=30, fill=NAVY, anchor='middle', weight=700):
     return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}" {FONT}>{spans}</text>'
 
 
+def MIX(x, y, parts, size=34, fill=NAVY, anchor='middle', weight=700):
+    """maths with units: parts = [(text, kind)], kind 'i' = italic Times (variables, numbers, signs), 'u' = upright Times (units such as m, cm), 'k' = Khmer words"""
+    esc = lambda t: str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    up = "font-family=\"'Times New Roman','STIX Two Text',serif\" font-style=\"normal\""
+    out = ''
+    for t, k in parts:
+        out += (f'<tspan {MATHFONT} font-weight="600">{esc(t)}</tspan>' if k == 'i' else f'<tspan {up} font-weight="600">{esc(t)}</tspan>' if k == 'u' else esc(t))
+    return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}" {FONT} xml:space="preserve">{out}</text>'
+
+
 def poly(pts, fill, stroke='none', sw=0):
     p = ' '.join(f'{x:.1f},{y:.1f}' for x, y in pts)
     return f'<polygon points="{p}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
@@ -74,15 +84,22 @@ def number_sets():
 
 # ---------------------------------------------------------------- square of area 3 m² (the garden that opens the lesson)
 def garden_square():
-    side = 280
-    assert side > 0
-    x, y = 180, 70
-    b = rect(x, y, side, side, '#d3f9d8', 8, TEAL, 5)
-    b += M(x + side / 2, y + side / 2 + 12, 'S = 3 m²', 36, NAVY)
-    b += M(x + side / 2, y + side + 48, 'x = √3', 34, RED)
-    b += M(x + side + 70, y + side / 2, 'x = √3', 34, RED, 'start')
-    b += M(760, 200, 'x² = 3', 36, NAVY, 'start')
-    return svg(1000, 440, b, '42vh')
+    """a square garden of area 3 m^2: its side x satisfies x^2 = 3, so x = sqrt 3 (a length is positive) = 1.73... m"""
+    assert 1.73 ** 2 < 3 < 1.74 ** 2 and abs(math.sqrt(3) ** 2 - 3) < 1e-12
+    side, x0, y0 = 270, 150, 60
+    b = rect(x0, y0, side, side, '#d3f9d8', 8, TEAL, 5)
+    b += MIX(x0 + side / 2, y0 + side / 2 + 14, [('S = 3 ', 'i'), ('m', 'u'), ('²', 'u')], 40, NAVY)
+    # the side is x: marked on the bottom edge and on the left edge
+    b += line(x0, y0 + side + 26, x0 + side, y0 + side + 26, RED, 4) + line(x0, y0 + side + 14, x0, y0 + side + 38, RED, 4) + line(x0 + side, y0 + side + 14, x0 + side, y0 + side + 38, RED, 4)
+    b += M(x0 + side / 2, y0 + side + 76, 'x', 42, RED)
+    b += line(x0 - 26, y0, x0 - 26, y0 + side, RED, 4) + line(x0 - 38, y0, x0 - 14, y0, RED, 4) + line(x0 - 38, y0 + side, x0 - 14, y0 + side, RED, 4)
+    b += M(x0 - 60, y0 + side / 2 + 14, 'x', 42, RED)
+    b += rvg(1, MIX(560, 150, [('S = x²  ', 'i'), ('→', 'i'), ('  x² = 3', 'i')], 44, NAVY, 'start'))
+    b += rvg(2, MIX(560, 240, [('x = √3 ', 'i'), ('  (x > 0)', 'i')], 44, RED, 'start'))
+    b += rvg(3, MIX(560, 330, [('√3 ≈ 1.73 ', 'i'), ('m', 'u')], 44, TEAL, 'start'))
+    return svg(1000, 440, b, '46vh')
+
+
 
 
 # ---------------------------------------------------------------- √2 on the number line, compass at every step
