@@ -1003,3 +1003,5 @@ body.teach-show-on { overflow: hidden; }
 
 /* projector size: ~40px body text at 1920 wide, for decks that were audited at this size (only 9-1 so far) */
 .ts-slide.ts-big { font-size: clamp(20px, 2.7vw, 40px); line-height: 1.6; }
+/* left margin 2 cm (CSS cm = 96 dpi: 2 cm on a laptop screen, scales with the projected image) */
+.ts-slide.ts-big { padding-left: 2cm; }
