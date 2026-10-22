@@ -2,6 +2,7 @@
 (function () {
   const kh = (n) => String(n ?? '').replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
   let root, stage, slideEl, ink, ctx, i = 0, slides = [], students = [];
+  let inkR = null;       // the ink canvas's box while a stroke is being drawn (reading it on every pen event would force a layout each time)
   let tool = 'none', color = '#e03131', size = 4, drawing = false, cur = null, spot = null, stamp = '✔';
   let clockT = 0, geoColor = '#212529', geoSize = 2, colorSetter = null, offTools = null, meta = { grade: '', lesson: '' }, lensPin = false, toolSetter = null, lensIco = null, lens = null, lensIn = null, lensClone = null, lensRaf = 0, lensGo = { x: 0, y: 0, z: 1 }, lensNow = { x: 0, y: 0, z: 1 }, lensOn = false, lensZoom = 2.2;
   let sizeSetter = null, toastEl = null, toastT = 0;
@@ -261,7 +262,7 @@
   }
 
   function pos(e) {
-    const r = ink.getBoundingClientRect();
+    const r = inkR || ink.getBoundingClientRect();
     const q = { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() };
     if (e.pointerType === 'pen' && e.pressure > 0) q.pr = e.pressure;          // a pen reports how hard it is pressed; mouse and touch do not
     return q;
@@ -327,6 +328,26 @@
       pw += (wOf(pts[k]) - pw) * .4; ctx.lineWidth = pw;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(pts[k].x, pts[k].y, b.x, b.y); ctx.stroke();
     }
+    st._pw = pw;
+  }
+
+  // live pen stroke: only the points that arrived since the last frame are painted (same curve and widths as the final repaint, so nothing changes when the pen lifts)
+  function plainPen(st) { return st.t === 'pen' && (!st.k || st.k === 'ball'); }
+  function liveSegments(st) {
+    const pts = st.p, n = pts.length, wOf = (q) => st.w * (0.35 + 1.3 * (q.pr == null ? 0.5 : q.pr)), press = pts.some((q) => q.pr != null);
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = st.c; ctx.fillStyle = st.c;
+    if (n === 1) { ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, (press ? wOf(pts[0]) : st.w) / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return; }
+    if (st._k == null) { st._k = 1; st._pw = press ? wOf(pts[0]) : st.w; }
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    for (let k = st._k; k < n - 1; k++) {                                   // segments whose end is already known
+      const a = k === 1 ? pts[0] : mid(pts[k - 1], pts[k]), b = mid(pts[k], pts[k + 1]);
+      if (press) st._pw += (wOf(pts[k]) - st._pw) * .4;
+      ctx.lineWidth = press ? st._pw : st.w; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(pts[k].x, pts[k].y, b.x, b.y); ctx.stroke();
+      st._k = k + 1;
+    }
+    const a = n >= 3 ? mid(pts[n - 2], pts[n - 1]) : pts[0], l = pts[n - 1];   // the head: a short straight lead-in so the line reaches the pen tip; the final repaint replaces it
+    ctx.lineWidth = press ? st._pw + (wOf(l) - st._pw) * .4 : st.w; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(l.x, l.y); ctx.stroke();
+    ctx.restore();
   }
 
   const rnd = (n) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); };
@@ -371,7 +392,7 @@
       strokes.forEach(paint); ctx = real; baseList = strokes.slice();
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ink.width, ink.height); ctx.drawImage(baseCv, 0, 0); ctx.restore();
-    if (cur) paint(cur);
+    if (cur) { paint(cur); if (plainPen(cur)) { cur._k = Math.max(1, cur.p.length - 1); } }
     if ((tool === 'erase' || penErase) && hoverP) {                                // the eraser's size, so the teacher sees what will be rubbed out
       ctx.save(); ctx.strokeStyle = 'rgba(30,41,59,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.arc(hoverP.x, hoverP.y, eraseR, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
@@ -816,11 +837,15 @@
   function handMove(e) {
     if (!hand) return;
     if (!HAND_TOOLS.includes(tool) || e.pointerType === 'touch') { hand.hidden = true; return; }
-    const r = ink.getBoundingClientRect();
-    hand.style.left = (e.clientX - r.left - 8) + 'px';
-    hand.style.top = (e.clientY - r.top - 88) + 'px';
+    handAt = { x: e.clientX, y: e.clientY };
     hand.hidden = false;
+    if (!handRaf) handRaf = requestAnimationFrame(() => {                              // the on-screen pen cursor moves once per frame, not once per pen event
+      handRaf = 0; if (!handAt) return;
+      const r = inkR || ink.getBoundingClientRect();
+      hand.style.left = (handAt.x - r.left - 8) + 'px'; hand.style.top = (handAt.y - r.top - 88) + 'px';
+    });
   }
+  let handAt = null, handRaf = 0;
 
   function bindInk() {
     hand = makeHand();
@@ -833,7 +858,8 @@
     ink.addEventListener('pointerenter', handMove);
     ink.addEventListener('pointerleave', () => { if (hand) hand.hidden = true; });
     ink.addEventListener('pointerdown', () => { if (hand) hand.classList.add('writing'); });
-    window.addEventListener('pointerup', () => { if (hand) hand.classList.remove('writing'); });
+    window.addEventListener('pointerup', () => { inkR = null; if (hand) hand.classList.remove('writing'); });
+    window.addEventListener('pointercancel', () => { inkR = null; });
     ink.addEventListener('contextmenu', (e) => e.preventDefault());              // the pen's side button must not open a menu
     ink.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'pen') lastPenAt = performance.now();
@@ -846,6 +872,7 @@
       const eraserEnd = e.pointerType === 'pen' && (e.button === 5 || (e.buttons & 34) !== 0);                 // eraser end (32) or side button (2)
       if (e.button && e.button !== 0 && !eraserEnd) return;
       downType = e.pointerType;
+      inkR = ink.getBoundingClientRect();
       const p = pos(e);
       closeMenus();
       if (eraserEnd) { penErase = true; drawing = true; eraseAt(p); ink.setPointerCapture && ink.setPointerCapture(e.pointerId); e.preventDefault(); return; }
@@ -868,6 +895,22 @@
       ink.setPointerCapture && ink.setPointerCapture(e.pointerId);
       e.preventDefault();
     };
+    // tablet jitter and pressure noise are filtered as the points arrive: slow movement is smoothed more, fast movement follows the pen closely
+    function ingest(q) {
+      const l = cur.p[cur.p.length - 1];
+      if (!l) { cur.p.push(q); return; }
+      const d = Math.hypot(q.x - l.x, q.y - l.y);
+      if (d <= 0.6) return;
+      const a = Math.min(1, 0.45 + d * 0.07);
+      const s = { x: l.x + (q.x - l.x) * a, y: l.y + (q.y - l.y) * a, t: q.t };
+      if (q.pr != null) s.pr = l.pr == null ? q.pr : l.pr + (q.pr - l.pr) * 0.3;
+      cur.p.push(s);
+    }
+    let frameQ = 0;
+    function framePaint() {                                                        // one paint per screen frame, however many pen events arrived
+      if (frameQ) return;
+      frameQ = requestAnimationFrame(() => { frameQ = 0; if (!cur) return; if (plainPen(cur)) liveSegments(cur); else redraw(); });
+    }
     const move = (e) => {
       if (tool === 'laser') {
         laser.push({ ...pos(e), t: performance.now() });
@@ -885,17 +928,22 @@
         if (cur.t === 'pen' || cur.t === 'hi') {
           // a pen reports many points between two frames: keep them all, so fast strokes stay smooth
           const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
-          (evs.length ? evs : [e]).forEach((ev) => { const q = pos(ev), l = cur.p[cur.p.length - 1]; if (!l || Math.hypot(q.x - l.x, q.y - l.y) > 0.6) cur.p.push(q); });
-        } else cur.p = [cur.p[0], p];
-        redraw();
+          (evs.length ? evs : [e]).forEach((ev) => ingest(pos(ev)));
+          framePaint();
+        } else { cur.p = [cur.p[0], p]; redraw(); }
       }
       e.preventDefault();
     };
     const up = (e) => {
       if (!drawing) return;
       if (e && downType && e.pointerType && e.pointerType !== downType) return;
-      drawing = false; downType = ''; if (penErase) { penErase = false; redraw(); return; }
-      if (cur) { strokes.push(cur); undoS.push({ add: cur }); redoS = []; cur = null; redraw(); syncUndo(); }
+      inkR = null; drawing = false; downType = ''; if (penErase) { penErase = false; redraw(); return; }
+      if (cur && (cur.t === 'pen' || cur.t === 'hi') && e && e.clientX != null) {
+        const q = pos(e), l = cur.p[cur.p.length - 1];
+        if (l && Math.hypot(q.x - l.x, q.y - l.y) > 0.3) { q.pr = l.pr; cur.p.push(q); }
+      }
+      if (frameQ) { cancelAnimationFrame(frameQ); frameQ = 0; }
+      if (cur) { delete cur._k; delete cur._pw; strokes.push(cur); undoS.push({ add: cur }); redoS = []; cur = null; redraw(); syncUndo(); }
     };
     function eraseAt(p) {
       const hit = strokes.filter((st) => near(st, p, eraseR));
@@ -2236,7 +2284,7 @@
       tick(); clearInterval(clockT); clockT = setInterval(tick, 5000);
       tbar.prepend(ck);   // the clock lives in the header bar, top-left
     }
-    ctx = ink.getContext('2d');
+    ctx = ink.getContext('2d', { desynchronized: true });   // lower latency for the pen where the browser supports it
     bindInk();
     penPalette();
     requestAnimationFrame(() => { fitInk(); show(opt.start ? opt.start + pre : 0); });   // opt.start counts the lesson's own slides, so skip the cover we put in front
