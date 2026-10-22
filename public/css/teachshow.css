@@ -1028,3 +1028,6 @@ body.teach-show-on { overflow: hidden; }
 
 /* no rule under the heading (ts-big decks) */
 .ts-slide.ts-big h2 { border-bottom: 0; padding-bottom: 0; }
+
+/* "≠" is drawn from a private-use glyph of KaTeX_Main: keep that font for it inside the Mathcad-style decks (otherwise it shows as a box) */
+.ts-slide.ts-big .katex .mrel:has(.thinbox), .ts-slide.ts-big .katex .mrel:has(.thinbox) *, .ts-slide.ts-big .katex .thinbox, .ts-slide.ts-big .katex .thinbox * { font-family: KaTeX_Main, 'Times New Roman', serif; font-style: normal; }
