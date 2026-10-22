@@ -142,7 +142,28 @@ S.append({'k': 'title', 'c': 'cover', 'html':
     + '<li>បែងចែកចំនួនសនិទាន និងចំនួនអសនិទានបានដោយមានហេតុផល។</li>'
     + '<li>ធ្វើប្រមាណវិធីលើចំនួនអសនិទានបានយ៉ាងស្ទាត់ជំនាញ។</li></ol></div>'})
 
-S.append(ex('ផែនទីមេរៀន', 'ថ្ងៃនេះយើងនឹងដើរតាមជំហានទាំងប្រាំមួយនេះ', fig(lesson_map())))
+def _map_box(no, tex, name, col):
+    return (f'<div style="border:4px solid {col};border-radius:18px;background:#fff;padding:.5em .6em .6em;text-align:center;position:relative;min-height:9.5em">'
+            f'<span style="position:absolute;left:-.5em;top:-.6em;background:{col};color:#fff;border-radius:50%;width:1.7em;height:1.7em;line-height:1.7em;font-weight:800">{no}</span>'
+            f'<div style="color:{col};font-size:1.35em;margin:.5em 0 .3em;min-height:2.6em;display:flex;align-items:center;justify-content:center">{m(tex)}</div>'
+            f'<div style="font-weight:700;color:#264b66;font-size:.95em">{name}</div></div>')
+
+
+_MAP = [('១', r'\sqrt{a}', 'ឫសការេ និងចំនួនអសនិទាន', '#1c7ed6'), ('២', r'\sqrt[3]{a}', 'ឫសគូប', '#2b8a87'),
+        ('៣', r'\sqrt{a}\cdot\sqrt{b}=\sqrt{ab}', 'គុណ និងចែករ៉ាឌីកាល់', '#2f9e44'), ('៤', r'3\sqrt{2}=\sqrt{18}', 'បញ្ចេញ និងបញ្ចូល', '#f08c00'),
+        ('៥', r'3\sqrt{2}+4\sqrt{2}=7\sqrt{2}', 'បូក និងដក', '#e8590c'), ('៦', r'\dfrac{1}{\sqrt{2}}=\dfrac{\sqrt{2}}{2}', 'បំបាត់រ៉ាឌីកាល់ពីភាគបែង', '#ae3ec9')]
+assert 3 * math.sqrt(2) - math.sqrt(18) < 1e-12 and abs(1 / math.sqrt(2) - math.sqrt(2) / 2) < 1e-12 and abs(3 * math.sqrt(2) + 4 * math.sqrt(2) - 7 * math.sqrt(2)) < 1e-12
+
+
+def _map_row(items, arrow):
+    out = ''
+    for k, it in enumerate(items):
+        out += _map_box(*it) + (f'<div style="align-self:center;font-size:1.8em;color:#868e96">{arrow}</div>' if k < 2 else '')
+    return f'<div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.4em;margin:.5em 0">{out}</div>'
+
+
+S.append(ex('ផែនទីមេរៀន', 'ថ្ងៃនេះយើងនឹងដើរតាមជំហានទាំងប្រាំមួយនេះ',
+    _map_row(_MAP[:3], '→') + '<div style="text-align:right;padding-right:3.5em;font-size:1.6em;color:#868e96">↓</div>' + _map_row([_MAP[5], _MAP[4], _MAP[3]], '←')))
 
 S.append(slide('រំលឹក', 'រំលឹកចំណេះដឹង',
     p('តើ ' + m('x') + ' ស្មើប៉ុន្មាន បើ ' + m('x + 5 = 3') + '? យើងទាញបាន ' + m('x = 3 - 5 = -2') + '។')
