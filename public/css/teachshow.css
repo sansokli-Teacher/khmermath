@@ -1000,3 +1000,6 @@ body.teach-show-on { overflow: hidden; }
 .att-period { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; padding: 4px 8px; }
 .att-period small { font-size: 10px; font-weight: 600; opacity: .8; white-space: nowrap; }
 .att-period.live { box-shadow: 0 0 0 2px rgba(47, 158, 68, .45); }
+
+/* projector size: ~40px body text at 1920 wide, for decks that were audited at this size (only 9-1 so far) */
+.ts-slide.ts-big { font-size: clamp(20px, 2.7vw, 40px); line-height: 1.6; }

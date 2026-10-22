@@ -161,7 +161,7 @@
     if (!depth) { if (slides[i] && slideEl && slideEl.innerHTML) slides[i]._ink = strokes; lensOff(); lensClone = null; } // remember what was written on the slide we leave
     i = Math.max(0, Math.min(slides.length - 1, n));
     const s = slides[i] || { html: '' };
-    slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '');
+    slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '') + (BIG_TEXT ? ' ts-big' : '');
     slideEl.innerHTML = s.k === 'key' ? cardify(s.html || '') : (s.html || '');
     math(slideEl);
     fillMeta();
@@ -2158,6 +2158,8 @@
   // lessons whose generated deck gets the same first slide as Lesson 1: the school (logo, name), the teacher, the class, the school year.
   // The lesson's own cover (title + objectives) then comes second, exactly like Lesson 1. Add "grade-lesson" keys to give more lessons this.
   const BRANDED_LESSONS = new Set(['7-2', '7-3', '7-12', '9-1']);
+  const BIG_TEXT_LESSONS = new Set(['9-1']);   // decks checked for overflow at the larger projector text size
+  let BIG_TEXT = false;
   function brandSlide() {
     return {
       k: 'title', c: 'brand',
@@ -2190,6 +2192,7 @@
     strokes = []; undoS = []; redoS = []; cur = null; i = 0; slideEl = null;
     if (!slides.length) return Exam.notify('មិនទាន់មានស្លាយ។');
     const lessonKey = `${opt.grade}-${opt.lesson}`;
+    BIG_TEXT = BIG_TEXT_LESSONS.has(lessonKey);
     const theme = LESSON_THEMES[lessonKey] || null, branded = BRANDED_LESSONS.has(lessonKey);
     const pre = (theme ? 1 : 0) + (branded ? 1 : 0);                // pre = slides added in front of the lesson's own slides
     themeCls = theme ? `ts-theme-${theme.name}` : '';

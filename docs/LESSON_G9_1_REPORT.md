@@ -38,3 +38,7 @@ Please check these three in the printed book before teaching them.
 - Two new slides after the «រ៉ាឌីកាល់» intro of part 1 and before the cube table in part 2: a flower whose petals carry numbers and whose roots underground carry their roots (idea from the user's sketch; the drawing is my own).
   ដើមការេ: 9 → 3, 5 → √5, −4 → none (dashed root). ដើមគូប: 8 → 2, 17 → ∛17, −27 → −3. Roots appear one at a time. Values asserted in `plant()`.
 - The Khmer sentences on these two slides are mine: please review. Audit: 147 slides on screen, no overflow, no text under 17 px, no maths errors. Not viewed: the root-by-root reveal steps one by one, projector/phone.
+
+## Update 2026-10-22 (projector text size)
+- Grade 9 Lesson 1 now uses a larger base text (`.ts-slide.ts-big`, ~40 px at 1920 px wide, was 28 px max). Only 9-1 (`BIG_TEXT_LESSONS` in teachshow.js): the Grade 7 decks were not re-audited at this size and keep the old size.
+- Audit at 1920x873: 148 slides, no overflow, no text under 22 px. Not tested on a real projector.
