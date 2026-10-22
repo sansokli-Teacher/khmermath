@@ -29,11 +29,11 @@ def ans(tex):
     return f'<span style="color:#2f9e44">{m(tex)}</span>'
 
 
-def qa(kick, title, rows, cols_=2, intro='', labels=LB, k='prac'):
+def qa(kick, title, rows, cols_=2, intro='', labels=LB, k='prac', together=False):
     """practice: the problem is always on screen, its answer appears on the next press of →. rows = [(problem tex, answer tex)]"""
     cells = ''
     for i, (q, a) in enumerate(rows, 1):
-        cells += f'<div><div>{lab_cell(labels[i - 1] + ".", m(q))}</div>{rvd(i, ans(a))}</div>'
+        cells += f'<div><div>{lab_cell(labels[i - 1] + ".", m(q))}</div>{rvd(1 if together else i, ans(a))}</div>'
     body = (p(intro) if intro else '') + f'<div style="display:grid;grid-template-columns:repeat({cols_},1fr);gap:.4em 2.2em;margin-top:.3em">{cells}</div>'
     return slide(kick, title, body, k=k)
 
@@ -349,6 +349,27 @@ assert near(1 / (V(5) + V(2)), (V(5) - V(2)) / 3) and near((3 * V(2) + 2 * V(3))
 assert near(3 / (C(5) - C(4)), 3 * C(25) + 3 * C(20) + 6 * C(2)) and near(C(3) / (C(4) + C(2)), (2 * C(6) - 2 * C(3) + C(12)) / 6)
 S.append(qa(K[8], 'ប្រតិបត្តិ ៖ សម្រួល', [(r'\dfrac{1}{\sqrt{5}+\sqrt{2}}', r'=\dfrac{\sqrt{5}-\sqrt{2}}{3}'), (r'\dfrac{3\sqrt{2}+2\sqrt{3}}{\sqrt{12}-\sqrt{18}}', r'=-5-2\sqrt{6}'),
     (r'\dfrac{3}{\sqrt[3]{5}-\sqrt[3]{4}}', r'=3\sqrt[3]{25}+3\sqrt[3]{20}+6\sqrt[3]{2}'), (r'\dfrac{\sqrt[3]{3}}{\sqrt[3]{4}+\sqrt[3]{2}}', r'=\dfrac{2\sqrt[3]{6}-2\sqrt[3]{3}+\sqrt[3]{12}}{6}')], 1))
+
+# ================================================================ 9. លំហាត់ (level one of the lesson file's exercises; answers appear together on one press)
+S.append(part(9, 'លំហាត់'))
+ex1 = [(r'\sqrt{9}', '3', 3 ** 2 == 9), (r'\sqrt{16}', '4', 4 ** 2 == 16), (r'\sqrt{36}', '6', 6 ** 2 == 36), (r'-\sqrt{64}', '-8', 8 ** 2 == 64),
+       (r'-\sqrt{100}', '-10', 10 ** 2 == 100), (r'\sqrt{121}', '11', 11 ** 2 == 121), (r'-\sqrt{144}', '-12', 12 ** 2 == 144), (r'\sqrt{625}', '25', 25 ** 2 == 625),
+       (r'\sqrt[3]{8}', '2', 2 ** 3 == 8), (r'\sqrt[3]{-8}', '-2', (-2) ** 3 == -8), (r'-\sqrt[3]{27}', '-3', 3 ** 3 == 27), (r'-\sqrt[3]{64}', '-4', 4 ** 3 == 64),
+       (r'\sqrt[3]{125}', '5', 5 ** 3 == 125), (r'\sqrt[3]{216}', '6', 6 ** 3 == 216)]
+assert all(ok for _, _, ok in ex1) and 4 ** 3 < 100 < 5 ** 3
+S.append(qa('លំហាត់', 'លំហាត់ទី ១ ៖ ចូរគណនា', [(t, '=' + a_) for t, a_, _ in ex1] + [(r'\sqrt[3]{100}', r'\text{ជាអសនិទាន}')], 5, labels='កខគឃងចឆជឈញដឋឌឍណ', together=True))
+ex2 = [(r'\sqrt{\dfrac{9}{16}}', r'\dfrac{3}{4}', Fraction(3, 4) ** 2 == Fraction(9, 16)), (r'\sqrt{\dfrac{49}{9}}', r'\dfrac{7}{3}', Fraction(7, 3) ** 2 == Fraction(49, 9)),
+       (r'-\sqrt{\dfrac{81}{4}}', r'-\dfrac{9}{2}', Fraction(9, 2) ** 2 == Fraction(81, 4)), (r'\sqrt{\dfrac{169}{49}}', r'\dfrac{13}{7}', Fraction(13, 7) ** 2 == Fraction(169, 49)),
+       (r'\sqrt{\dfrac{196}{25}}', r'\dfrac{14}{5}', Fraction(14, 5) ** 2 == Fraction(196, 25)), (r'-\sqrt{\dfrac{400}{225}}', r'-\dfrac{4}{3}', Fraction(4, 3) ** 2 == Fraction(400, 225)),
+       (r'\sqrt[3]{\dfrac{1}{8}}', r'\dfrac{1}{2}', Fraction(1, 2) ** 3 == Fraction(1, 8)), (r'\sqrt[3]{\dfrac{8}{27}}', r'\dfrac{2}{3}', Fraction(2, 3) ** 3 == Fraction(8, 27)),
+       (r'\sqrt[3]{\dfrac{64}{125}}', r'\dfrac{4}{5}', Fraction(4, 5) ** 3 == Fraction(64, 125)), (r'\sqrt[3]{\dfrac{512}{343}}', r'\dfrac{8}{7}', Fraction(8, 7) ** 3 == Fraction(512, 343)),
+       (r'\sqrt[3]{-\dfrac{216}{1000}}', r'-\dfrac{3}{5}', Fraction(-3, 5) ** 3 == Fraction(-216, 1000))]
+assert all(ok for _, _, ok in ex2)
+S.append(qa('លំហាត់', 'លំហាត់ទី ២ ៖ ចូរគណនា', [(t, '=' + a_) for t, a_, _ in ex2], 3, labels='កខគឃងចឆជឈញដ', together=True))
+assert near(V(16 ** 3), 64) and near(-C(36 ** 2), -6 * C(6)) and near(V(64 ** 3), 512) and near(C(-8) ** 3, -8) and near(C(-27 ** 3), -27) and near(C(1), 1) and near(C(8 ** 2), 4) and near(C(64 ** 2), 16) and near(C((-27) ** 2), 9)
+S.append(qa('លំហាត់', 'លំហាត់ទី ៣ ៖ ចូរសម្រួលរ៉ាឌីកាល់', [
+    (r'\sqrt{16^3}', '=64'), (r'-\sqrt[3]{36^2}', r'=-6\sqrt[3]{6}'), (r'\sqrt{64^3}', '=512'), (r'(\sqrt[3]{-8})^3', '=-8'), (r'\sqrt[3]{-27^3}', '=-27'),
+    (r'\sqrt[3]{1^5}', '=1'), (r'\sqrt[3]{8^2}', '=4'), (r'\sqrt[3]{64^2}', '=16'), (r'\sqrt[3]{(-27)^2}', '=9')], 3, together=True))
 
 # ---------------------------------------------------------------- summary, exit ticket, end
 S.append(key('សង្ខេប', 'សេចក្តីសង្ខេប', ul([
