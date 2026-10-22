@@ -78,6 +78,24 @@
     if (window.renderMathInElement) go(); else window.addEventListener('load', go);
   }
   function sndOn() { return $('tg-sound').checked && !(G && G.mute); }
+  // Browsers keep sound blocked until the page has had a click or key press, and sound switched off in another game (live quiz, bingo) stays off here.
+  // When the game opens that way it would be silent: show one clear button that turns the sound on.
+  var gateTimer = 0;
+  function audioGate() {
+    if (!window.KmSound || !KmSound.state) return;
+    var old = $('tg-unmute'); if (old) old.remove(); clearInterval(gateTimer);
+    var blocked = function () { return sndOn() && (KmSound.state() !== 'running' || KmSound.muted()); };
+    var show = function () {
+      if (!blocked() || $('tg-unmute') || !$('tg-play') || $('tg-play').hidden) return;
+      var b = el('button', 'tg-unmute', '🔊 ចុចដើម្បីបើកសំឡេង'); b.id = 'tg-unmute'; b.type = 'button';
+      b.addEventListener('click', function () { try { if (KmSound.muted()) KmSound.toggle(); KmSound.unlock(); } catch (e) {} bgm('main', 0.32); b.remove(); });
+      $('tg').appendChild(b);
+    };
+    setTimeout(show, 600);
+    var once = function () { try { KmSound.unlock(); } catch (e) {} bgm('main', 0.32); };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, once, { once: true, capture: true }); });
+    gateTimer = setInterval(function () { var b = $('tg-unmute'); if (b && !blocked()) b.remove(); if (!$('tg-play') || $('tg-play').hidden || (G && G.finished)) { if (b) b.remove(); clearInterval(gateTimer); } }, 700);
+  }
   function isPic(s) { return /^(data:image|https?:)/.test(s || ''); }
   function picNode(img, cls) {                       // a picture: uploaded/drawn image, or text/emoji shown big
     var box = el('span', 'tg-pic ' + (cls || ''));
@@ -289,7 +307,7 @@
   }
   function saveGame() { if (G) put(GAME, G); }
   function snapshot() { hist.push(JSON.stringify(G)); if (hist.length > 40) hist.shift(); }
-  function showPlay() { bgm('main', 0.32); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
+  function showPlay() { bgm('main', 0.32); audioGate(); lastTurn = -1; boardIn = true; $('tg').classList.add('tg-live'); document.documentElement.classList.add('tg-noscroll'); $('tg-setup').hidden = true; $('tg-play').hidden = false; $('tg-sndbtn').textContent = G.mute ? '🔇' : '🔊'; $('tg-board').innerHTML = ''; $('tg-board').removeAttribute('data-boat'); renderAll(); window.scrollTo(0, 0); }
   function showSetup() { if (window.TG_STUDENT) { location.href = 'student.html'; return; }  try { if (window.KmSound) KmSound.stop(); } catch (e) {} stopTimer(); closePop(); $('tg').classList.remove('tg-live'); document.documentElement.classList.remove('tg-noscroll'); if (document.fullscreenElement) document.exitFullscreen(); $('tg-play').hidden = true; $('tg-setup').hidden = false; refreshResume(); }
   function refreshResume() { $('tg-resume').hidden = true; }   // «Edit» ends the old game, so there is no game to resume
   function remaining() { return G.tiles.filter(function (t) { return !t.done; }).length; }

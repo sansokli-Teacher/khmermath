@@ -458,3 +458,7 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 /* result card: class, teacher, date and time; the line that says how many cards each team opens */
 .tg-meta { margin: 2px 0 10px; font-size: clamp(14px, 2.4vw, 20px); font-weight: 700; color: #1f6f66; text-align: center; }
 .tg-balance { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: #e6f6f1; color: #14584f; font-weight: 700; font-size: 14px; }
+
+/* «turn the sound on» button: shown only when the browser blocks sound or it was switched off elsewhere */
+.tg-unmute { position: fixed; z-index: 120; left: 50%; top: 76px; transform: translateX(-50%); padding: 12px 22px; border: 0; border-radius: 99px; background: #e8590c; color: #fff; font: 800 18px 'Kantumruy Pro', sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,.35); cursor: pointer; animation: tg-unmute-pulse 1.6s ease-in-out infinite; }
+@keyframes tg-unmute-pulse { 50% { transform: translateX(-50%) scale(1.06); } }

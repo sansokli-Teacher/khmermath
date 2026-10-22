@@ -167,6 +167,7 @@
     sfx: sfx,
     toggle: toggle,
     unlock: ensure,
+    state: function () { return ctx ? ctx.state : 'none'; },      // 'running' once the browser lets the page play sound (needs a click or key first)
     muted: function () { return muted; },
     isPlaying: function () { return !!cur; }
   };
