@@ -341,10 +341,20 @@ S.append(worked(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រ
     ('ខ', r'B=\dfrac{1+\sqrt{2}}{3-\sqrt{3}}=\dfrac{(1+\sqrt{2})(3+\sqrt{3})}{9-3}=\dfrac{3+\sqrt{3}+3\sqrt{2}+\sqrt{6}}{6}'),
     ('គ', r'C=\dfrac{1+\sqrt{3}}{2+\sqrt{5}}=\dfrac{(1+\sqrt{3})(2-\sqrt{5})}{4-5}=-2+\sqrt{5}-2\sqrt{3}+\sqrt{15}'),
     ('ឃ', r'D=\dfrac{8\sqrt{2}}{\sqrt{20}-\sqrt{18}}=\dfrac{8\sqrt{2}(\sqrt{20}+\sqrt{18})}{20-18}=\dfrac{16\sqrt{10}+48}{2}=8\sqrt{10}+24')]))
-S.append(worked(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រួល (ង និង ច)', [
-    ('ង', r'E=\dfrac{2}{\sqrt[3]{7}}=\dfrac{2(\sqrt[3]{7})^2}{\sqrt[3]{7}(\sqrt[3]{7})^2}=\dfrac{2\sqrt[3]{49}}{7}'),
-    ('ច', r'F=\dfrac{3}{\sqrt[3]{5}-\sqrt[3]{2}}\ \ \text{ប្រើ}\ (a-b)(a^2+ab+b^2)=a^3-b^3'),
-    ('', r'=\dfrac{3(\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4})}{5-2}=\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4}')]))
+assert near(C(7) * C(49), 7) and near(2 / C(7), 2 * C(49) / 7) and near(C(5) ** 3 - C(2) ** 3, 3) and near(3 / (C(5) - C(2)), C(25) + C(10) + C(4))
+assert near((C(5) - C(2)) * (C(25) + C(10) + C(4)), 3)
+S.append(slide(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រួល (ង)', ul([
+    lab_cell('ង.', m(r'E=\dfrac{2}{\sqrt[3]{7}}') + ' ភាគបែងមានឫសគូបតែមួយតួ ។'),
+    'គុណទាំងភាគយក និងភាគបែងនឹង ' + m(r'(\sqrt[3]{7})^2') + ' ដើម្បីឱ្យភាគបែងទៅជា ' + m(r'(\sqrt[3]{7})^3=7') + ' ៖',
+    m(r'E=\dfrac{2\times(\sqrt[3]{7})^2}{\sqrt[3]{7}\times(\sqrt[3]{7})^2}=\dfrac{2\sqrt[3]{49}}{(\sqrt[3]{7})^3}'),
+    m(r'E=\dfrac{2\sqrt[3]{49}}{7}') + ' ដោយ ' + m(r'(\sqrt[3]{7})^2=\sqrt[3]{49}') + ' ។']), k='sol'))
+S.append(slide(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រួល (ច)', ul([
+    lab_cell('ច.', m(r'F=\dfrac{3}{\sqrt[3]{5}-\sqrt[3]{2}}') + ' ភាគបែងមានឫសគូបពីរតួ ។'),
+    'ប្រើរូបមន្ត ' + m(r'(a-b)(a^2+ab+b^2)=a^3-b^3') + ' ដោយយក ' + m(r'a=\sqrt[3]{5}') + ' , ' + m(r'b=\sqrt[3]{2}') + ' ។',
+    'កន្សោមបំពេញ ' + m(r'a^2+ab+b^2=\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4}') + ' ។',
+    'គុណទាំងភាគយក និងភាគបែងនឹងកន្សោមនេះ ៖ ' + m(r'F=\dfrac{3(\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4})}{(\sqrt[3]{5}-\sqrt[3]{2})(\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4})}'),
+    'ភាគបែង ' + m(r'=(\sqrt[3]{5})^3-(\sqrt[3]{2})^3=5-2=3') + ' ដូចនេះ ៖',
+    m(r'F=\dfrac{3(\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4})}{3}=\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4}')]), k='sol'))
 assert near(1 / (V(5) + V(2)), (V(5) - V(2)) / 3) and near((3 * V(2) + 2 * V(3)) / (V(12) - V(18)), -5 - 2 * V(6))
 assert near(3 / (C(5) - C(4)), 3 * C(25) + 3 * C(20) + 6 * C(2)) and near(C(3) / (C(4) + C(2)), (2 * C(6) - 2 * C(3) + C(12)) / 6)
 S.append(qa(K[8], 'ប្រតិបត្តិ ៖ សម្រួល', [(r'\dfrac{1}{\sqrt{5}+\sqrt{2}}', r'=\dfrac{\sqrt{5}-\sqrt{2}}{3}'), (r'\dfrac{3\sqrt{2}+2\sqrt{3}}{\sqrt{12}-\sqrt{18}}', r'=-5-2\sqrt{6}'),
@@ -383,7 +393,7 @@ exit_rows = [('គណនា ' + m(r'\sqrt{49}') + ' និង ' + m(r'\sqrt[3]{-
              ('សម្រួល ' + m(r'2\sqrt{5}+\sqrt{45}'), m(r'2\sqrt{5}+3\sqrt{5}=5\sqrt{5}')),
              ('បំបាត់រ៉ាឌីកាល់ពីភាគបែង ' + m(r'\dfrac{6}{\sqrt{3}}'), m(r'\dfrac{6\sqrt{3}}{3}=2\sqrt{3}')),
              (m(r'\sqrt{20}') + ' ជាចំនួនសនិទាន ឬអសនិទាន? ហេតុអ្វី?', 'អសនិទាន ព្រោះ ' + m('20') + ' មិនមែនជាការេប្រាកដ')]
-S.append(ex('សំបុត្រចេញ', 'ពិនិត្យយល់ចុងក្រោយ', p('សរសេរចម្លើយលើក្រដាសតូច ហើយប្រគល់ជូនគ្រូមុនចេញ ។') + ''.join(
+S.append(ex(None, 'ត្រួតពិនិត្យចំណេះដឹង', p('សរសេរចម្លើយលើក្រដាសតូច ហើយប្រគល់ជូនគ្រូមុនចេញ ។') + ''.join(
     f'<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1em;align-items:center;margin:.3em 0"><div><b>{i}.</b> {q}</div>{rvd(i, a)}</div>' for i, (q, a) in enumerate(exit_rows, 1))))
 S.append({'k': 'title', 'html': '<p class="ts-kicker">មេរៀនទី ១</p><h1>ចប់មេរៀន</h1><p class="ts-sub">ចំនួនអសនិទាន</p><div class="th-you">សូមអរគុណ</div>'})
 
