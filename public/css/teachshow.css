@@ -1025,3 +1025,6 @@ body.teach-show-on { overflow: hidden; }
 
 /* heading: the slide blue, same size as the section tag above it (ts-big decks) */
 .ts-slide.ts-big h2, .ts-slide.ts-big.ts-key h2, .ts-slide.ts-big.ts-ex h2, .ts-slide.ts-big.ts-prac h2, .ts-slide.ts-big.ts-sol h2 { color: #0f5173; font-size: 1.1em; }
+
+/* no rule under the heading (ts-big decks) */
+.ts-slide.ts-big h2 { border-bottom: 0; padding-bottom: 0; }
