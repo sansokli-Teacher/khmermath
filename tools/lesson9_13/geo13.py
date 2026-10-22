@@ -1,12 +1,14 @@
 """Geometry pictures for Grade 9 Lesson 13 «រង្វង់និងបន្ទាត់». Everything is computed from coordinates (nothing is traced from the book),
 and the properties the lesson teaches are asserted for every figure: a tangent is perpendicular to its radius, equal chords are equidistant, tangents from a point are equal ...
 Maths labels are typeset (KaTeX in a foreignObject); pieces appear with the slide's reveal steps (rvg) and fade in smoothly."""
-import math, os, sys
+import math, os, re, sys
 HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson1'))
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson9_1'))
 from lib import svg, rvg, T, line as _line
 from vis_book import KT
+
+_CUR = [None]      # the picture being built: every line, circle and label is registered in it so that labels can step aside (see Cv.out)
 
 INK, BLUE, RED, GREEN, ORANGE, PURPLE, GREY = '#1f4a5f', '#1c7ed6', '#e03131', '#2f9e44', '#e8590c', '#ae3ec9', '#7d8791'
 FILL = '#eef5fb'
@@ -43,11 +45,19 @@ def near(a, b, tol=1e-6):
 
 
 # ---------------------------------------------------------------- primitives (each returns svg text)
+def _reg(**it):
+    if _CUR[0] is not None:
+        _CUR[0].items.append(it)
+
+
 def circle(c, r, col=INK, w=5, fill='none'):
+    if col != 'none' and w:
+        _reg(k='circ', c=c, r=r)
     return f'<circle cx="{c[0]:.1f}" cy="{c[1]:.1f}" r="{r:.1f}" fill="{fill}" stroke="{col}" stroke-width="{w}"/>'
 
 
 def seg(a, b, col=INK, w=5, dash=''):
+    _reg(k='seg', a=a, b=b)
     return _line(f'{a[0]:.1f}', f'{a[1]:.1f}', f'{b[0]:.1f}', f'{b[1]:.1f}', col, w, dash)
 
 
@@ -59,11 +69,26 @@ def ext(a, b, k0=0.0, k1=0.0):
 
 
 def dot(p, col=INK, r=6.5):
+    _reg(k='pt', p=p, r=r)
     return f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="{r}" fill="{col}"/>'
 
 
-def lab(p, tex, dx=0, dy=0, col=INK, size=40, w=150):
-    return KT(p[0] + dx, p[1] + dy, tex, size, col, w=w)
+def lab(p, tex, dx=0, dy=0, col=INK, size=40, w=150, maxr=66, anchor=None):
+    """typeset label centred at p + (dx, dy); inside a picture it is only a placeholder: Cv.out() moves it a little if it would sit on a line or on another label"""
+    if _CUR[0] is None:
+        return KT(p[0] + dx, p[1] + dy, tex, size, col, w=w)
+    cv = _CUR[0]
+    i = sum(1 for it in cv.items if it['k'] == 'lab')
+    cv.items.append(dict(k='lab', i=i, x=p[0] + dx, y=p[1] + dy, d=(dx, dy), tex=tex, size=size, col=col, w=w, maxr=maxr, anchor=anchor))
+    return f'@@L{i}@@'
+
+
+def _est_w(tex, size):
+    """rough printed width of a KaTeX label (px), enough to keep labels off the lines"""
+    t = re.sub(r'\\text\{([^}]*)\}', r'\1', tex).replace('\\ ', ' ').replace('^\\circ', '\u00b0').replace("'", '\u2032')
+    t = re.sub(r'\\[a-zA-Z]+', 'x', t)
+    t = re.sub(r'[{}^_]', '', t)
+    return sum(0.34 if ch in ' .,\u2032\u00b0' else 0.64 for ch in t) * size
 
 
 def poly(pts, fill, stroke='none', w=0, op=1):
@@ -78,6 +103,8 @@ def rightmark(v, p1, p2, s=20, col=INK, w=3):
     a = (v[0] + u1[0] * s, v[1] + u1[1] * s)
     b = (a[0] + u2[0] * s, a[1] + u2[1] * s)
     c = (v[0] + u2[0] * s, v[1] + u2[1] * s)
+    _reg(k='seg', a=a, b=b)
+    _reg(k='seg', a=b, b=c)
     return f'<polyline points="{a[0]:.1f},{a[1]:.1f} {b[0]:.1f},{b[1]:.1f} {c[0]:.1f},{c[1]:.1f}" fill="none" stroke="{col}" stroke-width="{w}"/>'
 
 
@@ -88,6 +115,7 @@ def tick(a, b, n=1, col=RED, size=11, w=4, at=0.5):
     for k in range(n):
         o = (k - (n - 1) / 2) * 9
         cx, cy = m[0] + ux * o, m[1] + uy * o
+        _reg(k='seg', a=(cx - uy * size, cy + ux * size), b=(cx + uy * size, cy - ux * size))
         out += _line(f'{cx - uy * size:.1f}', f'{cy + ux * size:.1f}', f'{cx + uy * size:.1f}', f'{cy - ux * size:.1f}', col, w)
     return out
 
@@ -96,6 +124,10 @@ def arc(v, a0, a1, r, col=ORANGE, w=4, fill=''):
     """arc around v from angle a0 to a1 (degrees, counter-clockwise on screen); fill = colour for a pie slice"""
     p0, p1 = pol(v, r, a0), pol(v, r, a1)
     large = 1 if (a1 - a0) % 360 > 180 else 0
+    n_ = 10
+    span = (a1 - a0) % 360
+    for i in range(n_):
+        _reg(k='seg', a=pol(v, r, a0 + span * i / n_), b=pol(v, r, a0 + span * (i + 1) / n_))
     d = f'M {p0[0]:.1f} {p0[1]:.1f} A {r} {r} 0 {large} 0 {p1[0]:.1f} {p1[1]:.1f}'
     if fill:
         return f'<path d="M {v[0]:.1f} {v[1]:.1f} L {p0[0]:.1f} {p0[1]:.1f} A {r} {r} 0 {large} 0 {p1[0]:.1f} {p1[1]:.1f} Z" fill="{fill}" fill-opacity=".35" stroke="{col}" stroke-width="{w}"/>'
@@ -141,14 +173,90 @@ def tangent_pts(c, r, p):
 
 class Cv:
     def __init__(self, W=640, H=440, maxh='58vh'):
-        self.W, self.H, self.maxh, self.parts = W, H, maxh, []
+        self.W, self.H, self.maxh, self.parts, self.items, self._mark = W, H, maxh, [], [], 0
+        _CUR[0] = self
 
     def add(self, g, step=0, until=None):
+        win = (step, until if until else 10 ** 6)          # the steps during which this group is on screen
+        for it in self.items[self._mark:]:
+            it['win'] = win
+        self._mark = len(self.items)
         self.parts.append(rvg(step, g, until) if (step or until) else g)
         return self
 
+    def _place_labels(self, body):
+        """a label keeps the spot it was given unless it would touch a line, a point or another label that is on screen at the same time;
+        then it takes the nearest free spot (tried in rings around it), so no label ever sits on a line"""
+        for it in self.items[self._mark:]:
+            it['win'] = (0, 10 ** 6)
+        obst = []
+        for it in self.items:
+            k = it['k']
+            if k == 'seg':
+                a, b = it['a'], it['b']
+                n = max(1, int(dist(a, b) / 3))
+                pts = [(a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n) for j in range(n + 1)]
+            elif k == 'circ':
+                c, r = it['c'], it['r']
+                n = max(12, int(2 * math.pi * r / 3))
+                pts = [(c[0] + r * math.cos(2 * math.pi * j / n), c[1] + r * math.sin(2 * math.pi * j / n)) for j in range(n)]
+            elif k == 'pt':
+                pts = [(it['p'][0] + dx_, it['p'][1] + dy_) for dx_ in (-it['r'], 0, it['r']) for dy_ in (-it['r'], 0, it['r'])]
+            else:
+                continue
+            obst.append((pts, it['win']))
+        labs = [it for it in self.items if it['k'] == 'lab']
+        placed = []
+        for L in labs:
+            hw, hh = _est_w(L['tex'], L['size']) * .5 + 6, L['size'] * .36 + 6
+            lo, hi = L['win']
+            live = [pts for pts, (s0, u0) in obst if max(lo, s0) < min(hi, u0)]
+            def cost(cx, cy):
+                x0, x1, y0, y1 = cx - hw, cx + hw, cy - hh, cy + hh
+                n = 0
+                for pts in live:
+                    for px, py in pts:
+                        if x0 < px < x1 and y0 < py < y1:
+                            n += 1
+                for (ox0, ox1, oy0, oy1, (s0, u0)) in placed:
+                    if max(lo, s0) < min(hi, u0) and x0 < ox1 + 3 and ox0 < x1 + 3 and y0 < oy1 + 3 and oy0 < y1 + 3:
+                        n += 40
+                if x0 < 2 or y0 < 2 or x1 > self.W - 2 or y1 > self.H - 2:
+                    n += 400
+                return n
+            dx0, dy0 = L['d']
+            best = (cost(L['x'], L['y']), 0, L['x'], L['y'])
+            if best[0] > 0:
+                base = math.atan2(dy0, dx0) if (dx0 or dy0) else 0
+                for rad in [q_ for q_ in (10, 20, 30, 42, 54, 66) if q_ <= L['maxr']]:
+                    for q in (0, 1, -1, 2, -2, 3, -3, 4):
+                        ang = base + q * math.pi / 4
+                        cx, cy = L['x'] + rad * math.cos(ang), L['y'] + rad * math.sin(ang)
+                        c_ = cost(cx, cy)
+                        if c_ * 100 + rad < best[0] * 100 + best[1]:
+                            best = (c_, rad, cx, cy)
+                    if best[0] == 0:
+                        break
+            L['final'], L['left'] = (best[2], best[3]), best[0]
+            placed.append((best[2] - hw, best[2] + hw, best[3] - hh, best[3] + hh, L['win']))
+            lead = ''
+            if L['anchor'] is not None:                              # an angle label that had to move gets a thin leader back to its arc
+                ax, ay = L['anchor']
+                ddx, ddy = ax - best[2], ay - best[3]
+                if math.hypot(ddx, ddy) > max(hw, hh) + 10:
+                    k_ = min(hw / abs(ddx) if ddx else 9e9, hh / abs(ddy) if ddy else 9e9)
+                    lead = _line(f'{best[2] + ddx * k_:.1f}', f'{best[3] + ddy * k_:.1f}', f'{ax:.1f}', f'{ay:.1f}', L['col'], 2)
+            body = body.replace(f'@@L{L["i"]}@@', lead + KT(best[2], best[3], L['tex'], L['size'], L['col'], w=L['w']))
+        self.unplaced = [(L['tex'], round(L['left'])) for L in labs if L['left']]
+        return body
+
     def out(self):
-        return svg(self.W, self.H, ''.join(self.parts), self.maxh)
+        body = self._place_labels(''.join(self.parts))
+        _CUR[0] = None
+        if self.unplaced:
+            print('  label left on a line:', self.unplaced)
+        assert '@@L' not in body
+        return svg(self.W, self.H, body, self.maxh)
 
 
 # ================================================================ 1.1 a line from the centre, perpendicular to a chord
@@ -423,7 +531,7 @@ def two_tangents_ex1():
     c.add(circle(O, r, fill=FILL) + seg(P, ex1[1], INK, 5) + seg(P, ex2[1], INK, 5) + seg(A, B, INK, 5) + dot(O) + dot(P) + dot(A) + dot(B) + lab(O, 'O', -20, 4) + lab(P, 'P', 28, 0) + lab(A, 'A', 6, -28) + lab(B, 'B', 6, 30))
     c.add(angarc(B, A, P, 44, ORANGE, 5) + lab(bis(B, A, P, 78), r'63^\circ', 0, 0, ORANGE, 28, 120), 0)
     c.add(seg(O, A, BLUE, 4) + seg(O, B, BLUE, 4) + rightmark(B, O, P, 18, BLUE) + rightmark(A, O, P, 18, BLUE), 1)
-    c.add(seg(O, P, INK, 4, '10 7') + angarc(O, A, B, 40, GREEN, 5) + lab(O, r'?', 52, 0, RED, 36, 60), 2)
+    c.add(seg(O, P, INK, 4, '10 7') + angarc(O, A, B, 24, GREEN, 5) + lab(O, r'?', 42, -18, RED, 34, 60), 2)
     return c.out()
 
 
@@ -692,7 +800,7 @@ def _tang_line(T, O, k0=.5, k1=.9):
 
 
 def _ang_lab(v, p1, p2, rad, tex, col, lr=None, size=26):
-    return angarc(v, p1, p2, rad, col, 4) + lab(bis(v, p1, p2, lr or rad + 30), tex, 0, 0, col, size, 130)
+    return angarc(v, p1, p2, rad, col, 4) + lab(bis(v, p1, p2, lr or rad + 30), tex, 0, 0, col, size, 130, maxr=60, anchor=bis(v, p1, p2, rad))
 
 
 def ex1(k):
@@ -775,7 +883,7 @@ def ex2(k):
     """exercise 2: tangents PT and PV from P; find the unknown angles"""
     r = {'a': 54, 'b': 88, 'c': 66, 'd': 100}[k]
     O = (90, 150)
-    c = Cv(480, 300, '34vh')
+    c = Cv(480, 300, '40vh')
     half = {'a': 11, 'b': 21, 'c': 12.5, 'd': 21}[k]
     if k in 'abc':
         half_p = {'a': 11, 'b': 21, 'c': 12.5}[k]
@@ -805,7 +913,7 @@ def ex2(k):
             T = tangent_pts(O, r, P)[1]
         X = (O[0] - r, O[1])
         assert near(angle_at(P, T, O), 21, 1e-6) and near(angle_at(O, T, P), 69, 1e-6) and near(angle_at(X, O, T), 34.5, 1e-6) and near(angle_at(T, X, O), 34.5, 1e-6)
-        c = Cv(580, 300, '34vh')
+        c = Cv(580, 300, '40vh')
         c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 6, 24, INK, 28, 60) + seg(X, P, INK, 5) + seg(P, ext(P, T, 0, .02)[1], INK, 5) + seg(O, T, INK, 4) + seg(X, T, INK, 4) + dot(T) + dot(X) + dot(P)
               + lab(T, 'T', 8, -24, INK, 28, 60) + lab(X, 'X', -24, 4, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60)
               + _ang_lab(P, T, O, 56, r'21^\circ', ORANGE, 90, 22) + _ang_lab(O, T, P, 30, r'a^\circ', RED, 52, 24) + _ang_lab(T, X, O, 36, r'b^\circ', RED, 60, 24) + _ang_lab(X, T, O, 36, r'c^\circ', RED, 62, 24))
@@ -825,7 +933,7 @@ def ex3(k):
         if A[1] > B[1]:
             A, B = B, A
         assert near(dist(P, A) / u, 15, 1e-6)
-        c = Cv(520, 300, '30vh')
+        c = Cv(520, 300, '42vh')
         c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 6, INK, 28, 60) + seg(P, A, INK, 5) + seg(P, B, INK, 5) + seg(O, P, INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
               + lab(A, 'A', 6, -24, INK, 28, 60) + lab(B, 'B', 6, 26, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60) + lab(mid(O, P), r'17', 0, -20, GREEN, 30, 60) + lab(mid(P, B), r'15', 8, 26, GREEN, 30, 60) + lab(mid(O, B), r'r', -20, 4, RED, 30, 60)
               + rightmark(A, O, P, 14, RED) + rightmark(B, O, P, 14, RED))
@@ -838,7 +946,7 @@ def ex3(k):
             A, B = B, A
         assert near(dist(P, A) / u, 12, 1e-6)
         N = (O[0] - r, O[1])
-        c = Cv(520, 300, '30vh')
+        c = Cv(520, 300, '42vh')
         c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 24, 4, INK, 28, 60) + seg(P, A, INK, 5) + seg(P, B, INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
               + lab(A, 'A', 4, -24, INK, 28, 60) + lab(B, 'B', 4, 26, INK, 28, 60) + lab(P, 'P', -22, 0, INK, 28, 60) + lab(mid(P, A), r'12', -8, -24, GREEN, 30, 60) + lab(mid(O, A), r'5', 18, -14, GREEN, 30, 60)
               + rightmark(A, O, P, 14, RED) + seg(P, N, RED, 4, '8 6') + lab(mid(P, N), r'd', 0, 24, RED, 30, 60) + dot(N, RED))

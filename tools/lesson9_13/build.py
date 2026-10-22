@@ -346,11 +346,12 @@ S.append(ex('លំហាត់ទី ១', 'ក្នុងរូបនីម�
            cell(G.ex1('e'), 'ង. រកមុំ ' + m('a,\\ b,\\ c'), A(G.EX1_ANS['e'], m('OTP') + ' កែង ; ' + m('OET') + ' សមបាត')),
            cell(G.ex1('f'), 'ច. ' + m('AOT') + ' និង ' + m('BOP') + ' ជាបន្ទាត់ត្រង់ រកមុំ ' + m('a') + ' និង ' + m('b'), A(G.EX1_ANS['f'], m(r'\angle TOP=180^\circ-130^\circ=50^\circ')))])))
 assert 90 - 50 == 40 and 90 - 40 == 50 and 90 - 35 == 55 and 180 - 2 * 55 == 70 and 90 - 65 == 25 and (180 - 65) / 2 == 57.5 and 90 - 57.5 == 32.5 and 180 - 130 == 50 and 90 - 50 == 40 and (180 - 50) / 2 == 65
-S.append(ex('លំហាត់ទី ២', 'ក្នុងរូបនីមួយៗ ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះ', p('គេមាន ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ ' + m('T') + ' និង ' + m('V') + ' ។ ចូររករង្វាស់មុំដែលមិនស្គាល់ ។')
+S.append(ex('លំហាត់ទី ២ (ក ខ)', 'ក្នុងរូបនីមួយៗ ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះ', p('គេមាន ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ ' + m('T') + ' និង ' + m('V') + ' ។ ចូររករង្វាស់មុំដែលមិនស្គាល់ ។')
     + row([cell(G.ex2('a'), '(ក)', A(G.EX2_ANS['a'], m('OP') + ' ពុះមុំ ' + m(r'22^\circ'))),
-           cell(G.ex2('b'), '(ខ)', A(G.EX2_ANS['b'], m(r'\angle OTP=\angle OVP=90^\circ'))),
-           cell(G.ex2('c'), '(គ)', A(G.EX2_ANS['c'], m(r'\angle PTV=77.5^\circ') + ' ; ' + m(r'\angle OTV=90^\circ-77.5^\circ'))),
-           cell(G.ex2('d'), '(ឃ)', A(G.EX2_ANS['d'], m(r'\angle TOP=69^\circ') + ' ; ' + m('OXT') + ' សមបាត'))], 4)))
+           cell(G.ex2('b'), '(ខ)', A(G.EX2_ANS['b'], m(r'\angle OTP=\angle OVP=90^\circ')))], 2)))
+S.append(ex('លំហាត់ទី ២ (គ ឃ)', 'ក្នុងរូបនីមួយៗ ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះ', p('គេមាន ' + m('PT') + ' និង ' + m('PV') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ ' + m('T') + ' និង ' + m('V') + ' ។ ចូររករង្វាស់មុំដែលមិនស្គាល់ ។')
+    + row([cell(G.ex2('c'), '(គ)', A(G.EX2_ANS['c'], m(r'\angle PTV=77.5^\circ') + ' ; ' + m(r'\angle OTV=90^\circ-77.5^\circ'))),
+           cell(G.ex2('d'), '(ឃ)', A(G.EX2_ANS['d'], m(r'\angle TOP=69^\circ') + ' ; ' + m('OXT') + ' សមបាត'))], 2)))
 assert 90 - 11 == 79 and 360 - 42 - 180 == 138 and 180 - 25 == 155 and (180 - 155) / 2 == 12.5 and 90 - 21 == 69 and (180 - (180 - 69)) / 2 == 34.5
 S.append(ex('លំហាត់ទី ៣', 'គណនាកាំ ' + m('r') + ' និងរង្វាស់ ' + m('d'), p('គេមានរង្វង់ផ្ចិត ' + m('O') + ' ដែលមាន ' + m('PA') + ' និង ' + m('PB') + ' ជាបន្ទាត់ប៉ះនឹងរង្វង់រៀងគ្នាត្រង់ ' + m('A') + ' និង ' + m('B') + ' ។ ចូរគណនារង្វាស់កាំ ' + m('r') + ' និងរង្វាស់ ' + m('d') + ' ។ រង្វាស់គិតជា cm ។')
     + row([cell(G.ex3('a'), 'រូបទី ១ ៖ រក ' + m('r'), A(r'r^2=OP^2-PA^2=17^2-15^2=64\ \Rightarrow\ r=8\text{ cm}', m('PA=PB=15') + ' ; ' + m(r'OA\perp PA'))),
@@ -424,10 +425,11 @@ def _style_h2(html):
     return re.sub(r'<h2>(.*?)</h2>', f, html, flags=re.S)
 
 
+_NOTAG = {'២', '៣', '៤', '៥', '៦'}      # parts 2-6 have their own divider slide: no repeated tag on the slides
 _TITLES = {'១.១': '១.១ បន្ទាត់កែងទៅនឹងចំណុចកណ្ដាលនៃអង្កត់ធ្នូ', '១.២': '១.២ អង្កត់ធ្នូស្មើគ្នា', '២': '២ បន្ទាត់ប៉ះ', '៣': '៣ លក្ខណៈនៃបន្ទាត់ប៉ះ',
            '៤': '៤ ចតុកោណចារឹកក្រៅរង្វង់', '៥': '៥ ទីតាំងរង្វង់', '៦': '៦ បន្ទាត់ប៉ះរួម'}
 for s in S:
-    s['html'] = re.sub(r'<p class="ts-kicker">([^<]*)</p>', lambda mo: '<p class="ts-kicker">' + _TITLES.get(mo.group(1), mo.group(1)) + '</p>', s['html'])
+    s['html'] = re.sub(r'<p class="ts-kicker">([^<]*)</p>', lambda mo: '' if mo.group(1) in _NOTAG else '<p class="ts-kicker">' + _TITLES.get(mo.group(1), mo.group(1)) + '</p>', s['html'])
     s['html'] = _style_h2(s['html'])
 out = [stepify(x) if x.get('k') in ('sol', 'ex', 'key', 'prac') and 'data-step' not in x['html'] else x for x in S]
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
