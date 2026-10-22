@@ -1052,6 +1052,8 @@ def ex9():
     c.add(circle(A, 4 * u, fill='#eef5fb') + circle(B, 4 * u, INK, 5, 'rgba(255,224,204,.35)') + poly([A, B, C, D], 'rgba(47,158,68,.18)', GREEN, 5) + dot(A) + dot(B) + dot(C) + dot(D)
           + lab(A, 'A', -22, 20, INK, 30, 60) + lab(B, 'B', 22, 20, INK, 30, 60) + lab(C, 'C', 4, -26, INK, 30, 60) + lab(D, 'D', -4, -26, INK, 30, 60)
           + rightmark(A, B, D, 18, INK) + rightmark(B, A, C, 18, INK) + rightmark(D, A, C, 18, INK) + rightmark(C, B, D, 18, INK) + lab(mid(A, B), r'4', 0, 24, GREEN, 30, 60))
+    c.add(lab(mid(A, D), r'4', 24, 0, GREEN, 30, 60) + lab(mid(B, C), r'4', -24, 0, GREEN, 30, 60), 2)         # AD and BC are radii too
+    c.add(lab(mid(D, C), r'4', 0, 24, GREEN, 30, 60) + tick(A, B, 1, GREEN) + tick(B, C, 1, GREEN) + tick(C, D, 1, GREEN) + tick(D, A, 1, GREEN), 3)   # so all four sides are equal: a square
     return c.out()
 
 
