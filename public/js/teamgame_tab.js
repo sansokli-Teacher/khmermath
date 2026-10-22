@@ -1,6 +1,6 @@
 // «ហ្គេមក្រុម» tab: pick one of the teacher's own classes, split its students into teams, and open the team game with those teams.
 // The roster comes from the class itself (no second list to keep). Students marked absent in the name wheel stay out of the teams.
-let tgClassId = null, tgTeams = 4, tgSkipAbsent = true;
+let tgClassId = null, tgTeams = 6, tgSkipAbsent = true;
 
 const tgShuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const tgKh = (n) => String(n).replace(/\d/g, (d) => '០១២៣៤៥៦៧៨៩'[d]);
@@ -227,7 +227,7 @@ render.teamgame = async function () {
   go.onclick = () => {
     if (!tgNoTeam && !teams.some((t) => t.length)) return Exam.notify('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។');
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: curCls().name, groups: teams })); } catch {}
-    location.href = `teamgame.html?from=exam&wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}${tgNoTeam ? '&nt=1' : ''}${tgRemote ? '&remote=1' : ''}`;
+    location.href = `teamgame.html?from=exam&wiz=1&import=1&style=${tgStyle}&grade=${gradeNow()}&l=${picked.join(',')}&n=${tgQn}&cn=${encodeURIComponent(curCls().name)}${tgNoTeam ? '&nt=1' : ''}${tgRemote ? '&remote=1' : ''}`;
   };
 
   const step = (n, title, body, right) => h('section', { class: 'tgl-step' }, [h('div', { class: 'tgl-sh' }, [h('span', { class: 'tgl-n' }, tgKh(n)), h('h3', {}, title), right || null]), body]);

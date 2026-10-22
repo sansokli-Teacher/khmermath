@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, kh, gradeOf, fullName } from './api.js';
+import { api, kh, gradeOf, fullName, todayISO, PERIODS } from './api.js';
+import { planCards } from './fair.js';
 import Modal from './Modal.jsx';
 import QuestionBank from './QuestionBank.jsx';
 import DealPopup from './DealPopup.jsx';
@@ -30,13 +31,15 @@ async function loadBank() {
 
 export default function GameWizard({ classes, cls: given, style: preStyle, onClose }) {
   const [cls, setCls] = useState(given || (classes.length === 1 ? classes[0] : null));
-  const [step, setStep] = useState(0);            // 0 class · 1 lesson · 2 style · 3 teams
+  const [step, setStep] = useState(() => (given || classes.length === 1 ? 1 : 0));   // 0 class · 1 lesson · 2 style · 3 teams (the class is not asked again when the teacher has already chosen it)
   const [bank, setBank] = useState(null);
   const [students, setStudents] = useState(null);
   const [picked, setPicked] = useState([]);
   const [qn, setQn] = useState(20);
   const [style, setStyle] = useState(preStyle || 'cards');
-  const [nTeams, setNTeams] = useState(4);
+  const [nTeams, setNTeams] = useState(6);
+  const [bonus, setBonus] = useState(3);          // bonus (special) boxes
+  const [attAbsent, setAttAbsent] = useState([]);  // students marked absent today in the attendance sheet
   const [noTeam, setNoTeam] = useState(false);
   const [deal, setDeal] = useState(0);            // bump to deal the teams again
   const [err, setErr] = useState('');
@@ -54,6 +57,20 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     return () => { live = false; };
   }, [cls]);
 
+  // absent today: read the attendance the teacher already took (the latest period that has marks), not only the Spin's crossed-out names
+  useEffect(() => {
+    if (!cls) return undefined;
+    let live = true; setAttAbsent([]);
+    (async () => {
+      try {
+        const per = await Promise.all(Array.from({ length: PERIODS }, (_, i) => api(`/api/attendance?class_id=${cls.id}&day=${todayISO()}&period=${i + 1}`).then((d) => ({ p: i + 1, rows: d.rows || [] })).catch(() => ({ p: i + 1, rows: [] }))));
+        const last = per.filter((x) => x.rows.length).pop();
+        if (live && last) setAttAbsent(last.rows.filter((r) => r.mark === 'A').map((r) => String(r.student_id)));
+      } catch { /* attendance is optional */ }
+    })();
+    return () => { live = false; };
+  }, [cls]);
+
   const lessons = useMemo(() => (bank || []).filter((L) => (L.g || 7) === grade).sort((a, b) => a.n - b.n), [bank, grade]);
   // the lesson last taught in this class, when the bank has it; otherwise the first one
   useEffect(() => {
@@ -68,8 +85,11 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
   }, [cls, grade]);
 
   // students present today: the Spin remembers who was crossed out
-  const absentIds = useMemo(() => { if (!cls) return []; try { return (JSON.parse(localStorage.getItem(`exam_wheel_${cls.id}`)) || {}).off || []; } catch { return []; } }, [cls]);
+  const wheelOff = useMemo(() => { if (!cls) return []; try { return ((JSON.parse(localStorage.getItem(`exam_wheel_${cls.id}`)) || {}).off || []).map(String); } catch { return []; } }, [cls]);
+  const absentIds = useMemo(() => [...new Set([...wheelOff, ...attAbsent])], [wheelOff, attAbsent]);
   const present = useMemo(() => (students || []).filter((s) => !absentIds.includes(String(s.id))), [students, absentIds]);
+  const absentNames = useMemo(() => (students || []).filter((s) => absentIds.includes(String(s.id))).map(fullName).filter(Boolean), [students, absentIds]);
+  const poolQ = useMemo(() => lessons.filter((L) => picked.includes(L.n)).reduce((a, L) => a + (L.qs ? L.qs.length : 0), 0), [lessons, picked]);
   const teams = useMemo(() => {
     const names = present.map(fullName).filter(Boolean);
     const n = Math.max(1, Math.min(nTeams, names.length || 1));
@@ -78,6 +98,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     return t;
   }, [present, nTeams, deal]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const plan = useMemo(() => { const n = noTeam ? 1 : teams.length; const Q = Math.min(qn, poolQ || qn); return planCards(Q, noTeam ? 0 : bonus, n, poolQ || Q); }, [qn, bonus, poolQ, teams.length, noTeam]);
   const palette = useMemo(() => shuffle(['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#d6336c', '#5f3dc4']), [deal]);   // new random colours for every deal
   const other = OTHERS.find((o) => o.k === style);
   const lastStep = other ? 2 : 3;
@@ -88,7 +109,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
     if (other) { location.href = other.href(cls); return; }
     if (!present.length && !noTeam) { setErr('ថ្នាក់នេះមិនទាន់មានសិស្សទេ។'); return; }
     try { localStorage.setItem('km_wheel_last_groups', JSON.stringify({ cls: cls.name, groups: teams })); } catch { /* storage blocked */ }
-    location.href = `/teamgame.html?from=teach&wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}${noTeam ? '&nt=1' : ''}${remote ? '&remote=1' : ''}`;
+    location.href = `/teamgame.html?from=teach&wiz=1&import=1&style=${style}&grade=${grade}&l=${picked.join(',')}&n=${qn}&sp=${noTeam ? 0 : bonus}&cn=${encodeURIComponent(cls.name)}&ab=${absentNames.length}${noTeam ? '&nt=1' : ''}${remote ? '&remote=1' : ''}`;
   };
   const next = () => { setErr(''); if (step === lastStep) start(); else setStep(step + 1); };
   const togglePick = (n) => setPicked((p) => (p.includes(n) ? (p.length > 1 ? p.filter((x) => x !== n) : p) : [...p, n]));
@@ -137,7 +158,7 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
             <button type="button" role="radio" aria-checked={!noTeam} className={!noTeam ? 'on' : ''} onClick={() => setNoTeam(false)}><b>👥 លេងជាក្រុម</b><small>ចែកសិស្សជាក្រុម ហើយប្រកួតគ្នា</small></button>
             <button type="button" role="radio" aria-checked={noTeam} className={noTeam ? 'on' : ''} onClick={() => setNoTeam(true)}><b>🙋 លេងម្នាក់ៗ</b><small>លោកគ្រូអ្នកគ្រូហៅសិស្សម្នាក់ៗ មិនមានក្រុម</small></button>
           </div>
-          {students && absentIds.length > 0 && <p className="gw-note">✕ មិនដាក់សិស្សអវត្តមាន {kh(students.length - present.length)} នាក់ (ដែលបានគូសក្នុងកង់ចាប់ឈ្មោះ)</p>}
+          {students && absentNames.length > 0 && <p className="gw-note">✕ មិនដាក់សិស្សអវត្តមាន {kh(absentNames.length)} នាក់ (ពីការចុះវត្តមានថ្ងៃនេះ)៖ {absentNames.join(' · ')}</p>}
           <label className="gw-remote"><input type="checkbox" checked={remote} onChange={(e) => toggleRemote(e.target.checked)} /><span><b>📱 Control from my phone</b><small>A QR code appears when the game starts. Scan it: the computer shows the game, the phone is the remote.</small></span></label>
           {noTeam ? (
             <p className="gw-solo">សិស្សទាំង {kh(present.length)} នាក់លេងជាមួយគ្នា — ចុច «ចាប់ផ្ដើមហ្គេម» ដើម្បីបន្ត។ ចង់លេងជាក្រុម សូមចុច «👥 លេងជាក្រុម» ខាងលើ។</p>
@@ -148,6 +169,11 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
                 <div className="gw-stepper"><button disabled={nTeams <= 2} onClick={() => setNTeams(nTeams - 1)}>−</button><output>{kh(teams.length)}</output><button disabled={nTeams >= 8} onClick={() => setNTeams(nTeams + 1)}>+</button></div>
                 <button className="btn primary" onClick={() => { setDeal(deal + 1); setPopup(true); }}>👥 ចែកក្រុម</button>
               </div>
+              <div className="gw-row">
+                <b>ប្រអប់ពិសេស (ប៉ូណូស)</b>
+                <div className="gw-stepper"><button disabled={bonus <= 0} onClick={() => setBonus(bonus - 1)}>−</button><output>{kh(bonus)}</output><button disabled={bonus >= 12} onClick={() => setBonus(bonus + 1)}>+</button></div>
+              </div>
+              <p className="gw-fair">{plan.short ? `⚠ សំណួរតិចជាងចំនួនក្រុម (${kh(plan.T)} កាត / ${kh(teams.length)} ក្រុម) — ក្រុមខ្លះនឹងមិនបានបើកកាត។ សូមបន្ថែមសំណួរ ឬបន្ថយក្រុម។` : <>⚖ ក្រុមនីមួយៗបើក {kh(plan.per)} កាត ({kh(plan.Q)} សំណួរ{plan.S ? ` + ${kh(plan.S)} ប្រអប់ពិសេស` : ''}){plan.changed ? ` — កែពី ${kh(Math.min(qn, poolQ || qn) + bonus)} កាត ដើម្បីឱ្យគ្រប់ក្រុមបើកស្មើគ្នា` : ''}</>}</p>
               <div className="gw-teams">{teams.map((t, i) => (
                 <div key={i} className="gw-team" style={{ borderTop: `6px solid ${palette[i % palette.length]}` }}><b style={{ color: palette[i % palette.length] }}>ក្រុមទី {kh(i + 1)} <small>{kh(t.length)} នាក់</small></b><span>{t.join(' · ')}</span></div>))}
               </div>
@@ -160,7 +186,8 @@ export default function GameWizard({ classes, cls: given, style: preStyle, onClo
       {popup && !noTeam && <DealPopup key={deal} teams={teams} colors={palette} cname={cls ? cls.name : ''} onAgain={() => setDeal((d) => d + 1)} onClose={() => setPopup(false)} />}
       {bankOpen && <QuestionBank lesson={picked[0]} onClose={() => { setBankOpen(false); loadBank().then(setBank); }} />}
       <div className="gw-bar">
-        <button className="btn ghost" onClick={() => (step > 0 && !(step === 1 && given) ? setStep(step - 1) : onClose())}>{step > 0 && !(step === 1 && given) ? '← ថយក្រោយ' : 'បោះបង់'}</button>
+        <button className="btn ghost" onClick={() => (step > 1 || (step === 1 && !given && classes.length > 1) ? setStep(step - 1) : onClose())}>{step > 1 || (step === 1 && !given && classes.length > 1) ? '← ថយក្រោយ' : 'បោះបង់'}</button>
+        {step > 0 && cls && classes.length > 1 && <button className="btn ghost" onClick={() => setStep(0)}>ប្តូរថ្នាក់ ({cls.name})</button>}
         {step > 0 && <button className="btn primary big" disabled={!canNext || (step >= 1 && students === null && step === 3)} onClick={next}>{step === lastStep ? '▶ ចាប់ផ្ដើមហ្គេម' : 'បន្ទាប់ →'}</button>}
       </div>
     </Modal>

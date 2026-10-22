@@ -144,6 +144,7 @@
   /* ---------- setup: teams ---------- */
   var teamNames = [], teamMembers = [];
   function renderTeamSetup() {
+    setTimeout(updateBalance, 0);
     var n = noTeam() ? 0 : Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), box = $('tg-teamlist'); box.innerHTML = '';
     for (var i = 0; i < n; i++) {
       (function (i) {
@@ -229,26 +230,61 @@
   }
 
   /* ---------- game ---------- */
+  // Fair turns: the teams open the cards one after another, so the number of cards (questions + bonus boxes) must divide by the number of teams.
+  // The nearer fix wins: add the missing questions from the lessons' spare questions, or take the surplus away (bonus boxes first).
+  function planCards(Q, S, n, poolMax) {
+    var keep = { Q: Q, S: S, T: Q + S, per: n > 0 ? (Q + S) / n : Q + S, changed: false, short: n > 1 && Q + S < n };
+    if (n <= 1 || Q + S < n) return keep;
+    var rem = (Q + S) % n; if (rem === 0) return keep;
+    var add = n - rem, nq = Q, ns = S;
+    if (Q + add <= poolMax && add <= rem) nq = Q + add;                       // 1. add the missing questions from the lessons' spare questions
+    else if (S > 0 && S + add <= 12 && add <= rem) ns = S + add;              // 2. no spare questions: add bonus boxes (when bonus boxes are on)
+    else { var cut = rem, fromQ = Math.min(cut, Math.max(0, nq - 1)); nq -= fromQ; cut -= fromQ; ns -= Math.min(ns, cut); }   // 3. take the surplus away, questions first so the bonus stays
+    if (nq < 1 || (nq + ns) % n !== 0 || nq + ns < n) {                       // fallback: only questions, a multiple of n
+      nq = Math.floor(Math.min(Q + S, Math.max(poolMax, 0)) / n) * n; ns = 0;
+      if (nq < n) return keep;
+    }
+    return { Q: nq, S: ns, T: nq + ns, per: (nq + ns) / n, changed: true, short: false };
+  }
+  // a line under the team list: how many cards each team will open (so the teacher sees the balance before starting)
+  function poolSize() { var k = 0; ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) k += L.qs.length; }); return k; }
+  function updateBalance() {
+    var box = $('tg-balance'); if (!box) return;
+    var n = noTeam() ? 1 : Math.max(2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2));
+    if (n < 2) { box.hidden = true; return; }
+    var pool = mode === 'lesson' ? poolSize() : cards.filter(function (c) { return clean(c.n); }).length;
+    if (!pool) { box.hidden = true; return; }
+    var want = mode === 'lesson' ? (parseInt($('tg-qn').value, 10) || pool) : pool, Q = Math.min(want, pool), S = $('tg-special').checked ? Math.max(0, Math.min(12, parseInt($('tg-nspecial').value, 10) || 0)) : 0;
+    var pl = planCards(Q, S, n, pool);
+    box.hidden = false;
+    if (pl.short) { box.textContent = '⚠ សំណួរតិចជាងចំនួនក្រុម (' + khNum(pl.T) + ' កាត / ' + khNum(n) + ' ក្រុម) — ក្រុមខ្លះនឹងមិនបានបើកកាត។ សូមបន្ថែមសំណួរ ឬបន្ថយក្រុម។'; return; }
+    box.textContent = '⚖ ក្រុមនីមួយៗបើក ' + khNum(pl.per) + ' កាត (' + khNum(pl.Q) + ' សំណួរ' + (pl.S ? ' + ' + khNum(pl.S) + ' ប្រអប់ពិសេស' : '') + ')' + (pl.changed ? ' — បានកែពី ' + khNum(Q + S) + ' កាត ដើម្បីឱ្យគ្រប់ក្រុមបើកស្មើគ្នា' : '');
+  }
   function startGame() {
-    var n = noTeam() ? 1 : Math.max(window.TG_STUDENT ? 1 : 2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value;
+    var n = noTeam() ? 1 : Math.max(window.TG_STUDENT ? 1 : 2, Math.min(8, parseInt($('tg-nteams').value, 10) || 2)), pts = Math.max(1, parseInt($('tg-pts').value, 10) || 10), tiles, face = $('tg-face').value, spare = [];
     if (mode === 'lesson') {
       var pool = [];
       ((BANK && BANK.lessons) || []).forEach(function (L) { if (selLessons.indexOf(L.n) >= 0) pool = pool.concat(L.qs.map(function (q) { return { n: lessonName(L) + ' · ' + q.t, q: q.q, o: q.o || null, ck: q.k, f: q.f || '', a: q.a, s: q.s || '', h: q.h || '', tm: q.tm || 0 }; })); });
       if (!pool.length) { $('tg-lessonhint').textContent = 'សូមជ្រើសមេរៀនយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
-      var want = parseInt($('tg-qn').value, 10) || pool.length; pool = shuffle(pool).slice(0, want); face = 'num';
-      tiles = pool.map(function (c) { return { k: 'q', n: c.n, img: '', q: c.q, o: c.o, ck: c.ck, f: c.f, a: c.a, s: c.s, h: c.h, tm: c.tm, p: pts, lq: 1 }; });
+      var want = parseInt($('tg-qn').value, 10) || pool.length, shuf = shuffle(pool), asTile = function (c) { return { k: 'q', n: c.n, img: '', q: c.q, o: c.o, ck: c.ck, f: c.f, a: c.a, s: c.s, h: c.h, tm: c.tm, p: pts, lq: 1 }; }; face = 'num';
+      tiles = shuf.slice(0, want).map(asTile); spare = shuf.slice(want).map(asTile);
     } else {
       var list = cards.filter(function (c) { return clean(c.n); });
       if (!list.length) { $('tg-qcount').textContent = 'សូមបន្ថែមកាតយ៉ាងហោចណាស់ ១ ជាមុនសិន។'; return; }
       tiles = list.map(function (c) { return { k: 'q', n: clean(c.n), img: c.img || '', q: clean(c.q), a: clean(c.a), p: parseInt(c.p, 10) > 0 ? parseInt(c.p, 10) : pts }; });
     }
-    if ($('tg-special').checked && !noTeam() && n > 1) {            // swap / steal / bomb need other teams, so no special cards without teams
-      var keys = Object.keys(SPECIALS), cnt = Math.max(0, Math.min(12, parseInt($('tg-nspecial').value, 10) || 0)), deck = [];
+    var spN = ($('tg-special').checked && !noTeam() && n > 1) ? Math.max(0, Math.min(12, parseInt($('tg-nspecial').value, 10) || 0)) : 0;
+    var plan = planCards(tiles.length, spN, n, tiles.length + spare.length);   // every team opens the same number of cards
+    if (plan.Q > tiles.length) tiles = tiles.concat(spare.slice(0, plan.Q - tiles.length)); else if (plan.Q < tiles.length) tiles = tiles.slice(0, plan.Q);
+    spN = plan.S;
+    if (spN > 0) {            // swap / steal / bomb need other teams, so no special cards without teams
+      var keys = Object.keys(SPECIALS), cnt = spN, deck = [];
       while (deck.length < cnt) deck = deck.concat(shuffle(keys));
       deck.slice(0, cnt).forEach(function (sp) { var src = tiles[Math.floor(Math.random() * tiles.length)]; tiles.push({ k: 's', sp: sp, img: src.img }); });   // a special card wears an ordinary picture
     }
     G = { style: noTeam() ? 'cards' : $('tg-style').value, finish: Math.max(3, Math.min(30, parseInt($('tg-finish').value, 10) || 8)), teams: [], tiles: shuffle(tiles), turn: 0, pts: pts, timer: $('tg-timer').value === 'auto' ? 'auto' : (parseInt($('tg-timer').value, 10) || 0), speed: parseFloat($('tg-speed').value) || 1, face: face, mute: false, finished: false };
     for (var i = 0; i < n; i++) G.teams.push({ name: noTeam() ? 'ថ្នាក់ទាំងមូល' : clean(teamNames[i]) || ('ក្រុមទី ' + khNum(i + 1)), color: COLORS[i % COLORS.length], score: 0, members: teamMembers[i] || [] });
+    G.per = n > 1 ? G.tiles.length / n : G.tiles.length; G.balanced = plan.changed; G.t0 = Date.now();
     hist = []; lastScores = null; saveCfg(); saveGame(); showPlay();
   }
   function saveGame() { if (G) put(GAME, G); }
@@ -264,7 +300,7 @@
     if (G.finished) { box.appendChild(el('b', '', 'Game over')); return; }
     if (G.teams.length === 1) { box.appendChild(el('b', '', '🙋 សិស្សជ្រើសលេខ')); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត')); return; }
     var dot = el('span', 'dot'); dot.style.background = G.teams[G.turn].color; box.appendChild(dot);
-    box.appendChild(document.createTextNode('វេនរបស់ ')); box.appendChild(el('b', '', G.teams[G.turn].name)); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត'));
+    box.appendChild(document.createTextNode('វេនរបស់ ')); box.appendChild(el('b', '', G.teams[G.turn].name)); box.appendChild(el('small', '', ' · នៅសល់ ' + khNum(remaining()) + ' កាត' + (G.per && G.style !== 'boat' ? ' · ក្រុមនីមួយៗបើក ' + khNum(G.per) + ' កាត' : '')));
     if (lastTurn !== -1 && lastTurn !== G.turn && !reduceMotion()) {            // a banner sweeps across when the turn changes
       var bn = el('div', 'tg-banner'); bn.style.setProperty('--c', G.teams[G.turn].color); bn.appendChild(el('span', '', 'វេនរបស់ ')); bn.appendChild(el('b', '', G.teams[G.turn].name));
       bn.addEventListener('animationend', function () { bn.remove(); }); $('tg-stage').appendChild(bn);
@@ -496,12 +532,19 @@
 
   /* ---------- finish ---------- */
   function ranking() { return G.teams.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) { return b.t.score - a.t.score; }); }
+  // who played, which class, when: shown on the result card and written into the picture
+  function metaInfo() {
+    var m = window.TG_META || {}, d = new Date(), z = function (x) { return ('0' + x).slice(-2); };
+    return { cname: m.cname || '', teacher: m.teacher || '', absent: m.absent || 0,
+      when: khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()) + ' · ' + khNum(z(d.getHours()) + ':' + z(d.getMinutes())) };
+  }
   function finishGame() {
     G.finished = true; saveGame(); closePop(); renderTurn();
     var card = $('tg-card'), rk = ranking(), top = rk[0].t.score, medals = ['🥇', '🥈', '🥉'];
     card.innerHTML = ''; card.className = 'tg-card final'; card.style.setProperty('--c', rk[0].t.color);
     var x = el('button', 'tg-x', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'បិទ'); x.addEventListener('click', function () { closePop(); card.className = 'tg-card'; }); card.appendChild(x);
     card.appendChild(el('div', 'tg-title', 'ហ្គេមបានបញ្ចប់! 🎉'));
+    var mi = metaInfo(); card.appendChild(el('div', 'tg-meta', [mi.cname ? 'ថ្នាក់ ' + mi.cname : '', mi.teacher ? 'គ្រូ ' + mi.teacher : '', mi.when].filter(Boolean).join('  ·  ')));
     var winners = rk.filter(function (r) { return r.t.score === top; }).map(function (r) { return r.t.name; });
     card.appendChild(el('div', 'tg-winner', (winners.length > 1 ? 'ជ័យលាភីរួម៖ ' : 'ក្រុមឈ្នះ៖ ') + winners.join(' · ')));
     var places = [], pl = 0, pv = null; rk.forEach(function (r, k) { if (r.t.score !== pv) { pl = k; pv = r.t.score; } places.push(pl); });
@@ -521,12 +564,12 @@
     if (list.children.length) card.appendChild(list);
     // after the result: back to where the teacher came from (the exam site or teaching mode), play again, or save the picture
     var from = (/[?&]from=(exam|teach)/.exec(location.search) || [])[1] || 'exam';
-    var acts = el('div', 'tg-acts'), png = el('button', 'btn btn-ghost btn-sm', '⬇ PNG'), again = el('button', 'btn btn-ghost btn-sm', '↻ Replay');
+    var acts = el('div', 'tg-acts'), copy = el('button', 'btn btn-primary btn-sm', '📋 ចម្លងរូបភាព'), png = el('button', 'btn btn-ghost btn-sm', '⬇ PNG'), again = el('button', 'btn btn-ghost btn-sm', '↻ Replay');
     var toExam = el('a', 'btn ' + (from === 'exam' ? 'btn-primary' : 'btn-ghost') + ' btn-sm', 'Exam'), toTeach = el('a', 'btn ' + (from === 'teach' ? 'btn-primary' : 'btn-ghost') + ' btn-sm', 'Teaching');
-    toExam.href = 'teacher.html'; toTeach.href = 'teach/';
+    toExam.href = 'teacher.html'; toTeach.href = 'teach/?back=game';
     if (window.TG_STUDENT) { toExam.href = 'student.html'; toExam.textContent = 'Back'; toExam.className = 'btn btn-primary btn-sm'; }
-    [png, again, window.TG_STUDENT ? null : toTeach, toExam].forEach(function (b) { if (!b) return; if (b.tagName === 'BUTTON') b.type = 'button'; acts.appendChild(b); }); card.appendChild(acts);
-    png.addEventListener('click', downloadResult); again.addEventListener('click', function () { card.className = 'tg-card'; startGame(); });
+    [window.TG_STUDENT ? null : copy, png, again, window.TG_STUDENT ? null : toTeach, toExam].forEach(function (b) { if (!b) return; if (b.tagName === 'BUTTON') b.type = 'button'; acts.appendChild(b); }); card.appendChild(acts);
+    copy.addEventListener('click', function () { copyResult(copy); }); png.addEventListener('click', downloadResult); again.addEventListener('click', function () { card.className = 'tg-card'; startGame(); });
     $('tg-pop').hidden = false; sfx.win(); fireworks(4200);
   }
   var FONT = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
@@ -536,13 +579,16 @@
     g.lineTo(x + bl, y + h); g.quadraticCurveTo(x, y + h, x, y + h - bl); g.lineTo(x, y + tl); g.quadraticCurveTo(x, y, x + tl, y); g.closePath();
   }
   function resultCanvas() {
-    var rk = ranking(), W = 1600, rowH = 120, H = 280 + rk.length * (rowH + 18) + 140, dpr = 2, cv = document.createElement('canvas');
+    var rk = ranking(), mi = metaInfo(), W = 1600, rowH = 120, H = 340 + rk.length * (rowH + 18) + 140, dpr = 2, cv = document.createElement('canvas');
     cv.width = W * dpr; cv.height = H * dpr; var g = cv.getContext('2d'); g.scale(dpr, dpr);
     var bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#eaf5f2'); bg.addColorStop(1, '#fdf6e8'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    var bn = g.createLinearGradient(0, 0, W, 240); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f'); g.fillStyle = bn; g.fillRect(0, 0, W, 240);
-    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText('លទ្ធផលហ្គេមក្រុម 🏆', W / 2, 96);
-    var d = new Date(); g.font = '500 32px ' + FONT; g.globalAlpha = 0.92; g.fillText(khNum(d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()) + '  ·  ' + khNum(G.tiles.length) + ' កាត', W / 2, 176); g.globalAlpha = 1;
-    var y = 280, medals = ['🥇', '🥈', '🥉'], place = 0, prev = null;
+    var bn = g.createLinearGradient(0, 0, W, 240); bn.addColorStop(0, '#1f6f66'); bn.addColorStop(0.6, '#2d8f7e'); bn.addColorStop(1, '#3aa68f'); g.fillStyle = bn; g.fillRect(0, 0, W, 300);
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.font = '700 70px ' + FONT; g.fillText('លទ្ធផលហ្គេមក្រុម 🏆', W / 2, 82);
+    var who = [mi.cname ? 'ថ្នាក់ ' + mi.cname : '', mi.teacher ? 'គ្រូ ' + mi.teacher : ''].filter(Boolean).join('   ·   ');
+    g.globalAlpha = 0.96; if (who) { g.font = '700 44px ' + FONT; var ws = 44; while (g.measureText(who).width > W - 160 && ws > 24) { ws -= 2; g.font = '700 ' + ws + 'px ' + FONT; } g.fillText(who, W / 2, 158); }
+    g.font = '500 32px ' + FONT; g.globalAlpha = 0.9;
+    g.fillText(mi.when + '  ·  ' + khNum(G.tiles.length) + ' កាត' + (G.per && G.teams.length > 1 ? '  ·  ក្រុមនីមួយៗ ' + khNum(G.per) + ' កាត' : '') + (mi.absent ? '  ·  អវត្តមាន ' + khNum(mi.absent) + ' នាក់' : ''), W / 2, who ? 230 : 176); g.globalAlpha = 1;
+    var y = 340, medals = ['🥇', '🥈', '🥉'], place = 0, prev = null;
     rk.forEach(function (r, k) {
       if (r.t.score !== prev) { place = k; prev = r.t.score; }
       g.save(); g.shadowColor = 'rgba(0,0,0,.16)'; g.shadowBlur = 18; g.shadowOffsetY = 6; g.fillStyle = '#fff'; rr(g, 60, y, W - 120, rowH, 22); g.fill(); g.restore();
@@ -562,6 +608,13 @@
   }
   function saveBlob(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); }
   function isPhone() { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || /Android|iPhone|iPad|iPod|Mobile|FBAN|FBAV|Telegram|Line\//i.test(navigator.userAgent); }
+  function copyResult(btn) {
+    var note = function (t) { var old = btn.getAttribute('data-t') || btn.textContent; btn.setAttribute('data-t', old); btn.textContent = t; setTimeout(function () { btn.textContent = old; }, 2400); };
+    if (!(navigator.clipboard && window.ClipboardItem)) { note('⚠ ចម្លងមិនបាន · ទាញយកជំនួស'); return downloadResult(); }
+    var fonts = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 40px "Kantumruy Pro"', 'សិស្សក'), document.fonts.load('500 30px "Kantumruy Pro"', 'សិស្សក')]).catch(function () {}) : Promise.resolve();
+    var blobP = fonts.then(function () { return new Promise(function (ok, no) { resultCanvas().toBlob(function (b) { b ? ok(b) : no(new Error('no image')); }, 'image/png'); }); });
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': blobP })]).then(function () { note('✓ បានចម្លងរូបភាព'); }, function () { note('⚠ ចម្លងមិនបាន · ទាញយកជំនួស'); downloadResult(); });
+  }
   function downloadResult() {
     var go = function () {
       resultCanvas().toBlob(function (b) {
@@ -641,6 +694,7 @@
     renderLessons(); saveCfg();
   }
   function renderLessons() {
+    setTimeout(updateBalance, 0);
     var box = $('tg-lessons'); box.innerHTML = ''; var ls = ((BANK && BANK.lessons) || []).filter(inClass);
     if (!ls.length) box.appendChild(el('small', 'tg-hint', BANK === null ? 'កំពុងផ្ទុក…' : BANK.closed ? 'គ្រូបានបិទហ្គេមនេះជាបណ្តោះអាសន្ន។' : 'គ្រូមិនទាន់បើកមេរៀនណាមួយទៀត។'));
     ls.forEach(function (L) {
@@ -686,7 +740,8 @@
     })();
   }
   document.querySelectorAll('input[name="tg-mode"]').forEach(function (r) { r.addEventListener('change', function () { if (r.checked) { mode = r.value; applyMode(); saveCfg(); } }); });
-  $('tg-qn').addEventListener('change', saveCfg);
+  $('tg-qn').addEventListener('change', function () { saveCfg(); updateBalance(); });
+  ['tg-special', 'tg-nspecial', 'tg-noteam'].forEach(function (id) { if ($(id)) $(id).addEventListener('change', updateBalance); if ($(id)) $(id).addEventListener('input', updateBalance); });
   $('tg-alllessons').addEventListener('click', function () { if (BANK) selLessons = BANK.lessons.filter(inClass).map(function (L) { return L.n; }); renderLessons(); saveCfg(); });
   $('tg-class').addEventListener('change', function () { pickClass(parseInt($('tg-class').value, 10) || 7, false); });
   loadCfg(); (function () { var m = /[?&]style=(wheel|cards|boat)/.exec(location.search); if (m) $('tg-style').value = m[1]; })(); applyMode(); loadBank(); renderTeamSetup(); renderPacks(); renderCards(); renderSets(); checkImport(); refreshResume();
@@ -709,6 +764,7 @@
       selLessons = chosen.length ? chosen : all.slice(0, 1);
       setQn(qn); renderLessons();
       if ($('tg-noteam')) $('tg-noteam').checked = q.get('nt') === '1';
+      if (q.get('sp') !== null && q.get('sp') !== '') { var sp = Math.max(0, Math.min(12, parseInt(q.get('sp'), 10) || 0)); $('tg-special').checked = sp > 0; $('tg-nspecial').value = String(sp); }
       startGame();
     }, 150);
   })();
@@ -737,6 +793,13 @@
       $('tg-special').checked = players.length > 1;
       load.remove(); startGame();
     }, 150);
+  })();
+
+  /* ---------- who is playing: class and absent count come from the launcher's link, the teacher's name from the signed-in account ---------- */
+  (function () {
+    var q = new URLSearchParams(location.search), m = window.TG_META = window.TG_META || {};
+    m.cname = clean(q.get('cn') || ''); m.absent = parseInt(q.get('ab'), 10) || 0;
+    try { fetch('/api/teacher/me', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (w) { if (w) m.teacher = clean(w.display_name || w.username || ''); }).catch(function () {}); } catch (e) {}
   })();
 
   /* ---------- phone remote bridge: lets js/tgremote.js publish the game state and press the same buttons a teacher would ---------- */

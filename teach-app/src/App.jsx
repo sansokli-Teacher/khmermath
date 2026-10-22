@@ -19,6 +19,8 @@ export default function App() {
   const [sheet, setSheet] = useState(null); // class whose actions are open
   const [view, setView] = useState(null); // { type: 'att' | 'lessons' | 'wheel', cls }
   const [wizard, setWizard] = useState(null); // { cls? } while the game wizard is open
+  const [activeId, setActiveId] = useState(() => { try { return localStorage.getItem('teach_active_class'); } catch { return null; } });   // the class the teacher is working with: the game uses it, so it is not asked again
+  const remember = (c) => { setActiveId(String(c.id)); try { localStorage.setItem('teach_active_class', String(c.id)); } catch { /* storage blocked */ } };
   const [bankOpen, setBankOpen] = useState(false);
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
@@ -41,7 +43,14 @@ export default function App() {
         const who = await api('/api/teacher/me');
         setMe(who);
         if (!who.teach_allowed) { setError('ម៉ូដបង្រៀនមិនទាន់បើកសម្រាប់គណនីរបស់អ្នកទេ។ សូមទាក់ទងម្ចាស់ប្រព័ន្ធ។'); return; }
-        setClasses((await api('/api/classes')).classes);
+        const list = (await api('/api/classes')).classes;
+        setClasses(list);
+        if (new URLSearchParams(location.search).get('back') === 'game') {                 // coming back from the game: open the same class again
+          let id = null; try { id = localStorage.getItem('teach_active_class'); } catch { /* storage blocked */ }
+          const c = list.find((x) => String(x.id) === String(id));
+          if (c) setSheet(c);
+          history.replaceState(null, '', location.pathname);
+        }
       } catch (e) {
         if (e.status === 401) location.href = '/teacher';
         else setError(e.message);
@@ -65,6 +74,7 @@ export default function App() {
   if (error) return <div className="boot"><p>{error}</p><a className="btn ghost" href="/teacher?classic=1">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a></div>;
   if (!classes) return <div className="boot"><div className="spinner" /><p>កំពុងផ្ទុក…</p></div>;
   const hello = me && (me.display_name || me.username);
+  const activeClass = classes.find((c) => String(c.id) === String(activeId)) || undefined;
 
   return (
     <div className={`home ${anim}`} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setAnim((a) => (a === 'vanish-out' ? a : '')); }}>
@@ -87,7 +97,7 @@ export default function App() {
             <ul className="class-grid">
               {classes.map((c, i) => (
                 <li key={c.id} style={{ '--i': i }}>
-                  <button className="class-card" style={{ '--a': hue(c)[0], '--b': hue(c)[1] }} onClick={() => setSheet(c)}>
+                  <button className="class-card" style={{ '--a': hue(c)[0], '--b': hue(c)[1] }} onClick={() => { remember(c); setSheet(c); }}>
                     <span className="cc-g">ទី {kh(gradeOf(c))}</span>
                     <span className="cc-go" aria-hidden="true">›</span>
                     <b className="cc-n">{c.name}</b>
@@ -105,8 +115,8 @@ export default function App() {
           <div className="sec-hd"><h2>🎮 ម៉ូដហ្គេម</h2><p>លេងជាក្រុមជាមួយសិស្សក្នុងថ្នាក់</p></div>
           <ul className="game-row">
             <li style={{ '--i': 0 }}>
-              <button className="tool t-cards" disabled={!classes.length} onClick={() => setWizard({})}>
-                <span className="tool-ic" aria-hidden="true">🎮</span><b>លេងហ្គេម</b><small>ជ្រើសថ្នាក់ មេរៀន ហ្គេម ក្រុម</small>
+              <button className="tool t-cards" disabled={!classes.length} onClick={() => setWizard({ cls: activeClass })}>
+                <span className="tool-ic" aria-hidden="true">🎮</span><b>លេងហ្គេម</b><small>{activeClass ? `ថ្នាក់ ${activeClass.name} · មេរៀន ហ្គេម ក្រុម` : 'ជ្រើសថ្នាក់ មេរៀន ហ្គេម ក្រុម'}</small>
               </button>
             </li>
             <li style={{ '--i': 1 }}>
@@ -123,7 +133,7 @@ export default function App() {
           <div className="act-row">
             <button className="act att" onClick={() => setView({ type: 'att', cls: sheet })}><span>✋</span><b>វត្តមាន</b><small>ចុះឈ្មោះសិស្សថ្ងៃនេះ</small></button>
             <button className="act les" onClick={() => setView({ type: 'lessons', cls: sheet })}><span>📖</span><b>ស្លាយមេរៀន</b><small>ជ្រើសមេរៀន និងផ្នែក</small></button>
-            <button className="act game" onClick={() => { const c = sheet; setSheet(null); setWizard({ cls: c }); }}><span>🎮</span><b>ហ្គេម</b><small>លេងជាក្រុមជាមួយមេរៀន</small></button>
+            <button className="act game" onClick={() => { const c = sheet; remember(c); setSheet(null); setWizard({ cls: c }); }}><span>🎮</span><b>ហ្គេម</b><small>លេងជាក្រុមជាមួយមេរៀន</small></button>
             <button className="act spin" onClick={() => setView({ type: 'wheel', cls: sheet })}><span>🎡</span><b>កង់ចាប់ឈ្មោះ</b><small>ចាប់ឈ្មោះ ឬបែងចែកក្រុម</small></button>
           </div>
         </Modal>

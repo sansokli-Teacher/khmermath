@@ -454,3 +454,7 @@ html.tg-noscroll, html.tg-noscroll body { overflow: hidden; }
 .rc-act button { min-height: 44px; padding: 0 22px; border-radius: 99px; border: 0; font-weight: 800; }
 .rc-done { background: #1f2547; color: #fff; } .rc-stop { background: #fff1f1; color: #c92a2a; border: 1.5px solid #e03131 !important; }
 .rc-x { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #f1eee6; font-size: 16px; }
+
+/* result card: class, teacher, date and time; the line that says how many cards each team opens */
+.tg-meta { margin: 2px 0 10px; font-size: clamp(14px, 2.4vw, 20px); font-weight: 700; color: #1f6f66; text-align: center; }
+.tg-balance { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: #e6f6f1; color: #14584f; font-weight: 700; font-size: 14px; }
