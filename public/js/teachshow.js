@@ -2205,8 +2205,8 @@
   const LESSON_THEMES = {};
   // lessons whose generated deck gets the same first slide as Lesson 1: the school (logo, name), the teacher, the class, the school year.
   // The lesson's own cover (title + objectives) then comes second, exactly like Lesson 1. Add "grade-lesson" keys to give more lessons this.
-  const BRANDED_LESSONS = new Set(['7-2', '7-3', '7-12', '9-1']);
-  const BIG_TEXT_LESSONS = new Set(['9-1']);   // decks checked for overflow at the larger projector text size
+  const BRANDED_LESSONS = new Set(['7-2', '7-3', '7-12', '9-1', '9-13']);
+  const BIG_TEXT_LESSONS = new Set(['9-1', '9-13']);   // decks checked for overflow at the larger projector text size
   let BIG_TEXT = false;
   function brandSlide() {
     return {

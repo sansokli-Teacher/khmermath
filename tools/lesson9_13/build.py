@@ -1,0 +1,348 @@
+"""Grade 9 Lesson 13 «រង្វង់និងបន្ទាត់» -> public/js/slides/g9/lesson13.js        python3 tools/lesson9_13/build.py
+Follows the MoEYS textbook lesson 13 (pp. 143-158): the same sections, examples, general rules and practice items, in the book's wording.
+Added for teaching flow (listed in docs/LESSON_G9_13_REPORT.md): the lesson map, a wheel-on-the-road opener, a recall of the parts of a circle, a table of positions/common tangents, a summary and an exit ticket.
+Every picture is computed from coordinates (geo13.py) and every answer is checked here."""
+import math, json, os, sys, re
+HERE = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(HERE, '..', 'lesson1'))
+sys.path.insert(0, HERE)
+from lib import stepify, slide, part, key, ex, prac, m, dm, p, ul, ol, hl, fig, rvd, cols
+import geo13 as G
+
+OUT = os.path.join(HERE, '..', '..', 'public', 'js', 'slides', 'g9', 'lesson13.js')
+K = ['', '១. អង្កត់ធ្នូ', '២. បន្ទាត់ប៉ះ', '៣. លក្ខណៈបន្ទាត់ប៉ះ', '៤. ចតុកោណចារឹកក្រៅរង្វង់', '៥. ទីតាំងរង្វង់', '៦. បន្ទាត់ប៉ះរួម', 'លំហាត់']
+V = math.sqrt
+LB = 'កខគឃងចឆជឈ'
+
+
+def near(a, b, tol=1e-9):
+    return abs(a - b) < tol * max(1, abs(b))
+
+
+def stack(items):
+    """captions that replace each other in the same place: caption k is shown at step k and hidden at step k+1"""
+    out = ''
+    for k, h in enumerate(items, 1):
+        until = f' data-until="{k + 1}"' if k < len(items) else ''
+        out += f'<div class="rv" data-step="{k}"{until} style="grid-area:1/1">{h}</div>'
+    return f'<div style="display:grid;align-content:start">{out}</div>'
+
+
+def lines(items):
+    """solution lines, one per press of → (step 1, 2, 3 ... : the same numbers as the figure's steps)"""
+    return ''.join(rvd(i, h) for i, h in enumerate(items, 1))
+
+
+def exfig(kick, title, figsvg, items, given=''):
+    """the problem (always visible) over a figure and its step-by-step solution"""
+    return ex(kick, title, (p(given) if given else '') + cols(fig(figsvg), lines(items)))
+
+
+def kh(n):
+    return str(n).translate(str.maketrans('0123456789', '០១២៣៤៥៦៧៨៩'))
+
+
+def big(table_html, px=30):
+    """table cells carry their own small size: set the projector size on every cell"""
+    st = f'font-size:{px}px;padding:6px 18px;line-height:1.3;text-align:center'
+    return table_html.replace('<td>', f'<td style="{st}">').replace('<th>', f'<th style="{st}">')
+
+
+def arc_(x):
+    return r'\overset{\frown}{' + x + '}'
+
+
+S = []
+
+# ---------------------------------------------------------------- cover (the book's objectives) and the map of the lesson
+S.append({'k': 'title', 'c': 'cover', 'html':
+    '<p class="ts-kicker">ថ្នាក់ទី ៩ · មេរៀនទី ១៣</p><h1>រង្វង់និងបន្ទាត់</h1>'
+    + '<div class="ts-obj"><h3>វត្ថុបំណង</h3><ol class="ts-bullets">'
+    + '<li>បង្ហាញពីលក្ខណៈនៃអង្កត់ធ្នូ</li><li>បង្ហាញពីលក្ខណៈនៃបន្ទាត់ប៉ះនៃរង្វង់</li>'
+    + '<li>អនុវត្តលក្ខណៈបន្ទាត់ប៉ះនៃរង្វង់ទៅនឹងជ្រុងឈមនៃចតុកោណចារឹកក្រៅរង្វង់</li><li>រកអង្កត់ធ្នូនិងកាំរង្វង់ដោយប្រើលក្ខណៈទីតាំងនៃរង្វង់</li></ol></div>'})
+
+
+def _map_box(no, tex, name, col):
+    return (f'<div style="border:4px solid {col};border-radius:18px;background:#fff;padding:.5em .6em .6em;text-align:center;position:relative;min-height:9em">'
+            f'<span style="position:absolute;left:-.5em;top:-.6em;background:{col};color:#fff;border-radius:50%;width:1.7em;height:1.7em;line-height:1.7em;font-weight:800">{no}</span>'
+            f'<div style="color:{col};font-size:1.25em;margin:.5em 0 .3em;min-height:2.4em;display:flex;align-items:center;justify-content:center">{m(tex)}</div>'
+            f'<div style="font-weight:700;color:#264b66;font-size:.95em">{name}</div></div>')
+
+
+_MAP = [('១', r'AM=MB', 'អង្កត់ធ្នូ', '#1c7ed6'), ('២', r'OM\perp l', 'បន្ទាត់ប៉ះ', '#2b8a87'), ('៣', r'AB=AC', 'លក្ខណៈបន្ទាត់ប៉ះ', '#2f9e44'),
+        ('៤', r'\small AB+CD=AD+BC', 'ចតុកោណចារឹកក្រៅរង្វង់', '#f08c00'), ('៥', r"d\ \text{ និង }\ r+r'", 'ទីតាំងរង្វង់ពីរ', '#e8590c'), ('៦', r'4\ \cdot\ 3\ \cdot\ 2\ \cdot\ 1\ \cdot\ 0', 'បន្ទាត់ប៉ះរួម', '#ae3ec9')]
+
+
+def _map_row(items, arrow):
+    out = ''
+    for k, it in enumerate(items):
+        out += _map_box(*it) + (f'<div style="align-self:center;font-size:1.8em;color:#868e96">{arrow}</div>' if k < 2 else '')
+    return f'<div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.4em;margin:.5em 0">{out}</div>'
+
+
+S.append(ex('ផែនទីមេរៀន', 'ថ្ងៃនេះយើងនឹងដើរតាមជំហានទាំងប្រាំមួយនេះ',
+    _map_row(_MAP[:3], '→') + '<div style="text-align:right;padding-right:3.5em;font-size:1.6em;color:#868e96">↓</div>' + _map_row([_MAP[5], _MAP[4], _MAP[3]], '←')))
+
+S.append(exfig('ចាប់ផ្ដើម', 'កង់រទេះវិលលើដី', G.circle_tangent_demo_wheel(), [
+    p('ដីប៉ះកង់ត្រង់ប៉ុន្មានចំណុច?'),
+    p('ត្រង់ចំណុច ' + m('M') + ' តែមួយ។ បន្ទាត់បែបនេះហៅថា ' + hl('បន្ទាត់ប៉ះ') + ' ។'),
+    p('ចុះកាំ ' + m('OM') + ' និងដី (បន្ទាត់ប៉ះ) ធ្វើមុំប៉ុន្មាន? ' + hl(m(r'90^\circ'))),
+], 'រង្វង់ និងបន្ទាត់អាចជួបគ្នាតាមរបៀបផ្សេងៗ។ ថ្ងៃនេះយើងសិក្សាពីបន្ទាត់ និងរង្វង់ ហើយរង្វង់ពីរ ។'))
+
+S.append(ex('រំលឹក', 'ផ្នែកនៃរង្វង់', cols(fig(G.vocab()), lines([
+    p(hl('កាំ', '#e03131') + ' ៖ ចម្ងាយពីផ្ចិត ' + m('O') + ' ទៅចំណុចមួយនៅលើរង្វង់ ។'),
+    p(hl('អង្កត់ផ្ចិត', '#1c7ed6') + ' ៖ អង្កត់ដែលកាត់តាមផ្ចិត ' + m('AB') + ' ។'),
+    p(hl('អង្កត់ធ្នូ', '#2f9e44') + ' ៖ អង្កត់ដែលភ្ជាប់ចំណុចពីរនៅលើរង្វង់ ' + m('CD') + ' ។')]))))
+
+# ================================================================ 1. លក្ខណៈនៃអង្កត់ធ្នូ  (book p.143-146)
+S.append(part(1, 'លក្ខណៈនៃអង្កត់ធ្នូ', '<p class="ts-sub">១.១ បន្ទាត់កែងទៅនឹងចំណុចកណ្ដាលនៃអង្កត់ធ្នូ · ១.២ អង្កត់ធ្នូស្មើគ្នា</p>'))
+S.append(ex('១.១', 'ឧទាហរណ៍ ៖ បន្ទាត់កែងពីផ្ចិតទៅអង្កត់ធ្នូ', p('នៅក្នុងរង្វង់ផ្ចិត ' + m('O') + ' គេគូសបន្ទាត់មួយចេញពីផ្ចិត ' + m('O') + ' កែងទៅនឹងអង្កត់ធ្នូ ' + m('AB') + ' ត្រង់ចំណុច ' + m('M') + ' ។')
+    + cols(fig(G.chord_perp()), lines([
+        p('បើគេបត់រង្វង់នេះតាមបន្ទាត់ ' + m('OM') + ' គេសង្កេតឃើញថារង្វង់នេះឆ្លុះគ្នាជៀបនឹងបន្ទាត់ ' + m('OM') + ' ។'),
+        p('ចំណុច ' + m('A') + ' ត្រួតស៊ីគ្នានឹង ' + m('B') + ' ។ ដូចនេះ ' + m('M') + ' ជា' + hl('ចំណុចកណ្ដាល') + 'នៃអង្កត់ធ្នូ ' + m('AB') + ' ។')]))))
+S.append(key('១.១', 'ជាទូទៅ', ul([
+    'បន្ទាត់ដែលគូសចេញពីផ្ចិតនៃរង្វង់ ហើយកែងនឹងអង្កត់ធ្នូ ត្រូវកាត់ចំណុចកណ្ដាលនៃអង្កត់ធ្នូ ។',
+    'ច្រាសមកវិញ ៖ បន្ទាត់ដែលកែងទៅនឹងចំណុចកណ្ដាលនៃអង្កត់ធ្នូ ត្រូវកាត់តាមផ្ចិតនៃរង្វង់ ។'])))
+S.append(exfig('១.១', 'លំហាត់គំរូទី ១', G.chord_perp_ex(), [
+    p('ដោយ ' + m('OC') + ' គូសចេញពីផ្ចិត ' + m('O') + ' នៃរង្វង់ និងកែងទៅនឹងអង្កត់ធ្នូ ' + m('AB')),
+    p('គេបាន ' + m('AC=BC') + ' ។'),
+    p('នាំឱ្យ ' + m(r'AC=\dfrac{1}{2}AB=\dfrac{1}{2}\times 10=5\text{ cm}')) + p('ដូចនេះ ' + hl(m(r'AC=5\text{ cm}')) + ' ។')],
+    'គេមានរង្វង់ផ្ចិត ' + m('O') + ' និងអង្កត់ធ្នូ ' + m(r'AB=10\text{ cm}') + ' ។ បើ ' + m('OC') + ' កែងទៅនឹង ' + m('AB') + ' ចូរគណនាប្រវែង ' + m('AC') + ' ។'))
+assert near(0.5 * 10, 5)
+S.append(exfig('១.១', 'លំហាត់គំរូទី ២', G.chord_ex2(), [
+    p('ក្នុងត្រីកោណកែង ' + m('OMB') + ' តាមទ្រឹស្តីបទពីតាគ័រ ៖') + dm(r'OM^2+MB^2=OB^2'),
+    dm(r'5^2+MB^2=7^2') + dm(r'MB^2=7^2-5^2=49-25=24') + dm(r'MB=\sqrt{24}'),
+    p('ដោយ ' + m('OM') + ' គូសចេញពីផ្ចិត ' + m('O') + ' ហើយកែងនឹង ' + m('AB') + ' នោះ ' + m('MB=MA') + ' ។'),
+    dm(r'AB=2MB=2\sqrt{24}\approx 2\times 4.899=9.80\text{ cm}')],
+    'គេមានរង្វង់ផ្ចិត ' + m('O') + ' ដូចរូប (' + m(r'OM=5\text{ cm}') + ' , ' + m(r'OB=7\text{ cm}') + ') ។ ចូរគណនាប្រវែងអង្កត់ធ្នូ ' + m('AB') + ' ។'))
+assert near(V(7 ** 2 - 5 ** 2), V(24)) and abs(2 * V(24) - 9.7980) < 1e-3
+S.append(exfig('១.១', 'លំហាត់គំរូទី ៣', G.chord_ex3(), [
+    p('ក្នុង ' + m(r'\Delta OXY') + ' គេមាន ' + m(r'\angle OYX+\angle OXY+\angle XOY=180^\circ') + ' (ផលបូកមុំក្នុងត្រីកោណ) ។'),
+    p('នាំឱ្យ ') + dm(r'\angle OYX=180^\circ-30^\circ-60^\circ=90^\circ'),
+    p('ដោយ ' + m(r'\angle OYX=90^\circ') + ' និង ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ នោះ ' + m('OY') + ' ជាបន្ទាត់កែងទៅនឹងចំណុចកណ្ដាលនៃ ' + m('XZ') + ' ។'),
+    p('នាំឱ្យ ' + m(r'YX=\dfrac{1}{2}\times XZ=\dfrac{1}{2}\times 32=16') + ' ។ ដូចនេះ ' + hl(m(r'XY=16\text{ cm}')) + ' ។')],
+    'នៅក្នុងរង្វង់ផ្ចិត ' + m('O') + ' គេមាន ' + m(r'\angle OXY=30^\circ') + ' , ' + m(r'\angle XOY=60^\circ') + ' និង ' + m(r'XZ=32\text{ cm}') + ' ។ ចូររកប្រវែង ' + m('XY') + ' ។'))
+assert 180 - 30 - 60 == 90 and 32 / 2 == 16
+S.append(exfig('១.១', 'ប្រតិបត្តិ', G.chord_prac1(), [
+    p('ដោយ ' + m('OP') + ' ' + m(r'\perp') + ' ' + m('AB') + ' នោះ ' + m('P') + ' ជាចំណុចកណ្ដាលនៃ ' + m('AB') + ' ។'),
+    p(m(r'AP=\dfrac{1}{2}AB=\dfrac{1}{2}\times 25=12.5\text{ cm}') + ' ។'),
+    p('ដោយ ' + m('OQ') + ' ' + m(r'\perp') + ' ' + m('BC') + ' នោះ ' + m('Q') + ' ជាចំណុចកណ្ដាលនៃ ' + m('BC') + ' ។') + p(m(r'BC=2\times BQ=2\times 6.5=13\text{ cm}') + ' ។')],
+    'គេមាន ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ និង ' + m(r'AB=25\text{ cm}') + ' និង ' + m(r'BQ=6.5\text{ cm}') + ' ដូចរូប ។ ចូរគណនាប្រវែង ' + m('AP') + ' និង ' + m('BC') + ' ។'))
+assert 25 / 2 == 12.5 and 2 * 6.5 == 13
+
+S.append(ex('១.២', 'ឧទាហរណ៍ ៖ អង្កត់ធ្នូស្មើគ្នា', p('គូសរង្វង់ផ្ចិត ' + m('O') + ' ដែលមានកាំ ' + m(r'4\text{ cm}') + ' ។ គូសអង្កត់ធ្នូ ' + m('AB') + ' និង ' + m('CD') + ' ឱ្យមានប្រវែងស្មើគ្នា ។ ភ្ជាប់ ' + m('O') + ' ទៅ ' + m('M') + ' ចំណុចកណ្ដាលនៃ ' + m('AB') + ' និង ' + m('O') + ' ទៅ ' + m('N') + ' ចំណុចកណ្ដាលនៃ ' + m('CD') + ' ។')
+    + cols(fig(G.equal_chords()), lines([
+        p('បើគេបត់រង្វង់តាមអ័ក្សឆ្លុះ គេសង្កេតឃើញថា ' + m('AB') + ' ត្រួតស៊ីគ្នានឹង ' + m('CD') + ' ។'),
+        p(m('OM') + ' ស្ថិតនៅលើ ' + m('ON') + ' នាំឱ្យ ' + hl(m('OM=ON')) + ' ។ ' + m('OM') + ' , ' + m('ON') + ' ហៅថា' + hl('ចម្ងាយ') + 'រៀងគ្នាពីផ្ចិត ' + m('O') + ' ទៅអង្កត់ធ្នូ ' + m('AB') + ' និង ' + m('CD') + ' ។')]))))
+S.append(key('១.២', 'ជាទូទៅ',
+    p('អង្កត់ធ្នូពីរមានប្រវែងស្មើគ្នានៅក្នុងរង្វង់មួយ ត្រូវមានចម្ងាយស្មើគ្នាពីផ្ចិតនៃរង្វង់នោះ ។')
+    + p('ច្រាសមកវិញ ៖ អង្កត់ធ្នូក្នុងរង្វង់មួយដែលមានចម្ងាយស្មើគ្នាពីផ្ចិតនៃរង្វង់ ជាអង្កត់ធ្នូស្មើគ្នា ។')))
+S.append(exfig('១.២', 'លំហាត់គំរូទី ១', G.chord_dist_ex1(), [
+    p('គេមាន ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ និង ' + m('M') + ' ជាចំណុចកណ្ដាលនៃអង្កត់ធ្នូ ' + m('AB') + ' ដោយ ' + m(r'AM=MB=4\text{ cm}') + ' ។'),
+    p('ក្នុង ' + m(r'\Delta OBM') + ' តាមទ្រឹស្តីបទពីតាគ័រ ៖') + dm(r'OM^2+4^2=5^2'),
+    dm(r'OM^2+16=25') + dm(r'OM^2=25-16=9') + dm(r'OM=\sqrt{9}=3\text{ cm}'),
+    p('ដូចនេះ ចម្ងាយពីផ្ចិតនៃរង្វង់ទៅអង្កត់ធ្នូគឺ ' + hl(m(r'3\text{ cm}')) + ' ។')],
+    'គេមានរង្វង់ផ្ចិត ' + m('O') + ' ដែលមានកាំ ' + m(r'5\text{ cm}') + ' និងអង្កត់ធ្នូប្រវែង ' + m(r'8\text{ cm}') + ' ដូចរូប ។ ចូររកចម្ងាយពីផ្ចិតនៃរង្វង់ទៅអង្កត់ធ្នូ ។'))
+assert V(5 ** 2 - 4 ** 2) == 3
+S.append(exfig('១.២', 'លំហាត់គំរូទី ២', G.chord_dist_ex2(), [
+    p('ក្នុងត្រីកោណកែង ' + m('OPX') + ' ៖ ' + m(r'PX=\dfrac{PQ}{2}=\dfrac{6}{2}=3') + ' ។'),
+    p('គេបាន ' + m('OX^2+PX^2=OP^2') + ' ៖') + dm(r'OX^2+3^2=5^2') + dm(r'OX^2=25-9=16') + dm(r'OX=4\text{ cm}'),
+    p('ដោយ ' + m('PQ=RS=6\\text{ cm}') + ' នាំឱ្យ ' + hl(m(r'OY=OX=4\text{ cm}')) + ' ។')],
+    'ក្នុងរូបភាព ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ដែលមានកាំ ' + m(r'5\text{ cm}') + ' ហើយ ' + m(r'PQ=RS=6\text{ cm}') + ' ។ ចូររកប្រវែង ' + m('OY') + ' និង ' + m('OX') + ' ។'))
+assert V(5 ** 2 - 3 ** 2) == 4
+S.append(exfig('១.២', 'លំហាត់គំរូទី ៣', G.chord_dist_ex3(), [
+    p('យើងដឹងថាអង្កត់ធ្នូ ' + m('PR=QS') + ' ហើយ ' + m(r'OC=OD=6\text{ cm}') + ' ។'),
+    p('ដូចនេះ ' + hl(m(r'OD=6\text{ cm}')) + ' ។'),
+    p('ក្នុងត្រីកោណកែង ' + m('OCR') + ' ៖') + dm(r'OC^2+CR^2=OR^2') + dm(r'6^2+CR^2=10^2') + dm(r'CR^2=100-36=64') + dm(r'CR=8\text{ cm}'),
+    p(m(r'OC\perp PR') + ' , ' + hl(m(r'PR=2CR=2\times 8=16\text{ cm}')) + ' ។')],
+    'គេមានរង្វង់ផ្ចិត ' + m('O') + ' ដែលមានកាំ ' + m(r'10\text{ cm}') + ' ហើយ ' + m('PR=QS') + ' និង ' + m(r'OC=6\text{ cm}') + ' ។ ចូរគណនាប្រវែង ' + m('OD') + ' និង ' + m('PR') + ' ។'))
+assert V(10 ** 2 - 6 ** 2) == 8 and 2 * 8 == 16
+S.append(exfig('១.២', 'ប្រតិបត្តិ', G.chord_prac2(), [
+    p('ដោយ ' + m(r'OA=OB=5.5\text{ cm}') + ' នោះអង្កត់ធ្នូ ' + m('NM') + ' និង ' + m('NP') + ' មានចម្ងាយស្មើគ្នាពីផ្ចិត ' + m('O') + ' ។'),
+    p('ដូចនេះ ' + m('NP=NM') + ' (ច្រាសមកវិញនៃលក្ខណៈអង្កត់ធ្នូស្មើគ្នា) ។') + p(hl(m(r'NP=9\text{ cm}')) + ' ។')],
+    'នៅក្នុងរូបភាព ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ ហើយ ' + m(r'OA=OB=5.5\text{ cm}') + ' និង ' + m(r'MN=9\text{ cm}') + ' ។ ចូររកប្រវែង ' + m('NP') + ' ។'))
+
+# ================================================================ 2. បន្ទាត់ប៉ះ  (book p.147)
+S.append(part(2, 'បន្ទាត់ប៉ះ'))
+S.append(ex('២', 'ឧទាហរណ៍ ៖ បន្ទាត់រំកិលចុះ', p('នៅក្នុងរង្វង់ផ្ចិត ' + m('O') + ' គេមានអង្កត់ផ្ចិត ' + m('AB') + ' នៅលើបន្ទាត់ ' + m('l') + ' ។ កាលណាបន្ទាត់ ' + m('l') + ' រំកិលចុះពីផ្ចិត ' + m('O') + ' ដោយរក្សាទីតាំងស្របនឹង ' + m('AB') + ' ...')
+    + cols(fig(G.tangent_slide()), stack([
+        p(hl('ទីតាំងទី ១') + ' ៖ ' + m('l') + ' កាត់តាមផ្ចិត ' + m('O') + ' ។ ' + m('AB') + ' ជាអង្កត់ផ្ចិត (វែងជាងគេ) ។'),
+        p(hl('ទីតាំងទី ២') + ' ៖ ' + m('l') + ' រំកិលចុះ ។ ' + m('AB') + ' ខ្លីជាងមុន ។'),
+        p(hl('ទីតាំងទី ៣') + ' ៖ ចម្ងាយរវាងចំណុច ' + m('A') + ' និង ' + m('B') + ' កាន់តែតូចទៅៗ ។'),
+        p(hl('ទីតាំងទី ៤') + ' ៖ ' + m('A') + ' និង ' + m('B') + ' ស្ទើរតែជិតគ្នា ។'),
+        p('រហូតមកត្រួតស៊ីគ្នានឹងចំណុច ' + m('M') + ' ។ ក្នុងករណីនេះបន្ទាត់ ' + m('l') + ' ប្រសព្វនឹងរង្វង់ត្រង់មួយចំណុច ' + m('M') + ' ។ បន្ទាត់នេះហៅថា ' + hl('បន្ទាត់ប៉ះ') + ' ហើយ ' + m('M') + ' ហៅថា' + hl('ចំណុចប៉ះ') + ' ។')]))))
+S.append(ex('២', 'ជាទូទៅ', '<div style="border:4px solid #0f5173;border-radius:16px;padding:.4em 1em;background:#eaf1f6;margin:.3em 0">' + p('បន្ទាត់ប៉ះនៃរង្វង់ត្រូវ' + hl('កែង') + 'ទៅនឹងកាំ ឬអង្កត់ផ្ចិតនៃរង្វង់ត្រង់ចំណុចប៉ះ ។') + '</div>' + fig(G.tangent_rule())))
+S.append(exfig('២', 'លំហាត់គំរូ', G.tangent_TA(), [
+    p(m('TA') + ' ជាបន្ទាត់ប៉ះនឹងរង្វង់ត្រង់ ' + m('T') + ' និង ' + m('OT') + ' ជាកាំនៃរង្វង់ ។ គេបាន ' + hl(m(r'\angle OTA=90^\circ')) + ' ។'),
+    p('ក្នុង ' + m(r'\Delta OTA') + ' មាន ' + m('OT=TA') + ' នាំឱ្យ ' + m(r'\angle TOA=\angle TAO') + ' (មុំបាតនៃត្រីកោណសមបាត) ។'),
+    p(m(r'\angle TOA+\angle TAO+\angle OTA=180^\circ') + ' នាំឱ្យ ' + m(r'2\angle TOA+90^\circ=180^\circ') + ' ។') + dm(r'2\angle TOA=90^\circ\ \Rightarrow\ \angle TOA=45^\circ'),
+    p('ដូចនេះ ' + m(r'\angle OTA=90^\circ') + ' , ' + m(r'\angle TOA=45^\circ') + ' និង ' + m(r'\angle TAO=45^\circ') + ' ។')],
+    'នៅក្នុងរូប ' + m('O') + ' ជាផ្ចិតនៃរង្វង់ ។ ' + m('TA') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ត្រង់ ' + m('T') + ' ដែល ' + m('OT=TA') + ' ។ ចូរគណនារង្វាស់មុំនៃត្រីកោណ ' + m('OTA') + ' ។'))
+assert (180 - 90) / 2 == 45
+S.append(exfig('២', 'ប្រតិបត្តិ', G.tangent_prac(), [
+    p(m('AB') + ' ជាបន្ទាត់ប៉ះ នាំឱ្យ ' + m(r'OB\perp AB') + ' ។ ' + m(r'OB=2') + ' (កាំ) និង ' + m('AB=OB=2') + ' ។'),
+    p('ក្នុងត្រីកោណកែង ' + m('OBA') + ' ៖') + dm(r'OA^2=OB^2+AB^2=4+4=8') + dm(r'OA=\sqrt{8}=2\sqrt{2}'),
+    p('ដោយ ' + m('OC=2') + ' (កាំ) ៖') + dm(r'AC=OA-OC=2\sqrt{2}-2\approx 0.83\text{ cm}')],
+    'គេមានរង្វង់មួយដែលមានផ្ចិត ' + m('O') + ' និងកាំស្មើនឹង ' + m(r'2\text{ cm}') + ' ។ ' + m('A') + ' ជាចំណុចមួយនៅក្រៅរង្វង់ ។ ពីចំណុច ' + m('A') + ' គេគូសបន្ទាត់ប៉ះនឹងរង្វង់ត្រង់ ' + m('B') + ' និងបន្ទាត់មួយទៀតកាត់តាមផ្ចិត ' + m('O') + ' និងកាត់រង្វង់ត្រង់ ' + m('C') + ' ។ បើគេដឹងថា ' + m('AB=OB') + ' ចូរគណនាប្រវែង ' + m('AC') + ' ។'))
+assert abs(2 * V(2) - 2 - 0.8284) < 1e-3
+
+# ================================================================ 3. លក្ខណៈនៃបន្ទាត់ប៉ះ  (book p.148-150)
+S.append(part(3, 'លក្ខណៈនៃបន្ទាត់ប៉ះ'))
+S.append(exfig('៣', 'ឧទាហរណ៍ទី ១', G.tangent_parallel_chord(), [
+    p('បន្ទាត់ ' + m('EF') + ' ប៉ះនឹងរង្វង់ត្រង់ចំណុច ' + m('C') + ' នាំឱ្យ ' + m(r'OC\perp EF') + ' ។'),
+    p('តែ ' + m(r'AB\parallel EF') + ' នាំឱ្យ ' + m(r'AB\perp OC') + ' ។ ដូចនេះ ' + m('C') + ' ជាចំណុចកណ្ដាលនៃធ្នូ ' + m('AB') + ' ។'),
+    p('ដូចនេះ ' + m(arc_('AC') + '=' + arc_('BC')) + ' ។')],
+    'គេឱ្យបន្ទាត់ ' + m('EF') + ' ប៉ះរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ ' + m('C') + ' ដែលមាន ' + m(r'AB\parallel EF') + ' ។ ស្រាយបញ្ជាក់ថា ' + m(arc_('AC') + '=' + arc_('BC')) + ' ។'))
+S.append(key('៣', 'ជាទូទៅ', p('បើបន្ទាត់ប៉ះរង្វង់ស្របទៅនឹងអង្កត់ធ្នូមួយនោះ ចំណុចប៉ះចែកធ្នូសន្និដ្ឋានជាពីរផ្នែកប៉ុនគ្នា ។')))
+S.append(exfig('៣', 'ឧទាហរណ៍ទី ២', G.tangents_slide(), [
+    p('ក្នុងត្រីកោណកែង ' + m('OAB') + ' និង ' + m('OAC') + ' ៖ ' + m('OB=OC') + ' (កាំនៃរង្វង់តែមួយ) ។ ' + m('OA') + ' ជាអ៊ីប៉ូតេនុសរួម ។'),
+    p('ដូចនេះ ' + m(r'\Delta AOB\cong\Delta AOC') + ' (អ.ជ) ។'),
+    p('វិបាក ៖ ') + ul([m('AB=AC'), m(r'\angle BAO=\angle OAC'), m(r'\angle OBA=\angle OCA'), m(r'\angle BOA=\angle COA')])],
+    'គេឱ្យបន្ទាត់ពីរ ' + m('AB') + ' និង ' + m('AC') + ' ប៉ះរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ចំណុចរៀង ' + m('B') + ' និង ' + m('C') + ' ។ ស្រាយបញ្ជាក់ថា ក. ' + m('AB=AC') + ' ខ. ' + m(r'\angle BAO=\angle OAC') + ' គ. ' + m(r'\angle BOA=\angle AOC') + ' ឃ. ' + m(r'\angle OBA=\angle OCA') + ' ។'))
+S.append(key('៣', 'ជាទូទៅ ៖ បន្ទាត់ប៉ះពីរចេញពីចំណុចតែមួយ',
+    p('បើបន្ទាត់ពីរគូសចេញពីចំណុចរួមមួយនៅក្រៅរង្វង់ ហើយប៉ះរង្វង់នេះត្រង់ចំណុច ' + m('B') + ' និង ' + m('C') + ' គេបាន ៖')
+    + ol([
+        'បន្ទាត់ប៉ះនៃរង្វង់កែងទៅនឹងកាំត្រង់ចំណុចប៉ះ ៖ ' + m(r'\angle OBA=\angle OCA=90^\circ') + ' ។',
+        'បន្ទាត់ប៉ះពីរទៅនឹងរង្វង់ដែលគូសចេញពីចំណុចរួមមួយនៅក្រៅរង្វង់ មានប្រវែងស្មើគ្នា ៖ ' + m('AB=AC') + ' ។',
+        'បន្ទាត់ ' + m('AO') + ' ជាអង្កត់ពុះមុំនៃមុំដែលផ្គុំដោយបន្ទាត់ប៉ះទាំងពីរ និងមុំដែលផ្គុំដោយកាំទាំងពីរ ៖ ' + m(r'\angle OAB=\angle OAC') + ' និង ' + m(r'\angle COA=\angle BOA') + ' ។'])))
+S.append(exfig('៣', 'លំហាត់គំរូទី ១', G.two_tangents_ex1(), [
+    p('គេមាន ' + m(r'\angle OBP=90^\circ') + ' ។'),
+    dm(r'\angle ABO=90^\circ-63^\circ=27^\circ'),
+    dm(r'\angle AOB=180^\circ-27^\circ-27^\circ=126^\circ'),
+    p('ដោយ ' + m('OP') + ' ពុះមុំ ' + m(r'\angle AOB') + ' ៖') + dm(r'\angle AOP=\dfrac{1}{2}(126^\circ)=63^\circ')],
+    m('O') + ' ជាផ្ចិតនៃរង្វង់មួយ (ដូចរូប) ។ ' + m('PA') + ' និង ' + m('PB') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ ។ បើ ' + m(r'\angle ABP=63^\circ') + ' ចូរគណនា ' + m(r'\angle AOB') + ' និង ' + m(r'\angle AOP') + ' ។'))
+assert 90 - 63 == 27 and 180 - 54 == 126 and 126 // 2 == 63
+S.append(exfig('៣', 'លំហាត់គំរូទី ២', G.two_tangents_ex2(), [
+    p('ក. ' + m(r'\angle OBT=\angle OAT=90^\circ') + ' នាំឱ្យ') + dm(r'\angle AOB=360^\circ-110^\circ-90^\circ-90^\circ=70^\circ'),
+    p('ខ. ផ្ទៃក្រឡានៃថាសទាំងមូល ' + m(r'\pi R^2') + ' ត្រូវនឹងមុំ ' + m(r'360^\circ') + ' ។ ផ្ទៃក្រឡានៃចម្រៀកថាស ' + m('S_{AOB}') + ' ត្រូវនឹងមុំ ' + m(r'70^\circ') + ' ។'),
+    dm(r'\dfrac{\pi R^2}{S_{AOB}}=\dfrac{360^\circ}{70^\circ}\ ,\quad S_{AOB}=\dfrac{70^\circ}{360^\circ}\times\pi R^2'),
+    dm(r'S_{AOB}=\dfrac{70^\circ}{360^\circ}\times\dfrac{22}{7}\times 9\times 9=49.5\text{ cm}^2')],
+    m('TA') + ' និង ' + m('TB') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់ផ្ចិត ' + m('O') + ' ដែលមានកាំ ' + m(r'9\text{ cm}') + ' ។ បើ ' + m(r'\angle ATB=110^\circ') + ' ចូរគណនា ក. ' + m(r'\angle AOB') + ' ខ. ផ្ទៃក្រឡាចម្រៀកថាសតូច ' + m('AOB') + ' ដែល ' + m(r'\pi=\dfrac{22}{7}') + ' ។'))
+assert 360 - 110 - 180 == 70 and near(70 / 360 * 22 / 7 * 81, 49.5)
+S.append(exfig('៣', 'ប្រតិបត្តិ', G.tangents_practice(), [
+    p('តាង ' + m('OQ=r') + ' (កាំ) ។ ដូចនេះ ' + m('OT=r+10') + ' ។'),
+    p('ដោយ ' + m('ST') + ' ជាបន្ទាត់ប៉ះ ' + m(r'OS\perp ST') + ' ។ ក្នុងត្រីកោណកែង ' + m('OST') + ' ៖') + dm(r'OS^2+ST^2=OT^2'),
+    dm(r'r^2+20^2=(r+10)^2') + dm(r'r^2+400=r^2+20r+100') + dm(r'20r=300') + p('ដូចនេះ ' + hl(m(r'OQ=r=15\text{ cm}')) + ' ។')],
+    m('ST') + ' និង ' + m('RT') + ' ជាបន្ទាត់ប៉ះទៅនឹងរង្វង់មួយមានផ្ចិត ' + m('O') + ' ដែល ' + m(r'ST=RT=20\text{ cm}') + ' ។ បើ ' + m('TQO') + ' ជាបន្ទាត់ត្រង់មួយដែល ' + m(r'TQ=10\text{ cm}') + ' ។ ចូរគណនាកាំនៃរង្វង់ ' + m('OQ') + ' ។'))
+assert 15 ** 2 + 20 ** 2 == 25 ** 2
+
+# ================================================================ 4. ចតុកោណចារឹកក្រៅរង្វង់  (book p.151-152)
+S.append(part(4, 'អនុវត្តន៍លក្ខណៈជ្រុងឈមនៃចតុកោណចារឹកក្រៅរង្វង់'))
+S.append(exfig('៤', 'ឧទាហរណ៍', G.circ_quad(), [
+    p('ជ្រុងទាំងបួននៃចតុកោណ ' + m('ABCD') + ' ប៉ះរង្វង់ត្រង់ ' + m('P') + ' , ' + m('Q') + ' , ' + m('R') + ' និង ' + m('S') + ' ។ ចតុកោណដែលមានជ្រុងទាំងបួនប៉ះរង្វង់តែមួយ ហៅថា' + hl('ចតុកោណចារឹកក្រៅរង្វង់') + ' ។'),
+    p('ក. ' + m('AP=AS') + ' , ' + m('BP=BQ') + ' , ' + m('CQ=CR') + ' និង ' + m('DR=DS') + ' (បន្ទាត់ប៉ះពីរចេញពីចំណុចតែមួយមានប្រវែងស្មើគ្នា) ។')],
+    'ក្នុងចតុកោណ ' + m('ABCD') + ' ជ្រុងទាំងបួនជាបន្ទាត់ប៉ះរង្វង់ត្រង់ ' + m('P') + ' , ' + m('Q') + ' , ' + m('R') + ' និង ' + m('S') + ' ។ បង្ហាញថា ក. ' + m('AP=AS,\\ BP=BQ,\\ CQ=CR,\\ DR=DS') + ' ខ. ' + m('AB+CD=AD+BC') + ' ។'))
+S.append(ex('៤', 'ឧទាហរណ៍ ៖ ខ.', p('បង្ហាញថា ' + m('AB+CD=AD+BC') + ' ។ គេមាន ' + m('AB=AP+PB') + ' , ' + m('AD=AS+SD') + ' , ' + m('CD=CR+RD') + ' , ' + m('BC=BQ+QC') + ' ។')
+    + dm(r'\begin{aligned}AB+CD&=(AP+PB)+(CR+RD)\\&=AS+BQ+QC+SD\\&=AS+SD+BQ+QC\\&=AD+BC\end{aligned}')))
+S.append(key('៤', 'ជាទូទៅ', p('ក្នុងចតុកោណចារឹកក្រៅរង្វង់ ផលបូករង្វាស់ជ្រុងឈមមានរង្វាស់ស្មើគ្នា ។') + dm(r'AB+CD=AD+BC')))
+S.append(ex('៤', 'លំហាត់គំរូ', p('រង្វង់ផ្ចិត ' + m('O') + ' ប៉ះនឹងជ្រុងទាំងបួននៃចតុកោណ ' + m('ABCD') + ' ដែល ' + m(r'AB=20\text{ cm}') + ' , ' + m(r'CD=14\text{ cm}') + ' , ' + m(r'BC=11\text{ cm}') + ' ។ ចូរគណនារង្វាស់ ' + m('AD') + ' ។')
+    + cols(fig(G.circ_quad(False)), lines([
+        p('ជ្រុងទាំងបួននៃ ' + m('ABCD') + ' ប៉ះរង្វង់ នោះ ' + m('ABCD') + ' ជាចតុកោណចារឹកក្រៅរង្វង់ ។'),
+        p('គេបាន ' + m('AB+CD=AD+BC') + ' នាំឱ្យ ' + m('AD=(AB+CD)-BC') + ' ។'),
+        dm(r'AD=(20+14)-11=23') + p('ដូចនេះ ' + hl(m(r'AD=23\text{ cm}')) + ' ។')]))))
+assert (20 + 14) - 11 == 23
+S.append(exfig('៤', 'ប្រតិបត្តិ', G.incircle_isosceles(), [
+    p('ពីចំណុច ' + m('A') + ' ៖ ' + m('AP=AQ') + ' ។ ដោយ ' + m('ABC') + ' សមបាត ' + m('AB=AC') + ' នាំឱ្យ ' + m('PC=QB') + ' (' + m('AC-AP=AB-AQ') + ') ។'),
+    p('ពីចំណុច ' + m('B') + ' ៖ ' + m('BR=BQ') + ' ។ ពីចំណុច ' + m('C') + ' ៖ ' + m('CR=CP') + ' ។'),
+    p('ដូចនេះ ' + m('BR=BQ=PC=CR') + ' ។ ' + hl(m('BR=RC')) + ' ។')],
+    'ក្នុងរូបភាព ' + m('ABC') + ' ជាត្រីកោណសមបាតដែលមានកំពូល ' + m('A') + ' ។ ចូរស្រាយបញ្ជាក់ថា ' + m('BR=RC') + ' ។'))
+
+# ================================================================ 5. ទីតាំងរង្វង់  (book p.152-153)
+S.append(part(5, 'ទីតាំងរង្វង់'))
+_pos_svg, _pos_cases = G.positions_slide()
+_pos_lines = [
+    (r"d>r+r'", 'រង្វង់គ្មានចំណុចរួម'), (r"d=r+r'", 'រង្វង់មានចំណុចរួមមួយ (ប៉ះក្រៅ)'), (r"r-r'<d<r+r'", 'រង្វង់កាត់គ្នាត្រង់ពីរចំណុច'),
+    (r"d=r-r'", 'រង្វង់មានចំណុចរួមមួយ (ប៉ះក្នុង)'), (r"d<r-r'", 'រង្វង់គ្មានចំណុចរួម (រង្វង់តូចនៅក្នុងរង្វង់ធំ)')]
+S.append(ex('៥', 'ឧទាហរណ៍ ៖ ចម្ងាយ ' + m('d') + ' កាន់តែតូច', p('គេមានរង្វង់ពីរដែលមានផ្ចិត ' + m('O') + ' និង ' + m("O'") + ' និងកាំរៀងគ្នា ' + m('r') + ' និង ' + m("r'") + ' ។ ' + m('d') + ' ជាចម្ងាយរវាងផ្ចិតទាំងពីរ ។ ' + m('d') + ' កាន់តែតូចទៅៗ ចាប់ពីទីតាំងទី (១) ទៅ (៥) ។')
+    + cols(fig(_pos_svg), stack([f'<p><b style="color:#e03131">({kn}) </b>{m(cond)}</p><p>{name}</p>' for kn, (cond, name) in zip('១២៣៤៥', _pos_lines)]))))
+S.append(ex('៥', 'សង្ខេប ៖ ទីតាំងរង្វង់ពីរ', big('<table class="tbl" style="margin:.3em auto"><tr><th>រូប</th><th>លក្ខខណ្ឌ</th><th>ចំណុចរួម</th></tr>'
+    + ''.join(f'<tr><td>({k})</td><td>{m(c)}</td><td>{n}</td></tr>' for k, (c, n) in zip('១២៣៤៥', [(r"d>r+r'", 'គ្មាន'), (r"d=r+r'", 'មួយ · ប៉ះក្រៅ'), (r"r-r'<d<r+r'", 'ពីរ · កាត់គ្នា'), (r"d=r-r'", 'មួយ · ប៉ះក្នុង'), (r"d<r-r'", 'គ្មាន')]))
+    + '</table>') + p('កាលណារង្វង់ប៉ះគ្នា ចំណុចប៉ះស្ថិតនៅលើបន្ទាត់កាត់តាមផ្ចិតនៃរង្វង់ទាំងពីរ ។')))
+S.append(ex('៥', 'លំហាត់គំរូ', p('គេឱ្យរង្វង់ពីរដែលមានកាំរៀងគ្នា ' + m(r"r=8\text{ cm}") + ' , ' + m(r"r'=5\text{ cm}") + ' ហើយ ' + m("OO'") + ' ជាចម្ងាយរវាងផ្ចិតទាំងពីរដែល ' + m("OO'=2x+1") + ' ។ ចូរកំណត់ ' + m('x') + ' ដើម្បីឱ្យ ក. រង្វង់ពីរប៉ះក្រៅ ខ. រង្វង់កាត់គ្នាត្រង់ពីរចំណុច ។')
+    + lines([
+        p('ក. រង្វង់ពីរប៉ះក្រៅកាលណា ' + m("d=r+r'=8+5=13") + ' ។ ' + m("OO'=d=2x+1") + ' នាំឱ្យ ' + m('2x+1=13') + ' ' + m('x=6') + ' ។'),
+        p('ដូចនេះ រង្វង់ពីរប៉ះក្រៅគ្នាកាលណា ' + hl(m('x=6')) + ' ។'),
+        p('ខ. រង្វង់កាត់គ្នាត្រង់ពីរចំណុចកាលណា ' + m("r-r'<d<r+r'") + ' ។') + dm(r'8-5<2x+1<8+5\ \Rightarrow\ 3<2x+1<13\ \Rightarrow\ 2<2x<12'),
+        p('ដូចនេះ ' + hl(m('1<x<6')) + ' ។')])))
+assert 2 * 6 + 1 == 13 and 3 < 2 * 2 + 1 < 13
+S.append(ex('៥', 'ប្រតិបត្តិ', p('គេឱ្យរង្វង់ពីរដែលមានកាំរៀងគ្នា ' + m(r"r=5\text{ cm}") + ' , ' + m(r"r'=3\text{ cm}") + ' ។ ' + m("OO'") + ' កាត់រង្វង់រៀងគ្នាត្រង់ ' + m('A') + ' , ' + m('B') + ' ។ ចូរគណនាប្រវែង ' + m('AB') + ' ។')
+    + p('សៀវភៅមិនបានឱ្យ ' + m("OO'") + ' ទេ ។ ក្នុងស្លាយនេះយើងឱ្យ ' + m(r"OO'=12\text{ cm}") + ' ។', 'ts-note')
+    + lines([p(m("OA=r=5") + ' , ' + m("O'B=r'=3") + ' ។ ' + m("OO'=OA+AB+BO'") + ' ។'), dm(r"AB=OO'-r-r'=12-5-3=4\text{ cm}")])))
+assert 12 - 5 - 3 == 4
+
+# ================================================================ 6. បន្ទាត់ប៉ះរួម  (book p.154-155)
+S.append(part(6, 'បន្ទាត់ប៉ះរួម'))
+S.append(ex('៦', 'បន្ទាត់ប៉ះរួម ក. រង្វង់គ្មានចំណុចរួម', p('បន្ទាត់ប៉ះរួមនៃរង្វង់ពីរផ្សេងគ្នាអាស្រ័យលើទំនាក់ទំនងទីតាំងនៃរង្វង់ទាំងពីរ ។')
+    + cols(fig(G.common_tangents_fig(330, step_ext=1, step_int=2)[0]), lines([
+        p('រង្វង់ទាំងពីរគ្មានចំណុចរួម ' + m('AB') + ' និង ' + m('CD') + ' ហៅថា' + hl('បន្ទាត់ប៉ះរួមខាងក្រៅ') + ' ។ រង្វង់ទាំងពីរស្ថិតនៅតែម្ខាងនៃបន្ទាត់ ' + m('AB') + ' និង ' + m('CD') + ' ។'),
+        p('បន្ទាត់ ' + m('MN') + ' និង ' + m('PQ') + ' ហៅថា' + hl('បន្ទាត់ប៉ះរួមខាងក្នុង', '#e03131') + ' ។ រង្វង់ទាំងពីរស្ថិតនៅសងខាងនៃបន្ទាត់ ' + m('MN') + ' និង ' + m('PQ') + ' ។')]))))
+S.append(ex('៦', 'ខ. រង្វង់ប៉ះគ្នា', p('រង្វង់ពីរមានចំណុចរួមមួយ ហៅថារង្វង់ប៉ះគ្នា ។ ' + m('l') + ' ជាបន្ទាត់ប៉ះរួម ។')
+    + cols(fig(G.common_tangents_fig(158, w=700, step_ext=1, step_int=2)[0]), lines([
+        p('ប៉ះក្រៅ ៖ រង្វង់ទាំងពីរស្ថិតនៅសងខាងនៃបន្ទាត់ប៉ះរួមខាងក្នុង ' + m('l') + ' ។ មានបន្ទាត់ប៉ះរួម ' + hl('៣') + ' ។'),
+        p('រង្វង់ក្រៅពីរមានបន្ទាត់ប៉ះរួមខាងក្រៅ ២ ។')]))))
+S.append(ex('៦', 'ខ. រង្វង់ប៉ះក្នុង', p('រង្វង់ទាំងពីរមានចំណុចរួមមួយ ។ ' + m('l') + ' ជាបន្ទាត់ប៉ះរួម ។ រង្វង់ទាំងពីរស្ថិតនៅតែម្ខាងនៃបន្ទាត់ ' + m('l') + ' ។ មានបន្ទាត់ប៉ះរួម ' + hl('១') + ' ។')
+    + fig(G.common_tangents_fig(42, step_ext=0)[0])))
+S.append(ex('៦', 'គ. រង្វង់កាត់គ្នា', p('រង្វង់ទាំងពីរកាត់គ្នាត្រង់ពីរចំណុច ។ បន្ទាត់ ' + m('XY') + ' និង ' + m('ZE') + ' ជាបន្ទាត់ប៉ះរួមខាងក្រៅ ។ រង្វង់ទាំងពីរស្ថិតនៅតែម្ខាងនៃ ' + m('XY') + ' និង ' + m('ZE') + ' ។ មានបន្ទាត់ប៉ះរួម ' + hl('២') + ' ។')
+    + fig(G.common_tangents_fig(100, step_ext=0)[0])))
+S.append(ex('៦', 'ឃ. រង្វង់តូចនៅក្នុងរង្វង់ធំ', p('គ្មានចំណុចប៉ះរួម ។ មានបន្ទាត់ប៉ះរួម ' + hl('០') + ' ។') + fig(G.common_tangents_fig(20, step_ext=0)[0])))
+S.append(ex('៦', 'សង្ខេប ៖ ចំនួនបន្ទាត់ប៉ះរួម', big('<table class="tbl" style="margin:.3em auto"><tr><th>ទីតាំងរង្វង់</th><th>លក្ខខណ្ឌ</th><th>បន្ទាត់ប៉ះរួម</th></tr>'
+    + ''.join(f'<tr><td>{a}</td><td>{m(c)}</td><td><b style="color:#e03131">{n}</b></td></tr>' for a, c, n in [
+        ('គ្មានចំណុចរួម', r"d>r+r'", '៤'), ('ប៉ះក្រៅ', r"d=r+r'", '៣'), ('កាត់គ្នា', r"r-r'<d<r+r'", '២'), ('ប៉ះក្នុង', r"d=r-r'", '១'), ('តូចក្នុងធំ', r"d<r-r'", '០')]) + '</table>')))
+# the table of the book (practice 1)
+_rows = [('៣', '៥', '១០', 'd>a+b', 'ដូចនេះមានបន្ទាត់ប៉ះរួម ៤', 4), ('៤', '៣', '៦', 'a-b<d<a+b', 'ដូចនេះមានបន្ទាត់ប៉ះរួម ២', 2), ('២', '៣', '៥', 'd=a+b', 'ដូចនេះមានបន្ទាត់ប៉ះរួម ៣', 3), ('៥', '៣', '២', 'd=a-b', 'ដូចនេះមានបន្ទាត់ប៉ះរួម ១', 1)]
+_vals = [(3, 5, 10), (4, 3, 6), (2, 3, 5), (5, 3, 2)]
+
+
+def n_common(a, b, d):
+    big, small = max(a, b), min(a, b)
+    return 4 if d > a + b else 3 if d == a + b else 2 if big - small < d < a + b else 1 if d == big - small else 0
+
+
+assert [n_common(*v) for v in _vals] == [4, 2, 3, 1]
+S.append(ex('៦', 'លំហាត់គំរូទី ១', p('គេមានរង្វង់ពីរផ្សេងគ្នាដែលមានរង្វាស់កាំ ' + m('a') + ' និង ' + m('b') + ' គិតជា cm ហើយចម្ងាយរវាងរង្វង់ទាំងពីរស្មើ ' + m('d') + ' ។ ចូររកចំនួនបន្ទាត់ប៉ះរួមតាមករណីខាងក្រោម ។')
+    + big('<table class="tbl" style="margin:.2em auto"><tr><th></th>' + ''.join(f'<th>{c}</th>' for c in 'កខគឃ') + '</tr>'
+    + ''.join(f'<tr><th>{lab}</th>' + ''.join(f'<td>{m(str(v[i]))}</td>' for v in _vals) + '</tr>' for i, lab in enumerate(['a', 'b', 'd']))
+    + '<tr><th>បន្ទាត់ប៉ះ</th>' + ''.join('<td>' + rvd(i + 1, '<b style="color:#e03131">' + kh(r[5]) + '</b>') + '</td>' for i, r in enumerate(_rows)) + '</tr></table>')))
+S.append(ex('៦', 'លំហាត់គំរូទី ១ ៖ ចម្លើយ', lines([
+    p('ក. ' + m('d>a+b') + ' នាំឱ្យរង្វង់ទាំងពីរគ្មានចំណុចរួម ។ ដូចនេះមានបន្ទាត់ប៉ះ ' + hl('៤') + ' ។'),
+    p('ខ. ' + m('a-b<d<a+b') + ' នាំឱ្យរង្វង់ទាំងពីរកាត់គ្នាត្រង់ពីរចំណុច ។ ដូចនេះមានបន្ទាត់ប៉ះរួម ' + hl('២') + ' ។'),
+    p('គ. ' + m('d=a+b') + ' នាំឱ្យរង្វង់ពីរប៉ះគ្នាមានចំណុចរួមមួយ ។ រង្វង់ស្ថិតនៅសងខាងនៃបន្ទាត់ប៉ះ ។ ដូចនេះមានបន្ទាត់ប៉ះរួម ' + hl('៣') + ' ។'),
+    p('ឃ. ' + m('d=a-b') + ' នាំឱ្យរង្វង់ពីរប៉ះគ្នាមានចំណុចរួមមួយ ។ រង្វង់ស្ថិតនៅម្ខាងនៃបន្ទាត់ប៉ះ ។ ដូចនេះមានបន្ទាត់ប៉ះរួម ' + hl('១') + ' ។')])))
+S.append(exfig('៦', 'លំហាត់គំរូទី ២', G.common_tangent_ex2(), [
+    p('គេមាន ' + m('XY') + ' ជាបន្ទាត់ប៉ះរួមខាងក្នុង ប៉ះរង្វង់ទាំងពីរត្រង់ ' + m('Y') + ' និង ' + m('X') + ' ។'),
+    p('ពីចំណុច ' + m('X') + ' បន្ទាត់ប៉ះរង្វង់ផ្ចិត ' + m('O') + ' ពីរគឺ ' + m('XY') + ' និង ' + m('XS') + ' ។ ដូចនេះ ' + hl(m('XS=XY')) + ' ។'),
+    p('ពីចំណុច ' + m('Y') + ' បន្ទាត់ប៉ះរង្វង់ផ្ចិត ' + m("O'") + ' ពីរគឺ ' + m('YX') + ' និង ' + m('YT') + ' ។ ដូចនេះ ' + hl(m('YX=YT')) + ' ។'),
+    p('ដូចនេះ ' + hl(m('XS=YT')) + ' ។')],
+    m('XY') + ' ជាបន្ទាត់ប៉ះរួមខាងក្នុងរង្វង់ផ្ចិត ' + m('O') + ' និង ' + m("O'") + ' ។ ' + m('XS') + ' ជាបន្ទាត់ប៉ះរង្វង់ផ្ចិត ' + m('O') + ' ត្រង់ ' + m('S') + ' ហើយ ' + m('YT') + ' ជាបន្ទាត់ប៉ះរង្វង់ផ្ចិត ' + m("O'") + ' ត្រង់ ' + m('T') + ' ។ ចូរបង្ហាញថា ' + m('XS=YT') + ' ។'))
+S.append(exfig('៦', 'ប្រតិបត្តិ', G.tangent_circles_prac(), [
+    p('រង្វង់ប៉ះក្រៅ ' + m("d=r+r'=4") + ' ។ រង្វង់ប៉ះក្នុង ' + m("d=r-r'=1") + ' ។'),
+    dm(r"\begin{cases} r+r'=4\\ r-r'=1\end{cases}"),
+    dm(r"2r=5\ \Rightarrow\ r=2.5\text{ cm}") + dm(r"r'=4-2.5=1.5\text{ cm}")],
+    'គេមានរង្វង់ពីរ មានទំហំខុសគ្នាដែលមានផ្ចិត ' + m('O') + ' និង ' + m("O'") + ' ។ រង្វង់ទាំងពីរនេះមានបន្ទាត់ប៉ះរួមមួយ ដែលមានចម្ងាយរវាងផ្ចិតទាំងពីរស្មើនឹង ' + m(r'4\text{ cm}') + ' និងមានចម្ងាយរវាងផ្ចិតទាំងពីរស្មើនឹង ' + m(r'1\text{ cm}') + ' ដូចរូប ។ ចូរគណនាកាំនៃរង្វង់ទាំងពីរ ។'))
+assert (4 + 1) / 2 == 2.5 and 4 - 2.5 == 1.5
+
+# ---------------------------------------------------------------- write
+for s in S:
+    s.setdefault('k', '')
+    s['html'] = s['html'].replace(' ។', ' ។')
+
+
+def _style_h2(html):
+    def f(mo):
+        t = mo.group(1)
+        if ' ៖ ' in t:
+            a, r = t.split(' ៖ ', 1)
+            return f'<h2><span class="h-lab">{a} ៖</span> <span class="h-txt">{r}</span></h2>'
+        return f'<h2><span class="h-lab">{t}</span></h2>'
+    return re.sub(r'<h2>(.*?)</h2>', f, html, flags=re.S)
+
+
+for s in S:
+    s['html'] = _style_h2(s['html'])
+out = [stepify(x) if x.get('k') in ('sol', 'ex', 'key', 'prac') and 'data-step' not in x['html'] else x for x in S]
+os.makedirs(os.path.dirname(OUT), exist_ok=True)
+js = ('// Deck for Grade 9 Lesson 13 (follows the MoEYS textbook): tools/lesson9_13/build.py — do not edit by hand.\n'
+      + 'window.TEACH_SLIDES = window.TEACH_SLIDES || {};\n'
+      + "window.TEACH_SLIDES['9-13'] = " + json.dumps(out, ensure_ascii=False, separators=(',', ':')) + ';\n')
+open(OUT, 'w', encoding='utf8').write(js)
+print(len(out), 'slides ->', os.path.abspath(OUT), len(js) // 1024, 'KB')
