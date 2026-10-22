@@ -677,7 +677,7 @@ body.teach-show-on { overflow: hidden; }
 
 /* ===== hand-designed lesson slides: figures, column arithmetic, tables, chips ===== */
 .ts-slide .fig { margin: .4em auto .5em; text-align: center; }
-.ts-slide .fig svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+.ts-slide .fig > svg { width: 100%; height: auto; display: block; margin: 0 auto; }   /* direct child only: the maths inside a picture has its own svg (radical sign) */
 .ts-slide .cap { font-size: .7em; color: #4a6477; font-weight: 700; margin-top: .15em; }
 .ts-slide .dm { margin: .2em 0; }
 .ts-slide .chip { display: inline-block; padding: .08em .6em; border-radius: 99px; font-weight: 800; }
@@ -1005,3 +1005,10 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide.ts-big { font-size: clamp(20px, 2.7vw, 40px); line-height: 1.6; }
 /* left margin 2 cm (CSS cm = 96 dpi: 2 cm on a laptop screen, scales with the projected image) */
 .ts-slide.ts-big { padding-left: 2cm; }
+
+/* smooth motion for the projector decks (ts-big): pictures and their pieces fade in; nothing draws itself, pops or bounces */
+@keyframes tsFade { from { opacity: 0; } to { opacity: 1; } }
+.ts-slide.ts-big .fig > svg { animation: tsFade .8s ease both; }
+.ts-slide.ts-big svg .rv { transition: opacity .7s ease; }
+.ts-slide.ts-big div.rv:not(.rv-hide) { animation: tsRise .7s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .ts-slide.ts-big .fig > svg, .ts-slide.ts-big div.rv:not(.rv-hide) { animation: none; } }

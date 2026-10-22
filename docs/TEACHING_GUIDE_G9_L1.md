@@ -1,44 +1,26 @@
-# Teaching guide: Grade 9 Lesson 1 «ចំនួនអសនិទាន» (irrational numbers and radicals)
+# Teaching guide: Grade 9 Lesson 1 «ចំនួនអសនិទាន» (follows the MoEYS textbook, 12 pages)
 
-The deck has 145 slides on screen (138 authored + the school intro + auto-splits). Plan about 6 periods of 45 minutes. This is the method behind the slides.
+The deck (`tools/lesson9_1/build.py`) has the book's sections, examples, general rules and practice items in the book's order and wording: 73 slides on screen (about 12 per period over 6 periods). The long deck (30 exercises with solutions, five PISA tasks, extras) is archived as `build_full.py` → `public/js/slides/g9/lesson1_full.js` (not loaded by the app; rebuild it if you want a workbook).
 
-## The method in one line
-**Problem → guess → picture → symbol → rule → try to break the rule → practise → check.** Concrete → pictorial → abstract (CPA), with *I do / we do / you do* inside every skill.
-
-## Period plan (suggested)
-| Period | Slides (by title) | Goal |
+## Period plan
+| Period | Parts | Book pages |
 |---|---|---|
-| 1 | Lesson map, warm-up, **ទាយសិន**, garden square, squeezing √3, sets of numbers, compass √2, area 2, spiral | Need for a new number; √2 is a real length; rational vs irrational |
-| 2 | Rules to decide, squares to 20, solving x² = a, ± vs √, **ពិត ឬ មិនពិត? #1**, cube roots | √ is not ±; cube roots of negatives exist |
-| 3 | 3.1 multiply, 3.2 divide (areas, patterns, then the rule), counter-example √(9+16) | √a·√b = √ab; the common mistake |
-| 4 | 3.3 take out, 3.4 put in (√18 = 3√2 as nine squares), like radicals as bars | Simplify by perfect squares/cubes |
-| 5 | 3.5 add and subtract, **ពិត ឬ មិនពិត? #2**, 3.6 rationalise | Combine like radicals; remove the radical from the denominator |
-| 6 | Exercises (level 1), one PISA task, **Exit ticket** | Consolidate and check |
+| 1 | Lesson map, recall, √ of 9 and 25/4, the garden (x² = 3), trial values, √3, radical sign, x² = −3, ដើមការេ, general rule | 1–2 |
+| 2 | Practice «លំហាត់គួរ» + «ប្រតិបត្តិ» of square roots; cube roots (64, −27, ដើមគូប, 17, −17, rule, practice) | 2–4 |
+| 3 | 3.1 multiply and 3.2 divide | 4–6 |
+| 4 | 3.3 take a number out, 3.4 put a number in | 6–8 |
+| 5 | 3.5 add and subtract | 8–10 |
+| 6 | 3.6 rationalise, summary, exit ticket | 10–12 |
 
-## How to run each kind of slide
-- **ទាយសិន / predict:** give 30 seconds, mini-whiteboards up together (no copying), then reveal. Wrong guesses are useful: ask «ហេតុអ្វីប្អូនទាយបែបនេះ?».
-- **Worked example (ex slides, steps):** press → one step at a time. Stop before each result and ask the class «ជំហានបន្ទាប់ជាអ្វី?» (cold-call with the Spin wheel in teaching mode, not hands up only).
-- **I do / we do / you do:** example (I do) → the next example, you hide the last step and the class completes it (we do) → «សាកល្បងខ្លួនឯង» (you do) on whiteboards → answers.
-- **ពិត ឬ មិនពិត:** students commit first (hand up for true / down for false), then you reveal one answer at a time and ask one student to explain.
-- **Exit ticket:** on paper, 5 minutes, collected. Sort the papers into «បានយល់ / ស្ទើរ / មិនទាន់»; re-teach the third pile next period.
-- **Pen:** write students' ideas on the slide (draw the compass arc, circle the perfect square inside √48).
+## How to run the slides
+- **Example slides:** press → one line at a time. Before each result ask «ជំហានបន្ទាប់ជាអ្វី?».
+- **Practice slides (លំហាត់គួរ / ប្រតិបត្តិ):** the problems are on screen; students write first, then each → reveals one answer (green).
+- **Worked-answer slides:** one line of working per →.
+- **ដើមការេ / ដើមគូប:** one colour per number and its roots. 9 and 5 each have TWO square roots; every number has ONE cube root.
+- **Exit ticket:** on paper in the last 5 minutes; sort into «បានយល់ / ស្ទើរ / មិនទាន់».
 
-## Questions that make students think
-- «តើ √2 ជាចំនួនប៉ុន្មាន?» → «វាជាប្រវែងអ៊ីប៉ូតេនុសនៃត្រីកោណកែងមានជ្រុង 1 និង 1» (before any decimal).
-- «ហេតុអ្វី √9 ≠ ±3 តែ x² = 9 មាន x = ±3?» (the function vs the equation).
-- «តើអាចបូក 3√2 + 4√3 បានទេ? គិតជាប្រវែង» (bars of different length).
-- «ហេតុអ្វីគេមិនទុករ៉ាឌីកាល់នៅភាគបែង?» → compute 1/√2 by hand vs √2/2.
-
-## Misconceptions to expect (all have a slide)
-1. √9 = ±3. 2. √(a + b) = √a + √b. 3. √(x²) = x (it is |x|). 4. 3√2 + 4√3 = 7√5. 5. «ទសភាគវែង = អសនិទាន» (0.333… is rational). 6. √(−4) exists.
-
-## Differentiation
-- **Support:** keep the picture slides (square of area 2, the nine squares for √18); give the table of squares/cubes; do level-1 exercises only.
-- **Core:** all examples + «សាកល្បងខ្លួនឯង» + two PISA tasks.
-- **Stretch:** «ហេតុអ្វី √2 ជាចំនួនអសនិទាន?» (proof by contradiction), the nested radical √(7 + √40), exercises of levels 2-3 in the book (not in the deck yet).
-
-## Assessment
-Quick checks (the two ពិត/មិនពិត slides), «សាកល្បងខ្លួនឯង» after each skill, the exit ticket, and the PISA tasks as the application mark (rubric: correct exact value; rational/irrational with reason; sensible estimate).
+## Misconceptions to expect
+√9 = ±3 (it is 3; the equation x² = 9 has x = ±3) · √(a + b) = √a + √b · √(x²) = x (it is |x|) · 3√2 + 4√3 = 7√5 · 0.333… is irrational (it is 1/3) · √(−4) exists.
 
 ## Honest limits
-This guide is my proposal for the method; the slides were not tried with a class. The book's own sequence is kept; additions are marked in `docs/LESSON_G9_1_REPORT.md` (lesson map, predict slide, true/false checks, proof of irrationality of √2, exit ticket: all written by me, not in the book).
+The slides were not tried with a class. Added by me, not in the book: lesson map, the garden picture, ដើមការេ/ដើមគូប, pictures for √4×√9, √18 = 3√2 and like radicals, the summary and the exit ticket (Khmer wording mine: please review).

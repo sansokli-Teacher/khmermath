@@ -43,7 +43,7 @@ export default function Lessons({ cls, students, onBack }) {
     const lesson = data[n];
     rememberLesson(cls, grade, n);   // the game wizard starts from the lesson last taught
     if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261027h`); } catch { /* falls back to the part board */ } }
-    if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261028g`); } catch { /* falls back to the part board */ } }
+    if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261030b`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;

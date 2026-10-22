@@ -42,3 +42,10 @@ Please check these three in the printed book before teaching them.
 ## Update 2026-10-22 (projector text size)
 - Grade 9 Lesson 1 now uses a larger base text (`.ts-slide.ts-big`, ~40 px at 1920 px wide, was 28 px max). Only 9-1 (`BIG_TEXT_LESSONS` in teachshow.js): the Grade 7 decks were not re-audited at this size and keep the old size.
 - Audit at 1920x873: 148 slides, no overflow, no text under 22 px. Not tested on a real projector.
+
+## Update 2026-10-22 (rebuilt to follow the MoEYS textbook)
+- Why: the first deck followed the long `L01_irrational_numbers.tex` (30 exercises, solutions, PISA) and had 147 slides: too many to teach. The textbook lesson 1 is 12 pages.
+- Now: `tools/lesson9_1/build.py` follows the book (sections 1, 2, 3.1–3.6: every example, general rule, «លំហាត់គួរ» and «ប្រតិបត្តិ», book wording): 73 slides on screen. Practice answers come with the → key (one by one). The old build is `build_full.py` (output `lesson1_full.js`, not loaded).
+- Pictures: `tools/lesson9_1/vis_book.py`, all labels typeset with KaTeX in a `foreignObject` (radical bars, fractions, italic maths), nothing draws itself: pieces fade in with the reveal steps (`.ts-big` rules at the end of teachshow.css). Lessons part list (`lessons_g9.json`) has the 8 book sections.
+- Differences from the book: the book prints 5/3 ≈ 1.66 and 2.77 and 15.6, 17.5 (truncated); the deck shows 5/3 ≈ 1.67, 25/9 ≈ 2.78, 2.5³ = 15.625, 2.6³ = 17.576 (rounded or exact). In 3.4 «ប្រតិបត្តិ» the book's first item (∛(1/3), no coefficient to insert) is omitted. The book's printed answer for 3.6 «ប្រតិបត្តិ» item 2 and 4 was not used; the values were checked numerically (−5−2√6 and (2∛6−2∛3+∛12)/6).
+- Audit at 1920×873: 73 slides, no overflow, no text under 22 px, no KaTeX errors. Looked at on screen: map, garden, √3 line, radical parts, both plants, 3.1 picture, 3.3 picture, like radicals picture, a practice slide, a worked slide. Not looked at: every other slide, projector/phone.
