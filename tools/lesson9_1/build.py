@@ -7,7 +7,7 @@ HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson1'))
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson2'))
 sys.path.insert(0, os.path.join(HERE, '..', 'lesson12'))
-from lib import stepify, slide, part, key, ex, prac, sol, m, dm, p, ul, ol, hl, fig, rvd, chain
+from lib import stepify, slide, part, key, ex, prac, sol, m, dm, p, ul, ol, hl, fig, rvd, chain, cols
 from tidy_sol import rebuild, split_solution
 from animate import animate_deck
 from vis9 import *
@@ -238,6 +238,12 @@ S.append(ex(K[1], 'ឧទាហរណ៍ទី៣  ទសភាគ',
 assert Fraction('1.5') ** 2 == Fraction('2.25') < 3
 assert Fraction('1.7') ** 2 == Fraction('2.89') < 3
 assert Fraction('1.8') ** 2 == Fraction('3.24') > 3
+S.append(ex(K[1], 'ដើមការេ',
+    cols(fig(plant('sq')),
+         p('«ឫស» គឺជាឫសដើមឈើ និងជាឫសនៃចំនួនផងដែរ។ ចំនួននៅលើផ្កា ឫសរបស់វាលាក់នៅក្រោមដី។')
+         + rvd(1, p(m('9') + ' → ' + m(r'\sqrt{9}=3') + ' ព្រោះ ' + m('3^2=9') + '។ ឫសជាចំនួនគត់ (សនិទាន)។'))
+         + rvd(2, p(m('5') + ' → ' + m(r'\sqrt{5}') + '។ ' + m('5') + ' មិនមែនជាការេប្រាកដ ដូចនេះឫសជាចំនួន' + hl('អសនិទាន') + '។'))
+         + rvd(3, p(m('-4') + ' → ' + hl('គ្មាន') + '។ គ្មានចំនួនពិតណាដែលលើកជាការេបាន ' + m('-4') + '។')))))
 S.append(key(K[1], 'រ៉ាឌីកាល់',
     p(m(r'\sqrt{3}') + ' អានថា ឫសទីពីរនៃ 3។ ' + m(r'(\sqrt{3})^2 = 3') + '។')
     + p('សញ្ញា ' + m(r'\sqrt{\;}') + ' ហៅថា ' + hl('រ៉ាឌីកាល់') + '។ សន្ទស្សន៍លាក់ទុកស្មើនឹង 2 ហើយលេខ 3 ហៅថា ' + hl('រ៉ាឌីកង់') + '។')
@@ -313,6 +319,12 @@ S.append(ex(K[1], 'ពិនិត្យយល់ ៖ ពិត ឬ មិនព
 ])))
 S.append(part(2, 'ឫសគូប'))
 S.append(ex(K[2], 'ប្រអប់មាឌ 64', fig(cube64()) + p('បើ ' + m('x^3 = 64') + ' នោះ ' + m(r'x = \sqrt[3]{64} = 4') + '។ ចំនួនអវិជ្ជមានក៏មានឫសគូបបានដែរ។')))
+S.append(ex(K[2], 'ដើមគូប',
+    cols(fig(plant('cu')),
+         p('ដើមគូបមានឫសគូប។ ចំនួនលើផ្កាលើកជាគូប ពីឫសនៅក្រោមដី។')
+         + rvd(1, p(m('8') + ' → ' + m(r'\sqrt[3]{8}=2') + ' ព្រោះ ' + m('2^3=8') + '។'))
+         + rvd(2, p(m('17') + ' → ' + m(r'\sqrt[3]{17}') + '។ ' + m('17') + ' មិនមែនជាគូបប្រាកដ ដូចនេះជាចំនួន' + hl('អសនិទាន') + '។'))
+         + rvd(3, p(m('-27') + ' → ' + m(r'\sqrt[3]{-27}=-3') + ' ព្រោះ ' + m('(-3)^3=-27') + '។ ' + hl('ដើមគូបមានឫសទោះចំនួនអវិជ្ជមាន') + '។')))))
 S.append(key(K[2], 'ចំនួនគូបប្រាកដ ពី 1 ដល់ 10', cu_table()))
 assert 4 ** 3 == 64 and (-4) ** 3 == -64 and (-3) ** 3 == -27
 S.append(ex(K[2], 'ឧទាហរណ៍ទី៦',

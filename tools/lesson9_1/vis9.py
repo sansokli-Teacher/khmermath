@@ -403,3 +403,51 @@ def lesson_map():
         else:
             b += rvg(k + 1, arrow(x1 + 130, y1 + 152, x2 + 130, y2 - 2, GREY, 6))
     return svg(1000, 470, b, '56vh')
+
+
+# ---------------------------------------------------------------- ដើមការេ / ដើមគូប: the number is the flower, its root grows underground (ឫស means both "root" of a plant and "root" of a number)
+def plant(kind='sq'):
+    """kind 'sq': petals 9, 5, -4 and roots 3, sqrt5, (none); kind 'cu': petals 8, 17, -27 and roots 2, cbrt17, -3.
+    The petal holds the number, the leaf under the ground holds its root: a perfect power has a whole root; the others keep the radical sign."""
+    if kind == 'sq':
+        assert 3 ** 2 == 9 and math.isqrt(5) ** 2 != 5 and not any(r * r == -4 for r in range(-5, 6))
+        items = [('9', '3', 'ok'), ('5', '√5', 'ok'), ('−4', 'គ្មាន', 'none')]
+    else:
+        assert 2 ** 3 == 8 and round(17 ** (1 / 3)) ** 3 != 17 and (-3) ** 3 == -27
+        items = [('8', '2', 'ok'), ('17', '∛17', 'ok'), ('−27', '−3', 'ok')]
+    PEACH, PET, PETS, LEAF, SOIL = '#ffe8d4', '#f8c8d8', '#8d5a6b', '#cfe8bf', '#f1d6b3'
+    b = f'<rect x="0" y="0" width="560" height="620" rx="30" fill="{PEACH}"/>'
+    b += f'<path d="M 0 360 H 560 V 590 Q 560 620 530 620 H 30 Q 0 620 0 590 Z" fill="{SOIL}"/>'
+    for k in range(26):                                                                       # specks of soil
+        b += f'<circle cx="{40 + (k * 97) % 480}" cy="{385 + (k * 53) % 200}" r="{2 + k % 3}" fill="#c9a574" opacity=".55"/>'
+    b += line(0, 360, 560, 360, '#4a3b3b', 6)
+    cx, cy = 280, 150
+    angs = [-150, -90, -30]                                                                    # the three petals that carry a number; the other three are plain
+    for a in (30, 90, 150):
+        x, y = cx + 78 * math.cos(math.radians(a)), cy + 78 * math.sin(math.radians(a))
+        b += f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="40" ry="48" transform="rotate({a + 90} {x:.1f} {y:.1f})" fill="{PET}" stroke="{PETS}" stroke-width="3"/>'
+    petal_xy = []
+    for a in angs:
+        x, y = cx + 78 * math.cos(math.radians(a)), cy + 78 * math.sin(math.radians(a))
+        petal_xy.append((x, y))
+        b += f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="40" ry="48" transform="rotate({a + 90} {x:.1f} {y:.1f})" fill="{PET}" stroke="{PETS}" stroke-width="3"/>'
+    b += f'<circle cx="{cx}" cy="{cy}" r="46" fill="#fff2a0" stroke="#7a6a2a" stroke-width="3"/>'
+    if kind == 'cu':                                                                          # the centre of the cube plant is a little cube
+        b += poly([(cx - 20, cy - 8), (cx + 12, cy - 8), (cx + 12, cy + 24), (cx - 20, cy + 24)], '#ffe066', '#7a6a2a', 3) + poly([(cx - 20, cy - 8), (cx + 12, cy - 8), (cx + 24, cy - 20), (cx - 8, cy - 20)], '#fff3b0', '#7a6a2a', 3) + poly([(cx + 12, cy - 8), (cx + 24, cy - 20), (cx + 24, cy + 12), (cx + 12, cy + 24)], '#f2c94c', '#7a6a2a', 3)
+    else:
+        b += rect(cx - 20, cy - 20, 40, 40, '#ffe066', 4, '#7a6a2a', 3)
+    # stem and two leaves
+    b += f'<path d="M {cx} {cy + 46} C {cx + 22} {cy + 110} {cx - 24} {cy + 160} {cx - 8} 360" fill="none" stroke="#3f6b3a" stroke-width="9" stroke-linecap="round"/>'
+    b += f'<path d="M {cx - 6} 265 C 215 225 170 232 150 262 C 195 285 232 284 {cx - 6} 265 Z" fill="{LEAF}" stroke="#3f6b3a" stroke-width="3"/>'
+    b += f'<path d="M {cx + 2} 300 C 330 258 372 262 396 292 C 350 314 316 312 {cx + 2} 300 Z" fill="{LEAF}" stroke="#3f6b3a" stroke-width="3"/>'
+    for (a, (num, root, st)), (px, py) in zip(zip(angs, items), petal_xy):
+        b += M(px, py + 13, num, 40, '#6b2f4a')
+    tags = [(110, 480), (280, 540), (450, 480)]
+    ends = [(140, 442), (280, 506), (420, 442)]
+    for k, ((num, root, st), (tx, ty), (ex_, ey)) in enumerate(zip(items, tags, ends)):
+        col = '#4a6b3a' if st == 'ok' else '#a3a3a3'
+        g = f'<path d="M {cx - 8} 360 C {cx - 8 + (ex_ - cx) * .2:.0f} 400 {ex_ + (cx - ex_) * .25:.0f} {ey - 40} {ex_} {ey}" fill="none" stroke="#6b4a2f" stroke-width="6" stroke-linecap="round"/>'
+        g += f'<ellipse cx="{tx}" cy="{ty}" rx="62" ry="46" transform="rotate({-18 + 18 * k} {tx} {ty})" fill="{"#e6f4d6" if st == "ok" else "#efefef"}" stroke="{col}" stroke-width="4"' + (' stroke-dasharray="8 6"' if st != 'ok' else '') + '/>'
+        g += (M(tx, ty + 14, root, 40, '#2f5a2a') if st == 'ok' else T(tx, ty + 12, root, 28, '#8a8a8a'))
+        b += rvg(k + 1, g)
+    return svg(560, 620, b, '56vh')

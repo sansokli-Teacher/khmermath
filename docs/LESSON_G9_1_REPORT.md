@@ -33,3 +33,8 @@ Please check these three in the printed book before teaching them.
   and an exit ticket. All their answers are asserted in `build.py`. Khmer wording for these slides is mine: please review.
 - `docs/TEACHING_GUIDE_G9_L1.md`: the method, a 6-period plan, questions, misconceptions, differentiation, assessment.
 - Audit again: 145 slides on screen, no overflow, no text under 17 px, no KaTeX errors. Looked at on screen: the map, the true/false check (3 answers revealed) and the proof slide.
+
+## Update 2026-10-22 (ដើមការេ / ដើមគូប plants)
+- Two new slides after the «រ៉ាឌីកាល់» intro of part 1 and before the cube table in part 2: a flower whose petals carry numbers and whose roots underground carry their roots (idea from the user's sketch; the drawing is my own).
+  ដើមការេ: 9 → 3, 5 → √5, −4 → none (dashed root). ដើមគូប: 8 → 2, 17 → ∛17, −27 → −3. Roots appear one at a time. Values asserted in `plant()`.
+- The Khmer sentences on these two slides are mine: please review. Audit: 147 slides on screen, no overflow, no text under 17 px, no maths errors. Not viewed: the root-by-root reveal steps one by one, projector/phone.
