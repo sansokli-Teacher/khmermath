@@ -132,7 +132,7 @@ S.append(key(K[1], 'ជាទូទៅ', p('បើ ' + m('a>0') + ' , ' + m('x^2
 rows = [('x^2=16', r'x=\sqrt{16}=4,\ \ x=-\sqrt{16}=-4'), ('x^2=7', r'x=\sqrt{7},\ \ x=-\sqrt{7}'), (r'x^2=\dfrac{25}{4}', r'x=\dfrac{5}{2},\ \ x=-\dfrac{5}{2}'),
         ('x^2=-81', r'\text{គ្មានឫសការេ}'), ('x^2=1', r'x=1,\ \ x=-1'), ('x^2=0', r'x=0')]
 assert 4 ** 2 == 16 and (-4) ** 2 == 16 and 5 ** 2 == 25 and Fraction(5, 2) ** 2 == Fraction(25, 4)
-S.append(qa(K[1], 'លំហាត់គួរ ៖ រកឫសការេនៃសមីការខាងក្រោម', rows, 2))
+S.append(qa(K[1], 'លំហាត់គំរូ ៖ រកឫសការេនៃសមីការខាងក្រោម', rows, 2))
 assert near(0.2 ** 2, 0.04) and near(0.1 ** 2, 0.01) and Fraction(5, 6) ** 2 == Fraction(25, 36)
 S.append(qa(K[1], 'ប្រតិបត្តិ ៖ រកឫសការេនៃចំនួន', [('0.04', r'\pm 0.2'), ('0.01', r'\pm 0.1'), ('5', r'\pm\sqrt{5}'), ('-1', r'\text{គ្មាន}'), (r'\dfrac{25}{36}', r'\pm\dfrac{5}{6}'), ('0.1', r'\pm\sqrt{0.1}')], 3))
 
@@ -169,7 +169,7 @@ S.append(key(K[2], 'ជាទូទៅ', p('បើ ' + m('x^3=a') + ' គេប�
 rows = [('x^3=-64', r'x=\sqrt[3]{-64}=-4'), ('x^3=-1', r'x=-1'), ('x^3=1', r'x=1'), ('x^3=-8', r'x=-2'), ('x^3=4', r'x=\sqrt[3]{4}'), ('x^3=0', r'x=0'),
         (r'x^3=\dfrac{1}{8}', r'x=\dfrac{1}{2}'), (r'x^3=\dfrac{27}{125}', r'x=\dfrac{3}{5}'), (r'x^3=-\dfrac{1}{1000}', r'x=-\dfrac{1}{10}')]
 assert (-4) ** 3 == -64 and (-2) ** 3 == -8 and Fraction(1, 2) ** 3 == Fraction(1, 8) and Fraction(3, 5) ** 3 == Fraction(27, 125) and Fraction(-1, 10) ** 3 == Fraction(-1, 1000)
-S.append(qa(K[2], 'លំហាត់គួរ ៖ រកឫសគូបនៃចំនួនខាងក្រោម', rows, 3))
+S.append(qa(K[2], 'លំហាត់គំរូ ៖ រកឫសគូបនៃចំនួនខាងក្រោម', rows, 3))
 assert near(0.2 ** 3, 0.008) and near((-0.1) ** 3, -0.001)
 S.append(qa(K[2], 'ប្រតិបត្តិ ៖ រកឫសគូបនៃចំនួន', [('0.008', r'0.2'), ('-0.001', r'-0.1'), ('0.08', r'\sqrt[3]{0.08}'), ('-0.4', r'-\sqrt[3]{0.4}')], 2))
 
@@ -190,7 +190,7 @@ S.append(key(K[3], 'ជាទូទៅ',
 rows = [(r'\sqrt{2}\times\sqrt{8}', r'=\sqrt{16}=4'), (r'\sqrt{3}\times\sqrt{27}', r'=\sqrt{81}=9'), (r'\sqrt[3]{2}\times\sqrt[3]{4}', r'=\sqrt[3]{8}=2'),
         (r'\sqrt[3]{2}\times\sqrt[3]{\dfrac{1}{16}}', r'=\sqrt[3]{\dfrac{1}{8}}=\dfrac{1}{2}'), (r'\sqrt{2}\times\sqrt{32}', r'=\sqrt{64}=8'), (r'\sqrt{50}\times\sqrt{2}', r'=\sqrt{100}=10')]
 assert near(V(2) * V(8), 4) and near(V(3) * V(27), 9) and near(C(2) * C(4), 2) and near(C(2) * C(1 / 16), 0.5) and near(V(2) * V(32), 8) and near(V(50) * V(2), 10)
-S.append(qa(K[3], 'លំហាត់គួរ ៖ គណនាផលគុណនៃរ៉ាឌីកាល់ខាងក្រោម', rows, 2))
+S.append(qa(K[3], 'លំហាត់គំរូ ៖ គណនាផលគុណនៃរ៉ាឌីកាល់ខាងក្រោម', rows, 2))
 assert near(V(10) * V(0.1), 1) and near(C(10) * C(0.1), 1)
 S.append(qa(K[3], 'ប្រតិបត្តិ ៖ គណនា', [(r'\sqrt{10}\times\sqrt{0.1}', r'=\sqrt{1}=1'), (r'\sqrt[3]{10}\times\sqrt[3]{0.1}', r'=\sqrt[3]{1}=1')], 1))
 
@@ -216,7 +216,7 @@ rows = [(r'\dfrac{\sqrt{8}}{\sqrt{2}}', r'=\sqrt{4}=2'), (r'\dfrac{\sqrt[3]{48}}
         (r'\dfrac{\sqrt{10}}{\sqrt{0.1}}', r'=\sqrt{100}=10'), (r'\dfrac{\sqrt[3]{25}}{\sqrt[3]{0.2}}', r'=\sqrt[3]{125}=5')]
 assert near(V(8) / V(2), 2) and near(C(48) / C(6), 2) and near(V(3) / V(27), 1 / 3) and near(V(288) / V(2), 12) and near(C(16) / C(2), 2)
 assert near(C(0.5) / C(4), 0.5) and near(V(10) / V(0.1), 10) and near(C(25) / C(0.2), 5)
-S.append(qa(K[4], 'លំហាត់គួរ ៖ គណនាផលចែកនៃរ៉ាឌីកាល់ខាងក្រោម', rows, 2))
+S.append(qa(K[4], 'លំហាត់គំរូ ៖ គណនាផលចែកនៃរ៉ាឌីកាល់ខាងក្រោម', rows, 2))
 assert near(V(7) / V(28), .5) and near(C(5) / C(0.2), C(25)) and near(V(10) / V(1000), .1) and near(C(100) / C(0.1), 10)
 S.append(qa(K[4], 'ប្រតិបត្តិ ៖ គណនាផលចែក', [(r'\dfrac{\sqrt{7}}{\sqrt{28}}', r'=\sqrt{\dfrac{1}{4}}=\dfrac{1}{2}'), (r'\dfrac{\sqrt[3]{5}}{\sqrt[3]{0.2}}', r'=\sqrt[3]{25}'),
     (r'\dfrac{\sqrt{10}}{\sqrt{1000}}', r'=\sqrt{\dfrac{1}{100}}=\dfrac{1}{10}'), (r'\dfrac{\sqrt[3]{100}}{\sqrt[3]{0.1}}', r'=\sqrt[3]{1000}=10')], 2))
@@ -241,9 +241,9 @@ S.append(ex(K[5], 'ករណីរ៉ាឌីកង់ជាចំនួនអ�
 assert near(V(121), 11) and near(V(4 / 9), 2 / 3) and near(C(125), 5) and near(V(16 * 81), 36) and near(C(-27), -3) and near(C(2 / 2000), 1 / 10)
 rows = [(r'\sqrt{121}', r'=\sqrt{11^2}=11'), (r'\sqrt{\dfrac{4}{9}}', r'=\sqrt{\left(\dfrac{2}{3}\right)^2}=\dfrac{2}{3}'), (r'\sqrt[3]{125}', r'=\sqrt[3]{5^3}=5'),
         (r'\sqrt{16\times 81}', r'=\sqrt{(4\times 9)^2}=36'), (r'\sqrt[3]{-27}', r'=-\sqrt[3]{27}=-\sqrt[3]{3^3}=-3'), (r'\sqrt[3]{\dfrac{2}{2000}}', r'=\sqrt[3]{\dfrac{1}{1000}}=\dfrac{1}{10}')]
-S.append(qa(K[5], 'លំហាត់គួរទី ១ ៖ បញ្ចេញមួយចំនួនពីរ៉ាឌីកាល់', rows, 2))
+S.append(qa(K[5], 'លំហាត់គំរូទី ១ ៖ បញ្ចេញមួយចំនួនពីរ៉ាឌីកាល់', rows, 2))
 assert near(V(32), 4 * V(2)) and near(C(16), 2 * C(2))
-S.append(ex(K[5], 'លំហាត់គួរទី ២ ៖ បញ្ចេញចំនួនពីរ៉ាឌីកាល់ ' + m(r'\sqrt{32}') + ' និង ' + m(r'\sqrt[3]{16}'),
+S.append(ex(K[5], 'លំហាត់គំរូទី ២ ៖ បញ្ចេញចំនួនពីរ៉ាឌីកាល់ ' + m(r'\sqrt{32}') + ' និង ' + m(r'\sqrt[3]{16}'),
     p('តាមលក្ខណៈនៃវិធីគុណ ៖')
     + dm(r'\sqrt{32}=\sqrt{16\times 2}=\sqrt{16}\times\sqrt{2}=\sqrt{4^2}\times\sqrt{2}=4\sqrt{2}')
     + dm(r'\sqrt[3]{16}=\sqrt[3]{8\times 2}=\sqrt[3]{8}\times\sqrt[3]{2}=\sqrt[3]{2^3}\times\sqrt[3]{2}=2\sqrt[3]{2}')))
@@ -266,7 +266,7 @@ rows = [(r'\dfrac{2}{3}\sqrt{\dfrac{12}{5}}', r'=\sqrt{\dfrac{4}{9}}\times\sqrt{
         (r'-7\sqrt{5}', r'=-\sqrt{49}\times\sqrt{5}=-\sqrt{245}'), (r'-5\sqrt[3]{\dfrac{4}{25}}', r'=-\sqrt[3]{125}\times\sqrt[3]{\dfrac{4}{25}}=-\sqrt[3]{20}'),
         (r'2\sqrt[3]{\dfrac{5}{12}}', r'=\sqrt[3]{8}\times\sqrt[3]{\dfrac{5}{12}}=\sqrt[3]{\dfrac{10}{3}}'), (r'\dfrac{1}{2}\sqrt[3]{4}', r'=\sqrt[3]{\dfrac{1}{8}}\times\sqrt[3]{4}=\sqrt[3]{\dfrac{1}{2}}')]
 assert near(2 / 3 * V(12 / 5), V(16 / 15)) and near(5 * V(3 / 50), V(3 / 2)) and near(-7 * V(5), -V(245)) and near(-5 * C(4 / 25), -C(20)) and near(2 * C(5 / 12), C(10 / 3)) and near(C(4) / 2, C(1 / 2))
-S.append(worked(K[6], 'លំហាត់គួរ ៖ បញ្ចូលមួយចំនួនក្នុងរ៉ាឌីកាល់', [(LB[i], q + a) for i, (q, a) in enumerate(rows)]))
+S.append(worked(K[6], 'លំហាត់គំរូ ៖ បញ្ចូលមួយចំនួនក្នុងរ៉ាឌីកាល់', [(LB[i], q + a) for i, (q, a) in enumerate(rows)]))
 assert near(V(3) / 3, V(1 / 3)) and near(5 * C(2 / 25), C(10)) and near(2 / 11 * V(121 / 7), V(4 / 7))
 S.append(qa(K[6], 'ប្រតិបត្តិ ៖ បញ្ចូលមួយចំនួនក្នុងរ៉ាឌីកាល់', [(r'\dfrac{1}{3}\sqrt{3}', r'=\sqrt{\dfrac{1}{3}}'), (r'5\sqrt[3]{\dfrac{2}{25}}', r'=\sqrt[3]{10}'), (r'\dfrac{2}{11}\sqrt{\dfrac{121}{7}}', r'=\sqrt{\dfrac{4}{7}}')], 1))
 
@@ -295,7 +295,7 @@ assert near(3 * V(11) + 5 * V(44) - 3 * V(99), 4 * V(11)) and near(3 * V(18) - V
 assert near(V(20) + V(80) - V(45), 3 * V(5)) and near(14 * V(3) + 6 * V(2) - 11 * V(3), 3 * V(3) + 6 * V(2))
 for _x in (1.7, 2.9):
     assert near(6 * C(8 * _x ** 2) - 2 * C(27 * _x ** 2), 6 * C(_x ** 2))
-S.append(worked(K[7], 'លំហាត់គួរទី ១ ៖ គណនា', [
+S.append(worked(K[7], 'លំហាត់គំរូទី ១ ៖ គណនា', [
     ('ក', r'A=3\sqrt{11}+5\sqrt{44}-3\sqrt{99}=3\sqrt{11}+10\sqrt{11}-9\sqrt{11}=4\sqrt{11}'),
     ('ខ', r'B=3\sqrt{18}-\sqrt{12}+\sqrt{75}+\sqrt{2}=9\sqrt{2}-2\sqrt{3}+5\sqrt{3}+\sqrt{2}=10\sqrt{2}+3\sqrt{3}'),
     ('គ', r'C=3\sqrt[3]{24}+6\sqrt[3]{81}=6\sqrt[3]{3}+18\sqrt[3]{3}=24\sqrt[3]{3}'),
@@ -305,7 +305,7 @@ S.append(worked(K[7], 'លំហាត់គួរទី ១ ៖ គណនា', 
 for _x in (1.7, 2.9):
     assert near(V(128 * _x) - V(2 * _x), 7 * V(2 * _x)) and near(5 * V(18 * _x) + 2 * V(8 * _x), 19 * V(2 * _x)) and near(V(8 * _x + 8) + V(2 * _x + 2), 3 * V(2 * _x + 2))
     assert near(V(200 * _x ** 2) - V(98 * _x ** 2), 3 * _x * V(2)) and near(V(8 * _x ** 2) + V(2 * _x ** 2), 3 * _x * V(2)) and near(2 * V(45 * _x ** 3) - V(20 * _x ** 3), 4 * _x * V(5 * _x))
-S.append(worked(K[7], 'លំហាត់គួរទី ២ ៖ សម្រួល', [
+S.append(worked(K[7], 'លំហាត់គំរូទី ២ ៖ សម្រួល', [
     ('ក', r'A=\sqrt{128y}-\sqrt{2y}=8\sqrt{2y}-\sqrt{2y}=7\sqrt{2y}\quad(y>0)'),
     ('ខ', r'B=5\sqrt{18x}+2\sqrt{8x}=15\sqrt{2x}+4\sqrt{2x}=19\sqrt{2x}\quad(x>0)'),
     ('គ', r'C=\sqrt{8n+8}+\sqrt{2n+2}=2\sqrt{2n+2}+\sqrt{2n+2}=3\sqrt{2n+2}\quad(n>0)'),
@@ -336,12 +336,12 @@ S.append(ex(K[8], 'ឧទាហរណ៍ទី ៣ ៖ ' + m(r'\dfrac{\sqrt{2}}{
     dm(r'\dfrac{\sqrt{2}}{\sqrt{5}+\sqrt{2}}=\dfrac{\sqrt{2}(\sqrt{5}-\sqrt{2})}{(\sqrt{5}+\sqrt{2})(\sqrt{5}-\sqrt{2})}=\dfrac{\sqrt{10}-2}{5-2}=\dfrac{\sqrt{10}-2}{3}')))
 assert near((V(3) + V(2)) / (V(3) - V(2)), 5 + 2 * V(6)) and near((1 + V(2)) / (3 - V(3)), (3 + V(3) + 3 * V(2) + V(6)) / 6) and near((1 + V(3)) / (2 + V(5)), -2 + V(5) - 2 * V(3) + V(15))
 assert near(8 * V(2) / (V(20) - V(18)), 8 * V(10) + 24) and near(2 / C(7), 2 * C(49) / 7) and near(3 / (C(5) - C(2)), C(25) + C(10) + C(4))
-S.append(worked(K[8], 'លំហាត់គួរទី ១ ៖ សម្រួល (ក ដល់ ឃ)', [
+S.append(worked(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រួល (ក ដល់ ឃ)', [
     ('ក', r'A=\dfrac{\sqrt{3}+\sqrt{2}}{\sqrt{3}-\sqrt{2}}=\dfrac{(\sqrt{3}+\sqrt{2})^2}{3-2}=5+2\sqrt{6}'),
     ('ខ', r'B=\dfrac{1+\sqrt{2}}{3-\sqrt{3}}=\dfrac{(1+\sqrt{2})(3+\sqrt{3})}{9-3}=\dfrac{3+\sqrt{3}+3\sqrt{2}+\sqrt{6}}{6}'),
     ('គ', r'C=\dfrac{1+\sqrt{3}}{2+\sqrt{5}}=\dfrac{(1+\sqrt{3})(2-\sqrt{5})}{4-5}=-2+\sqrt{5}-2\sqrt{3}+\sqrt{15}'),
     ('ឃ', r'D=\dfrac{8\sqrt{2}}{\sqrt{20}-\sqrt{18}}=\dfrac{8\sqrt{2}(\sqrt{20}+\sqrt{18})}{20-18}=\dfrac{16\sqrt{10}+48}{2}=8\sqrt{10}+24')]))
-S.append(worked(K[8], 'លំហាត់គួរទី ១ ៖ សម្រួល (ង និង ច)', [
+S.append(worked(K[8], 'លំហាត់គំរូទី ១ ៖ សម្រួល (ង និង ច)', [
     ('ង', r'E=\dfrac{2}{\sqrt[3]{7}}=\dfrac{2(\sqrt[3]{7})^2}{\sqrt[3]{7}(\sqrt[3]{7})^2}=\dfrac{2\sqrt[3]{49}}{7}'),
     ('ច', r'F=\dfrac{3}{\sqrt[3]{5}-\sqrt[3]{2}}\ \ \text{ប្រើ}\ (a-b)(a^2+ab+b^2)=a^3-b^3'),
     ('', r'=\dfrac{3(\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4})}{5-2}=\sqrt[3]{25}+\sqrt[3]{10}+\sqrt[3]{4}')]))
@@ -366,10 +366,25 @@ S.append(ex('សំបុត្រចេញ', 'ពិនិត្យយល់ច
     f'<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1em;align-items:center;margin:.3em 0"><div><b>{i}.</b> {q}</div>{rvd(i, a)}</div>' for i, (q, a) in enumerate(exit_rows, 1))))
 S.append({'k': 'title', 'html': '<p class="ts-kicker">មេរៀនទី ១</p><h1>ចប់មេរៀន</h1><p class="ts-sub">ចំនួនអសនិទាន</p><div class="th-you">សូមអរគុណ</div>'})
 
+import re
+
+
+def _style_h2(html):
+    """heading = label (bold italic) + the rest (plain): «ឧទាហរណ៍ទី ១ ៖» | «រក x ដែល x²=9». A heading without ៖ is all label."""
+    def f(mo):
+        t = mo.group(1)
+        if ' ៖ ' in t:
+            a, r = t.split(' ៖ ', 1)
+            return f'<h2><span class="h-lab">{a} ៖</span> <span class="h-txt">{r}</span></h2>'
+        return f'<h2><span class="h-lab">{t}</span></h2>'
+    return re.sub(r'<h2>(.*?)</h2>', f, html, flags=re.S)
+
+
 # ---------------------------------------------------------------- write (no draw-on animation: pictures fade in smoothly, pieces appear with the reveal steps)
 for s in S:
     s.setdefault('k', '')
-    s['html'] = s['html'].replace(' ។', '\u00a0។')    # the book spaces before ។: keep it with the word so a line never starts with it
+    s['html'] = s['html'].replace(' ។', '\u00a0។')
+    s['html'] = _style_h2(s['html'])    # the book spaces before ។: keep it with the word so a line never starts with it
 out = [stepify(x) if x.get('k') in ('sol', 'ex', 'key', 'prac') and 'data-step' not in x['html'] else x for x in S]
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 js = ('// Deck for Grade 9 Lesson 1 (follows the MoEYS textbook): tools/lesson9_1/build.py — do not edit by hand.\n'

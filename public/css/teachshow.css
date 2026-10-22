@@ -1012,3 +1012,13 @@ body.teach-show-on { overflow: hidden; }
 .ts-slide.ts-big svg .rv { transition: opacity .7s ease; }
 .ts-slide.ts-big div.rv:not(.rv-hide) { animation: tsRise .7s ease-out both; }
 @media (prefers-reduced-motion: reduce) { .ts-slide.ts-big .fig > svg, .ts-slide.ts-big div.rv:not(.rv-hide) { animation: none; } }
+
+/* heading + maths type for the projector decks (ts-big): label = Khmer Battambang bold italic in the slide red; the rest of the heading = Khmer Battambang, plain; maths = Mathcad-style italic */
+.ts-slide.ts-big h2 { font-family: 'Khmer OS Battambang', 'Kantumruy Pro', 'Times New Roman', serif; font-style: normal; font-weight: 400; }
+.ts-slide.ts-big h2 .h-lab { font-style: italic; font-weight: 800; }
+.ts-slide.ts-big h2 .h-txt { font-style: normal; font-weight: 400; }
+.ts-slide.ts-big h2 .katex { font-size: 1.05em; }
+.ts-slide.ts-big .katex, .ts-slide.ts-big .katex .mord, .ts-slide.ts-big .katex .mbin, .ts-slide.ts-big .katex .mrel, .ts-slide.ts-big .katex .mopen, .ts-slide.ts-big .katex .mclose, .ts-slide.ts-big .katex .mpunct, .ts-slide.ts-big .katex .mop {
+  font-family: 'Mathcad UniMath', 'Mathcad UniMath Italic', 'Times New Roman', 'STIX Two Text', serif; }
+.ts-slide.ts-big .katex .mathnormal, .ts-slide.ts-big .katex .mathit { font-style: italic; }
+.ts-slide.ts-big .katex .mathrm, .ts-slide.ts-big .katex .mord.mathrm { font-style: normal; }

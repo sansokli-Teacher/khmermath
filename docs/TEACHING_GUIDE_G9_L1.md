@@ -6,7 +6,7 @@ The deck (`tools/lesson9_1/build.py`) has the book's sections, examples, general
 | Period | Parts | Book pages |
 |---|---|---|
 | 1 | Lesson map, recall, √ of 9 and 25/4, the garden (x² = 3), trial values, √3, radical sign, x² = −3, ដើមការេ, general rule | 1–2 |
-| 2 | Practice «លំហាត់គួរ» + «ប្រតិបត្តិ» of square roots; cube roots (64, −27, ដើមគូប, 17, −17, rule, practice) | 2–4 |
+| 2 | Practice «លំហាត់គំរូ» + «ប្រតិបត្តិ» of square roots; cube roots (64, −27, ដើមគូប, 17, −17, rule, practice) | 2–4 |
 | 3 | 3.1 multiply and 3.2 divide | 4–6 |
 | 4 | 3.3 take a number out, 3.4 put a number in | 6–8 |
 | 5 | 3.5 add and subtract | 8–10 |
@@ -14,7 +14,7 @@ The deck (`tools/lesson9_1/build.py`) has the book's sections, examples, general
 
 ## How to run the slides
 - **Example slides:** press → one line at a time. Before each result ask «ជំហានបន្ទាប់ជាអ្វី?».
-- **Practice slides (លំហាត់គួរ / ប្រតិបត្តិ):** the problems are on screen; students write first, then each → reveals one answer (green).
+- **Practice slides (លំហាត់គំរូ / ប្រតិបត្តិ):** the problems are on screen; students write first, then each → reveals one answer (green).
 - **Worked-answer slides:** one line of working per →.
 - **ដើមការេ / ដើមគូប:** one colour per number and its roots. 9 and 5 each have TWO square roots; every number has ONE cube root.
 - **Exit ticket:** on paper in the last 5 minutes; sort into «បានយល់ / ស្ទើរ / មិនទាន់».
