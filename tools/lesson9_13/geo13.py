@@ -681,3 +681,334 @@ def tangent_prac():
     c.add(circle(O, r, fill=FILL) + seg(L0, L1, BLUE, 5) + seg(A, O, INK, 5) + dot(O) + dot(A) + dot(B, RED) + dot(C, RED) + lab(O, 'O', 24, -14) + lab(A, 'A', -26, 6) + lab(B, 'B', 4, 34, RED) + lab(C, 'C', -4, -28, RED) + lab(mid(O, B), r'2', 24, 0, GREEN, 34, 60))
     c.add(seg(O, B, INK, 4) + rightmark(B, O, A, 20, RED) + tick(A, B, 1, GREEN) + tick(O, B, 1, GREEN), 1)
     return c.out()
+
+
+# ================================================================ the book's exercises (p.156-158)
+def _tang_line(T, O, k0=.5, k1=.9):
+    """the tangent at T (perpendicular to OT), as two end points"""
+    r = dist(O, T)
+    tx, ty = -(T[1] - O[1]) / r, (T[0] - O[0]) / r
+    return (T[0] - tx * r * k0, T[1] - ty * r * k0), (T[0] + tx * r * k1, T[1] + ty * r * k1), (tx, ty)
+
+
+def _ang_lab(v, p1, p2, rad, tex, col, lr=None, size=26):
+    return angarc(v, p1, p2, rad, col, 4) + lab(bis(v, p1, p2, lr or rad + 30), tex, 0, 0, col, size, 130)
+
+
+def ex1(k):
+    """exercise 1 (k = 'a'..'f'): PT is tangent at T; find the angles marked a, b, c"""
+    O, r = (180, 150), 100
+    if k == 'b':
+        O = (190, 190)
+    c = Cv(380, 340, '40vh')
+    base = lambda: circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 4, -22, INK, 30, 60)
+    if k == 'a':
+        T = pol(O, r, 235)
+        P = pol(O, r / math.cos(math.radians(50)), 285)
+        a, b, ux = _tang_line(T, O, .55, .0)
+        assert near(angle_at(O, T, P), 50, 1e-6) and near(angle_at(P, T, O), 40, 1e-6)
+        L0, L1 = ext(T, P, .5, .0)
+        c.add(base() + seg(L0, P, INK, 5) + seg(O, T, INK, 5) + seg(O, P, INK, 5) + dot(T, RED) + lab(T, 'T', -22, 8, RED, 30, 60) + lab(P, 'P', 22, 8, INK, 30, 60)
+              + rightmark(T, O, P, 16, RED) + _ang_lab(O, T, P, 34, r'50^\circ', ORANGE, 62, 24) + _ang_lab(P, T, O, 40, r'a^\circ', RED, 66, 28))
+    elif k == 'b':
+        T = pol(O, r, 128)
+        a_, b_, (tx, ty) = _tang_line(T, O)
+        P = (T[0] + tx * r, T[1] + ty * r)
+        if P[0] < T[0]:
+            P = (T[0] - tx * r, T[1] - ty * r)
+        assert near(dist(O, T), dist(T, P)) and near(angle_at(T, O, P), 90) and near(angle_at(O, T, P), 45) and near(angle_at(P, O, T), 45)
+        L0, L1 = ext(T, P, 1.0, .0)
+        c.add(base() + seg(L0, P, INK, 5) + seg(O, T, INK, 5) + seg(O, P, INK, 5) + dot(T, RED) + lab(T, 'T', -20, -18, RED, 30, 60) + lab(P, 'P', 20, -6, INK, 30, 60)
+              + tick(O, T, 1, GREEN) + tick(T, P, 1, GREEN) + rightmark(T, O, P, 16, RED) + _ang_lab(T, O, P, 26, r'a^\circ', RED, 52, 26) + _ang_lab(O, T, P, 36, r'b^\circ', RED, 66, 26))
+    elif k == 'c':
+        T = pol(O, r, 300)
+        a_, b_, (tx, ty) = _tang_line(T, O)
+        w = unit(T, O)
+        u = (tx, ty) if (tx * 1 + ty * -1) > 0 else (-tx, -ty)          # towards the up-right side
+        P = (T[0] + u[0] * r * 1.0, T[1] + u[1] * r * 1.0)
+        ch = (math.cos(math.radians(40)) * w[0] + math.sin(math.radians(40)) * u[0], math.cos(math.radians(40)) * w[1] + math.sin(math.radians(40)) * u[1])
+        Q = (T[0] + ch[0] * 2 * r * math.cos(math.radians(40)), T[1] + ch[1] * 2 * r * math.cos(math.radians(40)))
+        assert near(dist(O, Q), r, 1e-6) and near(angle_at(T, O, Q), 40, 1e-6) and near(angle_at(T, Q, P), 50, 1e-6)
+        L0 = (T[0] - u[0] * r * .8, T[1] - u[1] * r * .8)
+        c.add(base() + seg(L0, P, INK, 5) + seg(O, T, INK, 5) + seg(T, Q, INK, 5) + dot(T, RED) + lab(T, 'T', 18, 24, RED, 30, 60) + lab(P, 'P', 22, 0, INK, 30, 60)
+              + rightmark(T, O, P, 16, RED) + _ang_lab(T, O, Q, 36, r'40^\circ', ORANGE, 64, 22) + _ang_lab(T, Q, P, 44, r'b^\circ', RED, 74, 26))
+    elif k == 'd':
+        T = pol(O, r, 235)
+        S = pol(O, r, 305)
+        a_, b_, (tx, ty) = _tang_line(T, O)
+        u = (tx, ty) if (tx * 1 + ty * 1) > 0 else (-tx, -ty)           # down-right
+        P = (T[0] + u[0] * r * .8, T[1] + u[1] * r * .8)
+        assert near(angle_at(T, S, P), 35, 1e-6) and near(angle_at(T, O, S), 55, 1e-6) and near(angle_at(O, T, S), 70, 1e-6)
+        L0 = (T[0] - u[0] * r * .6, T[1] - u[1] * r * .6)
+        c.add(base() + seg(L0, P, INK, 5) + seg(O, T, INK, 5) + seg(O, S, INK, 5) + seg(T, S, INK, 5) + dot(T, RED) + dot(S) + lab(T, 'T', -22, 4, RED, 30, 60) + lab(S, 'S', 22, 14, INK, 30, 60) + lab(P, 'P', 18, 12, INK, 30, 60)
+              + _ang_lab(T, S, P, 34, r'35^\circ', ORANGE, 64, 22) + _ang_lab(T, O, S, 36, r'a^\circ', RED, 60, 26) + _ang_lab(O, T, S, 34, r'b^\circ', RED, 58, 26))
+    elif k == 'e':
+        O2 = (250, 120)
+        ang_op = 194
+        T = pol(O2, r, ang_op + 65)
+        P = pol(O2, r / math.cos(math.radians(65)), ang_op)
+        E = pol(O2, r, ang_op)
+        assert near(angle_at(O2, T, P), 65, 1e-6) and near(angle_at(P, O2, T), 25, 1e-6) and near(angle_at(T, O2, E), 57.5, 1e-6) and near(angle_at(T, E, P), 32.5, 1e-6)
+        c = Cv(420, 340, '34vh')
+        c.add(circle(O2, r, fill=FILL) + dot(O2) + lab(O2, 'O', 24, -20, INK, 30, 60) + seg(P, O2, INK, 5) + seg(P, T, INK, 5) + seg(O2, T, INK, 5) + seg(E, T, INK, 5) + dot(T, RED) + dot(E)
+              + lab(T, 'T', 10, 26, RED, 30, 60) + lab(P, 'P', -22, 0, INK, 30, 60) + _ang_lab(O2, T, P, 30, r'65^\circ', ORANGE, 58, 22) + _ang_lab(P, O2, T, 60, r'a^\circ', RED, 96, 26)
+              + _ang_lab(T, O2, E, 32, r'b^\circ', RED, 54, 24) + _ang_lab(T, E, P, 46, r'c^\circ', RED, 74, 24))
+    else:
+        Oc = (180, 150)
+        Tt, Aa = pol(Oc, r, 315), pol(Oc, r, 135)
+        P = pol(Oc, r / math.cos(math.radians(50)), 5)
+        Bb = pol(Oc, r, 185)
+        assert near(angle_at(Oc, Tt, P), 50, 1e-6) and near(angle_at(P, Tt, Oc), 40, 1e-6) and near(angle_at(Aa, Oc, Bb), 65, 1e-6) and near(angle_at(Oc, Aa, P), 130, 1e-6)
+        a_, b_, (tx, ty) = _tang_line(Tt, Oc, .7, .0)
+        c.add(circle(Oc, r, fill=FILL) + dot(Oc) + lab(Oc, 'O', 18, 22, INK, 28, 60) + seg(Aa, Tt, INK, 5) + seg(Bb, P, INK, 5) + seg(Aa, Bb, INK, 5) + seg(a_, P, INK, 4) if False else
+              circle(Oc, r, fill=FILL) + dot(Oc) + lab(Oc, 'O', 18, 22, INK, 28, 60) + seg(Aa, Tt, INK, 5) + seg(Bb, P, INK, 5) + seg(Aa, Bb, INK, 5) + seg((Tt[0] - (P[0] - Tt[0]) * .5, Tt[1] - (P[1] - Tt[1]) * .5), P, INK, 4)
+              + dot(Tt, RED) + lab(Tt, 'T', 16, 20, RED, 30, 60) + lab(Aa, 'A', -14, -24, INK, 30, 60) + lab(Bb, 'B', -24, 8, INK, 30, 60) + lab(P, 'P', 22, -8, INK, 30, 60)
+              + _ang_lab(Oc, Aa, P, 26, r'130^\circ', ORANGE, 70, 20) + _ang_lab(Bb, Aa, Oc, 34, r'a^\circ', RED, 52, 26) + _ang_lab(P, Tt, Oc, 40, r'b^\circ', RED, 62, 26))
+    return c.out()
+
+
+EX1_ANS = {'a': r'a=90^\circ-50^\circ=40^\circ', 'b': r'a=90^\circ\ ,\ b=45^\circ', 'c': r'b=90^\circ-40^\circ=50^\circ', 'd': r'a=90^\circ-35^\circ=55^\circ\ ,\ b=180^\circ-2\times 55^\circ=70^\circ',
+           'e': r'a=25^\circ\ ,\ b=57.5^\circ\ ,\ c=32.5^\circ', 'f': r'b=40^\circ\ ,\ a=65^\circ'}
+
+
+def ex2(k):
+    """exercise 2: tangents PT and PV from P; find the unknown angles"""
+    r = {'a': 54, 'b': 88, 'c': 66, 'd': 100}[k]
+    O = (90, 150)
+    c = Cv(480, 300, '34vh')
+    half = {'a': 11, 'b': 21, 'c': 12.5, 'd': 21}[k]
+    if k in 'abc':
+        half_p = {'a': 11, 'b': 21, 'c': 12.5}[k]
+        d = r / math.sin(math.radians(half_p))
+        P = (O[0] + d, O[1])
+        T, V = tangent_pts(O, r, P)
+        if T[1] > V[1]:
+            T, V = V, T
+        g = circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 2, INK, 28, 60) + seg(P, ext(P, T, 0, .02)[1], INK, 5) + seg(P, ext(P, V, 0, .02)[1], INK, 5) + dot(T) + dot(V) + dot(P) \
+            + lab(T, 'T', 4, -24, INK, 28, 60) + lab(V, 'V', 4, 26, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60)
+        if k == 'a':
+            assert near(angle_at(P, T, V), 22) and near(angle_at(O, T, P), 79, 1e-6)
+            g += seg(O, T, INK, 4) + seg(O, V, INK, 4) + seg(O, P, INK, 4) + _ang_lab(P, T, V, 44, r'22^\circ', ORANGE, 76, 22) + _ang_lab(O, T, P, 30, r'a^\circ', RED, 50, 24) + _ang_lab(O, P, V, 36, r'b^\circ', RED, 58, 24) + _ang_lab(P, O, V, 70, r'c^\circ', RED, 100, 24)
+        elif k == 'b':
+            assert near(angle_at(P, T, V), 42) and near(angle_at(O, T, V), 138, 1e-6)
+            g += seg(O, T, INK, 4) + seg(O, V, INK, 4) + _ang_lab(P, T, V, 44, r'42^\circ', ORANGE, 76, 22) + _ang_lab(T, O, P, 24, r'c^\circ', RED, 46, 24) + _ang_lab(V, O, P, 24, r'a^\circ', RED, 46, 24) + _ang_lab(O, T, V, 24, r'b^\circ', RED, 48, 24)
+        else:
+            assert near(angle_at(P, T, V), 25) and near(angle_at(O, T, V), 155, 1e-6)
+            g += seg(O, T, INK, 4) + seg(O, V, INK, 4) + seg(T, V, INK, 4) + _ang_lab(P, T, V, 44, r'25^\circ', ORANGE, 76, 22) + _ang_lab(T, O, V, 24, r'a^\circ', RED, 48, 22) + _ang_lab(O, T, V, 24, r'b^\circ', RED, 56, 24) + _ang_lab(V, O, T, 24, r'c^\circ', RED, 48, 22)
+        c.add(g)
+    else:
+        O = (130, 150)
+        d = r / math.sin(math.radians(21))
+        P = (O[0] + d, O[1])
+        T = tangent_pts(O, r, P)[0]
+        if T[1] > O[1]:
+            T = tangent_pts(O, r, P)[1]
+        X = (O[0] - r, O[1])
+        assert near(angle_at(P, T, O), 21, 1e-6) and near(angle_at(O, T, P), 69, 1e-6) and near(angle_at(X, O, T), 34.5, 1e-6) and near(angle_at(T, X, O), 34.5, 1e-6)
+        c = Cv(580, 300, '34vh')
+        c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 6, 24, INK, 28, 60) + seg(X, P, INK, 5) + seg(P, ext(P, T, 0, .02)[1], INK, 5) + seg(O, T, INK, 4) + seg(X, T, INK, 4) + dot(T) + dot(X) + dot(P)
+              + lab(T, 'T', 8, -24, INK, 28, 60) + lab(X, 'X', -24, 4, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60)
+              + _ang_lab(P, T, O, 56, r'21^\circ', ORANGE, 90, 22) + _ang_lab(O, T, P, 30, r'a^\circ', RED, 52, 24) + _ang_lab(T, X, O, 36, r'b^\circ', RED, 60, 24) + _ang_lab(X, T, O, 36, r'c^\circ', RED, 62, 24))
+    return c.out()
+
+
+EX2_ANS = {'a': r'a=b=79^\circ\ ,\ c=11^\circ', 'b': r'a=c=90^\circ\ ,\ b=138^\circ', 'c': r'a=c=12.5^\circ\ ,\ b=155^\circ', 'd': r'a=69^\circ\ ,\ b=c=34.5^\circ'}
+
+
+def ex3(k):
+    """exercise 3: tangents PA, PB; find r (k = 'a') or d (k = 'b')"""
+    if k == 'a':
+        u = 8
+        O, r = (150, 150), 8 * u
+        P = (O[0] + 17 * u, O[1])
+        A, B = tangent_pts(O, r, P)
+        if A[1] > B[1]:
+            A, B = B, A
+        assert near(dist(P, A) / u, 15, 1e-6)
+        c = Cv(520, 300, '30vh')
+        c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 6, INK, 28, 60) + seg(P, A, INK, 5) + seg(P, B, INK, 5) + seg(O, P, INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
+              + lab(A, 'A', 6, -24, INK, 28, 60) + lab(B, 'B', 6, 26, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60) + lab(mid(O, P), r'17', 0, -20, GREEN, 30, 60) + lab(mid(P, B), r'15', 8, 26, GREEN, 30, 60) + lab(mid(O, B), r'r', -20, 4, RED, 30, 60)
+              + rightmark(A, O, P, 14, RED) + rightmark(B, O, P, 14, RED))
+    else:
+        u = 12
+        O, r = (400, 150), 5 * u
+        P = (O[0] - 13 * u, O[1])
+        A, B = tangent_pts(O, r, P)
+        if A[1] > B[1]:
+            A, B = B, A
+        assert near(dist(P, A) / u, 12, 1e-6)
+        N = (O[0] - r, O[1])
+        c = Cv(520, 300, '30vh')
+        c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 24, 4, INK, 28, 60) + seg(P, A, INK, 5) + seg(P, B, INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
+              + lab(A, 'A', 4, -24, INK, 28, 60) + lab(B, 'B', 4, 26, INK, 28, 60) + lab(P, 'P', -22, 0, INK, 28, 60) + lab(mid(P, A), r'12', -8, -24, GREEN, 30, 60) + lab(mid(O, A), r'5', 18, -14, GREEN, 30, 60)
+              + rightmark(A, O, P, 14, RED) + seg(P, N, RED, 4, '8 6') + lab(mid(P, N), r'd', 0, 24, RED, 30, 60) + dot(N, RED))
+    return c.out()
+
+
+def kite_fig(r_, tl, P_dir=0, labels=('P', 'A', 'B'), lens=None, extra='', maxh='42vh'):
+    """tangents PA, PB (P on the right, or the left when P_dir = 180) and the radii OA, OB; tl = tangent length (units), r_ = radius (units); u = pixels per unit"""
+    u = lens
+    O = (260 if P_dir == 0 else 380, 170)
+    r = r_ * u
+    d = math.hypot(r_, tl) * u
+    P = (O[0] + d, O[1]) if P_dir == 0 else (O[0] - d, O[1])
+    A, B = tangent_pts(O, r, P)
+    if A[1] > B[1]:
+        A, B = B, A
+    return O, r, P, A, B
+
+
+def ex4():
+    """OA = 2, PB = 9: b = 9, c = 2, perimeter 22, area 18"""
+    u = 24
+    O, r, P, A, B = kite_fig(2, 9, 180, lens=u)
+    assert near(dist(P, A) / u, 9, 1e-6) and near(dist(O, B) / u, 2, 1e-6)
+    c = Cv(640, 340, '36vh')
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 20, 4, INK, 28, 60) + seg(P, ext(P, A, 0, .12)[1], INK, 5) + seg(P, ext(P, B, 0, .12)[1], INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
+          + lab(A, 'A', 8, -24, INK, 28, 60) + lab(B, 'B', 8, 26, INK, 28, 60) + lab(P, 'P', -22, 0, INK, 28, 60) + lab(mid(P, A), r'b', -4, -24, RED, 30, 60) + lab(mid(P, B), r'9', -4, 26, GREEN, 30, 60)
+          + lab(mid(O, A), r'2', 22, -4, GREEN, 30, 60) + lab(mid(O, B), r'c', 22, 4, RED, 30, 60) + rightmark(A, O, P, 12, RED) + rightmark(B, O, P, 12, RED))
+    return c.out()
+
+
+def ex5():
+    """right triangle ABC (right angle at B), incircle; AF = 10, DB = 5, EC = 15: AB = 15, BC = 20, AC = 25, area 150"""
+    u = 15
+    B = (60, 280)
+    A = (60, 280 - 15 * u)
+    C = (60 + 20 * u, 280)
+    I = (B[0] + 5 * u, B[1] - 5 * u)
+    D, E = (B[0], I[1]), (I[0], B[1])
+    F = foot(I, A, C)
+    assert near(dist(I, F), 5 * u, 1e-6) and near(dist(A, F) / u, 10, 1e-6) and near(dist(C, F) / u, 15, 1e-6)
+    c = Cv(420, 330, '40vh')
+    c.add(poly([A, B, C], 'none', INK, 5) + circle(I, 5 * u, fill=FILL) + dot(I) + dot(D, RED) + dot(E, RED) + dot(F, RED) + lab(A, 'A', 0, -26) + lab(B, 'B', -24, 20) + lab(C, 'C', 24, 8)
+          + lab(D, 'D', -24, 0, RED, 28, 60) + lab(E, 'E', 0, 24, RED, 28, 60) + lab(F, 'F', 22, -10, RED, 28, 60) + rightmark(B, A, C, 16, INK)
+          + lab(mid(A, F), r'10', 28, 10, GREEN, 28, 60) + lab(mid(D, B), r'5', -22, 0, GREEN, 28, 60) + lab(mid(E, C), r'15', 0, 24, GREEN, 28, 60))
+    return c.out()
+
+
+def ex6():
+    """r = 3, angle AOB = 140: the tangents meet at P (AP = r / tan 70 = 8.24 cm; the book prints 82.4)"""
+    u = 40
+    O, r = (150, 150), 3 * u
+    half = 70.0
+    d = r / math.cos(math.radians(half))
+    P = (O[0] + d, O[1])
+    A, B = tangent_pts(O, r, P)
+    if A[1] > B[1]:
+        A, B = B, A
+    assert near(angle_at(O, A, B), 140, 1e-6)
+    c = Cv(560, 300, '34vh')
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 4, INK, 28, 60) + seg(P, ext(P, A, 0, .15)[1], INK, 5) + seg(P, ext(P, B, 0, .15)[1], INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(P)
+          + lab(A, 'A', 4, -24, INK, 28, 60) + lab(B, 'B', 4, 26, INK, 28, 60) + lab(P, 'P', 22, 0, INK, 28, 60) + lab(mid(O, A), r'3', -18, -6, GREEN, 28, 60) + lab(mid(P, A), r'82.4', 8, -26, GREEN, 28, 100)
+          + _ang_lab(O, A, B, 26, r'140^\circ', ORANGE, 60, 22))
+    return c.out()
+
+
+def ex7(la='A', lb='B', tangent_len=20, tq=10, r_=15):
+    u = 8
+    r = r_ * u
+    O = (330, 190)
+    Tp = (O[0] - (r + tq * u), O[1])
+    A, B = tangent_pts(O, r, Tp)
+    if A[1] > B[1]:
+        A, B = B, A
+    Q = (O[0] - r, O[1])
+    assert near(dist(Tp, A) / u, tangent_len, 1e-6)
+    c = Cv(560, 340, '34vh')
+    e1 = ext(Tp, A, 0, .2)[1]
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 22, 4, INK, 28, 60) + seg(Tp, e1, INK, 5) + seg(Tp, ext(Tp, B, 0, .2)[1], INK, 5) + seg(Tp, O, INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(Q, RED) + dot(Tp)
+          + lab(A, la, 4, -24, INK, 28, 60) + lab(B, lb, 4, 26, INK, 28, 60) + lab(Tp, 'T', -22, 4, INK, 28, 60) + lab(Q, 'Q', 22, -20, RED, 28, 60)
+          + lab(mid(Tp, Q), r'10', 0, 26, GREEN, 28, 60) + lab(mid(Tp, A), r'20', -10, -26, GREEN, 28, 60) + rightmark(A, O, Tp, 14, RED) + rightmark(B, O, Tp, 14, RED))
+    return c.out()
+
+
+def ex8():
+    """r = 4.5, TA = 9: perimeter 27, area 40.5"""
+    u = 24
+    O, r, P, A, B = kite_fig(4.5, 9, 0, lens=u)
+    assert near(dist(P, A) / u, 9, 1e-6)
+    c = Cv(620, 340, '36vh')
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 4, INK, 28, 60) + seg(P, ext(P, A, 0, .15)[1], INK, 5) + seg(P, ext(P, B, 0, .15)[1], INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + seg(O, P, INK, 3, '8 6') + dot(A) + dot(B) + dot(P)
+          + lab(A, 'A', 4, -24, INK, 28, 60) + lab(B, 'B', 4, 26, INK, 28, 60) + lab(P, 'T', 22, 0, INK, 28, 60) + lab(mid(O, A), r'4.5', -30, -6, GREEN, 28, 80) + lab(mid(P, A), r'9', 6, -24, GREEN, 28, 60))
+    return c.out()
+
+
+def ex9():
+    """two circles of radius 4 with centres A and B, AB = 4: ABCD is a square of side 4 (area 16)"""
+    u = 44
+    A, B = (200, 260), (200 + 4 * u, 260)
+    D, C = (A[0], A[1] - 4 * u), (B[0], B[1] - 4 * u)
+    assert near(dist(A, B), 4 * u) and near(dist(A, D), 4 * u)
+    c = Cv(680, 440, '42vh')
+    c.add(circle(A, 4 * u, fill='#eef5fb') + circle(B, 4 * u, INK, 5, 'rgba(255,224,204,.35)') + poly([A, B, C, D], 'rgba(47,158,68,.18)', GREEN, 5) + dot(A) + dot(B) + dot(C) + dot(D)
+          + lab(A, 'A', -22, 20, INK, 30, 60) + lab(B, 'B', 22, 20, INK, 30, 60) + lab(C, 'C', 4, -26, INK, 30, 60) + lab(D, 'D', -4, -26, INK, 30, 60)
+          + rightmark(A, B, D, 18, INK) + rightmark(B, A, C, 18, INK) + rightmark(D, A, C, 18, INK) + rightmark(C, B, D, 18, INK) + lab(mid(A, B), r'4', 0, 24, GREEN, 30, 60))
+    return c.out()
+
+
+def ex10():
+    """r = 5, angle ATB = 60: angle AOB = 120, sector area 26.2"""
+    u = 24
+    O, r = (330, 170), 5 * u
+    d = r / math.sin(math.radians(30))
+    Tp = (O[0] - d, O[1])
+    A, B = tangent_pts(O, r, Tp)
+    if A[1] > B[1]:
+        A, B = B, A
+    assert near(angle_at(O, A, B), 120, 1e-6) and near(angle_at(Tp, A, B), 60, 1e-6)
+    c = Cv(640, 360, '36vh')
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', 24, 4, INK, 28, 60) + seg(Tp, ext(Tp, A, 0, .15)[1], INK, 5) + seg(Tp, ext(Tp, B, 0, .15)[1], INK, 5) + seg(O, A, INK, 4) + seg(O, B, INK, 4) + dot(A) + dot(B) + dot(Tp)
+          + lab(A, 'A', 4, -24, INK, 28, 60) + lab(B, 'B', 4, 26, INK, 28, 60) + lab(Tp, 'T', -22, 0, INK, 28, 60) + lab(mid(O, B), r'5', 22, 12, GREEN, 28, 60) + _ang_lab(Tp, A, B, 40, r'60^\circ', ORANGE, 72, 22)
+          + angarc(O, A, B, 40, PURPLE, 4, fill=PURPLE))
+    return c.out()
+
+
+def ex11():
+    """concentric circles 8 and 10, chord AB of the big one touches the small one at T: AB = 12"""
+    u = 17
+    O = (300, 190)
+    T = (O[0] - 8 * u, O[1])
+    half = math.sqrt(100 - 64) * u
+    A, B = (T[0], T[1] - half), (T[0], T[1] + half)
+    assert near(dist(O, A), 10 * u) and near(half / u, 6, 1e-6)
+    c = Cv(620, 380, '38vh')
+    c.add(circle(O, 10 * u, fill='#fdf0e6') + circle(O, 8 * u, INK, 5, FILL) + dot(O) + lab(O, 'O', 22, 4, INK, 28, 60) + seg(A, B, INK, 5) + seg(O, T, BLUE, 4, '8 6') + dot(T, RED) + dot(A) + dot(B)
+          + lab(A, 'A', -4, -26, INK, 28, 60) + lab(B, 'B', -4, 28, INK, 28, 60) + lab(T, 'T', -24, 0, RED, 28, 60) + rightmark(T, O, A, 14, RED) + lab(mid(O, T), r'8', 0, -20, GREEN, 28, 60))
+    return c.out()
+
+
+def ex12():
+    """circles O and O' touch at B; MA, MB, MC tangents: MA = MB = MC"""
+    r1, r2 = 70, 100
+    O = (180, 300)
+    O2 = (O[0] + r1 + r2, 300 - (r2 - r1) * 0)
+    B = (O[0] + r1, 300)
+    M = (B[0], 60)
+    A = [p for p in tangent_pts(O, r1, M)][0]
+    A = min(tangent_pts(O, r1, M), key=lambda p: p[0])
+    C = max(tangent_pts(O2, r2, M), key=lambda p: p[0])
+    assert near(dist(M, A), dist(M, B), 1e-6) and near(dist(M, B), dist(M, C), 1e-6)
+    c = Cv(640, 420, '40vh')
+    c.add(circle(O, r1, fill=FILL) + circle(O2, r2, INK, 5, '#fdf0e6') + dot(O) + dot(O2) + lab(O, 'O', -2, 24, INK, 26, 60) + lab(O2, "O'", 2, 24, INK, 26, 60)
+          + seg(ext(M, A, 0, .35)[0], ext(M, A, 0, .35)[1], INK, 5) + seg(M, ext(M, C, 0, .35)[1], INK, 5) + seg(M, (B[0], B[1] + 70), INK, 5) + dot(A, RED) + dot(B, RED) + dot(C, RED) + dot(M)
+          + lab(M, 'M', 0, -22, INK, 30, 60) + lab(A, 'A', -22, -8, RED, 28, 60) + lab(B, 'B', 20, 10, RED, 28, 60) + lab(C, 'C', 22, -8, RED, 28, 60))
+    c.add(tick(M, A, 1, GREEN) + tick(M, B, 1, GREEN) + tick(M, C, 1, GREEN), 1)
+    return c.out()
+
+
+def ex13():
+    """EF, EG tangents to the circle H; J on EH; angle JEG = 22: EGH = 90, HGF = 22, FGE = 68"""
+    u = 20
+    H, r = (460, 170), 5 * u
+    d = r / math.sin(math.radians(22))
+    E = (H[0] - d, H[1])
+    F, G = tangent_pts(H, r, E)
+    if F[1] > G[1]:
+        F, G = G, F
+    J = foot(F, E, H)
+    assert near(angle_at(G, E, H), 90, 1e-6) and near(angle_at(G, H, F), 22, 1e-6) and near(angle_at(G, F, E), 68, 1e-6) and near(dist(F, J), dist(J, G), 1e-6)
+    c = Cv(680, 340, '34vh')
+    c.add(circle(H, r, fill=FILL) + dot(H) + lab(H, 'H', 24, 4, INK, 28, 60) + seg(E, ext(E, F, 0, .12)[1], INK, 5) + seg(E, ext(E, G, 0, .12)[1], INK, 5) + seg(E, H, INK, 4) + seg(H, F, INK, 4) + seg(H, G, INK, 4) + seg(F, G, INK, 3, '8 6') + dot(E) + dot(F) + dot(G) + dot(J)
+          + lab(E, 'E', -22, 0, INK, 28, 60) + lab(F, 'F', 4, -24, INK, 28, 60) + lab(G, 'G', 4, 26, INK, 28, 60) + lab(J, 'J', -14, -20, INK, 26, 60) + _ang_lab(E, G, H, 70, r'22^\circ', ORANGE, 104, 22))
+    return c.out()
