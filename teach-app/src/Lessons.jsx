@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { kh, gradeOf, loadScript } from './api.js';
 import { rememberLesson } from './GameWizard.jsx';
 
-// Grade 7 lessons + their parts come from public/data/lessons_g7.json (built from the lesson sources).
-// Lesson 1 has a hand-made deck; every other lesson gets a board with one slide per part to draw on.
-function boardDeck(n, lesson) {
-  const title = { k: 'title', html: `<p class="ts-kicker">ថ្នាក់ទី ៧ · មេរៀនទី ${kh(n)}</p><h1>${lesson.t}</h1><p class="ts-sub">${kh(lesson.p.length)} ផ្នែក</p>` };
+// Grade 7 lessons come from public/data/lessons_g7.json; Grade 9 from lessons_g9.json.
+// A lesson with no hand-made deck gets a board with one slide per part to draw on.
+function boardDeck(n, lesson, grade) {
+  const title = { k: 'title', html: `<p class="ts-kicker">ថ្នាក់ទី ${kh(grade)} · មេរៀនទី ${kh(n)}</p><h1>${lesson.t}</h1><p class="ts-sub">${kh(lesson.p.length)} ផ្នែក</p>` };
   const parts = lesson.p.map((p, i) => ({ html: `<p class="ts-kicker">ផ្នែកទី ${kh(i + 1)}</p><h2>${p}</h2>` }));
   return [title, ...parts];
 }
@@ -22,12 +22,13 @@ export default function Lessons({ cls, students, onBack }) {
 
   useEffect(() => {
     let live = true;
+    const lessonsFile = grade === '9' ? '/data/lessons_g9.json?v=1' : grade === '7' ? '/data/lessons_g7.json?v=2' : '';
     Promise.all([
-      grade === '7' ? fetch('/data/lessons_g7.json?v=2').then((r) => r.json()) : Promise.resolve({}),
+      lessonsFile ? fetch(lessonsFile).then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
         .then(() => loadScript('/js/slides/g7l01.js?v=20261025a'))
-        .then(() => loadScript('/js/teachshow.js?v=20261027d')),
+        .then(() => loadScript('/js/teachshow.js?v=20261028a')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -37,15 +38,16 @@ export default function Lessons({ cls, students, onBack }) {
   const nums = Object.keys(data).map(Number).sort((a, b) => a - b);
   if (!nums.length) return <div className="empty slim"><span>📖</span><p>មិនទាន់មានមេរៀនសម្រាប់ថ្នាក់ទី {kh(grade)} ទេ។</p></div>;
 
-  const hasDeck = (n) => (grade === '7' && n > 1) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
+  const hasDeck = (n) => (grade === '7' && n > 1) || (grade === '9' && n === 1) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
   const start = async (n, partIdx) => {
     const lesson = data[n];
     rememberLesson(cls, grade, n);   // the game wizard starts from the lesson last taught
     if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261027h`); } catch { /* falls back to the part board */ } }
+    if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261028b`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;
-    if (!window.TEACH_SLIDES[key]) { window.TEACH_SLIDES[key] = boardDeck(n, lesson); window.TEACH_SLIDES[key].board = true; }
+    if (!window.TEACH_SLIDES[key]) { window.TEACH_SLIDES[key] = boardDeck(n, lesson, grade); window.TEACH_SLIDES[key].board = true; }
     let startAt = 0;
     const extras = EXTRA_SECTIONS[key] || [];
     if (partIdx != null && partIdx >= lesson.p.length) {
