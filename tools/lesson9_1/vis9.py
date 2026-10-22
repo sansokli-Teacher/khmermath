@@ -12,6 +12,13 @@ def M(x, y, t, size=28, fill=NAVY, anchor='middle', weight=700, halo=False):
     return f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}" {MATHFONT}{h}>{t}</text>'
 
 
+def TMX(x, y, parts, size=30, fill=NAVY, anchor='middle', weight=700):
+    """parts = [(text, is_math), ...]: Khmer words upright, every number, letter and sign in italic Times maths"""
+    esc = lambda t: str(t).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    spans = ''.join((f'<tspan {MATHFONT} font-weight="600">{esc(t)}</tspan>' if is_m else esc(t)) + ' ' for t, is_m in parts)
+    return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}" {FONT}>{spans}</text>'
+
+
 def poly(pts, fill, stroke='none', sw=0):
     p = ' '.join(f'{x:.1f},{y:.1f}' for x, y in pts)
     return f'<polygon points="{p}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
@@ -74,7 +81,7 @@ def garden_square():
     b += M(x + side / 2, y + side / 2 + 12, 'S = 3 m²', 36, NAVY)
     b += M(x + side / 2, y + side + 48, 'x = √3', 34, RED)
     b += M(x + side + 70, y + side / 2, 'x = √3', 34, RED, 'start')
-    b += T(760, 200, 'x² = 3', 32, NAVY, 'start')
+    b += M(760, 200, 'x² = 3', 36, NAVY, 'start')
     return svg(1000, 440, b, '42vh')
 
 
@@ -113,12 +120,12 @@ def sqrt2_compass():
     # step 1: compass measures the unit on the line
     b += rvg(1, f'<g transform="translate({x0} {y})"><g class="pen-swing" style="transform-box:fill-box;transform-origin:0% {oy:.2f}%;animation:{k}a 1.6s ease-in-out both">{comp}</g></g>'
              + line(x0, y, x1, y, BLUE, 8)
-             + T(700, 70, '១. វាស់ប្រវែង 1', 30, RED, 'start'), until=2)
+             + TMX(700, 70, [('១. វាស់ប្រវែង', False), ('1', True)], 30, RED, 'start'), until=2)
     # step 2: same opening, needle at 1, swing up to the perpendicular
     b += rvg(2, line(x1, y, x1, topy, ORANGE, 8)
              + f'<g transform="translate({x1} {y})"><g class="pen-swing" style="transform-box:fill-box;transform-origin:0% {oy:.2f}%;animation:{k}b 1.8s ease-in-out both">{comp}</g></g>'
              + M(x1 + 28, (y + topy) / 2, '1', 32, ORANGE, 'start')
-             + T(700, 70, '២. គូសជ្រុងកែងប្រវែង 1', 30, RED, 'start'), until=3)
+             + TMX(700, 70, [('២. គូសជ្រុងកែងប្រវែង', False), ('1', True)], 30, RED, 'start'), until=3)
     # the triangle stays
     b += rvg(3, line(x0, y, x1, y, BLUE, 8) + line(x1, y, x1, topy, ORANGE, 8)
              + line(x0, y, topx, topy, RED, 8)
@@ -134,7 +141,7 @@ def sqrt2_compass():
              + f'<path d="M {sx:.1f} {sy:.1f} A {R:.1f} {R:.1f} 0 0 1 {x2:.1f} {y:.1f}" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>'
              + circ(x2, y, 11, RED, '#fff', 3)
              + M(x2, y - 28, '√2', 34, RED)
-             + T(700, 70, '√2 នៅចន្លោះ 1 និង 2', 30, RED, 'start'))
+             + TMX(700, 70, [('√2', True), ('នៅចន្លោះ', False), ('1', True), ('និង', False), ('2', True)], 30, RED, 'start'))
     return svg(1000, 460, b, '50vh')
 
 
@@ -185,7 +192,7 @@ def squeeze_sqrt3():
         b += M(x_of(t), y - 28, lab, 30, col)
     b += circ(x_of(mid), y, 12, RED, '#fff', 3)
     b += M(x_of(mid), y + 52, '√3', 32, RED)
-    b += T(500, 40, '1.7² = 2.89 < 3 < 3.24 = 1.8²', 28, NAVY)
+    b += M(500, 40, '1.7² = 2.89 < 3 < 3.24 = 1.8²', 32, NAVY)
     return svg(1000, 250, b, '30vh')
 
 
@@ -289,7 +296,7 @@ def simplify_18():
     b += M(x - 16, y + 1.5 * c, '3√2', 32, RED, 'end')
     b += M(620, 140, '√18 = √(9 × 2)', 32, NAVY, 'start')
     b += M(620, 200, '= 3√2', 36, RED, 'start')
-    b += T(620, 270, 'ផ្ទៃ 9 × 2 = 18', 28, TEAL, 'start')
+    b += TMX(620, 270, [('ផ្ទៃ', False), ('9 × 2 = 18', True)], 30, TEAL, 'start')
     return svg(1000, 380, b, '42vh')
 
 
@@ -300,7 +307,7 @@ def rationalise_steps():
     def frac(cx, num, den, col=NAVY):
         return (M(cx, 70, num, 36, col) + line(cx - 70, 88, cx + 70, 88, col, 4) + M(cx, 130, den, 36, col))
     b = rvg(0, frac(180, '3', '√2', RED) + T(180, 200, 'ដើម', 26, RED))
-    b += rvg(1, M(400, 100, '×', 40, NAVY) + frac(560, '√2', '√2', TEAL) + T(560, 200, 'គុណនឹង √2', 26, TEAL), until=2)
+    b += rvg(1, M(400, 100, '×', 40, NAVY) + frac(560, '√2', '√2', TEAL) + TMX(560, 200, [('គុណនឹង', False), ('√2', True)], 28, TEAL), until=2)
     b += rvg(2, frac(780, '3√2', '2', GREEN) + T(780, 200, 'បាន', 26, GREEN))
     return svg(1000, 250, b, '32vh')
 
@@ -316,7 +323,7 @@ def squeeze_cbrt17():
     b += line(xs[3], y - 14, xs[3], y + 14, NAVY, 4) + M(xs[3], y + 50, '3', 32, NAVY)
     mid = (xs[2] + xs[3]) / 2
     b += circ(mid, y, 12, RED, '#fff', 3) + M(mid - 22, y - 46, '3', 18, RED) + M(mid + 8, y - 26, '√17', 30, RED)
-    b += T(500, 40, '2³ = 8 < 17 < 27 = 3³', 30, NAVY)
+    b += M(500, 40, '2³ = 8 < 17 < 27 = 3³', 34, NAVY)
     return svg(1000, 220, b, '28vh')
 
 
@@ -359,3 +366,23 @@ def like_radicals():
     b += rvg(4, M(x0 + 1.5 * u2, y2 - 14, '3√2', 34, BLUE) + M(x0 + 3 * u2 + 2 * u3, y2 - 14, '4√3', 34, GREEN))
     b += rvg(5, M(500, y2 + 100, 'ប្រវែងខុសគ្នា → បូកមិនបាន', 34, NAVY).replace('font-style="italic"', ''))
     return svg(1000, 470, b, '52vh')
+
+
+# ---------------------------------------------------------------- the map of the lesson: six steps, each builds on the one before
+def lesson_map():
+    boxes = [('1', '√a', 'ឫសការេ និងចំនួនអសនិទាន', '#1c7ed6'), ('2', '∛a', 'ឫសគូប', '#2b8a87'), ('3', '√a · √b = √ab', 'គុណ និងចែករ៉ាឌីកាល់', '#2f9e44'),
+             ('4', '3√2 = √18', 'បញ្ចេញ និងបញ្ចូល', '#f08c00'), ('5', '3√2 + 4√2', 'បូក និងដក', '#e8590c'), ('6', '1/√2 = √2/2', 'បំបាត់រ៉ាឌីកាល់ពីភាគបែង', '#ae3ec9')]
+    b = ''
+    pos = [(60, 70), (370, 70), (680, 70), (680, 270), (370, 270), (60, 270)]       # a snake: left to right, then back
+    for k, ((no, expr, name, col), (x, y)) in enumerate(zip(boxes, pos)):
+        g = rect(x, y, 260, 150, '#fff', 20, col, 5) + circ(x + 34, y + 34, 22, col) + M(x + 34, y + 44, no, 30, '#fff')
+        g += M(x + 130, y + 88, expr, 38, col) + T(x + 130, y + 132, name, 22, NAVY)
+        b += rvg(k, g) if k else g
+    for k, (a, c) in enumerate(((0, 1), (1, 2), (2, 3), (3, 4), (4, 5))):
+        (x1, y1), (x2, y2) = pos[a], pos[c]
+        if y1 == y2:
+            xa, xb = (x1 + 262, x2 - 2) if x2 > x1 else (x1 - 2, x2 + 262)
+            b += rvg(k + 1, arrow(xa, y1 + 75, xb, y2 + 75, GREY, 6))
+        else:
+            b += rvg(k + 1, arrow(x1 + 130, y1 + 152, x2 + 130, y2 - 2, GREY, 6))
+    return svg(1000, 470, b, '56vh')

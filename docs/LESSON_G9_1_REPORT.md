@@ -26,3 +26,10 @@ Please check these three in the printed book before teaching them.
 - Looked at on screen: the square-root spiral, cube, compass construction of √2, √4·√9 area model, √18 squares, rationalising, radical anatomy, like radicals. Not looked at: the number-sets, garden square, √3 and ∛17 squeeze figures (they passed the overflow audit only).
 - Not checked on a projector or phone. Khmer wording is the book's; I added none except slide titles like «ឈ្មោះផ្នែកនៃរ៉ាឌីកាល់» and «ប្រវែងដូចគ្នា ទើបបូកបាន».
 - Maths: I read all 128 of Cursor's slides and checked every result I could by hand or by computation; the additions are asserted numerically in `build.py`. I did not independently prove the irrationality statements (they follow the book).
+
+## Update 2026-10-22 (teaching-method additions)
+- Every number and letter inside the pictures is now italic Times maths (mixed Khmer + maths labels use upright Khmer and italic maths).
+- Added by me (not in the book): a map of the lesson (6 steps), a «ទាយសិន» predict slide, two «ពិត ឬ មិនពិត» checks (end of part 1 and before the exercises), a proof that √2 is irrational (extension),
+  and an exit ticket. All their answers are asserted in `build.py`. Khmer wording for these slides is mine: please review.
+- `docs/TEACHING_GUIDE_G9_L1.md`: the method, a 6-period plan, questions, misconceptions, differentiation, assessment.
+- Audit again: 145 slides on screen, no overflow, no text under 17 px, no KaTeX errors. Looked at on screen: the map, the true/false check (3 answers revealed) and the proof slide.
