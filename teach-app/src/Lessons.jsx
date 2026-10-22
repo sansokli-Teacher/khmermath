@@ -28,7 +28,7 @@ export default function Lessons({ cls, students, onBack }) {
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
         .then(() => loadScript('/js/slides/g7l01.js?v=20261025a'))
-        .then(() => loadScript('/js/teachshow.js?v=20261102d')),
+        .then(() => loadScript('/js/teachshow.js?v=20261102e')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -43,7 +43,7 @@ export default function Lessons({ cls, students, onBack }) {
     const lesson = data[n];
     rememberLesson(cls, grade, n);   // the game wizard starts from the lesson last taught
     if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261027h`); } catch { /* falls back to the part board */ } }
-    if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261102d`); } catch { /* falls back to the part board */ } }
+    if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261102e`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;

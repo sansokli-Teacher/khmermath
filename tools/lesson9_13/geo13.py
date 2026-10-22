@@ -755,13 +755,13 @@ def vocab():
     """recall: centre, radius, chord, diameter, and a point on the circle"""
     O, r = (330, 215), 165
     A, Bb = pol(O, r, 35), pol(O, r, 215)
-    C, D = pol(O, r, 120), pol(O, r, 310)
+    C, D = pol(O, r, 160), pol(O, r, 85)       # a chord well away from the centre: not a diameter
     c = Cv(720, 450)
-    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -2, 28))
+    c.add(circle(O, r, fill=FILL) + dot(O) + lab(O, 'O', -22, 22))
     R_ = pol(O, r, 0)
     c.add(seg(O, R_, RED, 5) + dot(R_, RED) + T(O[0] + 90, O[1] - 16, 'កាំ', 30, RED), 1)
     c.add(seg(Bb, A, BLUE, 5) + dot(A, BLUE) + dot(Bb, BLUE) + lab(A, 'A', 22, -22, BLUE) + lab(Bb, 'B', -24, 22, BLUE), 2)
-    c.add(seg(C, D, GREEN, 5) + dot(C, GREEN) + dot(D, GREEN) + lab(C, 'C', -20, -22, GREEN) + lab(D, 'D', 22, 22, GREEN), 3)
+    c.add(seg(C, D, GREEN, 5) + dot(C, GREEN) + dot(D, GREEN) + lab(C, 'C', -26, -8, GREEN) + lab(D, 'D', 10, -28, GREEN), 3)
     return c.out()
 
 
