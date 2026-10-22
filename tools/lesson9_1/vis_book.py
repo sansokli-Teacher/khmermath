@@ -73,14 +73,26 @@ def squeeze_cbrt17():
     return svg(1000, 340, b, '42vh')
 
 
+def _curve(x1, y1, cx, cy, x2, y2, col, w=3):
+    """a thin curved arrow from (x1,y1) to (x2,y2) bending through (cx,cy)"""
+    import math as _m
+    ang = _m.atan2(y2 - cy, x2 - cx)
+    d = 15
+    a1, a2 = ang + _m.radians(155), ang - _m.radians(155)
+    tip = f'<polygon points="{x2},{y2} {x2 + d * _m.cos(a1):.1f},{y2 + d * _m.sin(a1):.1f} {x2 + d * _m.cos(a2):.1f},{y2 + d * _m.sin(a2):.1f}" fill="{col}"/>'
+    return f'<path d="M {x1} {y1} Q {cx} {cy} {x2} {y2}" fill="none" stroke="{col}" stroke-width="{w}" stroke-linecap="round"/>' + tip
+
+
 def radical_parts():
-    """the book's naming: for sqrt[2]{3} the sign is the radical, 2 the index, 3 the radicand"""
-    b = KT(500, 190, r'\sqrt[2]{3}', 150, NAVY, w=420, h=260)
-    parts = [('សញ្ញារ៉ាឌីកាល់', GREY, (170, 80), (452, 170)), ('សន្ទស្សន៍', ORANGE, (500, 360)), ('រ៉ាឌីកង់', TEAL, (830, 80), (560, 170))]
-    b += rvg(1, T(170, 80, 'សញ្ញារ៉ាឌីកាល់ √', 38, GREY) + arrow(260, 112, 438, 160, GREY, 5))
-    b += rvg(2, T(830, 80, 'រ៉ាឌីកង់ = 3', 38, TEAL) + arrow(780, 112, 580, 165, TEAL, 5))
-    b += rvg(3, T(300, 330, 'សន្ទស្សន៍ = 2', 38, ORANGE) + arrow(360, 296, 452, 168, ORANGE, 5))
-    return svg(1000, 400, b, '48vh')
+    """the n-th root of a^m with its four named parts, drawn like the textbook figure: blue rounded box, red index and exponent, blue radicand, grey radical sign"""
+    RED_, BLU, GRY = '#e03131', '#1c1cc0', '#7d8791'
+    b = rect(10, 10, 680, 330, '#eeeefb', 28, BLU, 5)
+    b += KT(350, 190, r'\sqrt[\textcolor{#e03131}{n}]{\textcolor{#1c1cc0}{a}^{\textcolor{#e03131}{m}}}', 150, '#222', w=420, h=260)
+    b += rvg(1, T(175, 78, 'សន្ទស្សន៍', 40, RED_) + _curve(232, 100, 262, 118, 282, 136, RED_))
+    b += rvg(2, T(525, 78, 'និទស្សន្ត', 40, RED_) + _curve(500, 100, 470, 112, 452, 134, RED_))
+    b += rvg(3, T(175, 308, 'សញ្ញារ៉ាឌីកាល់', 40, GRY) + _curve(262, 280, 290, 272, 318, 250, GRY))
+    b += rvg(4, T(525, 308, 'រ៉ាឌីកង់', 40, BLU) + _curve(500, 280, 462, 268, 410, 238, BLU))
+    return svg(700, 350, b, '52vh')
 
 
 def area_product():
