@@ -4,7 +4,7 @@
 // Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
 // skips everything else; the (batched) migration runs once per version, not once per cold start.
 // (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
-const SCHEMA_VERSION = '2026-10-20-teach';
+const SCHEMA_VERSION = '2026-10-24-shares';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
@@ -203,6 +203,34 @@ export async function ensureColumns(env) {
       PRIMARY KEY (class_id, day, period, student_id)
     )`),
     env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_attendance_class_day ON attendance(class_id, day, period)'),
+    // what the teacher plans to teach in a period (typed at the head of the period) and its subject
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS attendance_info (
+      class_id INTEGER NOT NULL,
+      day TEXT NOT NULL,
+      period INTEGER NOT NULL,
+      subject TEXT,
+      topic TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (class_id, day, period)
+    )`),
+    // student photos: private, one per student, never served without a teacher's login
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS student_photos (
+      student_id TEXT PRIMARY KEY,
+      content_type TEXT NOT NULL,
+      data_base64 TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`),
+    // One-time share invitation links for tests.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS test_share_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token_hash TEXT NOT NULL UNIQUE,
+      test_id INTEGER NOT NULL,
+      created_by INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('reviewer','editor')),
+      expires_at TEXT NOT NULL,
+      used_by INTEGER,
+      revoked INTEGER NOT NULL DEFAULT 0
+    )`),
   ]);
 
   // Add whichever columns are missing — one call to look, one call to add (a failing ALTER would roll the batch back).

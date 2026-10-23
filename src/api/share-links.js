@@ -1,5 +1,5 @@
 import { json, err } from '../lib/http.js';
-import { authTeacher, needTest } from '../lib/access.js';
+import { authTeacher, needTest, isAdmin } from '../lib/access.js';
 
 async function setup(env) {
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS test_share_links (
@@ -43,7 +43,7 @@ async function load(env, token) {
   await setup(env);
   if (!/^[a-f0-9]{48}$/.test(token || '')) return null;
   return env.DB.prepare(`SELECT l.id,l.test_id,l.role,x.title,x.owner_id FROM test_share_links l
-    JOIN tests x ON x.id=l.test_id AND x.owner_id=l.created_by
+    JOIN tests x ON x.id=l.test_id AND (x.owner_id=l.created_by OR (x.owner_id IS NULL AND t.role='owner'))
     JOIN teachers t ON t.id=l.created_by AND t.active=1
     WHERE l.token_hash=?1 AND l.revoked=0 AND l.used_by IS NULL AND l.expires_at>?2`)
     .bind(await hash(token), new Date().toISOString()).first();
@@ -57,7 +57,7 @@ export async function accept(req, env, params) {
   const t = await authTeacher(req, env); if (!t) return err('Not logged in.', 401);
   const link = await load(env, params.token);
   if (!link) return err('តំណបានប្រើរួច ផុតកំណត់ ឬត្រូវបានដកចេញ។', 404);
-  if (link.owner_id === t.id) return err('នេះជាតេស្តរបស់អ្នកផ្ទាល់។', 400);
+  if (link.owner_id === t.id || (isAdmin(t) && link.owner_id == null)) return err('នេះជាតេស្តរបស់អ្នកផ្ទាល់។', 400);
   const now = new Date().toISOString();
   // Atomic grant and consume; only the first recipient can use the link.
   const result = await env.DB.batch([
@@ -68,6 +68,7 @@ export async function accept(req, env, params) {
         CASE WHEN shares.role='editor' THEN 'editor' ELSE excluded.role END`).bind(t.id, link.id, now),
     env.DB.prepare('UPDATE test_share_links SET used_by=?1 WHERE id=?2 AND used_by IS NULL AND revoked=0 AND expires_at>?3').bind(t.id, link.id, now),
   ]);
-  if (!result[1].meta.changes) return err('តំណនេះត្រូវបានប្រើរួចហើយ។', 409);
+  const changes = result[1]?.meta?.rows_written ?? result[1]?.meta?.changes ?? 0;
+  if (!changes) return err('តំណនេះត្រូវបានប្រើរួចហើយ។', 409);
   return json({ test_id: link.test_id });
 }

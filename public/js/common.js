@@ -117,6 +117,29 @@ Exam.modal = function (message, { okOnly = false } = {}) {
     document.body.append(overlay);
   });
 };
+// In-page replacement for window.prompt: resolves to the typed text, or null when cancelled.
+Exam.prompt = function (message, value = '') {
+  return new Promise((resolve) => {
+    function finish(result) { overlay.remove(); resolve(result); }
+    const input = Exam.h('input', { type: 'text', value: String(value ?? ''), style: 'width:100%;margin-bottom:14px;' });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(input.value); if (e.key === 'Escape') finish(null); });
+    const overlay = Exam.h('div', {
+      style: 'position:fixed;inset:0;background:rgba(15,23,28,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;',
+      onclick: (e) => { if (e.target === overlay) finish(null); },
+    }, [
+      Exam.h('div', { class: 'card', style: 'max-width:380px;width:100%;margin:0;' }, [
+        Exam.h('p', { style: 'margin:0 0 10px;white-space:pre-wrap;' }, message),
+        input,
+        Exam.h('div', { class: 'row', style: 'justify-content:flex-end' }, [
+          Exam.h('button', { class: 'secondary', onclick: () => finish(null) }, 'បោះបង់'),
+          Exam.h('button', { onclick: () => finish(input.value) }, 'យល់ព្រម'),
+        ]),
+      ]),
+    ]);
+    document.body.append(overlay);
+    input.focus(); input.select();
+  });
+};
 Exam.confirm = (message) => Exam.modal(message);
 Exam.notify = (message) => Exam.modal(message, { okOnly: true });
 

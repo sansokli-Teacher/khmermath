@@ -28,7 +28,8 @@ export async function createClass(req, env) {
 export async function listStudents(req, env, params) {
   const g = await needClass(req, env, params.classId, 'view'); if (g.resp) return g.resp;
   const { results } = await env.DB.prepare(
-    'SELECT id, surname, first_name, gender, dob FROM students WHERE class_id = ?1 ORDER BY surname, first_name',
+    `SELECT s.id, s.surname, s.first_name, s.gender, s.dob, p.updated_at AS photo_v FROM students s
+     LEFT JOIN student_photos p ON p.student_id = s.id WHERE s.class_id = ?1 ORDER BY s.surname, s.first_name`,
   ).bind(params.classId).all();
   return json({ students: results });
 }
@@ -70,22 +71,37 @@ export async function updateStudent(req, env, params) {
   const g = await needStudent(req, env, params.studentId, 'edit'); if (g.resp) return g.resp;
   const { id, surname, first_name, gender, dob } = await req.json();
   if (!surname || !first_name) return err('surname and first_name are required.', 400);
-  if (id && String(id) !== params.studentId) return err("Changing a student's ID is not supported — add them again under the new ID instead.", 400);
-  const result = await env.DB.prepare(
-    'UPDATE students SET surname = ?1, first_name = ?2, gender = ?3, dob = ?4 WHERE id = ?5'
-  ).bind(
-    String(surname).trim(),
-    String(first_name).trim(),
-    gender ? String(gender).trim() : null,
-    dob ? String(dob).trim() : null,
-    params.studentId
-  ).run();
-  if (!result.meta.rows_written) return err('Student not found.', 404);
-  return json({ ok: true });
+  const oldId = params.studentId;
+  const newId = id === undefined || id === null ? oldId : String(id).trim();
+  if (!newId || newId.length > 40 || /\s/.test(newId)) return err('Student ID must be 1-40 characters with no spaces.', 400);
+  const update = env.DB.prepare('UPDATE students SET surname = ?1, first_name = ?2, gender = ?3, dob = ?4 WHERE id = ?5').bind(
+    String(surname).trim(), String(first_name).trim(), gender ? String(gender).trim() : null, dob ? String(dob).trim() : null, oldId);
+  if (newId === oldId) {
+    const result = await update.run();
+    if (!result.meta.rows_written) return err('Student not found.', 404);
+    return json({ ok: true });
+  }
+  // A new ID: it must be free, and every table that points at the old one is moved over in the same batch (all or nothing).
+  if (await env.DB.prepare('SELECT 1 FROM students WHERE id = ?1').bind(newId).first()) return err(`ID ${newId} is already used by another student.`, 409);
+  let tables = [];
+  try {
+    // every table that has a student_id column (looked up with PRAGMA table_info, which D1 allows)
+    const { results: all } = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'").all();
+    const names = all.map((x) => x.name).filter((n) => /^[A-Za-z0-9_]+$/.test(n));
+    const infos = await env.DB.batch(names.map((n) => env.DB.prepare(`PRAGMA table_info(${n})`)));
+    tables = names.filter((n, i) => (infos[i].results || []).some((c) => c.name === 'student_id'));
+  } catch (e) { return err('Could not look up the tables that use student IDs: ' + (e && e.message ? e.message : e), 500); }
+  const stmts = [env.DB.prepare('PRAGMA defer_foreign_keys = true'), update.bind(
+    String(surname).trim(), String(first_name).trim(), gender ? String(gender).trim() : null, dob ? String(dob).trim() : null, oldId),
+    env.DB.prepare('UPDATE students SET id = ?1 WHERE id = ?2').bind(newId, oldId),
+    ...tables.map((t) => env.DB.prepare(`UPDATE ${t} SET student_id = ?1 WHERE student_id = ?2`).bind(newId, oldId))];
+  try { await env.DB.batch(stmts); } catch (e) { return err('Could not change the ID: ' + (e && e.message ? e.message : e), 500); }
+  return json({ ok: true, id: newId, tables: tables.length });
 }
 
 export async function deleteStudent(req, env, params) {
   const g = await needStudent(req, env, params.studentId, 'edit'); if (g.resp) return g.resp;
+  await env.DB.prepare('DELETE FROM student_photos WHERE student_id = ?1').bind(params.studentId).run();   // a deleted student's photo goes too
   const result = await env.DB.prepare('DELETE FROM students WHERE id = ?1').bind(params.studentId).run();
   if (!result.meta.rows_written) return err('Student not found.', 404);
   return json({ ok: true });
@@ -115,6 +131,7 @@ export async function importRoster(req, env, params) {
 export async function deleteClass(req, env, params) {
   const g = await needClass(req, env, params.classId, 'own'); if (g.resp) return g.resp;
   const classId = params.classId;
+  await env.DB.prepare('DELETE FROM student_photos WHERE student_id IN (SELECT id FROM students WHERE class_id = ?1)').bind(classId).run();
   await env.DB.prepare('DELETE FROM students WHERE class_id = ?1').bind(classId).run();
   await env.DB.prepare('DELETE FROM test_sessions WHERE class_id = ?1').bind(classId).run();
   await env.DB.prepare("DELETE FROM shares WHERE resource_type = 'class' AND resource_id = ?1").bind(classId).run();

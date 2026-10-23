@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { kh, gradeOf, loadScript } from './api.js';
 import { rememberLesson } from './GameWizard.jsx';
 
-// Grade 7 lessons come from public/data/lessons_g7.json; Grade 9 from lessons_g9.json.
+// Grade 7 lessons come from public/data/lessons_g7.json; Grade 8 from lessons_g8.json; Grade 9 from lessons_g9.json.
 // A lesson with no hand-made deck gets a board with one slide per part to draw on.
 function boardDeck(n, lesson, grade) {
   const title = { k: 'title', html: `<p class="ts-kicker">ថ្នាក់ទី ${kh(grade)} · មេរៀនទី ${kh(n)}</p><h1>${lesson.t}</h1><p class="ts-sub">${kh(lesson.p.length)} ផ្នែក</p>` };
@@ -22,13 +22,13 @@ export default function Lessons({ cls, students, onBack }) {
 
   useEffect(() => {
     let live = true;
-    const lessonsFile = grade === '9' ? '/data/lessons_g9.json?v=1' : grade === '7' ? '/data/lessons_g7.json?v=2' : '';
+    const lessonsFile = grade === '9' ? '/data/lessons_g9.json?v=1' : grade === '8' ? '/data/lessons_g8.json?v=2' : grade === '7' ? '/data/lessons_g7.json?v=2' : '';
     Promise.all([
       lessonsFile ? fetch(lessonsFile).then((r) => r.json()) : Promise.resolve({}),
       Promise.all([loadScript('/katex/katex.min.js'), loadScript('/js/common.js')])
         .then(() => loadScript('/katex/contrib/auto-render.min.js'))
         .then(() => loadScript('/js/slides/g7l01.js?v=20261025a'))
-        .then(() => loadScript('/js/teachshow.js?v=20261102g')),
+        .then(() => loadScript('/js/teachshow.js?v=20261106j')),
     ]).then(([d]) => { if (live) { setData(d); setReady(true); } }).catch((e) => live && setErr(e.message));
     return () => { live = false; };
   }, [grade]);
@@ -38,12 +38,13 @@ export default function Lessons({ cls, students, onBack }) {
   const nums = Object.keys(data).map(Number).sort((a, b) => a - b);
   if (!nums.length) return <div className="empty slim"><span>📖</span><p>មិនទាន់មានមេរៀនសម្រាប់ថ្នាក់ទី {kh(grade)} ទេ។</p></div>;
 
-  const hasDeck = (n) => (grade === '7' && n > 1) || (grade === '9' && (n === 1 || n === 13)) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
+  const hasDeck = (n) => (grade === '7' && n > 1) || (grade === '8' && n === 12) || (grade === '9' && (n === 1 || n === 13)) || !!(window.TEACH_SLIDES && window.TEACH_SLIDES[`${grade}-${n}`]);
   const start = async (n, partIdx) => {
     const lesson = data[n];
     rememberLesson(cls, grade, n);   // the game wizard starts from the lesson last taught
     if (n > 1 && grade === '7') { try { await loadScript(`/js/slides/g7/lesson${n}.js?v=20261027h`); } catch { /* falls back to the part board */ } }
     if (grade === '9') { try { await loadScript(`/js/slides/g9/lesson${n}.js?v=20261102g`); } catch { /* falls back to the part board */ } }
+    if (grade === '8') { try { await loadScript(`/js/slides/g8/lesson${n}.js?v=20261106f`); } catch { /* falls back to the part board */ } }
     const key = `${grade}-${n}`;
     window.TEACH_SLIDES = window.TEACH_SLIDES || {};
     const real = !!window.TEACH_SLIDES[key] && !window.TEACH_SLIDES[key].board;
@@ -59,7 +60,7 @@ export default function Lessons({ cls, students, onBack }) {
       else {
         // each part of the hand-made deck opens with a title slide whose heading starts with the part number ("8. ការ៉េ គូប …");
         // matching the number (not the part's name) avoids hitting the cover's objectives list or a longer title that contains the name
-        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && s.html.includes(`<h1>${partIdx + 1}. `));
+        const hit = window.TEACH_SLIDES[key].findIndex((s) => s.k === 'title' && s.html && (s.html.includes(`data-part="${partIdx + 1}"`) || s.html.includes(`<h1>${partIdx + 1}. `)));
         startAt = hit >= 0 ? hit : 0;
       }
     }

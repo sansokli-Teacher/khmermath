@@ -22,8 +22,9 @@ const GRADE_KH = (g) => {
 };
 const bankGradesOf = (curr) => curr.bankGrades || curr.grades || [];
 const canBankDelete = () => typeof ME !== 'undefined' && ME && (ME.role === 'owner' || ME.role === 'admin');
-let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '' };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
+let bankState = { grade: '', chapter: '', lesson: '', level: '', kind: '', topic: '', q: '', mine: null };   // grade '' = all, '-' = no grade; lesson '' = all, '-' = no lesson
 let CURR = null;
+const bankSelected = new Set();   // question ids ticked for a test: kept while the teacher moves between lessons and grades
 
 async function loadCurr(force) { if (!CURR || force) CURR = await api('/api/curriculum'); return CURR; }
 
@@ -364,9 +365,23 @@ ${q.solution_text}
 render.bank = async function () {
   const container = document.getElementById('tab-bank');
   container.innerHTML = '';
-  const [{ questions }, { tests }, curr] = await Promise.all([api('/api/bank'), api('/api/tests'), loadCurr(true)]);
+  // «ថ្នាក់ខ្ញុំ» downloads only the grades this teacher taught last time (remembered here); a new grade triggers one full download
+  let hint = ''; try { if (localStorage.getItem('bank_mine') !== '0') hint = localStorage.getItem('bank_my_grades') || ''; } catch {}
+  if (bankState.mine === false) hint = '';
+  let [{ questions: allQuestions }, { tests }, curr, classRes] = await Promise.all([api(hint ? `/api/bank?grades=${encodeURIComponent(hint)}` : '/api/bank'), api('/api/tests'), loadCurr(true), api('/api/classes').catch(() => ({ classes: [] }))]);
+  // «ថ្នាក់ខ្ញុំ»: the bank opens on the grades this teacher teaches; «គ្រប់ថ្នាក់» shows every grade (tests can mix grades)
+  const myClasses = (classRes.classes || []).filter((c) => bankGradesOf(curr).includes(String(c.grade)));
+  const myGrades = [...new Set(myClasses.map((c) => String(c.grade)))].sort((a, b) => Number(a) - Number(b));
+  try { localStorage.setItem('bank_my_grades', myGrades.join(',')); } catch {}
+  if (hint && myGrades.some((g) => !hint.split(',').includes(g))) allQuestions = (await api('/api/bank')).questions;   // a grade not downloaded yet
+  if (bankState.mine === null) { let v = null; try { v = localStorage.getItem('bank_mine'); } catch {} bankState.mine = v === null ? myGrades.length > 0 : v === '1'; }
+  const mineOn = bankState.mine && myGrades.length > 0 && bankState.grade !== '-';
+  if (mineOn && bankState.grade && !myGrades.includes(bankState.grade)) Object.assign(bankState, { grade: '', chapter: '', lesson: '' });
+  const questions = mineOn ? allQuestions.filter((q) => !q.grade || myGrades.includes(String(q.grade))) : allQuestions;
+  const setMine = (v) => { bankState.mine = v; try { localStorage.setItem('bank_mine', v ? '1' : '0'); } catch {} if (v && bankState.grade && !myGrades.includes(bankState.grade)) Object.assign(bankState, { grade: '', chapter: '', lesson: '' }); render.bank(); };
   const editable = tests.filter((t) => (t.my_role === 'owner' || t.my_role === 'editor') && !t.is_sample);
-  const selected = new Set();
+  const selected = bankSelected;
+  if (!hint) { const have = new Set(allQuestions.map((q) => q.id)); [...selected].forEach((id) => { if (!have.has(id)) selected.delete(id); }); }   // (only when every grade was downloaded)   // forget questions that were deleted
   const S = bankState;
   // What's new in the shared library since this teacher last looked (ids only grow, so "bigger than last seen" = added since).
   let seenMax = 0; try { seenMax = Number(localStorage.getItem('bank_seen_max') || 0); } catch {}
@@ -389,21 +404,29 @@ render.bank = async function () {
   // ---------- header + grade tabs
   const gradePill = (val, label, n) => h('button', { class: `filter-pill${S.grade === val ? ' on' : ''}`, onclick: () => { Object.assign(S, { grade: val, chapter: '', lesson: '' }); reload(); } }, [label, ' ', h('span', { class: 'pill-n' }, String(n))]);
   const pills = h('div', { class: 'filter-bar' }, [
-    gradePill('', 'ទាំងអស់', questions.length),
-    ...bankGradesOf(curr).map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
-    gradePill('-', 'មិនទាន់កំណត់ថ្នាក់', count((q) => !q.grade)),
-  ]);
+    myGrades.length ? h('button', { class: `filter-pill scope-pill${mineOn ? ' on' : ''}`, title: 'បង្ហាញតែថ្នាក់ដែលខ្ញុំបង្រៀន', onclick: () => setMine(true) }, '⭐ ថ្នាក់ខ្ញុំ') : null,
+    myGrades.length ? h('button', { class: `filter-pill scope-pill${!mineOn ? ' on' : ''}`, title: 'បង្ហាញគ្រប់ថ្នាក់', onclick: () => setMine(false) }, '🌐 គ្រប់ថ្នាក់') : null,
+    gradePill('', mineOn ? 'ទាំងអស់ (ថ្នាក់ខ្ញុំ)' : 'ទាំងអស់', questions.length),
+    ...(mineOn ? myGrades : bankGradesOf(curr)).map((g) => gradePill(g, GRADE_KH(g), count((q) => q.grade === g))),
+    mineOn ? null : gradePill('-', 'មិនទាន់កំណត់ថ្នាក់', count((q) => !q.grade)),
+  ].filter(Boolean));
+  const classChips = mineOn && myClasses.length ? h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;' }, [
+    h('span', { class: 'muted', style: 'font-size:12px;' }, 'ថ្នាក់របស់ខ្ញុំ ៖'),
+    ...myClasses.map((c) => h('button', { type: 'button', class: `chip chip-plain class-chip${S.grade === String(c.grade) ? ' on' : ''}`, style: 'cursor:pointer;', title: `ទៅកាន់ ${GRADE_KH(String(c.grade))}`,
+      onclick: () => { Object.assign(S, { grade: String(c.grade), chapter: '', lesson: '' }); reload(); } }, `${c.name} · ${GRADE_KH(String(c.grade))}`)),
+  ]) : null;
   if (newCount) container.append(h('div', { class: 'card', style: 'background:#fff4dc;border:1px solid #f1d28a;display:flex;gap:12px;align-items:center;flex-wrap:wrap;' }, [
     h('div', { style: 'flex:1;min-width:200px;' }, [h('b', {}, `🆕 ឃ្លាំងសំណួររួមមាន ${newCount} សំណួរថ្មី`), h('div', { class: 'muted' }, 'ម្ចាស់ប្រព័ន្ធទើបបន្ថែម — មើលសំណួរដែលមានស្លាក «🆕 ថ្មី» ខាងក្រោម។')]),
     h('button', { class: 'secondary', onclick: () => { try { localStorage.setItem('bank_seen_max', String(maxShared)); } catch {} render.bank(); } }, '✓ បានមើលហើយ'),
   ]));
   container.append(h('div', { class: 'card' }, [
     h('div', { class: 'row', style: 'justify-content:space-between;align-items:center;gap:10px;' }, [
-      h('h2', { style: 'margin:0;' }, `🗂 ធនាគារសំណួរ (${questions.length})`),
-      h('button', { onclick: () => openExport(questions, curr, S) }, '📥 ទាញយកលំហាត់ជា PDF / Word'),
+      h('h2', { style: 'margin:0;' }, `🗂 ធនាគារសំណួរ (${questions.length}${mineOn ? (hint ? ' · ថ្នាក់ខ្ញុំ' : ` ក្នុងចំណោម ${allQuestions.length}`) : ''})`),
+      h('button', { class: 'no-phone', onclick: () => openExport(questions, curr, S) }, '📥 ទាញយកលំហាត់ជា PDF / Word'),
     ]),
     h('p', { class: 'muted' }, 'រៀបតាមថ្នាក់ → ជំពូក → មេរៀន។ បន្ថែមសំណួរចូលជំពូក និងមេរៀន រួចពេលបង្កើតតេស្ត គ្រាន់តែជ្រើសរើសពីមេរៀន ឬផ្នែកដែលចង់បាន។'),
     pills,
+    classChips,
   ]));
 
   // ---------- lesson sidebar (grouped by chapter when available)
@@ -500,6 +523,7 @@ render.bank = async function () {
 
   // ---------- right side: filters, actions, list
   const list = h('div', { class: 'test-list' });
+  let page = 1;   // current page of the question list
   const countLbl = h('b', {}, '0');
   const targetSel = h('select', { style: 'width:auto;max-width:170px;' }, editable.map((t) => h('option', { value: t.id }, t.title)));
   const addBtn = h('button', { class: 'btn-sm', disabled: 'disabled', onclick: async () => {
@@ -530,14 +554,19 @@ render.bank = async function () {
       const wCount = pickedQs.filter((q) => q.kind === 'writing').length;
       const totalPts = pickedQs.reduce((a, q) => a + (q.points || 1), 0);
 
-      const gradeText = S.grade && S.grade !== '-' ? `ថ្នាក់ទី ${khNum(S.grade)}` : '';
-      const chText = S.chapter ? `${S.chapter}` : '';
-      const lessonText = S.lesson && S.lesson !== '-' ? `មេរៀន ${S.lesson}` : '';
-      const partText = lessonText ? (chText ? `${chText} · ${lessonText}` : lessonText) : chText;
-      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${partText ? ' ' + partText : ''} (${khNum(selArr.length)} សំណួរ · ${khNum(totalPts)} ពិន្ទុ)`;
+      // a test made from questions of any lesson or grade: the default title says which ones
+      const grades = [...new Set(pickedQs.map((q) => q.grade).filter(Boolean))];
+      const lessonsPicked = [...new Set(pickedQs.map((q) => q.lesson).filter(Boolean))];
+      const gradeText = grades.length ? (grades.length === 1 ? `ថ្នាក់ទី ${khNum(grades[0])}` : `ថ្នាក់ទី ${grades.map(khNum).join(' · ')}`) : '';
+      const lessonText = lessonsPicked.length === 1 ? `មេរៀន ${lessonsPicked[0]}` : lessonsPicked.length ? `${khNum(lessonsPicked.length)} មេរៀន` : '';
+      const defaultTitle = `វិញ្ញាសា${gradeText ? ' ' + gradeText : ''}${lessonText ? ' ' + lessonText : ''} (${khNum(selArr.length)} សំណួរ · ${khNum(totalPts)} ពិន្ទុ)`;
 
       const titleInp = h('input', { type: 'text', value: defaultTitle, style: 'width:100%;margin-top:4px;' });
-      const minInp = h('input', { type: 'number', value: '60', min: '10', max: '240', style: 'width:100px;' });
+      // what the test is made of: one line per grade + lesson
+      const groups = new Map();
+      pickedQs.forEach((q) => { const k = `${q.grade ? GRADE_KH(q.grade) : 'មិនទាន់កំណត់ថ្នាក់'} · ${q.lesson || 'មិនទាន់កំណត់មេរៀន'}`; groups.set(k, (groups.get(k) || 0) + 1); });
+      const breakdown = h('div', { style: 'max-height:150px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;padding:6px 10px;margin-top:8px;font-size:13px;' },
+        [...groups.entries()].map(([k, n]) => h('div', { style: 'display:flex;justify-content:space-between;gap:10px;padding:2px 0;' }, [h('span', {}, k), h('b', {}, `${khNum(n)} សំណួរ`)])));
 
       const box = h('div', { style: 'text-align:left;' }, [
         h('div', { class: 'row', style: 'gap:8px;flex-wrap:wrap;margin:0 0 10px;' }, [
@@ -545,15 +574,13 @@ render.bank = async function () {
           h('span', { class: 'chip chip-open' }, `${khNum(totalPts)} ពិន្ទុ`),
           mcqCount ? h('span', { class: 'chip chip-plain' }, `ពហុជ្រើសរើស ${khNum(mcqCount)}`) : null,
           wCount ? h('span', { class: 'chip chip-soon' }, `សរសេរ ${khNum(wCount)}`) : null,
+          grades.length > 1 ? h('span', { class: 'chip chip-plain' }, `${khNum(grades.length)} ថ្នាក់`) : null,
         ]),
-        h('p', { class: 'muted', style: 'margin-top:0;' }, 'បង្កើតវិញ្ញាសាភ្លាមៗចេញពីសំណួរដែលបានជ្រើស។'),
-        h('label', { style: 'font-weight:600;display:block;margin-top:8px;' }, 'ចំណងជើងវិញ្ញាសា'),
+        h('p', { class: 'muted', style: 'margin-top:0;' }, 'បង្កើតវិញ្ញាសាពីសំណួរដែលបានជ្រើស (អាចមកពីមេរៀន និងថ្នាក់ផ្សេងៗគ្នា)។'),
+        breakdown,
+        h('label', { style: 'font-weight:600;display:block;margin-top:12px;' }, 'ចំណងជើងវិញ្ញាសា'),
         titleInp,
-        h('div', { class: 'row', style: 'gap:12px;margin-top:12px;align-items:center;' }, [
-          h('label', { style: 'font-weight:600;' }, 'រយៈពេលប្រឡង (នាទី)'),
-          minInp,
-        ]),
-        h('p', { class: 'muted', style: 'font-size:12px;margin-top:10px;' }, 'វិញ្ញាសានឹងបើកភ្លាមៗជាមួយទម្រង់ផ្លូវការ (មានរូបធរណីមាត្រ រូបមន្ត KaTeX សន្លឹកចម្លើយ OMR និងអត្រាកំណែ)។ អ្នកអាចទាញយក PDF, Word ឬបោះពុម្ពបានភ្លាម។'),
+        h('p', { class: 'muted', style: 'font-size:12px;margin-top:10px;' }, 'បន្ទាប់ពីបង្កើត អ្នកនឹងទៅកាន់ផ្នែក «តេស្ត» ដើម្បីពិនិត្យ កែពិន្ទុ និងថែមសំណួរបន្ថែមពីធនាគារ មុនពេលបោះពុម្ព ឬទាញយក PDF / Word។'),
         h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px;margin-top:18px;' }, [
           h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'),
           h('button', {
@@ -564,14 +591,17 @@ render.bank = async function () {
                 const newTest = await api('/api/tests', { method: 'POST', body: { title: ttl } });
                 const r = await api(`/api/tests/${newTest.id}/questions/copy`, { method: 'POST', body: { question_ids: selArr } });
                 m.remove();
-                await Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» — ${khNum(r.copied || selArr.length)} សំណួរ · ${khNum(totalPts)} ពិន្ទុ`);
-                const min = Math.max(10, Math.min(240, Number(minInp.value) || 60));
-                window.open(`paper.html?test=${newTest.id}&min=${min}`, '_blank');
+                selected.clear();
+                if (r.copied < selArr.length) await Exam.notify(`⚠ បានថែមតែ ${khNum(r.copied)} ក្នុងចំណោម ${khNum(selArr.length)} សំណួរ (ដល់កម្រិតកំណត់នៃគម្រោង)។`);
+                else Exam.notify(`✅ បានបង្កើតវិញ្ញាសា «${ttl}» — ${khNum(r.copied)} សំណួរ`);
+                selectedTestId = newTest.id;                                   // open it in the «តេស្ត» tab, in this same page
+                const tab = document.querySelector('.tabs button[data-tab="tests"], [data-tab="tests"]');
+                if (tab) tab.click(); else render.tests();
               } catch (e) {
                 Exam.notify(e.message);
               }
             }
-          }, '📄 បង្កើត និងបើកវិញ្ញាសា →')
+          }, '📄 បង្កើត រួចពិនិត្យក្នុងតេស្ត →')
         ])
       ]);
       const m = bankModal('📄 បង្កើតវិញ្ញាសាភ្លាមៗ', box);
@@ -592,7 +622,8 @@ render.bank = async function () {
     }
   }, '🗑 លុបដែលបានជ្រើស') : null;
   const ptsLbl = h('b', {}, '0');
-  const bar = h('div', { class: 'bank-bar' }, [h('span', { class: 'bank-bar-count' }, ['បានជ្រើស ', countLbl, ' សំណួរ · ', ptsLbl, ' ពិន្ទុ']), paperBtn, tagBtn, delSelBtn, targetSel, addBtn].filter(Boolean));
+  const clearBtn = h('button', { class: 'secondary btn-sm', title: 'ដកការជ្រើសរើសទាំងអស់ (រួមទាំងមេរៀន និងថ្នាក់ផ្សេងទៀត)', onclick: () => { selected.clear(); draw(); } }, '✕ ដកការជ្រើស');
+  const bar = h('div', { class: 'bank-bar' }, [h('span', { class: 'bank-bar-count' }, ['បានជ្រើស ', countLbl, ' សំណួរ · ', ptsLbl, ' ពិន្ទុ']), clearBtn, paperBtn, tagBtn, delSelBtn, targetSel, addBtn].filter(Boolean));
 
   const fLevel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']].map(([v, l]) => h('option', { value: v, selected: S.level === v ? 'selected' : null }, l)));
   const fKind = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v, selected: S.kind === v ? 'selected' : null }, l)));
@@ -633,7 +664,21 @@ render.bank = async function () {
     const rows = visible();
     list.innerHTML = '';
     if (!rows.length) list.append(h('div', { class: 'empty-card' }, h('div', { class: 'muted' }, questions.length ? 'មិនមានសំណួរក្នុងផ្នែកនេះទេ — ចុច «➕ សំណួរថ្មី» ឬ «📥 នាំចូល Excel»។' : 'មិនទាន់មានសំណួរទេ — ចុច «➕ សំណួរថ្មី» ឬបង្កើតតេស្តជាមុនសិន។')));
-        rows.slice(0, 200).forEach((x, idx) => {
+    const PER = 20;   // questions per page: a short page draws fast (every stem is maths-typeset)
+    const pages = Math.max(1, Math.ceil(rows.length / PER));
+    if (page > pages) page = pages;
+    const start = (page - 1) * PER;
+    const pager = () => rows.length <= PER ? null : h('div', { class: 'bank-pager' }, [
+      h('button', { class: 'secondary btn-sm', disabled: page <= 1 ? 'disabled' : null, onclick: () => { page--; draw(); window.scrollTo({ top: 0 }); } }, '‹'),
+      ...[...new Set([1, 2, page - 1, page, page + 1, pages - 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b).flatMap((n, i, arr) => [
+        i && n - arr[i - 1] > 1 ? h('span', { class: 'muted' }, '…') : null,
+        h('button', { class: `btn-sm${n === page ? '' : ' secondary'}`, onclick: () => { page = n; draw(); window.scrollTo({ top: 0 }); } }, khNum(n)),
+      ]).filter(Boolean),
+      h('button', { class: 'secondary btn-sm', disabled: page >= pages ? 'disabled' : null, onclick: () => { page++; draw(); window.scrollTo({ top: 0 }); } }, '›'),
+      h('span', { class: 'muted', style: 'font-size:12px;' }, `${khNum(start + 1)}–${khNum(Math.min(rows.length, start + PER))} / ${khNum(rows.length)}`),
+    ]);
+    const topPager = pager(); if (topPager) list.append(topPager);
+        rows.slice(start, start + PER).forEach((x, i) => { const idx = start + i;
       const cb = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none;cursor:pointer;margin-top:3px;', checked: selected.has(x.id) ? 'checked' : null, onchange: (e) => { e.target.checked ? selected.add(x.id) : selected.delete(x.id); upd(); } });
       const canEdit = !x.shared || (typeof ME !== 'undefined' && ME && ME.role === 'owner');
       const onEdit = canEdit ? () => openQuestionEditor(x, { id: x.test_id, submissions: 0 }, null, reload) : null;
@@ -734,7 +779,7 @@ render.bank = async function () {
         ]),
       ]));
     });
-    if (rows.length > 200) list.append(h('p', { class: 'muted' }, `បង្ហាញ ២០០ ដំបូង ក្នុងចំណោម ${rows.length} — សូមត្រងបន្ថែម។`));
+    const botPager = pager(); if (botPager) list.append(botPager);
     upd();
   }
   function upd() {
@@ -742,10 +787,10 @@ render.bank = async function () {
     const pts = questions.filter((q) => selected.has(q.id)).reduce((a, q) => a + (q.points || 1), 0);
     countLbl.textContent = String(n);
     ptsLbl.textContent = String(pts);
-    addBtn.disabled = !n; tagBtn.disabled = !n; paperBtn.disabled = !n; if (delSelBtn) delSelBtn.disabled = !n;
+    addBtn.disabled = !n; tagBtn.disabled = !n; paperBtn.disabled = !n; clearBtn.disabled = !n; if (delSelBtn) delSelBtn.disabled = !n;
   }
-  [fLevel, fKind, fTopic].forEach((el) => el && el.addEventListener('change', draw));
-  fQ.addEventListener('input', draw);
+  [fLevel, fKind, fTopic].forEach((el) => el && el.addEventListener('change', () => { page = 1; draw(); }));
+  fQ.addEventListener('input', () => { page = 1; draw(); });
 
   // ---------- random generator for the chosen grade / lesson
   const gen = (() => {
@@ -828,4 +873,82 @@ function importQuestionsCard(test, container, onDone) {
     h('div', { class: 'row' }, [h('button', { class: 'secondary btn-sm', onclick: template }, '⬇ ទាញយកគំរូ Excel'), file]),
     status,
   ]);
+}
+
+
+// ---------- add more questions to an existing test, picked from the whole bank (any grade, any lesson) ----------
+async function openBankPicker(test, onDone) {
+  const [{ questions }, curr] = await Promise.all([api('/api/bank'), loadCurr()]);
+  const have = new Set((test.questions || []).map((q) => String(q.stem_text || '').trim()));
+  const pick = new Set();
+  const F = { grade: '', lesson: '', level: '', kind: '', q: '' };
+  const holder = h('div', {});
+  const m = bankModal(`➕ ថែមសំណួរពីធនាគារ — ${test.title}`, holder, true);
+  const gradeSel = h('select', { style: 'width:auto;' }, [h('option', { value: '' }, 'គ្រប់ថ្នាក់'), ...bankGradesOf(curr).map((g) => h('option', { value: g }, GRADE_KH(g)))]);
+  const lessonSel = h('select', { style: 'width:auto;max-width:260px;' });
+  const levelSel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់កម្រិត'], ['easy', 'ងាយ'], ['medium', 'មធ្យម'], ['hard', 'ពិបាក'], ['pisa', 'បែប PISA']].map(([v, l]) => h('option', { value: v }, l)));
+  const kindSel = h('select', { style: 'width:auto;' }, [['', 'គ្រប់ប្រភេទ'], ['mcq', 'ពហុជ្រើសរើស'], ['writing', 'សរសេរ']].map(([v, l]) => h('option', { value: v }, l)));
+  const search = h('input', { type: 'text', placeholder: '🔍 ស្វែងរក…', style: 'max-width:180px;' });
+  const list = h('div', { style: 'max-height:52vh;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:6px;' });
+  const info = h('b', {}, '0');
+  const addBtn = h('button', { disabled: 'disabled', style: 'background:#16a34a;color:#fff;font-weight:600;' }, '➕ ថែមទៅតេស្ត');
+  const fillLessons = () => {
+    lessonSel.innerHTML = '';
+    lessonSel.append(h('option', { value: '' }, 'គ្រប់មេរៀន'));
+    const pool = gradeSel.value ? [gradeSel.value] : bankGradesOf(curr);
+    const names = [...new Set(pool.flatMap((g) => (curr.lessons[g] || []).concat(questions.filter((q) => q.grade === g && q.lesson).map((q) => q.lesson))))];
+    names.forEach((n) => lessonSel.append(h('option', { value: n }, n)));
+  };
+  const rows = () => {
+    const t = search.value.trim().toLowerCase();
+    return questions.filter((q) => (!gradeSel.value || q.grade === gradeSel.value) && (!lessonSel.value || q.lesson === lessonSel.value)
+      && (!levelSel.value || q.level === levelSel.value) && (!kindSel.value || (kindSel.value === 'writing' ? q.kind === 'writing' : q.kind !== 'writing'))
+      && (!t || String(q.stem_text).toLowerCase().includes(t)));
+  };
+  const status = () => {
+    const pts = questions.filter((q) => pick.has(q.id)).reduce((a, q) => a + (q.points || 1), 0);
+    info.textContent = `${khNum(pick.size)} សំណួរ · ${khNum(pts)} ពិន្ទុ`;
+    addBtn.disabled = !pick.size;
+  };
+  const draw = () => {
+    list.innerHTML = '';
+    const r = rows();
+    if (!r.length) list.append(h('p', { class: 'muted' }, 'មិនមានសំណួរតាមលក្ខខណ្ឌនេះទេ។'));
+    r.slice(0, 150).forEach((q) => {
+      const dup = have.has(String(q.stem_text || '').trim());
+      const cb = h('input', { type: 'checkbox', style: 'width:20px;height:20px;flex:none;margin-top:3px;', checked: pick.has(q.id) ? 'checked' : null, disabled: dup ? 'disabled' : null,
+        onchange: (e) => { e.target.checked ? pick.add(q.id) : pick.delete(q.id); status(); } });
+      list.append(h('label', { style: `display:flex;gap:10px;align-items:flex-start;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;${dup ? 'opacity:.5;' : 'cursor:pointer;'}` }, [
+        cb,
+        h('div', { style: 'flex:1;min-width:0;' }, [
+          mathEl('div', { style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;' }, q.stem_text),
+          h('div', { class: 'muted', style: 'font-size:12px;margin-top:2px;' }, [q.grade ? GRADE_KH(q.grade) : 'មិនទាន់កំណត់ថ្នាក់', q.lesson ? ` · ${q.lesson}` : '', q.level ? ` · ${LEVEL_KH[q.level] || q.level}` : '', ` · ${khNum(q.points || 1)} ពិន្ទុ`, dup ? ' · ✓ មានក្នុងតេស្តរួចហើយ' : ''].join('')),
+        ]),
+      ]));
+    });
+    if (r.length > 150) list.append(h('p', { class: 'muted' }, `បង្ហាញ ១៥០ ដំបូង ក្នុងចំណោម ${khNum(r.length)} — សូមត្រងបន្ថែម។`));
+    status();
+  };
+  gradeSel.addEventListener('change', () => { fillLessons(); draw(); });
+  [lessonSel, levelSel, kindSel].forEach((el) => el.addEventListener('change', draw));
+  search.addEventListener('input', draw);
+  addBtn.onclick = async () => {
+    try {
+      addBtn.disabled = true;
+      const r = await api(`/api/tests/${test.id}/questions/copy`, { method: 'POST', body: { question_ids: [...pick] } });
+      m.remove();
+      await Exam.notify(r.copied < pick.size ? `⚠ បានថែម ${khNum(r.copied)} ក្នុងចំណោម ${khNum(pick.size)} សំណួរ (ដល់កម្រិតកំណត់នៃគម្រោង)។` : `✅ បានថែម ${khNum(r.copied)} សំណួរទៅតេស្ត។`);
+      if (onDone) onDone();
+    } catch (e) { addBtn.disabled = false; Exam.notify(e.message); }
+  };
+  fillLessons();
+  holder.append(
+    h('div', { class: 'row', style: 'gap:8px;flex-wrap:wrap;' }, [gradeSel, lessonSel, levelSel, kindSel, search]),
+    list,
+    h('div', { class: 'bp-foot' }, [
+      h('div', { class: 'bp-count' }, ['បានជ្រើស ', info]),
+      h('div', { class: 'bp-btns' }, [h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'), addBtn]),
+    ]),
+  );
+  draw();
 }

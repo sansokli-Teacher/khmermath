@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, kh, fullName, todayISO, SCHEDULE, periodAt, isLive } from './api.js';
+import { attendanceReport } from './report.js';
+import AttendanceDay from './AttendanceDay.jsx';
+
+const lsGet = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } };
 
 const MARKS = [
   { m: 'ok', t: 'មាន', cls: 'ok' },
@@ -10,7 +15,7 @@ const MARKS = [
 const blank = { mark: 'ok', note: '' };
 const snap = (students, rows) => JSON.stringify(students.map((s) => { const r = rows[s.id] || blank; return [s.id, r.mark, r.note]; }));
 
-export default function Attendance({ cls, students }) {
+export default function Attendance({ cls, students, teacher = '' }) {
   const [day, setDay] = useState(todayISO());
   const [period, setPeriod] = useState(() => periodAt());      // opens on the period that is running now
   const [editing, setEditing] = useState(false);                // after submitting, the list is locked until the teacher presses «កែប្រែ»
@@ -23,6 +28,14 @@ export default function Attendance({ cls, students }) {
   const [noteOpen, setNoteOpen] = useState({});
   const [filter, setFilter] = useState('all');
   const job = useRef(0);
+  // what is planned for this period (typed at the head of the period) and the message the teacher copies afterwards
+  const [info, setInfo] = useState({ subject: lsGet('att_subject') || 'គណិតវិទ្យា', topic: '' });
+  const [teacherName, setTeacherName] = useState(() => lsGet('att_teacher') || teacher);
+  const [withTopic, setWithTopic] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [infoSaved, setInfoSaved] = useState(true);
+  const infoTimer = useRef(0);
+  const [mode, setMode] = useState('mark');   // 'mark' = take attendance for one period · 'day' = read back a whole day
 
   const load = useCallback(async () => {
     const n = ++job.current;
@@ -37,6 +50,8 @@ export default function Attendance({ cls, students }) {
       setRecorded((data.rows || []).length > 0);
       setEditing(false);
       setSaved(snap(students, next));
+      setInfo({ subject: (data.info && data.info.subject) || lsGet('att_subject') || 'គណិតវិទ្យា', topic: (data.info && data.info.topic) || '' });
+      setInfoSaved(true);
       setNoteOpen({});
       setState('ready');
     } catch (e) {
@@ -91,11 +106,45 @@ export default function Attendance({ cls, students }) {
     }
   }
 
+  const putInfo = (next, d, p) => api('/api/attendance/info', { method: 'POST', body: { class_id: cls.id, day: d, period: p, subject: next.subject, topic: next.topic } }).then(() => setInfoSaved(true)).catch(() => {});
+  const editInfo = (patch) => {
+    const next = { ...info, ...patch };
+    setInfo(next); setInfoSaved(false);
+    if (patch.subject !== undefined) lsSet('att_subject', next.subject);
+    clearTimeout(infoTimer.current);
+    const d = day, p = period;                                           // saved for the period it was typed in, even if the teacher moves on
+    infoTimer.current = setTimeout(() => putInfo(next, d, p), 700);
+  };
+  const flushInfo = () => { clearTimeout(infoTimer.current); if (!infoSaved) putInfo(info, day, period); };
+  const absentNames = students.filter((s) => (rows[s.id] || blank).mark === 'A').map(fullName);
+  const report = attendanceReport({ day, className: cls.name, subject: info.subject, period, absent: absentNames, teacher: teacherName, topic: info.topic, withTopic });
+  async function copyReport() {
+    try { await navigator.clipboard.writeText(report); }
+    catch { const t = document.createElement('textarea'); t.value = report; document.body.append(t); t.select(); try { document.execCommand('copy'); } catch { /* nothing else to try */ } t.remove(); }
+    setCopied(true); setTimeout(() => setCopied(false), 2200);
+  }
+
+  const tabs = (
+    <div className="att-tabs" role="tablist">
+      <button role="tab" aria-selected={mode === 'mark'} className={mode === 'mark' ? 'on' : ''} onClick={() => setMode('mark')}>✎ ចុះវត្តមាន</button>
+      <button role="tab" aria-selected={mode === 'day'} className={mode === 'day' ? 'on' : ''} onClick={() => { if (!changed || window.confirm('មានការផ្លាស់ប្តូរមិនទាន់ចុះ។ បោះបង់ការផ្លាស់ប្តូរ?')) { flushInfo(); setMode('day'); } }}>📅 មើលរបាយការណ៍តាមថ្ងៃ</button>
+    </div>
+  );
+  if (mode === 'day') {
+    return (
+      <div className="att">
+        {tabs}
+        <AttendanceDay cls={cls} day={day} onDay={setDay} teacher={teacherName} subject={info.subject} onEdit={(p) => { setPeriod(p); setMode('mark'); }} />
+      </div>
+    );
+  }
+
   const shown = students.map((s, i) => ({ s, i })).filter(({ s }) => filter === 'all' || (rows[s.id] || blank).mark === filter);
   if (!students.length) return <div className="empty slim"><span>👥</span><p>ថ្នាក់នេះមិនទាន់មានសិស្សទេ។</p></div>;
 
   return (
     <div className="att">
+      {tabs}
       <div className="att-top">
         <div className="field">
           <label htmlFor="att-day">ថ្ងៃ</label>
@@ -113,6 +162,26 @@ export default function Attendance({ cls, students }) {
         </div>
         <button className="btn ghost" disabled={locked} onClick={() => markAll('ok')}>✓ មានវត្តមានទាំងអស់</button>
       </div>
+      <div className="att-info">
+        <div className="field grow">
+          <label htmlFor="att-topic">ម៉ោងទី {kh(period)} · ថ្ងៃនេះបង្រៀន {!infoSaved && <small className="dim">កំពុងរក្សាទុក…</small>}</label>
+          <input id="att-topic" type="text" maxLength={300} placeholder="ឧ. ចំនួនគត់" value={info.topic} onChange={(e) => editInfo({ topic: e.target.value })} onBlur={flushInfo} />
+        </div>
+        <div className="field">
+          <label htmlFor="att-subject">មុខវិជ្ជា</label>
+          <input id="att-subject" type="text" maxLength={80} value={info.subject} onChange={(e) => editInfo({ subject: e.target.value })} onBlur={flushInfo} />
+        </div>
+        <button className="btn primary att-copy" onClick={copyReport}>{copied ? '✓ បានចម្លង' : '📋 ចម្លងរបាយការណ៍'}</button>
+      </div>
+      <details className="att-report">
+        <summary>មើល / កែរបាយការណ៍អវត្តមាន</summary>
+        <div className="att-report-opts">
+          <div className="field grow"><label htmlFor="att-teacher">បង្រៀនដោយ</label>
+            <input id="att-teacher" type="text" value={teacherName} onChange={(e) => { setTeacherName(e.target.value); lsSet('att_teacher', e.target.value); }} /></div>
+          <label className="chk"><input type="checkbox" checked={withTopic} onChange={(e) => setWithTopic(e.target.checked)} /> បញ្ចូលមេរៀនក្នុងរបាយការណ៍</label>
+        </div>
+        <pre className="att-report-pre">{report}</pre>
+      </details>
       {locked && (
         <div className="att-done" role="status">
           <span>✓ បានចុះវត្តមានម៉ោងទី {kh(period)} ({SCHEDULE[period - 1].s}–{SCHEDULE[period - 1].e}) រួចរាល់</span>

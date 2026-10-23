@@ -262,6 +262,19 @@ function initDashboard() {
   }
   const badge = document.getElementById('teacher-username-badge');
   if (badge) badge.textContent = `${ME.display_name} · ${ME.role === 'owner' ? 'ម្ចាស់ប្រព័ន្ធ' : ME.status === 'trial' ? 'សាកល្បង 🔒' : ME.status === 'expired' ? 'ផុតកំណត់ ⏰' : `គ្រូ${ME.license_until ? ` · ដល់ ${fmtDateTime(ME.license_until).split(',')[0]}` : ''}`}`;
+  if (badge) {   // click your name to write it the way you want (e.g. SAN SOKLI -> សាន សុខលី)
+    badge.style.cursor = 'pointer'; badge.title = '✏️ ចុចដើម្បីកែឈ្មោះរបស់ខ្ញុំ';
+    badge.addEventListener('click', async () => {
+      const v = await Exam.prompt('ឈ្មោះរបស់លោកគ្រូ (បង្ហាញលើរបាយការណ៍ ស្លាយ និងបញ្ជីថ្នាក់)៖', ME.display_name || '');
+      if (v == null || !v.trim() || v.trim() === ME.display_name) return;
+      try {
+        const r = await api('/api/teacher/profile', { method: 'POST', body: { display_name: v } });
+        const old = ME.display_name; ME.display_name = r.display_name;
+        badge.textContent = badge.textContent.replace(old, r.display_name);
+        Exam.notify('✓ បានប្តូរឈ្មោះជា «' + r.display_name + '»');
+      } catch (e) { Exam.notify(e.message); }
+    });
+  }
   if (ME.role !== 'owner') { const tb = document.querySelector('[data-tab="teachers"]'); if (tb) tb.hidden = true; }
   else startRequestBadge();
   const tabs = document.querySelectorAll('.tabs button');
@@ -315,7 +328,7 @@ render.classes = async function () {
         h('button', { class: 'secondary btn-sm', onclick: () => { selectedClassId = c.id; render.classes(); } }, 'មើលបញ្ជីសិស្ស'),
         c.my_role === 'owner' ? h('button', { class: 'secondary btn-sm', onclick: () => openShareDialog('class', c.id, `ថ្នាក់ ${c.name}`) }, '👥 ចែករំលែក') : null,
         c.my_role !== 'owner' ? null : h('button', { class: 'danger btn-sm', onclick: async () => {
-          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបថ្នាក់ «${c.name}» និងទិន្នន័យសិស្សទាំងអស់ក្នុងថ្នាក់នេះឬ?`)) return;
+          if (!(await Exam.confirm(`តើលោកគ្រូពិតជាចង់លុបថ្នាក់ «${c.name}» និងទិន្នន័យសិស្សទាំងអស់ក្នុងថ្នាក់នេះឬ?`))) return;
           try {
             await api(`/api/classes/${c.id}`, { method: 'DELETE' });
             render.classes();
@@ -664,6 +677,7 @@ function parseExcelRows(rawRows) {
 
 function studentRow(container, cls, s) {
   if (editingStudentId === s.id) {
+    const idInput = h('input', { type: 'text', value: s.id, style: 'min-width:0;width:100%;font-weight:700;', title: 'អត្តលេខសិស្ស — អាចកែបាន' });
     const surnameInput = h('input', { type: 'text', value: s.surname || '', style: 'min-width:0;width:100%' });
     const firstNameInput = h('input', { type: 'text', value: s.first_name || '', style: 'min-width:0;width:100%' });
     const genderSelect = h('select', { style: 'min-width:0;width:100%' }, [
@@ -674,7 +688,7 @@ function studentRow(container, cls, s) {
     const dobInput = h('input', { type: 'text', value: s.dob || '', placeholder: 'YYYY-MM-DD', style: 'min-width:0;width:100%' });
 
     return h('tr', {}, [
-      h('td', {}, h('strong', {}, s.id)),
+      h('td', {}, idInput),
       h('td', {}, surnameInput),
       h('td', {}, firstNameInput),
       h('td', {}, genderSelect),
@@ -684,10 +698,14 @@ function studentRow(container, cls, s) {
           const surname = surnameInput.value.trim();
           const first_name = firstNameInput.value.trim();
           if (!surname || !first_name) return Exam.notify('សូមបញ្ចូលគោត្តនាម និងនាម។');
+          const newId = idInput.value.trim();
+          if (!newId) return Exam.notify('សូមបញ្ចូលអត្តលេខសិស្ស។');
+          if (newId !== s.id && !(await Exam.confirm(`ប្តូរអត្តលេខសិស្សពី ${s.id} ទៅ ${newId}?\nពិន្ទុ និងប្រវត្តិទាំងអស់របស់សិស្សនឹងផ្លាស់ទៅអត្តលេខថ្មី ហើយសិស្សត្រូវចូលប្រើអត្តលេខថ្មីនេះ។`))) return;
           try {
             await api(`/api/students/${s.id}`, {
               method: 'PUT',
               body: {
+                id: newId,
                 surname,
                 first_name,
                 gender: genderSelect.value.trim(),
@@ -720,7 +738,7 @@ function studentRow(container, cls, s) {
     h('td', { class: 'row', style: 'gap:4px' }, [
       h('button', { class: 'btn-sm secondary', onclick: () => { editingStudentId = s.id; renderRoster(container); } }, 'កែ'),
       h('button', { class: 'btn-sm danger', onclick: async () => {
-        if (!confirm(`តើលោកគ្រូពិតជាចង់លុបសិស្ស «${s.surname} ${s.first_name}» (${s.id}) ឬ?`)) return;
+        if (!(await Exam.confirm(`តើលោកគ្រូពិតជាចង់លុបសិស្ស «${s.surname} ${s.first_name}» (${s.id}) ឬ?`))) return;
         try {
           await api(`/api/students/${s.id}`, { method: 'DELETE' });
           renderRoster(container);
@@ -997,7 +1015,7 @@ render.tests = async function () {
         t.my_role === 'owner' && ME.licensed ? item('👥 ចែករំលែកជាមួយគ្រូ', () => openShareDialog('test', t.id, t.title)) : null,
         t.my_role === 'owner' && (ME.licensed || ME.status === 'trial') ? h('div', { class: 'menu-sep' }) : null,
         t.my_role === 'owner' && (ME.licensed || ME.status === 'trial') ? item('🗑 លុបតេស្ត', async () => {
-          if (!confirm(`តើពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`)) return;
+          if (!(await Exam.confirm(`តើពិតជាចង់លុបតេស្ត «${t.title}» និងសំណួរទាំងអស់ក្នុងតេស្តនេះឬ?`))) return;
           try { await api(`/api/tests/${t.id}`, { method: 'DELETE' }); render.tests(); } catch (er) { Exam.notify(er.message); }
         }, 'danger') : null,
       ]);
@@ -1023,7 +1041,7 @@ render.tests = async function () {
         h('button', { class: 'btn-primary-sm', onclick: () => { selectedTestId = t.id; render.tests(); } }, canEdit ? '✏️ កែសម្រួល' : isSample ? '⭐ មើលតេស្តគំរូ' : t.my_role === 'owner' ? '🔍 មើល' : '🔍 ពិនិត្យ'),
         mayWork && !isSample || ME.role === 'owner' ? h('button', { class: 'btn-go', title: 'កំណត់ពេលប្រឡងឱ្យថ្នាក់', onclick: () => goSchedule(t.id) }, '📅 ប្រឡង') : null,
         h('button', { class: 'icon-btn', title: 'មើលជាសិស្ស', 'aria-label': 'មើលជាសិស្ស', onclick: () => window.open(`student.html?preview=${t.id}`, '_blank') }, '👁'),
-        h('button', { class: 'icon-btn', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
+        h('button', { class: 'icon-btn no-phone', title: 'បោះពុម្ព / PDF', 'aria-label': 'PDF', onclick: () => window.open(`paper.html?test=${t.id}`, '_blank') }, '📄'),
         h('div', { class: 'menu-wrap' }, [menuBtn]),
       ]),
     ]);
@@ -1089,6 +1107,113 @@ async function renderTestBuilder(container) {
   if (same) window.scrollTo(0, y);
 }
 
+// how a test is balanced: levels, and about how long it takes (≈ 1.5 min per multiple-choice question, 6 per written one)
+function balanceStrip(qs) {
+  if (!qs.length) return null;
+  const n = (l) => qs.filter((q) => q.level === l).length;
+  const none = qs.filter((q) => !q.level).length;
+  const mins = Math.round(qs.reduce((a, q) => a + (q.kind === 'writing' ? 6 : 1.5), 0));
+  const chip = (txt, cls) => h('span', { class: `chip ${cls}` }, txt);
+  return h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;margin:0 0 10px;align-items:center;' }, [
+    h('span', { class: 'muted', style: 'font-size:12px;' }, 'តុល្យភាព ៖'),
+    n('easy') ? chip(`ងាយ ${n('easy')}`, 'chip-open') : null, n('medium') ? chip(`មធ្យម ${n('medium')}`, 'chip-plain') : null,
+    n('hard') ? chip(`ពិបាក ${n('hard')}`, 'chip-closed') : null, n('pisa') ? chip(`PISA ${n('pisa')}`, 'chip-soon') : null,
+    none ? chip(`មិនកំណត់ ${none}`, 'chip-plain') : null,
+    h('span', { class: 'muted', style: 'font-size:12px;' }, `· ប្រហែល ${mins} នាទី`),
+  ].filter(Boolean));
+}
+
+// go to the «កំណត់ពេលប្រឡង» tab with a test already chosen
+function goScheduleTab(testId) {
+  document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === 'schedule'));
+  document.querySelectorAll('[id^="tab-"]').forEach((el) => { el.hidden = el.id !== 'tab-schedule'; });
+  render.schedule(testId);
+}
+
+// Drag-and-drop order of the question cards: grab the ⠿ handle (mouse or finger) and drop the card where it belongs.
+function makeSortable(list, onDrop) {
+  let drag = null;
+  const cards = () => [...list.querySelectorAll(':scope > .question-card')];
+  list.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('.qdrag'); if (!handle) return;
+    const card = handle.closest('.question-card'); if (!card) return;
+    e.preventDefault();
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+    drag = { card, pid: e.pointerId, before: cards().map((c) => c.dataset.qid).join(',') };
+    card.classList.add('dragging');
+  });
+  list.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    const y = e.clientY;
+    if (y < 90) window.scrollBy(0, -16); else if (y > innerHeight - 90) window.scrollBy(0, 16);   // scroll the page while dragging near its edge
+    for (const c of cards()) {
+      if (c === drag.card) continue;
+      const r = c.getBoundingClientRect();
+      if (y < r.top || y > r.bottom) continue;
+      const mid = r.top + r.height / 2;
+      const draggedIsAfter = !!(c.compareDocumentPosition(drag.card) & Node.DOCUMENT_POSITION_FOLLOWING);
+      if (draggedIsAfter && y < mid) list.insertBefore(drag.card, c);
+      else if (!draggedIsAfter && y > mid) list.insertBefore(drag.card, c.nextSibling);
+      break;
+    }
+  });
+  const end = (e) => {
+    if (!drag || e.pointerId !== drag.pid) return;
+    const { card, before } = drag; drag = null;
+    card.classList.remove('dragging');
+    cards().forEach((c, i) => { const n = c.querySelector('.qnum'); if (n) n.textContent = `${i + 1}.`; });
+    const ids = cards().map((c) => c.dataset.qid);
+    if (ids.join(',') !== before && e.type === 'pointerup') onDrop(ids.map(Number));
+    else if (e.type === 'pointercancel') onDrop(null);
+  };
+  list.addEventListener('pointerup', end);
+  list.addEventListener('pointercancel', end);
+}
+
+// «make the whole test worth 100», or give every question the same score
+function openScoreTool(test, container) {
+  const qs = test.questions;
+  const cur = qs.reduce((a, q) => a + Number(q.points || 0), 0);
+  const round2 = (x) => Math.round(x * 100) / 100;
+  let mode = 'prop';
+  const totalInp = h('input', { type: 'number', min: '1', max: String(qs.length * 100), step: '1', value: '100', style: 'width:110px;' });
+  const preview = h('div', { class: 'muted', style: 'margin:8px 0;min-height:1.4em;' });
+  const plan = () => {
+    const total = Number(totalInp.value);
+    if (!(total > 0)) return null;
+    const w = qs.map((q) => (mode === 'prop' ? Number(q.points) || 1 : 1));
+    const W = w.reduce((a, b) => a + b, 0);
+    const pts = w.map((x) => round2((total * x) / W));
+    const drift = round2(total - pts.reduce((a, b) => a + b, 0));
+    pts[pts.length - 1] = round2(pts[pts.length - 1] + drift);          // the last question absorbs the rounding so the sum is exact
+    return pts.every((p) => p > 0 && p <= 100) ? pts : null;
+  };
+  const refresh = () => {
+    const pts = plan();
+    preview.textContent = pts ? `ពិន្ទុក្នុងមួយសំណួរ ៖ ${Math.min(...pts)}${Math.min(...pts) === Math.max(...pts) ? '' : ' – ' + Math.max(...pts)} · សរុប ${round2(pts.reduce((a, b) => a + b, 0))}` : '⚠ ពិន្ទុក្នុងមួយសំណួរត្រូវនៅចន្លោះ ០ ដល់ ១០០';
+  };
+  const radio = (v, label) => h('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0;cursor:pointer;' }, [
+    h('input', { type: 'radio', name: 'pt-mode', checked: mode === v ? 'checked' : null, onchange: () => { mode = v; refresh(); } }), label]);
+  const body = h('div', { style: 'text-align:left;' }, [
+    h('p', { class: 'muted', style: 'margin-top:0;' }, `${qs.length} សំណួរ · ពិន្ទុសរុបឥឡូវ ${round2(cur)}`),
+    h('div', { class: 'row', style: 'gap:10px;align-items:center;' }, [h('label', { style: 'margin:0;font-weight:600;' }, 'ពិន្ទុសរុបថ្មី'), totalInp]),
+    radio('prop', 'តាមសមាមាត្រ (រក្សាភាពខុសគ្នានៃពិន្ទុរវាងសំណួរ)'),
+    radio('eq', 'ស្មើគ្នាគ្រប់សំណួរ'),
+    preview,
+    test.submissions ? h('div', { class: 'callout warn' }, `⚠ មានសិស្ស ${test.submissions} នាក់បានប្រគល់រួច — ការប្តូរពិន្ទុប៉ះពាល់ពិន្ទុរបស់ពួកគេ (ចុច «គណនាឡើងវិញ» នៅផ្នែកដាក់ពិន្ទុ)។`) : null,
+    h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px;margin-top:14px;' }, [
+      h('button', { class: 'secondary', onclick: () => m.remove() }, 'បោះបង់'),
+      h('button', { onclick: async () => {
+        const pts = plan(); if (!pts) return;
+        try { await api(`/api/tests/${test.id}/questions/points`, { method: 'POST', body: { points: Object.fromEntries(qs.map((q, i) => [q.id, pts[i]])) } }); m.remove(); renderTestBuilder(container); } catch (e) { Exam.notify(e.message); }
+      } }, 'អនុវត្ត'),
+    ].filter(Boolean)),
+  ].filter(Boolean));
+  totalInp.addEventListener('input', refresh);
+  const m = bankModal('⚖ កំណត់ពិន្ទុទាំងតេស្ត', body);
+  refresh();
+}
+
 async function drawTestBuilder(container) {
   const test = await api(`/api/tests/${selectedTestId}`);
   container.innerHTML = '';
@@ -1113,8 +1238,9 @@ async function drawTestBuilder(container) {
     ]),
     h('div', { class: 'row' }, [
       h('button', { class: 'secondary', onclick: () => window.open(`student.html?preview=${test.id}`, '_blank') }, '👁 មើលជាសិស្ស'),
-      h('button', { class: 'secondary', onclick: () => window.open(`paper.html?test=${test.id}`, '_blank') }, '📄 វិញ្ញាសា PDF'),
-      h('button', { class: 'secondary', onclick: () => window.open(`paper.html?test=${test.id}&docx=1`, '_blank') }, '📝 Word'),
+      h('button', { class: 'secondary no-phone', onclick: () => window.open(`paper.html?test=${test.id}`, '_blank') }, '📄 វិញ្ញាសា PDF'),
+      h('button', { class: 'secondary no-phone', onclick: () => window.open(`paper.html?test=${test.id}&docx=1`, '_blank') }, '📝 Word'),
+      h('button', { class: 'schedule-top', onclick: () => goScheduleTab(test.id) }, '📅 កំណត់ពេលប្រឡង'),
       h('span', { class: `badge ${test.status}` }, test.status === 'ready' ? 'រួចរាល់' : 'សម្រាង'),
       test.status !== 'ready'
         ? h('button', { onclick: async () => { await api(`/api/tests/${test.id}`, { method: 'PUT', body: { status: 'ready' } }); renderTestBuilder(container); } }, 'សម្គាល់ថារួចរាល់')
@@ -1122,14 +1248,33 @@ async function drawTestBuilder(container) {
     ]),
   ]);
 
+  const canEditScore = (test.my_role === 'owner' || test.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
+  const pointsEditor = (q) => {
+    if (!canEditScore) return h('div', { class: 'muted' }, `${q.points} ពិន្ទុ`);
+    const inp = h('input', { type: 'number', min: '0.25', max: '100', step: '0.25', value: String(q.points), style: 'width:84px;padding:4px 8px;', title: 'កែពិន្ទុនៃសំណួរនេះ' });
+    const save = async () => {
+      const v = Number(inp.value);
+      if (!(v > 0 && v <= 100) || v === q.points) { inp.value = String(q.points); return; }
+      try { await api(`/api/questions/${q.id}`, { method: 'PUT', body: { points: v } }); renderTestBuilder(container); } catch (e) { Exam.notify(e.message); inp.value = String(q.points); }
+    };
+    inp.addEventListener('change', save);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+    return h('div', { class: 'row', style: 'gap:8px;align-items:center;margin-top:6px;' }, [h('span', { class: 'muted' }, 'ពិន្ទុ'), inp]);
+  };
   const mcqQs = test.questions.filter((q) => q.kind !== 'writing');
   const wQs = test.questions.filter((q) => q.kind === 'writing');
   const sum = (a) => a.reduce((t, q) => t + q.points, 0);
   const list = h('div', { class: 'card' }, [
     h('h3', {}, `សំណួរ (${test.questions.length}) — ពហុជ្រើសរើស ${mcqQs.length} សំណួរ ${sum(mcqQs)} ពិន្ទុ · សរសេរ ${wQs.length} សំណួរ ${sum(wQs)} ពិន្ទុ · សរុប ${sum(test.questions)} ពិន្ទុ`),
-    ...test.questions.map((q, i) => h('div', { class: 'question-card' }, [
+    canEditScore ? h('div', { class: 'row', style: 'gap:8px;margin:6px 0 10px;flex-wrap:wrap;' }, [
+      h('button', { class: 'tb-add-fab', onclick: () => openBankPicker(test, () => renderTestBuilder(container)) }, '➕ ថែមសំណួរពីធនាគារ'),
+      h('button', { class: 'secondary', onclick: () => openScoreTool(test, container) }, '⚖ កំណត់ពិន្ទុ'),
+      h('span', { class: 'muted' }, 'អូស ⠿ ដើម្បីប្តូរលំដាប់សំណួរ · កែពិន្ទុនៃសំណួរនីមួយៗបានខាងក្រោម'),
+    ]) : null,
+    balanceStrip(test.questions),
+    ...test.questions.map((q, i) => h('div', { class: 'question-card', 'data-qid': String(q.id) }, [
       h('div', { class: 'row', style: 'justify-content:space-between' }, [
-        h('div', {}, [h('strong', {}, `${i + 1}.`), h('span', { class: 'chip chip-plain', style: 'margin-left:6px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;' }, `#${q.id}`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.lesson ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, `${q.grade ? 'ថ្នាក់ ' + q.grade + ' · ' : ''}${q.lesson}`) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'បែប PISA' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
+        h('div', {}, [canEditScore ? h('span', { class: 'qdrag', title: 'អូសដើម្បីប្តូរលំដាប់', 'aria-label': 'អូសដើម្បីប្តូរលំដាប់' }, '⠿') : null, h('strong', { class: 'qnum' }, `${i + 1}.`), h('span', { class: 'chip chip-plain', style: 'margin-left:6px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:700;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;' }, `#${q.id}`), (q.kind === 'writing' ? h('span', { class: 'badge upcoming', style: 'margin-left:8px;' }, '✎ សរសេរ') : null), q.cancelled ? h('span', { class: 'badge closed', style: 'margin-left:8px;' }, 'បានបោះបង់') : null, q.topic ? h('span', { class: 'chip chip-plain', style: 'margin-left:8px;' }, q.topic) : null, q.lesson ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, `${q.grade ? 'ថ្នាក់ ' + q.grade + ' · ' : ''}${q.lesson}`) : null, q.level ? h('span', { class: 'chip chip-plain', style: 'margin-left:4px;' }, { easy: 'ងាយ', medium: 'មធ្យម', hard: 'ពិបាក', pisa: 'បែប PISA' }[q.level]) : null, q.alt_correct_index != null ? h('span', { class: 'chip chip-soon', style: 'margin-left:4px;' }, 'ទទួលចម្លើយ២') : null]),
         h('div', { class: 'row', style: 'gap:6px;' }, [
           h('button', { class: 'secondary btn-sm', onclick: () => openQuestionEditor(q, test, container) }, '✏️ កែ'),
           h('button', { class: 'danger btn-sm', onclick: async () => { if (await Exam.confirm('លុបសំណួរនេះ?')) { await api(`/api/questions/${q.id}`, { method: 'DELETE' }); renderTestBuilder(container); } } }, 'លុប'),
@@ -1143,23 +1288,32 @@ async function drawTestBuilder(container) {
         : h('div', { class: 'radio-list' }, Exam.withSample(q).options.map((opt, idx) => h('div', { class: `radio-opt${idx === q.correct_index ? ' selected' : ''}` }, [
             h('span', {}, idx === q.correct_index ? '✓' : '○'), mathEl('span', { class: 'opt-body' }, opt),
           ]))),
-      h('div', { class: 'muted' }, `${q.points} ពិន្ទុ`),
+      pointsEditor(q),
       notesBlock(q, test, container),
     ])),
   ]);
 
+  if (canEditScore) makeSortable(list, async (ids) => {
+    if (!ids) return renderTestBuilder(container);
+    try { await api(`/api/tests/${test.id}/questions/reorder`, { method: 'POST', body: { ids } }); Exam.notify('✓ បានរក្សាលំដាប់ថ្មី'); }
+    catch (e) { Exam.notify(e.message); renderTestBuilder(container); }
+  });
   const canEdit = (test.my_role === 'owner' || test.my_role === 'editor') && (ME.licensed || ME.status === 'trial');
   if (!canEdit) {
     container.append(h('div', { class: 'notice' }, test.my_role === 'sample' ? '⭐ នេះជាតេស្តគំរូ — សាកល្បងជាសិស្ស និងមើលទម្រង់វិញ្ញាសាបាន (ចម្លើយត្រឹមត្រូវត្រូវបានលាក់)។' : '👁 អ្នកជាអ្នកពិនិត្យ — អាចមើល សាកល្បងជាសិស្ស និងសរសេរចំណាំលើសំណួរបាន តែមិនអាចកែប្រែបានទេ។'), header, list);
     if (test.my_role === 'sample') list.querySelectorAll('.notes').forEach((n) => n.parentElement.remove());
     list.querySelectorAll('button.danger').forEach((b) => b.remove());
-    header.querySelectorAll('button').forEach((b) => { if (/សម្រាង|រួចរាល់/.test(b.textContent)) b.remove(); });
+    header.querySelectorAll('button').forEach((b) => { if (/សម្រាង|រួចរាល់/.test(b.textContent) || b.classList.contains('schedule-top')) b.remove(); });
     return;
   }
   const topics = [...new Set(test.questions.map((q) => q.topic).filter(Boolean))];
   const dl = h('datalist', { id: 'topic-list' }, topics.map((t) => h('option', { value: t })));
   const warn = test.submissions ? h('div', { class: 'callout warn', style: 'margin-bottom:12px;' }, `⚠ តេស្តនេះមានសិស្ស ${test.submissions} នាក់បានប្រគល់រួចហើយ — ការកែសំណួរ ឬចម្លើយអាចប៉ះពាល់ពិន្ទុ។`) : null;
-  container.append(warn, dl, header, list, await buildQuestionForm(test, container), importQuestionsCard(test, container));
+  if (canEdit) {   // the add-from-bank button is also in the top button group, where a phone shows it without scrolling
+    const hr = header.querySelectorAll('.row')[1];
+    if (hr) hr.insertBefore(h('button', { class: 'tb-add-top', onclick: () => openBankPicker(test, () => renderTestBuilder(container)) }, '➕ ថែមសំណួរ'), hr.firstChild);
+  }
+  container.append(...[warn, dl, header, list, await buildQuestionForm(test, container), importQuestionsCard(test, container)].filter(Boolean));   // (a null here would be printed as the word «null»)
 }
 
 async function buildQuestionForm(test, container, opts = {}) {
@@ -1289,15 +1443,27 @@ function parseScheduleDateTime(dateVal, timeVal) {
   return new Date(`${dateVal}T${hStr}:${mStr}:00`);
 }
 
+let schedFilter = 'active';
 render.schedule = async function (preSelectedTestId = null) {
   const container = document.getElementById('tab-schedule');
   container.innerHTML = '';
   const [{ tests }, { classes }, { sessions }] = await Promise.all([api('/api/tests'), api('/api/classes'), api('/api/sessions')]);
 
+  // the list is filtered so it stays short as the year goes on: coming up + running by default, closed ones one tab away
+  const phaseCount = (ph) => sessions.filter((s) => (ph === 'closed' ? s.phase !== 'open' && s.phase !== 'upcoming' : s.phase === ph)).length;
+  if (!['active', 'upcoming', 'open', 'closed', 'all'].includes(schedFilter)) schedFilter = 'active';
+  if (schedFilter === 'active' && !phaseCount('open') && !phaseCount('upcoming') && sessions.length) schedFilter = 'closed';
+  const shownSessions = sessions.filter((s) => schedFilter === 'all' ? true : schedFilter === 'active' ? (s.phase === 'open' || s.phase === 'upcoming')
+    : schedFilter === 'closed' ? (s.phase !== 'open' && s.phase !== 'upcoming') : s.phase === schedFilter).slice(0, schedFilter === 'all' || schedFilter === 'closed' ? 30 : 100);
+  const schedTabs = sessions.length ? h('div', { class: 'filter-bar', style: 'margin:8px 0;' }, [
+    ['active', 'ថ្មីៗ និងកំពុងប្រឡង', phaseCount('open') + phaseCount('upcoming')], ['open', 'កំពុងប្រឡង', phaseCount('open')], ['upcoming', 'នឹងមកដល់', phaseCount('upcoming')],
+    ['closed', 'បានបិទ', phaseCount('closed')], ['all', 'ទាំងអស់', sessions.length],
+  ].map(([k, l, n]) => h('button', { class: `filter-pill${schedFilter === k ? ' on' : ''}`, onclick: () => { schedFilter = k; render.schedule(preSelectedTestId); } }, [l, h('span', { class: 'pill-n' }, String(n))]))) : null;
   const list = h('div', { class: 'card' }, [
     h('h2', {}, 'ការប្រឡងដែលបានកំណត់ពេល'),
-    sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : null,
-    ...sessions.map((s) => h('div', { class: 'list-item' }, [
+    schedTabs,
+    sessions.length === 0 ? h('p', { class: 'muted' }, 'មិនទាន់មានការកំណត់ពេលប្រឡងនៅឡើយទេ។') : (shownSessions.length ? null : h('p', { class: 'muted' }, 'គ្មានការប្រឡងក្នុងផ្នែកនេះទេ។')),
+    ...shownSessions.map((s) => h('div', { class: 'list-item' }, [
       h('div', {}, [
         h('div', { class: 'row', style: 'gap:8px;align-items:center;flex-wrap:wrap;' }, [
           h('strong', {}, `${s.test_title} — ${s.class_name}`),
@@ -1311,7 +1477,7 @@ render.schedule = async function (preSelectedTestId = null) {
           h('span', { class: 'muted' }, 'PIN សម្រាប់សិស្ស៖ '),
           s.pin ? h('span', { class: 'pin-chip' }, [s.pin]) : h('span', { class: 'badge draft' }, 'មិនមាន PIN'),
           h('button', { class: 'secondary btn-sm', style: 'margin-left:8px;', onclick: async () => {
-            const next = prompt('PIN ថ្មី (អក្សរ ឬលេខ ៣–១២ តួ)៖', s.pin || '');
+            const next = await Exam.prompt('PIN ថ្មី (អក្សរ ឬលេខ ៣–១២ តួ)៖', s.pin || '');
             if (next == null) return;
             try { await api(`/api/sessions/${s.id}/pin`, { method: 'POST', body: { pin: next } }); render.schedule(); }
             catch (e) { Exam.notify(e.message); }
@@ -1331,7 +1497,7 @@ render.schedule = async function (preSelectedTestId = null) {
           render.grading();
         } }, 'ដាក់ពិន្ទុ'),
         s.my_role === 'reviewer' ? null : h('button', { class: 'danger btn-sm', onclick: async () => {
-          if (!confirm(`តើលោកគ្រូពិតជាចង់លុបការកំណត់ពេលប្រឡង «${s.test_title} — ${s.class_name}» ឬ?`)) return;
+          if (!(await Exam.confirm(`តើលោកគ្រូពិតជាចង់លុបការកំណត់ពេលប្រឡង «${s.test_title} — ${s.class_name}» ឬ?`))) return;
           try {
             await api(`/api/sessions/${s.id}`, { method: 'DELETE' });
             render.schedule();
@@ -1353,11 +1519,11 @@ render.schedule = async function (preSelectedTestId = null) {
 
   const dateInput = h('input', { type: 'date', id: 'sch-date', value: todayYMD, style: 'width: 100%;' });
   const startTimeInput = h('input', {
-    type: 'text', id: 'sch-start-time', value: defStartTime, placeholder: '08:00',
+    type: 'time', id: 'sch-start-time', value: defStartTime, placeholder: '08:00',
     style: 'font-weight:600; font-family:monospace;'
   });
   const endTimeInput = h('input', {
-    type: 'text', id: 'sch-end-time', value: defEndTime, placeholder: '10:00',
+    type: 'time', id: 'sch-end-time', value: defEndTime, placeholder: '10:00',
     style: 'font-weight:600; font-family:monospace;'
   });
   const durationInput = h('input', { type: 'number', id: 'sch-duration', value: '120' });
@@ -1441,11 +1607,25 @@ render.schedule = async function (preSelectedTestId = null) {
     document.body.append(back);
   }
 
+  // one test, several classes: each ticked class gets its own session (same time, same PIN)
+  const schedClasses = classes.filter((c) => c.my_role !== 'reviewer');
+  const classBox = h('div', { id: 'sch-class', class: 'sch-classes' }, [
+    schedClasses.length > 1 ? h('div', { class: 'row', style: 'gap:6px;margin-bottom:6px;' }, [
+      h('button', { type: 'button', class: 'secondary btn-sm', onclick: () => { classBox.querySelectorAll('input').forEach((i) => { i.checked = true; }); checkIdentity(); } }, 'ជ្រើសទាំងអស់'),
+      h('button', { type: 'button', class: 'secondary btn-sm', onclick: () => { classBox.querySelectorAll('input').forEach((i) => { i.checked = false; }); checkIdentity(); } }, 'ដកទាំងអស់'),
+    ]) : null,
+    h('div', { class: 'sch-class-grid' }, schedClasses.map((c, i) => h('label', { class: 'sch-class-opt' }, [
+      h('input', { type: 'checkbox', value: String(c.id), checked: schedClasses.length === 1 || (i === 0 && false) ? 'checked' : null }),
+      h('span', {}, c.name), h('small', { class: 'muted' }, ` ${c.student_count || 0} នាក់`),
+    ]))),
+  ].filter(Boolean));
+  const pickedClassIds = () => [...classBox.querySelectorAll('input:checked')].map((i) => Number(i.value));
+
   // a class that signs in with the ID only: say so, and offer the date-of-birth check when the roster has the dates
   const idNote = h('div', { style: 'margin-top:6px;' });
   async function checkIdentity() {
-    const sel = document.getElementById('sch-class'); idNote.innerHTML = '';
-    const c = sel && classes.find((x) => String(x.id) === sel.value); if (!c || c.require_dob) return;
+    idNote.innerHTML = '';
+    const c = classes.find((x) => x.id === pickedClassIds()[0]); if (!c || c.require_dob) return;
     let withDob = 0, total = 0;
     try { const { students } = await api(`/api/classes/${c.id}/students`); total = students.length; withDob = students.filter((s) => s.dob).length; } catch { return; }
     const ok = total && withDob / total >= 0.9;
@@ -1455,15 +1635,15 @@ render.schedule = async function (preSelectedTestId = null) {
       ok ? h('button', { type: 'button', class: 'btn-sm', onclick: async (ev) => { ev.currentTarget.disabled = true; try { await api(`/api/classes/${c.id}/settings`, { method: 'POST', body: { require_dob: true } }); c.require_dob = 1; Exam.notify('បានបើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើតសម្រាប់ថ្នាក់នេះ។'); checkIdentity(); } catch (e) { Exam.notify(e.message); } } }, '🔐 បើកការផ្ទៀងផ្ទាត់ថ្ងៃកំណើត') : null,
     ]));
   }
-  setTimeout(() => { const sel = document.getElementById('sch-class'); if (sel) { sel.addEventListener('change', checkIdentity); checkIdentity(); } }, 0);
+  classBox.addEventListener('change', checkIdentity);
 
   const form = h('div', { class: 'card' }, [
     h('h3', {}, 'កំណត់ពេលប្រឡងថ្មី'),
     tests.length === 0 ? h('p', { class: 'muted' }, 'សូមបង្កើតតេស្ត ១ នៅផ្ទាំង «តេស្ត» ជាមុនសិន។') : null,
     h('label', {}, 'តេស្ត (ជ្រើសរើសតេស្តចាស់ ឬតេស្តថ្មីដែលបានបង្កើត)'),
     h('select', { id: 'sch-test' }, testOptions),
-    h('label', {}, 'ថ្នាក់'),
-    h('select', { id: 'sch-class' }, classes.filter((c) => c.my_role !== 'reviewer').map((c) => h('option', { value: c.id }, c.name))),
+    h('label', {}, 'ថ្នាក់ (ជ្រើសបានច្រើនថ្នាក់ក្នុងពេលតែមួយ)'),
+    classBox,
     idNote,
     h('label', {}, 'កាលបរិច្ឆេទប្រឡង (Date)'),
     dateInput,
@@ -1495,9 +1675,9 @@ render.schedule = async function (preSelectedTestId = null) {
     h('div', { class: 'row', style: 'margin-top:16px' }, [
       h('button', { onclick: async () => {
         const testId = Number(document.getElementById('sch-test').value);
-        const classId = Number(document.getElementById('sch-class').value);
+        const classIds = pickedClassIds();
         if (!testId) { await Exam.notify('សូមជ្រើសរើសតេស្ត'); return; }
-        if (!classId) { await Exam.notify('សូមជ្រើសរើសថ្នាក់'); return; }
+        if (!classIds.length) { await Exam.notify('សូមជ្រើសរើសថ្នាក់យ៉ាងតិចមួយ'); return; }
 
         const dateVal = dateInput.value.trim();
         const startVal = startTimeInput.value.trim();
@@ -1517,8 +1697,17 @@ render.schedule = async function (preSelectedTestId = null) {
         const dur = Number(durationInput.value) || Math.round((endDt.getTime() - startDt.getTime()) / 60000) || 120;
 
         try {
-          const rd = await api(`/api/readiness?${new URLSearchParams({ test_id: testId, class_id: classId, start: startDt.toISOString(), end: endDt.toISOString(), duration: dur, pin: pinInput.value.trim() })}`);
-          if (!(await showReadiness(rd, { confirmLabel: 'កំណត់ពេលប្រឡង' }))) return;
+          const className = (id) => (classes.find((c) => c.id === id) || {}).name || id;
+          const parts = [];
+          for (const cid of classIds) parts.push({ cid, rd: await api(`/api/readiness?${new URLSearchParams({ test_id: testId, class_id: cid, start: startDt.toISOString(), end: endDt.toISOString(), duration: dur, pin: pinInput.value.trim() })}`) });
+          const multi = parts.length > 1;
+          const rd = { errors: 0, warnings: 0, checks: [] };
+          parts.forEach(({ cid, rd: r }) => {
+            rd.errors += r.errors || 0; rd.warnings += r.warnings || 0;
+            (r.checks || []).forEach((c) => { if (!multi) rd.checks.push(c); else if (c.level !== 'ok') rd.checks.push({ ...c, title: `[${className(cid)}] ${c.title}` }); });
+          });
+          if (multi) rd.checks.unshift({ level: 'ok', title: `ថ្នាក់ដែលបានជ្រើស ៖ ${parts.map((x) => className(x.cid)).join(' · ')}` });
+          if (!(await showReadiness(rd, { confirmLabel: multi ? `កំណត់ពេល ${parts.length} ថ្នាក់` : 'កំណត់ពេលប្រឡង' }))) return;
         } catch (e) { return Exam.notify(e.message); }
 
         // If the selected test was a draft, promote it to ready so students can take it
@@ -1529,16 +1718,23 @@ render.schedule = async function (preSelectedTestId = null) {
           } catch {}
         }
 
-        await api('/api/sessions', { method: 'POST', body: {
-          test_id: testId,
-          class_id: classId,
-          scheduled_start: startDt.toISOString(),
-          scheduled_end: endDt.toISOString(),
-          duration_minutes: dur,
-          pin: pinInput.value.trim(),
-          integrity_mode: integritySelect.value, max_violations: Number(maxViolInput.value) || 3,
-        } });
-        await Exam.notify('បានកំណត់ពេលប្រឡងជោគជ័យ! សូមប្រាប់សិស្សពី PIN: ' + pinInput.value.trim());
+        const made = []; const failed = [];
+        for (const cid of classIds) {
+          try {
+            await api('/api/sessions', { method: 'POST', body: {
+              test_id: testId,
+              class_id: cid,
+              scheduled_start: startDt.toISOString(),
+              scheduled_end: endDt.toISOString(),
+              duration_minutes: dur,
+              pin: pinInput.value.trim(),
+              integrity_mode: integritySelect.value, max_violations: Number(maxViolInput.value) || 3,
+            } });
+            made.push(cid);
+          } catch (e) { failed.push(`${(classes.find((c) => c.id === cid) || {}).name || cid}: ${e.message}`); }
+        }
+        if (failed.length) await Exam.notify(`⚠ បានកំណត់ពេល ${made.length} ថ្នាក់ · មិនបាន ${failed.length}៖ ${failed.join(' · ')}`);
+        if (made.length) await Exam.notify(`បានកំណត់ពេលប្រឡង ${made.length} ថ្នាក់ជោគជ័យ! សូមប្រាប់សិស្សពី PIN: ` + pinInput.value.trim());
         render.schedule();
       } }, 'កំណត់ពេល'),
     ]),
@@ -1728,6 +1924,17 @@ async function renderAnalysis(session) {
       h('h2', { style: 'margin:0;' }, ['📊 ការវិភាគសំណួរ', (() => { const n2 = stats.filter((x) => x.flags.some((f) => /⚠|🔍/.test(f[0]))).length; return n2 ? h('span', { class: 'badge warn', style: 'margin-left:10px;font-size:13px;' }, `${n2} សំណួរគួរពិនិត្យ`) : null; })()]),
       h('a', { class: 'btn secondary btn-sm', target: '_blank', href: `classreport.html?session=${session.id}` }, '🖨 របាយការណ៍ថ្នាក់'),
       h('div', { class: 'row', style: 'gap:6px;' }, [
+        h('button', { class: 'btn-sm', title: 'បង្កើតតេស្តថ្មីពីសំណួរដែលសិស្សឆ្លើយត្រូវតិចជាង ៦០%', onclick: async () => {
+          const weak = stats.filter((x) => !x.q.cancelled && x.pct != null && x.pct < 60).sort((a, b) => a.pct - b.pct);
+          if (!weak.length) return Exam.notify('គ្មានសំណួរណាដែលសិស្សឆ្លើយត្រូវតិចជាង ៦០% ទេ — ថ្នាក់នេះធ្វើបានល្អ!');
+          if (!(await Exam.confirm(`បង្កើតតេស្តត្រួតពិនិត្យថ្មី ពីសំណួរដែលសិស្សឆ្លើយត្រូវតិចជាង ៦០% (${weak.length} សំណួរ)?`))) return;
+          try {
+            const nt = await api('/api/tests', { method: 'POST', body: { title: `ត្រួតពិនិត្យឡើងវិញ — ${session.test_title} (${weak.length} សំណួរ)` } });
+            const r = await api(`/api/tests/${nt.id}/questions/copy`, { method: 'POST', body: { question_ids: weak.map((x) => x.q.id) } });
+            await Exam.notify(`✅ បានបង្កើតតេស្តត្រួតពិនិត្យ ${r.copied} សំណួរ។ បើកវាក្នុងផ្នែក «តេស្ត» ដើម្បីកែ និងកំណត់ពេល។`);
+            selectedTestId = nt.id; const tab = document.querySelector('[data-tab="tests"]'); if (tab) tab.click();
+          } catch (e) { Exam.notify(e.message); }
+        } }, '🎯 តេស្តត្រួតពិនិត្យ (សំណួរដែលខុសច្រើន)'),
         h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'order'; drawQuestions(); } }, 'តាមលំដាប់'),
         h('button', { class: 'secondary btn-sm', onclick: () => { sortMode = 'hard'; drawQuestions(); } }, 'ពិបាកបំផុតមុន'),
       ]),
@@ -1815,7 +2022,8 @@ async function renderGradingSession(container) {
       if (!document.body.contains(container) || !selectedSessionId || !document.getElementById('bulk-writing-max')) {
         return clearInterval(gradingRefreshTimer);
       }
-      renderGradingSession(container);
+      const y = window.scrollY;
+      Promise.resolve(renderGradingSession(container)).then(() => window.scrollTo(0, y));   // refresh in place: do not throw the teacher back to the top
     }, 15000);
   }
 
@@ -1889,7 +2097,7 @@ async function renderGradingSession(container) {
       ]),
       h('div', { class: 'row', style: 'gap:8px;' }, [
         session.phase !== 'closed' ? h('button', { class: 'secondary btn-sm', title: 'បន្ថែមពេលឱ្យថ្នាក់ទាំងមូល', onclick: async () => {
-          const m = Number(prompt('បន្ថែមពេលប៉ុន្មាននាទីឱ្យថ្នាក់ទាំងមូល?', '5'));
+          const m = Number(await Exam.prompt('បន្ថែមពេលប៉ុន្មាននាទីឱ្យថ្នាក់ទាំងមូល?', '5'));
           if (!m) return;
           try { await api(`/api/sessions/${selectedSessionId}/extend`, { method: 'POST', body: { minutes: m } }); await Exam.notify(`បានបន្ថែម ${m} នាទី។`); refresh(); } catch (e) { Exam.notify(e.message); }
         } }, '⏱ បន្ថែមពេលថ្នាក់') : null,
@@ -1954,14 +2162,14 @@ async function renderGradingSession(container) {
       style: 'color:var(--warn);border-color:var(--warn);padding:4px 8px;font-size:12px;',
       title: 'អនុញ្ញាតឱ្យសិស្សចូលប្រឡងបន្តឡើងវិញ ប្រសិនបើសិស្សច្រឡំចុច Submit',
       onclick: async () => {
-        if (!confirm(`តើលោកគ្រូពិតជាចង់អនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តឡើងវិញឬ?
+        if (!(await Exam.confirm(`តើលោកគ្រូពិតជាចង់អនុញ្ញាតឱ្យសិស្ស «${s.surname} ${s.first_name}» ចូលប្រឡងបន្តឡើងវិញឬ?
 
-(ចម្លើយដែលសិស្សបានជ្រើសរើសពីមុន នៅតែរក្សាទុកដដែល ដោយសិស្សគ្រាន់តែចូលទៅធ្វើបន្ត)`)) return;
+(ចម្លើយដែលសិស្សបានជ្រើសរើសពីមុន នៅតែរក្សាទុកដដែល ដោយសិស្សគ្រាន់តែចូលទៅធ្វើបន្ត)`))) return;
         // when the exam time is already over, say how long this student may continue (counted from now); others stay finished
         let minutes;
         const over = Date.now() >= Date.parse(session.scheduled_end) + (s.extra_minutes || 0) * 60000;
         if (over) {
-          const ans = prompt('ការប្រឡងបានផុតម៉ោងហើយ។ ឱ្យសិស្សនេះបន្តប្រឡងបានប៉ុន្មាននាទី? (១–១២០)', '10');
+          const ans = await Exam.prompt('ការប្រឡងបានផុតម៉ោងហើយ។ ឱ្យសិស្សនេះបន្តប្រឡងបានប៉ុន្មាននាទី? (១–១២០)', '10');
           if (ans === null) return;
           minutes = Math.round(Number(ans));
           if (!(minutes >= 1 && minutes <= 120)) { Exam.notify('សូមបញ្ចូលចំនួននាទីពី ១ ដល់ ១២០។'); return; }
@@ -2078,7 +2286,7 @@ async function renderGradingSession(container) {
             h('button', { class: 'secondary', onclick: () => openPublishPreview(selectedSessionId, () => renderGradingSession(container)) }, '👁 មើលជាមុន និងផ្សព្វផ្សាយ'),
           ])
         : h('button', { class: 'danger', onclick: async () => {
-            if (!confirm('តើអ្នកពិតជាចង់បិទការប្រឡងនេះមុនពេលកំណត់ឬ?')) return;
+            if (!(await Exam.confirm('តើអ្នកពិតជាចង់បិទការប្រឡងនេះមុនពេលកំណត់ឬ?'))) return;
             await api(`/api/sessions/${selectedSessionId}/close`, { method: 'POST' });
             await Exam.notify('បានបិទការប្រឡងជោគជ័យ!');
             renderGradingSession(container);

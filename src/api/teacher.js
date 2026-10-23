@@ -255,3 +255,15 @@ export async function ownerReset(req, env) {
   await notifyOwner(env, '⚠️ ពាក្យសម្ងាត់ម្ចាស់ប្រព័ន្ធត្រូវបានកំណត់ថ្មីតាមកូដស្តារ។');
   return json({ ok: true });
 }
+
+// A teacher changes how their own name is written (e.g. SAN SOKLI -> សាន សុខលី): it appears on reports, slides and the class list.
+export async function updateMyProfile(req, env) {
+  const t = await authTeacher(req, env);
+  if (!t) return err('Not logged in.', 401);
+  const { display_name } = await req.json();
+  const name = String(display_name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!name) return err('សូមបញ្ចូលឈ្មោះ។', 400);
+  await env.DB.prepare('UPDATE teachers SET display_name = ?1 WHERE id = ?2').bind(name, t.id).run();
+  await audit(env, t, 'name_changed', `${t.display_name || ''} -> ${name}`);
+  return json({ ok: true, display_name: name });
+}

@@ -433,3 +433,42 @@ a { color: inherit; text-decoration: none; }
 .dp-g { min-height: min-content; flex: none; }
 @media (max-height: 760px) { .dp-g ol { font-size: 16px; line-height: 1.45; padding-top: 6px; padding-bottom: 8px; } .dp-gh { padding: 6px 12px; } .dp-gh b { font-size: 18px; } }
 @media (max-height: 760px) { .dp-ban { padding: 8px 18px; } .dp-ban b { font-size: 24px; } .dp-ban small { font-size: 14px; } .dp-grid { padding: 10px 16px; gap: 10px; } .dp-act { padding: 6px 18px 10px; } .dp-act button { min-height: 36px; } .dp-card { max-height: 96vh; } }
+
+/* attendance: what is taught this period + the message to copy */
+.att-info { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 10px 0; }
+.att-info .field { margin: 0; }
+.att-info input { width: 100%; }
+.att-info .dim { color: #94a3b8; font-weight: 400; }
+.att-copy { white-space: nowrap; }
+.att-report { margin: 6px 0 12px; border: 1px solid #dbe3ea; border-radius: 12px; padding: 8px 12px; background: #f8fafc; }
+.att-report summary { cursor: pointer; font-weight: 700; color: #0f5173; }
+.att-report-opts { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 10px 0; }
+.att-report-opts .chk { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.att-report-pre { white-space: pre-wrap; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; font: inherit; line-height: 1.7; margin: 0; user-select: all; }
+@media (max-width: 640px) { .att-info .field.grow { flex: 1 1 100%; } .att-copy { flex: 1 1 100%; } }
+
+/* attendance: read a whole day back */
+.att-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.att-tabs button { flex: 1 1 0; padding: 10px 12px; border: 1px solid #cfd8e3; background: #fff; border-radius: 12px; font-weight: 700; color: #0f5173; cursor: pointer; }
+.att-tabs button.on { background: #0f5173; color: #fff; border-color: #0f5173; }
+.att-day-nav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+.att-day-nav input { flex: 1 1 150px; }
+.att-day-nav .btn.on { background: #e7f0f5; border-color: #0f5173; }
+.att-day-sum { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 4px 0 10px; }
+.att-day-sum .chk { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.att-day-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.att-day-card { border: 1px solid #dbe3ea; border-radius: 14px; padding: 12px; background: #fff; }
+.att-day-card.none { background: #fbfaf5; }
+.att-day-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+.att-day-h small { color: #64748b; }
+.att-day-h .tag { margin-left: auto; font-size: 13px; padding: 2px 10px; border-radius: 99px; background: #eaf5ee; color: #166534; }
+.att-day-h .tag.warn { background: #fff4dc; color: #8a5a00; }
+.att-day-card .field { margin: 0 0 6px; }
+.att-day-card .field input { width: 100%; }
+.att-day-names { margin: 4px 0; font-size: 14px; line-height: 1.6; }
+.att-day-act { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+.name-edit { border: 0; background: transparent; cursor: pointer; font-size: .6em; padding: 2px 6px; border-radius: 8px; opacity: .55; }
+.name-edit:hover { opacity: 1; background: rgba(15,81,115,.1); }
+.name-form .field input { width: 100%; }
+.name-act { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }

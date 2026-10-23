@@ -151,3 +151,24 @@ CREATE TABLE IF NOT EXISTS attendance (
   PRIMARY KEY (class_id, day, period, student_id)
 );
 CREATE INDEX IF NOT EXISTS idx_attendance_class_day ON attendance(class_id, day, period);
+
+CREATE TABLE IF NOT EXISTS shares (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  resource_type TEXT NOT NULL,
+  resource_id INTEGER NOT NULL,
+  teacher_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(resource_type, resource_id, teacher_id)
+);
+
+CREATE TABLE IF NOT EXISTS test_share_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token_hash TEXT NOT NULL UNIQUE,
+  test_id INTEGER NOT NULL,
+  created_by INTEGER NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('reviewer','editor')),
+  expires_at TEXT NOT NULL,
+  used_by INTEGER,
+  revoked INTEGER NOT NULL DEFAULT 0
+);

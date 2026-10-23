@@ -6,6 +6,7 @@ import Attendance from './Attendance.jsx';
 import Lessons from './Lessons.jsx';
 import Wheel from './Wheel.jsx';
 import Modal from './Modal.jsx';
+import NameDialog from './NameDialog.jsx';
 import Clock from './Clock.jsx';
 import GameWizard from './GameWizard.jsx';
 import QuestionBank from './QuestionBank.jsx';
@@ -17,6 +18,7 @@ export default function App() {
   const [me, setMe] = useState(null);
   const [classes, setClasses] = useState(null);
   const [sheet, setSheet] = useState(null); // class whose actions are open
+  const [naming, setNaming] = useState(false); // the «edit my name» dialog
   const [view, setView] = useState(null); // { type: 'att' | 'lessons' | 'wheel', cls }
   const [wizard, setWizard] = useState(null); // { cls? } while the game wizard is open
   const [activeId, setActiveId] = useState(() => { try { return localStorage.getItem('teach_active_class'); } catch { return null; } });   // the class the teacher is working with: the game uses it, so it is not asked again
@@ -74,6 +76,7 @@ export default function App() {
   if (error) return <div className="boot"><p>{error}</p><a className="btn ghost" href="/teacher?classic=1">← ត្រឡប់ទៅផ្ទាំងគ្រូ</a></div>;
   if (!classes) return <div className="boot"><div className="spinner" /><p>កំពុងផ្ទុក…</p></div>;
   const hello = me && (me.display_name || me.username);
+  const saveName = async (v) => { const r = await api('/api/teacher/profile', { method: 'POST', body: { display_name: v } }); setMe((m) => ({ ...m, display_name: r.display_name })); setNaming(false); };
   const activeClass = classes.find((c) => String(c.id) === String(activeId)) || undefined;
 
   return (
@@ -92,7 +95,7 @@ export default function App() {
 
       <main className="wrap">
         <section>
-          <div className="sec-hd"><h1>សួស្តី {hello} 👋</h1><p>ជ្រើសថ្នាក់ដើម្បីចាប់ផ្តើមបង្រៀន</p></div>
+          <div className="sec-hd"><h1>សួស្តី {hello} <button className="name-edit" title="កែឈ្មោះរបស់ខ្ញុំ" aria-label="កែឈ្មោះរបស់ខ្ញុំ" onClick={() => setNaming(true)}>✏️</button> 👋</h1><p>ជ្រើសថ្នាក់ដើម្បីចាប់ផ្តើមបង្រៀន</p></div>
           {classes.length ? (
             <ul className="class-grid">
               {classes.map((c, i) => (
@@ -139,9 +142,10 @@ export default function App() {
         </Modal>
       )}
 
+      {naming && <NameDialog current={(me && me.display_name) || ''} onSave={saveName} onClose={() => setNaming(false)} />}
       {view && view.type === 'att' && (
         <Modal title={`វត្តមាន · ${view.cls.name}`} onClose={() => setView(null)} wide>
-          <Attendance cls={view.cls} students={students} />
+          <Attendance cls={view.cls} students={students} teacher={hello || ''} />
         </Modal>
       )}
       {view && view.type === 'lessons' && (

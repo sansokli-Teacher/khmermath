@@ -79,7 +79,8 @@ export async function setTeachAccess(req, env, params) {
   const g = await needAdmin(req, env); if (g.resp) return g.resp;
   const { allowed } = await req.json();
   const r = await env.DB.prepare("UPDATE teachers SET teach_ok = ?1 WHERE id = ?2 AND role NOT IN ('owner', 'admin')").bind(allowed ? 1 : 0, params.id).run();
-  if (!r.meta.changes) return err('Teacher not found.', 404);
+  const changes = r.meta?.rows_written ?? r.meta?.changes ?? 0;
+  if (!changes) return err('Teacher not found.', 404);
   await audit(env, g.t, allowed ? 'teach_on' : 'teach_off', String(params.id));
   return json({ ok: true });
 }
@@ -134,12 +135,13 @@ export async function acceptInvite(req, env, params) {
 export async function searchTeachers(req, env) {
   const g0 = await needLicense(req, env); if (g0.resp) return g0.resp;
   const t = g0.t;
-  const q = (new URL(req.url).searchParams.get('q') || '').trim();
+  const rawQ = (new URL(req.url).searchParams.get('q') || '').trim();
+  const q = rawQ.replace(/^@/, '').trim();
   if (!q || q.length > 100) return json({ teachers: [] });
   if (!await allow(env, `teacher-search:${t.id}`, 30, 60)) return err('សូមរង់ចាំមួយភ្លែត មុនស្វែងរកម្ដងទៀត។', 429);
   const { results } = await env.DB.prepare(
     `SELECT id, username, COALESCE(display_name, username) AS name FROM teachers
-     WHERE active = 1 AND id <> ?1 AND username = ?2 COLLATE NOCASE LIMIT 1`,
+     WHERE active = 1 AND id <> ?1 AND (username = ?2 COLLATE NOCASE OR (email IS NOT NULL AND email = ?2 COLLATE NOCASE)) LIMIT 1`,
   ).bind(t.id, q).all();
   return json({ teachers: results });
 }
@@ -378,4 +380,18 @@ export async function backupDownload(req, env, params) {
   const f = await getBackupFile(env, Number(params.id));
   if (!f) return err('Backup not found.', 404);
   return new Response(f.bytes, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="exam-backup-${f.at.slice(0, 10)}.json.gz"` } });
+}
+
+// The owner / an admin corrects the written name of any teacher (only the owner may rename the owner).
+export async function setTeacherName(req, env, params) {
+  const g = await needAdmin(req, env); if (g.resp) return g.resp;
+  const { display_name } = await req.json();
+  const name = String(display_name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!name) return err('សូមបញ្ចូលឈ្មោះ។', 400);
+  const target = await env.DB.prepare('SELECT id, role, display_name, username FROM teachers WHERE id = ?1').bind(Number(params.id)).first();
+  if (!target) return err('Teacher not found.', 404);
+  if (target.role === 'owner' && g.t.role !== 'owner') return err('Only the owner can rename the owner.', 403);
+  await env.DB.prepare('UPDATE teachers SET display_name = ?1 WHERE id = ?2').bind(name, target.id).run();
+  await audit(env, g.t, 'name_changed', `${target.username}: ${target.display_name || ''} -> ${name}`);
+  return json({ ok: true, display_name: name });
 }

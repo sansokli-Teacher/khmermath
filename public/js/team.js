@@ -6,8 +6,31 @@ function inviteUrl(token) {
 }
 
 async function copyText(text) {
-  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    throw new Error('Clipboard API unavailable');
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const res = document.execCommand('copy');
+      ta.remove();
+      return !!res;
+    } catch {
+      return false;
+    }
+  }
 }
+
 
 // A one-time link box with a copy button.
 function linkBox(url, caption) {
@@ -78,7 +101,12 @@ render.teachers = async function () {
     rowsBox.append(h('table', {}, [
       h('thead', {}, h('tr', {}, ['ឈ្មោះ', 'ឈ្មោះអ្នកប្រើ', 'ការប្រើប្រាស់', 'ថ្នាក់', 'តេស្ត', 'ចូលចុងក្រោយ', 'ស្ថានភាព', ''].map((x) => h('th', {}, x)))),
       h('tbody', {}, list.map((t) => h('tr', {}, [
-        h('td', {}, [h('strong', {}, t.display_name || t.username), t.role === 'owner' ? h('span', { class: 'badge upcoming', style: 'margin-left:6px;' }, 'ម្ចាស់') : null]),
+        h('td', {}, [h('strong', {}, t.display_name || t.username), t.role === 'owner' ? h('span', { class: 'badge upcoming', style: 'margin-left:6px;' }, 'ម្ចាស់') : null,
+          h('button', { class: 'secondary btn-sm', style: 'margin-left:8px;padding:2px 8px;', title: 'កែឈ្មោះ', onclick: async () => {
+            const v = await Exam.prompt(`ឈ្មោះថ្មីរបស់ ${t.username}៖`, t.display_name || t.username);
+            if (v == null || !v.trim()) return;
+            try { await api(`/api/admin/teachers/${t.id}/name`, { method: 'POST', body: { display_name: v } }); render.teachers(); } catch (e) { Exam.notify(e.message); }
+          } }, '✏️')]),
         h('td', { class: 'muted' }, [t.username, t.contact ? h('div', { style: 'font-size:12px;' }, `📞 ${t.contact}`) : null]),
         h('td', {}, licenseChip(t)),
         h('td', {}, t.class_count), h('td', {}, t.test_count),
@@ -199,7 +227,11 @@ async function openShareDialog(type, id, title) {
     try {
       const data = await api('/api/share-links', { method: 'POST', body: { test_id: id, role: role.value } });
       const input = h('input', { type: 'text', readonly: 'readonly', value: `${location.origin}/teacher.html?share=${data.token}`, 'aria-label': 'តំណអញ្ជើញ', onfocus: e => e.target.select() });
-      const copy = h('button', { onclick: async () => { const ok = await copyText(input.value); if (ok) report('បានចម្លងតំណ។ ផ្ញើទៅគ្រូដែលអ្នកចង់អញ្ជើញ។'); else { input.focus(); input.select(); report('សូមចម្លងតំណពីប្រអប់ខាងលើ។'); } } }, 'ចម្លងតំណ');
+      const copy = h('button', { onclick: async () => {
+        const ok = await copyText(input.value);
+        if (ok) { copy.textContent = '✓ បានចម្លង'; report('បានចម្លងតំណ។ ផ្ញើទៅគ្រូដែលអ្នកចង់អញ្ជើញ។'); }
+        else { input.focus(); input.select(); report('សូមចម្លងតំណពីប្រអប់ខាងលើ។'); }
+      } }, 'ចម្លងតំណ');
       linkSlot.replaceChildren(h('div', { class: 'share-search-row' }, [input, copy]));
       await drawLinks(); report('តំណរួចរាល់។ ប្រើបានម្ដង ហើយផុតកំណត់ក្នុង ៧ ថ្ងៃ។');
     } catch(e) { report(e.message, true); }
@@ -527,14 +559,24 @@ async function openTestInvitation() {
       accept.disabled = true;
       try {
         const result = await api(`/api/share-invitation/${encodeURIComponent(token)}`, { method: 'POST' });
-        clear(); back.remove(); selectedTestId = result.test_id;
-        document.querySelector('[data-tab=tests]').click();
+        clear(); back.remove();
+        if (typeof selectedTestId !== 'undefined') selectedTestId = result.test_id;
+        const tab = document.querySelector('[data-tab=tests]');
+        if (tab) tab.click();
+        if (window.render && window.render.tests) window.render.tests();
+        Exam.notify('បានទទួលការចែករំលែកតេស្តដោយជោគជ័យ!');
       } catch (e) { Exam.notify(e.message); }
       finally { accept.disabled = false; }
     } }, 'ទទួលការអញ្ជើញ');
-    back.append(h('div', { class: 'modal-box' }, [h('h2', {}, 'ការអញ្ជើញចែករំលែកតេស្ត'),
-      h('p', {}, data.title), h('p', {}, ROLE_NAMES[data.role]),
-      h('div', { class: 'row' }, [h('button', { class: 'secondary', onclick: () => { clear(); back.remove(); } }, 'បោះបង់'), accept])]));
+    back.append(h('div', { class: 'modal-box' }, [
+      h('h2', {}, 'ការអញ្ជើញចែករំលែកតេស្ត'),
+      h('p', { style: 'font-weight:600;font-size:16px;margin:10px 0 4px;' }, data.title),
+      h('p', { class: 'muted' }, ROLE_NAMES[data.role] || data.role),
+      h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px;margin-top:16px;' }, [
+        h('button', { class: 'secondary', onclick: () => { clear(); back.remove(); } }, 'បោះបង់'),
+        accept
+      ])
+    ]));
     document.body.append(back);
   } catch (e) { clear(); Exam.notify(e.message); }
 }

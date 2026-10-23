@@ -65,7 +65,7 @@ export async function testAccess(env, t, testId) {
   const x = await env.DB.prepare('SELECT id, owner_id, is_sample FROM tests WHERE id = ?1').bind(testId).first();
   if (!x) return null;
   // Personal tests require ownership or an explicit share, including for admins.
-  if (x.owner_id === t.id) return 'owner';
+  if (x.owner_id === t.id || (isAdmin(t) && x.owner_id == null)) return 'owner';
   const share = await env.DB.prepare("SELECT role FROM shares WHERE resource_type = 'test' AND resource_id = ?1 AND teacher_id = ?2").bind(x.id, t.id).first();
   return share?.role || null;
 }
@@ -183,7 +183,7 @@ export async function accessibleTests(env, t) {
   ).bind(t.id).all();
   const map = new Map();
   for (const x of results) {
-    const acc = x.owner_id === t.id ? 'owner' : x.shared_role;
+    const acc = (x.owner_id === t.id || (isAdmin(t) && x.owner_id == null)) ? 'owner' : x.shared_role;
     if (acc) map.set(x.id, acc);
   }
   return map;

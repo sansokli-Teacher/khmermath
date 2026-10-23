@@ -5,6 +5,7 @@ import * as teacher from './api/teacher.js';
 import * as classes from './api/classes.js';
 import * as tests from './api/tests.js';
 import * as images from './api/images.js';
+import * as photos from './api/photos.js';
 import * as sessions from './api/sessions.js';
 import * as student from './api/student.js';
 import * as year from './api/year.js';
@@ -45,6 +46,7 @@ const ROUTES = [
   ['POST', '/api/teacher/logout', teacher.logout],
   ['POST', '/api/teacher/change-password', teacher.changePassword],
   ['GET', '/api/teacher/me', teacher.me],
+  ['POST', '/api/teacher/profile', teacher.updateMyProfile],
 
   ['GET', '/api/admin/teachers', admin.listTeachers],
   ['POST', '/api/admin/invites', admin.createInvite],
@@ -68,6 +70,7 @@ const ROUTES = [
   ['DELETE', '/api/admin/invites/:id', admin.revokeInvite],
   ['POST', '/api/admin/teachers/:id/reset-link', admin.createResetLink],
   ['POST', '/api/admin/teachers/:id/active', admin.setTeacherActive],
+  ['POST', '/api/admin/teachers/:id/name', admin.setTeacherName],
   ['POST', '/api/admin/teachers/:id/teach', admin.setTeachAccess],
   ['GET', '/api/invite/:token', admin.inviteInfo],
   ['POST', '/api/invite/:token/accept', admin.acceptInvite],
@@ -95,7 +98,9 @@ const ROUTES = [
   ['DELETE', '/api/classes/:classId/students/:studentId', classes.deleteStudent],
   ['POST', '/api/classes/:classId/students/bulk', classes.importRoster],
   ['GET', '/api/attendance', attendance.getAttendance],
+  ['GET', '/api/attendance/day', attendance.getAttendanceDay],
   ['POST', '/api/attendance', attendance.saveAttendance],
+  ['POST', '/api/attendance/info', attendance.saveAttendanceInfo],
 
   ['GET', '/api/settings/pin', settings.getPinStatus],
   ['POST', '/api/settings/pin', settings.setPin],
@@ -110,6 +115,8 @@ const ROUTES = [
   ['POST', '/api/tests/:testId/rescore', tests.rescoreTest],
   ['POST', '/api/tests/:testId/questions/copy', tests.copyQuestions],
   ['POST', '/api/tests/:testId/questions/bulk', tests.bulkAdd],
+  ['POST', '/api/tests/:testId/questions/reorder', tests.reorderQuestions],
+  ['POST', '/api/tests/:testId/questions/points', tests.setQuestionPoints],
   ['GET', '/api/bank', tests.listBank],
   ['GET', '/api/bank/export', tests.exportBank],
   ['POST', '/api/bank/generate', tests.generateTest],
@@ -125,6 +132,9 @@ const ROUTES = [
   ['POST', '/api/notes/:noteId/resolve', tests.resolveNote],
   ['DELETE', '/api/notes/:noteId', tests.deleteNote],
 
+  ['POST', '/api/students/:studentId/photo', photos.uploadPhoto],
+  ['GET', '/api/students/:studentId/photo', photos.servePhoto],
+  ['DELETE', '/api/students/:studentId/photo', photos.deletePhoto],
   ['POST', '/api/images', images.upload],
   ['GET', '/api/images/:key', images.serve],
 

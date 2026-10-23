@@ -70,3 +70,49 @@ test('revoked, expired and owner-deactivated links cannot grant access',async()=
  assert.equal((await call(links.accept,env,'bob',{}, {token:inactive})).status,404);
  assert.equal(await testAccess(env,{id:3,role:'teacher'},2),null);
 });
+
+test('teacher search strips leading @ and matches email', async () => {
+  const env = await setup();
+  env.raw.exec("UPDATE teachers SET email='alice@school.edu' WHERE id=2");
+  const resAt = await call(searchTeachers, env, 'bob', null, {}, '?q=@alice');
+  assert.equal(resAt.data.teachers.length, 1);
+  assert.equal(resAt.data.teachers[0].username, 'alice');
+
+  const resEmail = await call(searchTeachers, env, 'bob', null, {}, '?q=alice@school.edu');
+  assert.equal(resEmail.data.teachers.length, 1);
+  assert.equal(resEmail.data.teachers[0].username, 'alice');
+});
+
+test('link accept works when D1 returns rows_written instead of changes', async () => {
+  const env = await setup();
+  const created = await call(links.create, env, 'alice', { test_id: 2, role: 'reviewer' });
+  const params = { token: created.data.token };
+  const origBatch = env.DB.batch.bind(env.DB);
+  env.DB.batch = async (stmts) => {
+    const res = await origBatch(stmts);
+    return res.map(r => ({ results: r.results, meta: { rows_written: r.meta.changes } }));
+  };
+  const accepted = await call(links.accept, env, 'bob', {}, params);
+  assert.equal(accepted.status, 200);
+  assert.equal(accepted.data.test_id, 2);
+  assert.equal(await testAccess(env, { id: 3, role: 'teacher' }, 2), 'reviewer');
+});
+
+test('unassigned legacy tests can be accessed, listed and shared by owner/admin', async () => {
+  const env = await setup();
+  env.raw.exec("INSERT INTO tests(id, title, owner_id, is_sample) VALUES(99, 'Legacy unassigned', NULL, 0)");
+  assert.equal(await testAccess(env, { id: 1, role: 'owner' }, 99), 'owner');
+  assert.equal(await testAccess(env, { id: 2, role: 'teacher' }, 99), null);
+
+  const adminTests = await call(listTests, env, 'admin');
+  assert.ok(adminTests.data.tests.some(t => t.id === 99));
+
+  const created = await call(links.create, env, 'admin', { test_id: 99, role: 'editor' });
+  assert.equal(created.status, 200);
+
+  const accepted = await call(links.accept, env, 'bob', {}, { token: created.data.token });
+  assert.equal(accepted.status, 200);
+  assert.equal(accepted.data.test_id, 99);
+  assert.equal(await testAccess(env, { id: 3, role: 'teacher' }, 99), 'editor');
+});
+

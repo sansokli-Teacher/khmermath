@@ -164,7 +164,9 @@
     const s = slides[i] || { html: '' };
     slideEl.className = 'ts-slide' + (s.k ? ` ts-${s.k}` : '') + (s.c ? ` ts-${s.c}` : '') + (BIG_TEXT ? ' ts-big' : '');
     slideEl.innerHTML = s.k === 'key' ? cardify(s.html || '') : (s.html || '');
+    chipStop();
     math(slideEl);
+    markDrawables();
     fillMeta();
     const fits = fitText(0.72);
     if (!fits && (depth || 0) < 4 && splitSlide(i)) return show(i, (depth || 0) + 1, atEnd);
@@ -172,9 +174,64 @@
     s._fs = slideEl.style.fontSize;
     setupSteps(atEnd);   // after fitting, so the layout is measured with everything showing and nothing jumps when a step appears
     startWidgets();
+    pfApplyLogo();
+    setupProfile();
     pageLabel();
     strokes = s._ink || []; undoS = []; redoS = []; cur = null;
     redraw(); syncUndo();
+  }
+
+  // teacher profile slide: texts are editable, photo and school logo can be replaced; everything is kept in this browser (localStorage)
+  const PF_KEY = 'esc_profile_v1';
+  function pfLoad() { try { return JSON.parse(localStorage.getItem(PF_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function pfSave(o) { try { localStorage.setItem(PF_KEY, JSON.stringify(o)); } catch (e) { /* storage full or blocked */ } }
+  function pfShrink(file, max, done) {   // a picture is scaled down first so it fits in storage
+    const rd = new FileReader();
+    rd.onload = () => { const im = new Image(); im.onload = () => {
+      const k = Math.min(1, max / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+      const cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, cv.width, cv.height);
+      done(cv.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.88));
+    }; im.src = rd.result; };
+    rd.readAsDataURL(file);
+  }
+  function pfApplyLogo() {   // the school logo chosen on the profile slide is also the one in the top-right corner of every slide
+    const el = root || slideEl; if (!el) return;
+    const v = pfLoad().logo;
+    if (v) el.style.setProperty('--esc-logo', `url("${v}")`); else el.style.removeProperty('--esc-logo');
+  }
+  function setupProfile() {
+    const pf = slideEl && slideEl.querySelector('.pf-t'); if (!pf) return;
+    const st = pfLoad();
+    const paint = () => { pfApplyLogo(); slideEl.querySelectorAll('[data-img]').forEach((el) => { const v = st[el.dataset.img]; el.style.backgroundImage = v ? `url("${v}")` : ''; if (v) el.style.setProperty('--img', `url("${v}")`); el.classList.toggle('has', !!v); }); };
+    slideEl.querySelectorAll('[data-edit]').forEach((el) => {
+      if (st[el.dataset.edit] != null) el.textContent = st[el.dataset.edit];
+      el.contentEditable = 'true'; el.spellcheck = false;
+      el.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });   // typing is not a clicker press
+      el.addEventListener('paste', (e) => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData.getData('text') || '').replace(/\s+/g, ' ')); });
+      el.addEventListener('blur', () => { const o = pfLoad(); o[el.dataset.edit] = el.textContent.replace(/\s+/g, ' ').trim(); pfSave(o); });
+    });
+    slideEl.querySelectorAll('[data-img]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+        inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) pfShrink(f, el.dataset.img === 'photo' ? 700 : 500, (url) => { st[el.dataset.img] = url; pfSave(st); paint(); }); };
+        inp.click();
+      });
+    });
+    slideEl.querySelectorAll('[data-logo]').forEach((bt) => {
+      const u = bt.dataset.logo;
+      if (u !== 'upload') bt.classList.toggle('on', st.logo === u);
+      bt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (u === 'upload') { const lg = slideEl.querySelector('[data-img="logo"]'); if (lg) lg.click(); return; }
+        st.logo = u; pfSave(st); paint();
+        slideEl.querySelectorAll('[data-logo]').forEach((x) => x.classList.toggle('on', x.dataset.logo === u));
+      });
+    });
+    const rs = slideEl.querySelector('[data-pf-reset]');
+    if (rs) rs.addEventListener('click', (e) => { e.stopPropagation(); try { localStorage.removeItem(PF_KEY); } catch (err) { /* nothing to clear */ } show(i); });
+    paint();
   }
 
   // ---- step-by-step reveal ------------------------------------------------------------------
@@ -187,12 +244,28 @@
     stepNow = atEnd ? stepLevels.length : 0;
     applySteps();
   }
+  // a group of a picture that a click brings in is drawn like a pen stroke (its lines run from one end to the other)
+  function penIn(g) {
+    g.querySelectorAll('line, path').forEach((el) => {
+      const fill = el.getAttribute('fill');
+      if (el.tagName.toLowerCase() === 'path' && fill && fill !== 'none') return;
+      let len = 0; try { len = el.getTotalLength(); } catch (e) { return; }
+      if (!len || len < 40) return;
+      const keep = el.getAttribute('stroke-dasharray');
+      el.style.transition = 'none'; el.style.strokeDasharray = len; el.style.strokeDashoffset = len;
+      el.getBoundingClientRect();
+      el.style.transition = 'stroke-dashoffset .8s linear'; el.style.strokeDashoffset = 0;
+      setTimeout(() => { el.style.strokeDasharray = ''; el.style.strokeDashoffset = ''; el.style.transition = ''; if (keep) el.setAttribute('stroke-dasharray', keep); }, 900);
+    });
+  }
   function applySteps() {
     const cur = stepNow ? stepLevels[stepNow - 1] : 0;   // the data-step value that is showing now
     slideEl.querySelectorAll('[data-step],[data-until]').forEach((el) => {
       const a = el.dataset.step != null ? Number(el.dataset.step) : 0;
       const u = el.dataset.until != null ? Number(el.dataset.until) : Infinity;
+      const wasHid = el.classList.contains('rv-hide');
       el.classList.toggle('rv-hide', a > cur || u <= cur);
+      if (wasHid && !el.classList.contains('rv-hide') && el.tagName.toLowerCase() === 'g' && !el.classList.contains('mvg')) penIn(el);
       el.classList.toggle('rv-now', a > 0 && a === cur && stepNow > 0);   // what was just revealed gets a soft highlight
     });
     // data-now="n": marks the part (e.g. a whole column of a sum) that step n is about, so it is tinted only while that step shows
@@ -2206,7 +2279,8 @@
   // lessons whose generated deck gets the same first slide as Lesson 1: the school (logo, name), the teacher, the class, the school year.
   // The lesson's own cover (title + objectives) then comes second, exactly like Lesson 1. Add "grade-lesson" keys to give more lessons this.
   const BRANDED_LESSONS = new Set(['7-2', '7-3', '7-12', '9-1', '9-13']);
-  const BIG_TEXT_LESSONS = new Set(['9-1', '9-13']);   // decks checked for overflow at the larger projector text size
+  const ESC_LESSONS = new Set(['8-12']);                       // decks drawn in the look of the author's class slides (ESC_*.pptx): see ".ts-theme-esc" in teachshow.css
+  const BIG_TEXT_LESSONS = new Set(['8-12', '9-1', '9-13']);   // decks checked for overflow at the larger projector text size
   let BIG_TEXT = false;
   function brandSlide() {
     return {
@@ -2243,7 +2317,7 @@
     BIG_TEXT = BIG_TEXT_LESSONS.has(lessonKey);
     const theme = LESSON_THEMES[lessonKey] || null, branded = BRANDED_LESSONS.has(lessonKey);
     const pre = (theme ? 1 : 0) + (branded ? 1 : 0);                // pre = slides added in front of the lesson's own slides
-    themeCls = theme ? `ts-theme-${theme.name}` : '';
+    themeCls = theme ? `ts-theme-${theme.name}` : (ESC_LESSONS.has(lessonKey) ? 'ts-theme-esc' : '');
     if (branded) slides.unshift(brandSlide());
     if (theme) slides.unshift(purpleCover(theme, opt));
     students = (opt.students || []).map((s) => `${s.surname || ''} ${s.first_name || ''}`.trim()).filter(Boolean);
@@ -2265,6 +2339,12 @@
     ink.className = 'ts-ink';
     const wm = document.createElement('div'); wm.className = 'ts-wm'; wm.textContent = 'khmermath.org';   // site label, bottom-left of every slide
     stage.append(slideEl, ink, wm, tbar._nav);
+    stage.addEventListener('click', chipHit);
+    stage.addEventListener('dblclick', (e) => {   // double-click a figure to watch it drawn again (a single click only moves the slide on)
+      if (tool !== 'none') return;
+      const fig = document.elementsFromPoint(e.clientX, e.clientY).find((n) => n.classList && n.classList.contains('drawfig'));
+      if (fig) { e.preventDefault(); drawPlay(fig); }
+    });
     root.append(stage);
     const names = students.length ? students : ['សិស្ស ក', 'សិស្ស ខ', 'សិស្ស គ'];
     { // Spin starts about a quarter of the slide in size, in the top-right corner
@@ -2324,8 +2404,86 @@
     } catch (e) { /* not supported (e.g. iPhone) */ }
   }
 
+  // ---- «គិត ២ នាទី» chip: click it to count down (a second click stops it and puts the label back) ----
+  let chipT = 0, chipEl = null, chipLabel = '';
+  const khMin = (t) => Number(String(t).replace(/[០-៩]/g, (d) => '០១២៣៤៥៦៧៨៩'.indexOf(d)).replace(/\D+/g, ' ').trim().split(' ')[0]) || 0;
+  function chipStop() { clearInterval(chipT); chipT = 0; if (chipEl) { chipEl.textContent = chipLabel; chipEl.classList.remove('run', 'done'); } chipEl = null; }
+  function chipBeep() { try { const A = new (window.AudioContext || window.webkitAudioContext)(); [0, .35, .7].forEach((t) => { const o = A.createOscillator(), g = A.createGain(); o.frequency.value = 880; g.gain.value = .15; o.connect(g); g.connect(A.destination); o.start(A.currentTime + t); o.stop(A.currentTime + t + .22); }); } catch (e) { /* no sound */ } }
+  function chipClick(chip) {
+    if (chipEl === chip) { chipStop(); return; }
+    chipStop();
+    chipEl = chip; chipLabel = chip.textContent;
+    let left = khMin(chipLabel) * 60;
+    const draw = () => { chip.textContent = '⏱ ' + kh(String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0')); };
+    chip.classList.add('run'); draw();
+    chipT = setInterval(() => {
+      left -= 1;
+      if (left <= 0) { clearInterval(chipT); chipT = 0; chip.textContent = 'ចប់ម៉ោង!'; chip.classList.remove('run'); chip.classList.add('done'); chipBeep(); return; }
+      draw();
+    }, 1000);
+  }
+  // ---- every picture can be redrawn "the way you draw it": click it and its lines are drawn one after another (main lines, points, names, fills, then the marks) ----
+  let drawT = [];
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function imp(el, k, v) { el.style.setProperty(k, v, 'important'); }
+  function drawPlay(svg) {
+    drawT.forEach(clearTimeout); drawT = [];
+    svg.classList.add('replay');
+    const all = [...svg.querySelectorAll('line, path, polygon, circle, foreignObject')].filter((el) => !el.closest('.rv-hide, .tool-r, .tool-p'));   // what a later click has not brought in yet, and the measuring tools, stay out of it
+    const info = all.map((el) => {
+      const tag = el.tagName.toLowerCase();
+      let len = 0;
+      if (tag === 'line' || tag === 'path') { try { len = el.getTotalLength(); } catch (e) { len = 0; } }
+      const stroked = (tag === 'line') || (tag === 'path' && (el.getAttribute('fill') === 'none' || !el.getAttribute('fill')));
+      const kind = tag === 'foreignobject' ? 'label' : tag === 'circle' ? 'dot' : tag === 'polygon' || (tag === 'path' && !stroked) ? 'fill' : (len > 70 ? 'main' : 'mark');
+      return { el, kind, len, keep: el.getAttribute('stroke-dasharray') };
+    });
+    info.forEach((o) => imp(o.el, 'opacity', '0'));
+    const groups = ['main', 'dot', 'label', 'fill', 'mark'];
+    let t = 150;
+    groups.forEach((g) => {
+      const items = info.filter((o) => o.kind === g);
+      items.forEach((o) => {
+        const dur = g === 'main' ? 800 : g === 'mark' ? 350 : 350;
+        drawT.push(setTimeout(() => {
+          if (o.len && (g === 'main' || g === 'mark')) {
+            o.el.style.transition = 'none';
+            o.el.style.strokeDasharray = o.len; o.el.style.strokeDashoffset = o.len;
+            imp(o.el, 'opacity', '1'); o.el.getBoundingClientRect();
+            o.el.style.transition = `stroke-dashoffset ${dur}ms linear`; o.el.style.strokeDashoffset = 0;
+            drawT.push(setTimeout(() => { o.el.style.strokeDasharray = ''; o.el.style.strokeDashoffset = ''; o.el.style.transition = ''; if (o.keep) o.el.setAttribute('stroke-dasharray', o.keep); }, dur + 60));
+          } else { o.el.style.transition = 'opacity .45s'; imp(o.el, 'opacity', '1'); }
+        }, t));
+        t += g === 'main' ? 750 : g === 'mark' ? 260 : g === 'fill' ? 200 : 220;
+      });
+      t += 200;
+    });
+    drawT.push(setTimeout(() => { info.forEach((o) => { o.el.style.removeProperty('opacity'); o.el.style.transition = ''; }); svg.classList.remove('replay'); }, t + 400));
+  }
+  // every figure of a lesson slide gets the replay (the small cards and the pictures that already move on their own are left alone)
+  function markDrawables() {
+    if (!slideEl) return;
+    slideEl.querySelectorAll('.fig > svg').forEach((svg) => {
+      if (svg.closest('.ovc, .ts-card-b')) return;
+      if (svg.querySelector('[data-until], .mvg')) return;
+      svg.classList.add('drawfig');
+      const box = svg.parentElement;
+      if (box && !box.querySelector('.drawhint') && !box.querySelector('.cap')) {
+        
+      }
+    });
+  }
+  function chipHit(e) {
+    if (tool !== 'none') return;
+    const under = document.elementsFromPoint(e.clientX, e.clientY);
+    const fig = under.find((n) => n.classList && n.classList.contains('drawfig'));
+    const hit = document.elementsFromPoint(e.clientX, e.clientY).find((n) => n.classList && n.classList.contains('esc-chip'));
+    if (hit) { e.preventDefault(); chipClick(hit); }
+  }
+
   function close() {
     clearInterval(clockT); clockT = 0;
+    chipStop();
     stopWidgets();
     if (offTools) { offTools(); offTools = null; }
     try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* ignore */ }

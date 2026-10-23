@@ -173,6 +173,33 @@ export async function updateQuestion(req, env, params) {
   return json({ ok: true, key_changed: keyChanged, submissions: results[0].n, frozen_sessions: frozenSessions, synced_to_frozen: synced });
 }
 
+// Drag-and-drop order: the client sends every question id of the test in the new order.
+export async function reorderQuestions(req, env, params) {
+  const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
+  const { ids } = await req.json();
+  if (!Array.isArray(ids) || !ids.length) return err('ids is required.', 400);
+  const { results } = await env.DB.prepare('SELECT id FROM test_questions WHERE test_id = ?1').bind(Number(params.testId)).all();
+  const have = new Set(results.map((r) => r.id));
+  const order = ids.map(Number);
+  if (order.length !== have.size || new Set(order).size !== order.length || order.some((i) => !have.has(i))) return err('ids must list every question of this test exactly once.', 400);
+  await env.DB.batch(order.map((qid, i) => env.DB.prepare('UPDATE test_questions SET order_no = ?1 WHERE id = ?2 AND test_id = ?3').bind(i + 1, qid, Number(params.testId))));
+  return json({ ok: true });
+}
+
+// Set the points of many questions at once ({ points: { questionId: points } }), e.g. «make the whole test worth 100».
+export async function setQuestionPoints(req, env, params) {
+  const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
+  const { points } = await req.json();
+  if (!points || typeof points !== 'object') return err('points is required.', 400);
+  const entries = Object.entries(points).map(([id, p]) => [Number(id), Math.round(Number(p) * 100) / 100]);
+  if (!entries.length || entries.some(([id, p]) => !Number.isInteger(id) || !(p > 0 && p <= 100))) return err('Every score must be above 0 and at most 100.', 400);
+  const { results } = await env.DB.prepare('SELECT id FROM test_questions WHERE test_id = ?1').bind(Number(params.testId)).all();
+  const have = new Set(results.map((r) => r.id));
+  if (entries.some(([id]) => !have.has(id))) return err('A question does not belong to this test.', 400);
+  await env.DB.batch(entries.map(([id, p]) => env.DB.prepare('UPDATE test_questions SET points = ?1 WHERE id = ?2 AND test_id = ?3').bind(p, id, Number(params.testId))));
+  return json({ ok: true, updated: entries.length });
+}
+
 // Apply the current answer key to every session of this test.
 export async function rescoreTest(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
@@ -414,7 +441,10 @@ export async function exportBank(req, env) {
 export async function listBank(req, env) {
   const g0 = await needLicense(req, env, true); if (g0.resp) return g0.resp;
   await ensureColumns(env);
-  const rows = await bankRows(env, g0.t, { includeShared: true });
+  let rows = await bankRows(env, g0.t, { includeShared: true });
+  // ?grades=7,8,9 sends only those grades (and questions without a grade): a smaller, faster download for a teacher's own classes
+  const want = new URL(req.url).searchParams.get('grades');
+  if (want) { const set = new Set(want.split(',').map((x) => x.trim()).filter(Boolean)); rows = rows.filter((q) => !q.grade || set.has(String(q.grade))); }
   return json({ questions: rows.map((q) => ({ ...q, options: JSON.parse(q.options_json), options_json: undefined })) });
 }
 
