@@ -31,6 +31,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE teachers ADD COLUMN contact TEXT',
     'ALTER TABLE teachers ADD COLUMN created_at TEXT',
     'ALTER TABLE teachers ADD COLUMN email TEXT',
+    // an account made from report.khmermath.org (src/api/service.js) remembers who it belongs to there
+    'ALTER TABLE teachers ADD COLUMN ext_ref TEXT',
     // teaching mode is opt-in: the owner (or an admin) switches it on per teacher
     'ALTER TABLE teachers ADD COLUMN teach_ok INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE tests ADD COLUMN is_sample INTEGER NOT NULL DEFAULT 0',
