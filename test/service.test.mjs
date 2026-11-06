@@ -161,3 +161,16 @@ test('retest: a new test on the weak topics from the teacher\'s own questions, u
   const tp = await (await service.topics(req('http://x/t', { refId: 'tch-5', className: '8NGS-B' }), env)).json();
   assert.equal(tp.topics[0].trend.length, 1);
 });
+
+test('a database that already ran the older migration still gets the new columns (the schema version is bumped when columns are added)', async () => {
+  const env = await setup();
+  // the live database: it recorded the previous schema version, and has no ext_ref column yet
+  env.raw.exec("INSERT INTO settings (key, value) VALUES ('schema_version', '2026-10-24-shares') ON CONFLICT(key) DO UPDATE SET value = '2026-10-24-shares'");
+  try { env.raw.exec('ALTER TABLE teachers DROP COLUMN ext_ref'); } catch { /* already absent */ }
+  assert.ok(!env.raw.prepare('PRAGMA table_info(teachers)').all().some((c) => c.name === 'ext_ref'));
+  _resetSchemaForTests(); await ensureColumns(env);
+  assert.ok(env.raw.prepare('PRAGMA table_info(teachers)').all().some((c) => c.name === 'ext_ref'), 'ext_ref was not added: bump SCHEMA_VERSION in src/lib/schema.js');
+  // and the service call that failed on the live site works
+  const r = await service.provision(req('http://x/p', T), env);
+  assert.equal(r.status, 200);
+});
