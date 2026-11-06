@@ -197,6 +197,7 @@ const ROUTES = [
   ['POST', '/api/service/results', service.sessionResults],
   ['GET', '/api/sso', service.ssoLogin],
   ['POST', '/api/service/topics', service.topics],
+  ['POST', '/api/service/retest', service.retest],
   ['GET', '/api/health', async (req, env) => { const t = Date.now(); const r = await env.DB.prepare('SELECT 1 AS ok').first(); return json({ ok: !!(r && r.ok), db_ms: Date.now() - t, at: new Date().toISOString() }); }],
   ['GET', '/api/game/bank', game.bank],
   ['GET', '/api/game/admin', game.admin],

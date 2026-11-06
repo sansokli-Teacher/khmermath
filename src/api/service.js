@@ -148,6 +148,7 @@ export async function sessions(req, env) {
   const { results } = await env.DB.prepare(
     `SELECT ts.id, ts.scheduled_start AS start, ts.status, c.name AS className, x.title,
             (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL) AS submitted,
+            (SELECT COUNT(*) FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL AND r.published_at IS NOT NULL) AS published,
             (SELECT COUNT(*) FROM students s WHERE s.class_id = ts.class_id) AS roster
      FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests x ON x.id = ts.test_id
      WHERE c.owner_id = ?1 ORDER BY ts.scheduled_start DESC LIMIT 40`,
@@ -169,7 +170,7 @@ export async function sessionResults(req, env) {
   ).bind(Number(sessionId) || 0, t.id).first();
   if (!s) return err('Session not found.', 404);
   const { results: rows } = await env.DB.prepare(
-    `SELECT st.id, st.surname, st.first_name AS firstName, r.mcq_score AS mcq, r.mcq_max AS mcqMax, r.writing_score AS writing, r.writing_max AS writingMax
+    `SELECT st.id, st.surname, st.first_name AS firstName, r.mcq_score AS mcq, r.mcq_max AS mcqMax, r.writing_score AS writing, r.writing_max AS writingMax, r.published_at AS publishedAt
      FROM results r JOIN students st ON st.id = r.student_id WHERE r.session_id = ?1 AND r.submitted_at IS NOT NULL ORDER BY st.surname, st.first_name`,
   ).bind(s.id).all();
   const mx = (k) => rows.reduce((m, r) => Math.max(m, Number(r[k]) || 0), 0);
@@ -178,7 +179,8 @@ export async function sessionResults(req, env) {
     sessionId: s.id, className: s.className, title: s.title, start: s.start,
     mcqMax: mx('mcqMax'), writingMax: hasWriting ? mx('writingMax') : null,
     writingPending: hasWriting ? rows.filter((r) => r.writing == null).length : 0,
-    rows: rows.map((r) => ({ id: r.id, surname: r.surname, first: r.firstName, mcq: r.mcq, writing: hasWriting ? r.writing : null })),
+    published: rows.filter((r) => r.publishedAt).length,
+    rows: rows.map((r) => ({ id: r.id, surname: r.surname, first: r.firstName, mcq: r.mcq, writing: hasWriting ? r.writing : null, published: !!r.publishedAt })),
   });
 }
 
@@ -206,19 +208,75 @@ export async function topics(req, env) {
     for (const q of qs) {
       const name = clip(q.topic, 60);
       if (!name) { untagged++; continue; }
-      const row = (by[name] ||= { name, questions: 0, students: {} });
+      const row = (by[name] ||= { name, questions: 0, students: {}, per: {} });
       row.questions++;
+      const ps = (row.per[s.id] ||= { start: s.start, title: s.title, earned: 0, possible: 0 });
       for (const d of done) {
         const st = (row.students[d.student_id] ||= { id: d.student_id, earned: 0, possible: 0 });
         const pts = Number(q.points) || 1;
-        st.possible += pts; if (isRight(q, (chosen[d.student_id] || {})[q.id] ?? null)) st.earned += pts;
+        const ok = isRight(q, (chosen[d.student_id] || {})[q.id] ?? null);
+        st.possible += pts; ps.possible += pts; if (ok) { st.earned += pts; ps.earned += pts; }
       }
     }
   }
   const list = Object.values(by).map((r) => {
     const students = Object.values(r.students);
     const earned = students.reduce((n, x) => n + x.earned, 0), possible = students.reduce((n, x) => n + x.possible, 0);
-    return { name: r.name, questions: r.questions, pct: possible ? Math.round((earned / possible) * 1000) / 10 : null, students };
+    // test by test, oldest first: lets the report show whether the class improved after teaching the topic again
+    const trend = Object.values(r.per).filter((x) => x.possible).sort((a, b) => String(a.start).localeCompare(String(b.start))).map((x) => ({ start: x.start, title: x.title, pct: Math.round((x.earned / x.possible) * 1000) / 10 }));
+    return { name: r.name, questions: r.questions, pct: possible ? Math.round((earned / possible) * 1000) / 10 : null, students, trend };
   }).filter((r) => r.pct !== null).sort((a, b) => a.pct - b.pct);
   return json({ sessions: ses.map((s) => ({ id: s.id, title: s.title, start: s.start })), topics: list, untagged });
+}
+
+// POST /api/service/retest {refId, className, topics, perTopic, minutes}: a new test on the weak topics, set for the class right now.
+// Questions come from this teacher's own tests (closed questions only, withdrawn ones skipped, one per distinct text), preferring ones this
+// class has not met yet. A topic with no questions is reported in `missing`; if nothing at all is found, nothing is created.
+export async function retest(req, env) {
+  const g = await needService(req, env); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const b = await req.json().catch(() => ({}));
+  const t = await teacherOf(env, b.refId);
+  if (!t) return err('No exam account for this teacher yet.', 404);
+  const cls = await env.DB.prepare('SELECT id, name FROM classes WHERE owner_id = ?1 AND name = ?2').bind(t.id, clip(b.className, 80)).first();
+  if (!cls) return err('Class not found.', 404);
+  const topicsWanted = [...new Set((Array.isArray(b.topics) ? b.topics : []).map((x) => clip(x, 60)).filter(Boolean))].slice(0, 6);
+  if (!topicsWanted.length) return err('Choose at least one topic.', 400);
+  const per = Math.min(10, Math.max(1, Number(b.perTopic) || 4));
+  const minutes = Math.min(180, Math.max(10, Number(b.minutes) || 30));
+  const { results: seenRows } = await env.DB.prepare(
+    `SELECT DISTINCT q.stem_text FROM test_sessions ts JOIN test_questions q ON q.test_id = ts.test_id WHERE ts.class_id = ?1`,
+  ).bind(cls.id).all();
+  const seen = new Set(seenRows.map((r) => r.stem_text));
+  const picked = [], missing = [], counts = {};
+  for (const name of topicsWanted) {
+    const { results: pool } = await env.DB.prepare(
+      `SELECT q.* FROM test_questions q JOIN tests x ON x.id = q.test_id
+       WHERE x.owner_id = ?1 AND q.topic = ?2 AND q.kind <> 'writing' AND COALESCE(q.cancelled, 0) = 0 ORDER BY q.id DESC`,
+    ).bind(t.id, name).all();
+    const uniq = []; const stems = new Set();
+    for (const q of pool) if (!stems.has(q.stem_text)) { stems.add(q.stem_text); uniq.push(q); }
+    const take = [...uniq.filter((q) => !seen.has(q.stem_text)), ...uniq.filter((q) => seen.has(q.stem_text))].slice(0, per);
+    if (!take.length) { missing.push(name); continue; }
+    counts[name] = take.length; picked.push(...take);
+  }
+  if (!picked.length) return json({ created: false, missing, counts });
+  const title = clip(b.title, 120) || `ប្រឡងឡើងវិញ — ${Object.keys(counts).join(', ')}`;
+  const { meta } = await env.DB.prepare("INSERT INTO tests (title, owner_id, status) VALUES (?1, ?2, 'ready')").bind(title, t.id).run();
+  const testId = meta.last_row_id;
+  let n = 0;
+  for (const q of picked) {
+    await env.DB.prepare(
+      `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)`,
+    ).bind(testId, ++n, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null, q.chapter || null, q.params ?? null).run();
+  }
+  const start = new Date(Date.now() - 60000).toISOString();
+  const end = new Date(Date.parse(start) + minutes * 60000).toISOString();
+  const pin = String(Math.floor(1000 + Math.random() * 9000));
+  const ses = await env.DB.prepare(
+    'INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes, scheduled_end, pin) VALUES (?1, ?2, ?3, ?4, ?5, ?6)',
+  ).bind(testId, cls.id, start, minutes, end, pin).run();
+  await audit(env, { id: t.id }, 'retest.create', JSON.stringify({ testId, sessionId: ses.meta.last_row_id, class: cls.name, topics: topicsWanted }));
+  return json({ created: true, testId, sessionId: ses.meta.last_row_id, title, questions: picked.length, counts, missing, minutes });
 }

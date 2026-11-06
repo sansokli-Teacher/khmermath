@@ -100,9 +100,15 @@ test('results: a teacher sees only their own sessions; unmarked writing is null,
   const list = await (await service.sessions(req('http://x/s', { refId: 'tch-5' }), env)).json();
   assert.equal(list.sessions.length, 1); assert.equal(list.sessions[0].className, '8NGS-B'); assert.equal(list.sessions[0].submitted, 2);
   const d = await (await service.sessionResults(req('http://x/r', { refId: 'tch-5', sessionId: 1 }), env)).json();
+  assert.equal(d.published, 0); assert.equal(d.rows.every((x) => x.published === false), true);   // not announced yet
+  assert.equal(list.sessions[0].published, 0);
   assert.equal(d.rows.length, 2); assert.equal(d.mcqMax, 25); assert.equal(d.writingMax, 25); assert.equal(d.writingPending, 1);
   assert.equal(d.rows.find((x) => x.id === '0109294').writing, null);
   assert.equal((await service.sessionResults(req('http://x/r', { refId: 'tch-5', sessionId: 2 }), env)).status, 404);   // someone else's session
+  r.prepare("UPDATE results SET published_at = '2026-11-02 01:00:00' WHERE session_id = 1").run();   // the teacher announces the results
+  const d2 = await (await service.sessionResults(req('http://x/r', { refId: 'tch-5', sessionId: 1 }), env)).json();
+  assert.equal(d2.published, 2); assert.equal(d2.rows.every((x) => x.published), true);
+  assert.equal((await (await service.sessions(req('http://x/s', { refId: 'tch-5' }), env)).json()).sessions[0].published, 2);
 });
 
 test('topics: class and student scores by topic; withdrawn, writing and untagged questions left out; only own class', async () => {
@@ -124,4 +130,34 @@ test('topics: class and student scores by topic; withdrawn, writing and untagged
   assert.equal(d.topics[1].students.find((s) => s.id === '0109294').earned, 1);
   assert.equal((await (await service.topics(req('http://x/t', { refId: 'tch-5', className: '9NGS-A' }), env)).json()).topics.length, 0);
   assert.equal((await service.topics(req('http://x/t', { refId: 'tch-5', className: '8NGS-B' }, 'bad'), env)).status, 403);
+});
+
+test('retest: a new test on the weak topics from the teacher\'s own questions, unseen ones first, set for the class now; trend per topic', async () => {
+  const env = await setup();
+  await service.provision(req('http://x/p', T), env);
+  const r = env.raw;
+  const owner = r.prepare("SELECT id FROM teachers WHERE username = 'chaysophea'").get().id;
+  const cid = r.prepare("SELECT id FROM classes WHERE name = '8NGS-B'").get().id;
+  r.prepare("INSERT INTO tests (title, owner_id) VALUES ('Old', ?)").run(owner);                 // test 1: sat by the class
+  r.prepare("INSERT INTO tests (title, owner_id) VALUES ('Bank', ?)").run(owner);                // test 2: spare questions, never sat
+  const q = (tid, no, stem, topic, kind = 'mcq') => r.prepare("INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, topic) VALUES (?, ?, ?, '[\"a\",\"b\"]', 0, 1, ?, ?)").run(tid, no, stem, kind, topic);
+  q(1, 1, 'seen-frac', 'Fractions'); q(2, 1, 'new-frac-1', 'Fractions'); q(2, 2, 'new-frac-2', 'Fractions'); q(2, 3, 'seen-frac', 'Fractions'); q(2, 4, 'writing-frac', 'Fractions', 'writing');
+  r.prepare("INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes) VALUES (1, ?, '2026-11-01T01:00:00Z', 40)").run(cid);
+  r.prepare("INSERT INTO results (session_id, student_id, mcq_score, mcq_max, submitted_at) VALUES (1, '0109293', 0, 1, '2026-11-01T01:30:00Z')").run();
+  const d = await (await service.retest(req('http://x/rt', { refId: 'tch-5', className: '8NGS-B', topics: ['Fractions', 'Geometry'], perTopic: 2, minutes: 25 }), env)).json();
+  assert.equal(d.created, true); assert.equal(d.questions, 2); assert.deepEqual(d.missing, ['Geometry']);
+  const stems = r.prepare('SELECT stem_text FROM test_questions WHERE test_id = ? ORDER BY order_no').all(d.testId).map((x) => x.stem_text);
+  assert.deepEqual([...stems].sort(), ['new-frac-1', 'new-frac-2']);                                          // unseen first; no writing; no duplicates
+  const s = r.prepare('SELECT * FROM test_sessions WHERE id = ?').get(d.sessionId);
+  assert.equal(s.class_id, cid); assert.equal(s.duration_minutes, 25); assert.ok(Date.parse(s.scheduled_start) <= Date.now());   // open now
+  assert.equal(r.prepare('SELECT status FROM tests WHERE id = ?').get(d.testId).status, 'ready');
+  // nothing found: nothing created; someone else's class / no topics refused
+  const none = await (await service.retest(req('http://x/rt', { refId: 'tch-5', className: '8NGS-B', topics: ['Nope'] }), env)).json();
+  assert.equal(none.created, false);
+  assert.equal((await service.retest(req('http://x/rt', { refId: 'tch-5', className: '9NGS-A', topics: ['Fractions'] }), env)).status, 404);
+  assert.equal((await service.retest(req('http://x/rt', { refId: 'tch-5', className: '8NGS-B', topics: [] }), env)).status, 400);
+  assert.equal((await service.retest(req('http://x/rt', { refId: 'tch-5', className: '8NGS-B', topics: ['Fractions'] }, 'bad'), env)).status, 403);
+  // the trend: the class sat the old test only → one point
+  const tp = await (await service.topics(req('http://x/t', { refId: 'tch-5', className: '8NGS-B' }), env)).json();
+  assert.equal(tp.topics[0].trend.length, 1);
 });
