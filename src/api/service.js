@@ -9,6 +9,8 @@ import { createSessionCookie } from '../lib/session.js';
 import { ensureColumns } from '../lib/schema.js';
 import { allow } from '../lib/limits.js';
 import { audit } from '../lib/audit.js';
+import { sessionQuestions, mcqOnly } from '../lib/frozen.js';
+import { isRight } from '../lib/scoring.js';
 
 const USERNAME = /^[A-Za-z0-9_.\-]{3,30}$/;
 const SSO_SECONDS = 60;
@@ -178,4 +180,45 @@ export async function sessionResults(req, env) {
     writingPending: hasWriting ? rows.filter((r) => r.writing == null).length : 0,
     rows: rows.map((r) => ({ id: r.id, surname: r.surname, first: r.firstName, mcq: r.mcq, writing: hasWriting ? r.writing : null })),
   });
+}
+
+// POST /api/service/topics {refId, className, limit}: where a class is weak, by topic, from the closed questions of its newest tests.
+// Per topic: the points earned out of the points possible for the class, and the same for each student. Writing questions and withdrawn
+// ones are left out; questions with no topic are only counted (`untagged`). Only this teacher's own class.
+export async function topics(req, env) {
+  const g = await needService(req, env); if (g.resp) return g.resp;
+  await ensureColumns(env);
+  const { refId, className, limit } = await req.json().catch(() => ({}));
+  const t = await teacherOf(env, refId);
+  if (!t) return json({ sessions: [], topics: [], untagged: 0 });
+  const { results: ses } = await env.DB.prepare(
+    `SELECT ts.id, ts.test_id, ts.scheduled_start AS start, x.title FROM test_sessions ts JOIN classes c ON c.id = ts.class_id JOIN tests x ON x.id = ts.test_id
+     WHERE c.owner_id = ?1 AND c.name = ?2 AND EXISTS (SELECT 1 FROM results r WHERE r.session_id = ts.id AND r.submitted_at IS NOT NULL)
+     ORDER BY ts.scheduled_start DESC LIMIT ?3`,
+  ).bind(t.id, clip(className, 80), Math.min(12, Math.max(1, Number(limit) || 6))).all();
+  const by = {}; let untagged = 0;
+  for (const s of ses) {
+    const qs = mcqOnly(await sessionQuestions(env, s.id, s.test_id)).filter((q) => !q.cancelled);
+    const { results: done } = await env.DB.prepare('SELECT student_id FROM results WHERE session_id = ?1 AND submitted_at IS NOT NULL').bind(s.id).all();
+    const { results: rs } = await env.DB.prepare('SELECT student_id, question_id, selected_index FROM responses WHERE session_id = ?1').bind(s.id).all();
+    const chosen = {};
+    for (const r of rs) (chosen[r.student_id] ||= {})[r.question_id] = r.selected_index;
+    for (const q of qs) {
+      const name = clip(q.topic, 60);
+      if (!name) { untagged++; continue; }
+      const row = (by[name] ||= { name, questions: 0, students: {} });
+      row.questions++;
+      for (const d of done) {
+        const st = (row.students[d.student_id] ||= { id: d.student_id, earned: 0, possible: 0 });
+        const pts = Number(q.points) || 1;
+        st.possible += pts; if (isRight(q, (chosen[d.student_id] || {})[q.id] ?? null)) st.earned += pts;
+      }
+    }
+  }
+  const list = Object.values(by).map((r) => {
+    const students = Object.values(r.students);
+    const earned = students.reduce((n, x) => n + x.earned, 0), possible = students.reduce((n, x) => n + x.possible, 0);
+    return { name: r.name, questions: r.questions, pct: possible ? Math.round((earned / possible) * 1000) / 10 : null, students };
+  }).filter((r) => r.pct !== null).sort((a, b) => a.pct - b.pct);
+  return json({ sessions: ses.map((s) => ({ id: s.id, title: s.title, start: s.start })), topics: list, untagged });
 }

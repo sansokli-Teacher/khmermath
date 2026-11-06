@@ -104,3 +104,24 @@ test('results: a teacher sees only their own sessions; unmarked writing is null,
   assert.equal(d.rows.find((x) => x.id === '0109294').writing, null);
   assert.equal((await service.sessionResults(req('http://x/r', { refId: 'tch-5', sessionId: 2 }), env)).status, 404);   // someone else's session
 });
+
+test('topics: class and student scores by topic; withdrawn, writing and untagged questions left out; only own class', async () => {
+  const env = await setup();
+  await service.provision(req('http://x/p', T), env);
+  const r = env.raw;
+  r.prepare("INSERT INTO tests (title) VALUES ('Quiz 1')").run();
+  const cid = r.prepare("SELECT id FROM classes WHERE name = '8NGS-B'").get().id;
+  r.prepare("INSERT INTO test_sessions (test_id, class_id, scheduled_start, duration_minutes) VALUES (1, ?, '2026-11-01T01:00:00Z', 40)").run(cid);
+  const q = (no, topic, kind = 'mcq', cancelled = 0) => r.prepare("INSERT INTO test_questions (test_id, order_no, stem_text, options_json, correct_index, points, kind, topic, cancelled) VALUES (1, ?, 's', '[\"a\",\"b\"]', 0, 1, ?, ?, ?)").run(no, kind, topic, cancelled);
+  q(1, 'Fractions'); q(2, 'Fractions'); q(3, 'Geometry'); q(4, null); q(5, 'Geometry', 'writing'); q(6, 'Geometry', 'mcq', 1);
+  for (const id of ['0109293', '0109294']) r.prepare("INSERT INTO results (session_id, student_id, mcq_score, mcq_max, submitted_at) VALUES (1, ?, 0, 4, '2026-11-01T01:30:00Z')").run(id);
+  const ans = (sid, qno, sel) => r.prepare('INSERT INTO responses (session_id, student_id, question_id, selected_index) VALUES (1, ?, ?, ?)').run(sid, r.prepare('SELECT id FROM test_questions WHERE order_no = ?').get(qno).id, sel);
+  ans('0109293', 1, 0); ans('0109293', 2, 0); ans('0109293', 3, 1);   // Fractions 2/2, Geometry 0/1
+  ans('0109294', 1, 1); ans('0109294', 2, 0); ans('0109294', 3, 1);   // Fractions 1/2, Geometry 0/1
+  const d = await (await service.topics(req('http://x/t', { refId: 'tch-5', className: '8NGS-B' }), env)).json();
+  assert.deepEqual(d.topics.map((x) => [x.name, x.pct]), [['Geometry', 0], ['Fractions', 75]]);   // weakest first
+  assert.equal(d.untagged, 1);
+  assert.equal(d.topics[1].students.find((s) => s.id === '0109294').earned, 1);
+  assert.equal((await (await service.topics(req('http://x/t', { refId: 'tch-5', className: '9NGS-A' }), env)).json()).topics.length, 0);
+  assert.equal((await service.topics(req('http://x/t', { refId: 'tch-5', className: '8NGS-B' }, 'bad'), env)).status, 403);
+});
