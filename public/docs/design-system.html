@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ប្រព័ន្ធរចនា — Exam Khmer</title>
+<link rel="stylesheet" href="../fonts/kantumruy-pro.css">
+<link rel="stylesheet" href="../css/tokens.css?v=20261107c">
+<link rel="stylesheet" href="../css/components.css?v=20261107b">
+<style>
+  body.ds { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: 'Kantumruy Pro', 'Khmer OS Siemreap', system-ui, sans-serif; line-height: 1.7; }
+  .ds-wrap { max-width: 980px; margin: 0 auto; padding: var(--s-6) var(--s-4) var(--s-8); }
+  .ds-wrap h1 { font-size: var(--t-2xl); line-height: 1.7; margin: 0 0 var(--s-2); }
+  .ds-wrap h2 { font-size: var(--t-lg); line-height: 1.7; margin: var(--s-6) 0 var(--s-3); }
+  .ds-wrap p { margin: 0 0 var(--s-3); color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+  .ds-wrap .show-focus { outline: 3px solid rgba(107, 99, 224, .5); outline-offset: 2px; }
+  table.data { background: #fff; border-radius: var(--r-md); }
+</style>
+</head>
+<body class="ds">
+<main class="ds-wrap">
+  <h1>ប្រព័ន្ធរចនា</h1>
+  <p>សមាសភាគគ្រូ ក្នុងស្ថានភាពនីមួយៗ។ ទំព័រនេះមិនមានតំណពីកម្មវិធីទេ។</p>
+
+  <h2>ប៊ូតុង</h2>
+  <div class="row">
+    <button class="btn-primary" type="button">បឋម</button>
+    <button class="btn-primary show-focus" type="button">ផ្តោត</button>
+    <button class="btn-primary" type="button" disabled>បិទ</button>
+    <button class="btn-primary is-loading" type="button" disabled>កំពុងផ្ទុក</button>
+    <button class="btn-secondary" type="button">ទីពីរ</button>
+    <button class="btn-ghost" type="button">ខ្មោច</button>
+    <button class="btn-danger" type="button">គ្រោះថ្នាក់</button>
+    <button class="btn-primary btn-sm" type="button">តូច</button>
+    <button class="btn-primary btn-lg" type="button">ធំ</button>
+    <button class="icon-btn" type="button" aria-label="រូបតំណាង">✎</button>
+  </div>
+
+  <h2>វាលបញ្ចូល</h2>
+  <label class="field">
+    <span>ឈ្មោះ</span>
+    <input type="text" value="សុភា">
+    <span class="hint">ជំនួយខ្លីក្រោមវាល</span>
+  </label>
+  <label class="field is-error">
+    <span>ថ្នាក់</span>
+    <input type="text" value="">
+    <span class="hint">សូមបំពេញវាលនេះ</span>
+  </label>
+
+  <h2>ស្លាក</h2>
+  <div class="row">
+    <span class="chip chip-open">បើក</span>
+    <span class="chip chip-soon">ព្រមាន</span>
+    <span class="chip chip-plain">សេចក្តីព្រាង</span>
+    <span class="badge closed">បិទ</span>
+  </div>
+
+  <h2>កាត និងបញ្ជី</h2>
+  <div class="card">
+    <strong>កាត</strong>
+    <div class="list-item"><span>ជួរទីមួយ</span><span class="chip">ស្លាក</span></div>
+    <div class="list-item"><span>ជួរទីពីរ</span></div>
+  </div>
+
+  <h2>តារាង</h2>
+  <table class="data">
+    <thead><tr><th>ឈ្មោះ</th><th>ពិន្ទុ</th></tr></thead>
+    <tbody><tr><td>សុភា</td><td>៨៥</td></tr><tr><td>ដារា</td><td>៧២</td></tr></tbody>
+  </table>
+
+  <h2>ផ្ទាំង និងរបារ</h2>
+  <div class="seg" role="tablist">
+    <button type="button" role="tab" aria-selected="true">ថ្នាក់</button>
+    <button type="button" role="tab" aria-selected="false">តេស្ត</button>
+  </div>
+  <div class="progress" style="margin-top:16px" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><i style="width:60%"></i></div>
+
+  <h2>រូបតំណាង និងម៉ឺនុយ</h2>
+  <div class="row">
+    <span class="avatar" aria-hidden="true">ស</span>
+    <span class="tip" tabindex="0" data-tip="ព័ត៌មានខ្លី">ដាក់លើ</span>
+  </div>
+  <div class="menu" style="position:relative;margin-top:12px">
+    <button type="button">មើល</button>
+    <button type="button">កែ</button>
+  </div>
+
+  <h2>សារលេច</h2>
+  <div class="toast" style="position:static;transform:none;margin-top:8px">បានរក្សាទុក</div>
+  <div class="toast is-error" style="position:static;transform:none;margin-top:8px">មិនអាចរក្សាទុកបាន</div>
+
+  <h2>ទទេ និងគ្រោង</h2>
+  <div class="empty"><b>មិនទាន់មានទិន្នន័យ</b>ចាប់ផ្តើមដោយប៊ូតុងខាងក្រោម។</div>
+  <div class="sk lg" style="margin-top:16px"></div>
+</main>
+</body>
+</html>

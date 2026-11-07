@@ -350,7 +350,7 @@
   .edit-ico { width: 18px; height: 18px; flex: none; display: block; }
   .icon-btn:hover { background: var(--brand-soft); box-shadow: none; }
   .menu-wrap.is-open, .menu-wrap:has(.menu-pop) { z-index: 60; }
-  .menu-pop { border-radius: 16px; box-shadow: 0 16px 38px rgba(15, 27, 61, .22), 0 4px 12px rgba(15, 27, 61, .08); padding: 8px; z-index: 100; }
+  .menu-pop { border-radius: 16px; box-shadow: 0 16px 38px rgba(15, 27, 61, .22), 0 4px 12px rgba(15, 27, 61, .08); padding: 8px; z-index: var(--z-pop); }
   .menu-item { border-radius: 10px; min-height: 40px; box-shadow: none; background: transparent; color: var(--ink); border: 0; }
   .menu-item:hover { background: var(--brand-soft); color: var(--brand-dark); box-shadow: none; }
   .bank-item, .new-test-row { border-radius: 14px; }
@@ -523,7 +523,7 @@
       left: 12px;
       top: 12px;
       bottom: 12px;
-      z-index: 40;
+      z-index: var(--z-nav);
       display: flex;
       flex-direction: column;
       width: 200px;
@@ -1333,7 +1333,7 @@
   #tab-tests .card > .row > button { flex: 1 1 calc(50% - 8px); min-width: 0; padding: 10px 8px; font-size: 14px; }
   #tab-tests .card > .row > .badge { flex: 0 0 auto; }
   #tab-tests .card > .row:first-child > button.secondary { flex: 0 0 auto; }
-  .tb-add-top { flex: 1 1 100% !important; }
+  #tab-tests .card > .row > button.tb-add-top { flex: 1 1 100%; }
   .tb-add-fab { position: fixed; right: 14px; bottom: 16px; z-index: 40; background: #16a34a; color: #fff; border: 0; font-weight: 700; border-radius: 99px; padding: 12px 18px; box-shadow: 0 6px 18px rgba(22,101,52,.4); }
   .question-card input[type=number] { width: 96px; }
 }
@@ -1341,7 +1341,7 @@
 /* question-bank pager, and what a phone does not need: downloads (PDF / Word) are for the computer */
 .bank-pager { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; margin: 10px 0; }
 .bank-pager button { min-width: 38px; }
-@media (max-width: 720px) { .no-phone { display: none !important; } }
+@media (max-width: 720px) { body.teacher-body .no-phone { display: none; } }
 
 /* question bank scope: «ថ្នាក់ខ្ញុំ / គ្រប់ថ្នាក់» and the teacher's own classes */
 .scope-pill { font-weight: 700; }
@@ -1361,7 +1361,7 @@
 .question-card.dragging { box-shadow: 0 10px 28px rgba(107, 99, 224, .28); outline: 2px solid var(--brand); background: var(--brand-soft); position: relative; z-index: 3; }
 .question-card.dragging .qdrag { cursor: grabbing; }
 .schedule-top { background: #0f5173; color: #fff; border: 0; font-weight: 700; }
-@media (max-width: 720px) { .schedule-top { flex: 1 1 100% !important; } }
+@media (max-width: 720px) { #tab-tests .card > .row > button.schedule-top { flex: 1 1 100%; } }
 
 /* schedule form: tick the classes that take the test */
 .sch-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }

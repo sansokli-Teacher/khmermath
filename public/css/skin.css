@@ -5,7 +5,6 @@
     background: radial-gradient(820px 420px at 0% -8%, #e4dfff 0%, transparent 58%), radial-gradient(720px 460px at 100% 0%, #e9e4ff 0%, transparent 52%), var(--bg);
   }
   body.teacher-body:not(.teach-mode) #view-dashboard { background: #f7f6fd; box-shadow: 0 24px 60px rgba(90, 80, 170, .1); }
-  button:not(.secondary):not(.danger):not(.ghost):not(.good):not(.icon-btn):not(.lg-eye):not(.live-pill):not(.pw-eye):not(:is(.teacher-navigation button)) { background-image: var(--brand-grad); }
   ::placeholder { color: var(--placeholder); opacity: 1; }
   .chip-open, .badge.open, .badge.ready, .save-status:not(.busy):not(.bad) { color: var(--good-text); }
 
@@ -85,9 +84,9 @@
   .hm-banner { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 30px 34px; border-radius: 26px; color: #fff; background: linear-gradient(120deg, #6d65e2 0%, #5249c6 100%); box-shadow: 0 18px 40px rgba(82, 73, 198, .32); }
   .hm-banner::after { content: ''; position: absolute; right: -60px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: rgba(255, 255, 255, .1); }
   .hm-banner-copy { position: relative; z-index: 1; max-width: 460px; }
-  .hm-banner h2 { margin: 0 0 6px; font-size: 26px; line-height: 1.5; color: #fff !important; }
+  #dashboard-content .hm-banner h2 { margin: 0 0 6px; font-size: 26px; line-height: 1.5; color: #fff; }
   .hm-banner p { margin: 0 0 18px; color: #fff; font-size: 15px; line-height: 1.8; }
-  .hm-cta { background: #fff !important; background-image: none !important; color: var(--brand-dark); border: 0; border-radius: 99px; min-height: 42px; padding: 8px 20px; font-weight: 700; box-shadow: 0 8px 18px rgba(30, 20, 100, .25); }
+  .hm-cta { background: #fff; background-image: none; color: var(--brand-dark); border: 0; border-radius: 99px; min-height: 42px; padding: 8px 20px; font-weight: 700; box-shadow: 0 8px 18px rgba(30, 20, 100, .25); }
   .hm-banner-art { position: relative; z-index: 1; flex: none; width: 210px; animation: hmFloat 5s ease-in-out infinite; }
   .hm-banner-art svg { width: 100%; display: block; filter: drop-shadow(0 14px 18px rgba(30, 20, 100, .35)); }
   @keyframes hmFloat { 50% { transform: translateY(-6px); } }
@@ -98,9 +97,9 @@
   .hm-stat-l { font-size: 12.5px; color: var(--muted); }
   .hm-sec-h { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }
   .hm-sec-h h3 { margin: 0; font-size: 18px; color: var(--navy); }
-  .hm-link { background: none !important; background-image: none !important; box-shadow: none; color: var(--brand); min-height: 32px; padding: 0 6px; font-size: 13px; font-weight: 700; }
+  .hm-link { background: none; background-image: none; box-shadow: none; color: var(--brand); min-height: 32px; padding: 0 6px; font-size: 13px; font-weight: 700; }
   .hm-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
-  .hm-class { display: block; padding: 0; text-align: left; overflow: hidden; background: #fff !important; background-image: none !important; color: var(--ink); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); font-weight: 400; }
+  .hm-class { display: block; padding: 0; text-align: left; overflow: hidden; background: #fff; background-image: none; color: var(--ink); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); font-weight: 400; }
   .hm-class:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(90, 80, 170, .16); }
   .hm-class-top { position: relative; height: 92px; padding: 14px 16px; background: linear-gradient(135deg, var(--a), var(--b)); color: #fff; overflow: hidden; }
   .hm-class-top::after { content: ''; position: absolute; right: -24px; bottom: -34px; width: 110px; height: 110px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
@@ -118,25 +117,25 @@
   .hm-empty { background: #fff; border: 1.5px dashed #d6d1ef; border-radius: 20px; padding: 26px; text-align: center; }
   .hm-card { background: #fff; border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 18px; }
   .hm-cal-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: var(--navy); }
-  .hm-nav { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 10px; background: #fff !important; background-image: none !important; color: var(--muted); border: 1.5px solid var(--line); box-shadow: none; font-size: 18px; }
-  .hm-nav:hover { background: var(--brand-soft) !important; color: var(--brand); }
+  .hm-nav { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 10px; background: #fff; background-image: none; color: var(--muted); border: 1.5px solid var(--line); box-shadow: none; font-size: 18px; }
+  .hm-nav:hover { background: var(--brand-soft); color: var(--brand); }
   .hm-cal-g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
   .hm-dow { font-size: 11.5px; color: var(--muted); font-weight: 700; padding: 4px 0; }
-  .hm-day { position: relative; min-height: 0; height: 36px; padding: 0; border-radius: 12px; background: transparent !important; background-image: none !important; color: var(--ink); box-shadow: none; font-weight: 600; font-size: 13px; }
-  .hm-day:hover { background: var(--brand-soft) !important; box-shadow: none; }
+  .hm-day { position: relative; min-height: 0; height: 36px; padding: 0; border-radius: 12px; background: transparent; background-image: none; color: var(--ink); box-shadow: none; font-weight: 600; font-size: 13px; }
+  .hm-day:hover { background: var(--brand-soft); box-shadow: none; }
   .hm-day.today { box-shadow: inset 0 0 0 1.5px var(--brand); }
-  .hm-day.on { background: var(--brand-grad) !important; color: #fff; box-shadow: 0 6px 14px rgba(107, 99, 224, .35); }
+  .hm-day.on { background: var(--brand-grad); color: #fff; box-shadow: 0 6px 14px rgba(107, 99, 224, .35); }
   .hm-day.has::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #f2798c; }
   .hm-day.on.has::after { background: #fff; }
   .hm-agenda { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
   .hm-agenda-t { font-size: 13px; font-weight: 700; color: var(--navy); }
-  .hm-ag { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-height: 0; padding: 8px 10px; border-radius: 14px; background: #f7f6fd !important; background-image: none !important; color: var(--ink); box-shadow: none; font-weight: 400; }
-  .hm-ag:hover { background: var(--brand-soft) !important; }
+  .hm-ag { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-height: 0; padding: 8px 10px; border-radius: 14px; background: #f7f6fd; background-image: none; color: var(--ink); box-shadow: none; font-weight: 400; }
+  .hm-ag:hover { background: var(--brand-soft); }
   .hm-ag-d { flex: none; width: 46px; text-align: center; line-height: 1.2; color: var(--brand-dark); } .hm-ag-d b { display: block; font-size: 18px; } .hm-ag-d small { font-size: 11px; }
   .hm-ag-m b { display: block; font-size: 14px; color: var(--navy); } .hm-ag-m small { color: var(--muted); font-size: 12px; }
   .hm-tests { display: grid; gap: 10px; }
-  .hm-test { position: relative; display: block; width: 100%; text-align: left; min-height: 0; padding: 12px 14px 12px; border-radius: 16px; background: #f7f6fd !important; background-image: none !important; color: var(--ink); box-shadow: none; font-weight: 400; }
-  .hm-test:hover { background: var(--brand-soft) !important; }
+  .hm-test { position: relative; display: block; width: 100%; text-align: left; min-height: 0; padding: 12px 14px 12px; border-radius: 16px; background: #f7f6fd; background-image: none; color: var(--ink); box-shadow: none; font-weight: 400; }
+  .hm-test:hover { background: var(--brand-soft); }
   .hm-test-t { display: flex; justify-content: space-between; gap: 8px; color: var(--navy); font-size: 14px; } .hm-test-t span { color: var(--brand); }
   .hm-test small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
   .hm-pct { position: absolute; right: 14px; bottom: 9px; font-size: 11.5px; font-weight: 700; color: var(--brand-dark); }
