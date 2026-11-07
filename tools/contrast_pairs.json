@@ -1,0 +1,21 @@
+[
+  { "name": "white on brand-grad light", "fg": "#ffffff", "bg": "#6d65e2", "min": 4.5 },
+  { "name": "white on brand-grad dark", "fg": "#ffffff", "bg": "#5249c6", "min": 4.5 },
+  { "name": "white on banner light", "fg": "#ffffff", "bg": "#6d65e2", "min": 4.5 },
+  { "name": "white on live pill", "fg": "#ffffff", "bg": "#d83b40", "min": 4.5 },
+  { "name": "white on live pill hover", "fg": "#ffffff", "bg": "#c93a3f", "min": 4.5 },
+  { "name": "grade numeral on purple", "fg": "#ffffff", "bg": "#7a6df0", "min": 3 },
+  { "name": "grade numeral on purple dark", "fg": "#ffffff", "bg": "#5a4bd6", "min": 3 },
+  { "name": "grade numeral on amber", "fg": "#ffffff", "bg": "#d07a1c", "min": 3 },
+  { "name": "grade numeral on amber dark", "fg": "#ffffff", "bg": "#b86400", "min": 3 },
+  { "name": "grade numeral on rose", "fg": "#ffffff", "bg": "#e0506b", "min": 3 },
+  { "name": "grade numeral on rose dark", "fg": "#ffffff", "bg": "#bf3050", "min": 3 },
+  { "name": "grade numeral on teal", "fg": "#ffffff", "bg": "#1f9e83", "min": 3 },
+  { "name": "grade numeral on teal dark", "fg": "#ffffff", "bg": "#0c7a63", "min": 3 },
+  { "name": "class tag chip over purple", "fg": "#ffffff", "bg": "#6054c6", "min": 4.5 },
+  { "name": "class tag chip over amber", "fg": "#ffffff", "bg": "#9e5d2d", "min": 4.5 },
+  { "name": "class tag chip over rose", "fg": "#ffffff", "bg": "#aa3f66", "min": 4.5 },
+  { "name": "class tag chip over teal", "fg": "#ffffff", "bg": "#1f7778", "min": 4.5 },
+  { "name": "good text on good-soft", "fg": "#0b7a54", "bg": "#e1f5ec", "min": 4.5 },
+  { "name": "placeholder on white", "fg": "#8a85a3", "bg": "#ffffff", "min": 3 }
+]

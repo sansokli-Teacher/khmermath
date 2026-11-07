@@ -4,15 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>គ្រូបង្រៀន — Exam Khmer</title>
-<link rel="stylesheet" href="css/app.css?v=20261019f">
+<link rel="stylesheet" href="css/app.css?v=20261024b">
 <link rel="stylesheet" href="css/interface.css?v=20261019f">
 <link rel="stylesheet" href="css/promo.css?v=4">
 <link rel="stylesheet" href="css/shimmer.css?v=2">
 <link rel="stylesheet" href="css/wheel.css?v=20261021c">
-<link rel="stylesheet" href="css/ui2.css?v=20261024a">
+<link rel="stylesheet" href="css/ui2.css?v=20261107i">
 <link rel="stylesheet" href="css/teachshow.css?v=20261106j">
 <link rel="stylesheet" href="css/sharing.css?v=20261018g">
 <link rel="stylesheet" href="css/tgtab.css?v=20261101c">
+<link rel="stylesheet" href="css/login.css?v=20261107b">
+<link rel="stylesheet" href="css/tokens.css?v=20261107b">
+<link rel="stylesheet" href="css/skin.css?v=20261107e">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f1b3d">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -37,20 +40,51 @@
   </div>
 </div>
 
-<div id="view-login" class="auth-screen" hidden>
-  <div class="auth-card" style="text-align:left;">
-    <a class="site-brand" href="index.html"><span class="brand-symbol" aria-hidden="true">∑</span><span>KhmerMath<span class="brand-caption">ប្រព័ន្ធប្រឡងគណិតវិទ្យា</span></span></a>
-    <p class="eyebrow auth-eyebrow">សម្រាប់គ្រូបង្រៀន</p>
-    <h2>ចូលគណនីគ្រូ</h2>
-    <p class="muted">គ្រប់គ្រងថ្នាក់ រៀបចំការប្រឡង និងតាមដានលទ្ធផល។</p>
-    <label for="login-username">ឈ្មោះអ្នកប្រើប្រាស់ ឬ អ៊ីមែល</label>
-    <input type="text" id="login-username" autocomplete="username" placeholder="ឧ. sopha, 012345678 ឬ sopha@gmail.com" autocapitalize="none" spellcheck="false">
-    <label for="login-password">ពាក្យសម្ងាត់</label>
-    <input type="password" id="login-password" autocomplete="current-password">
-    <div class="row" style="margin-top:14px;"><button id="login-submit">ចូល</button></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);text-align:center;">
-      <a href="forgot.html">🔑 ភ្លេចពាក្យសម្ងាត់?</a><br>
-      <a href="signup.html">មិនទាន់មានគណនី? បង្កើតគណនីសាកល្បង</a>
+<div id="view-login" class="auth-screen lg-screen" hidden>
+  <div class="lg-shell">
+    <section class="lg-scene" aria-hidden="false">
+      <a class="lg-brand" href="index.html"><span class="lg-brand-mark" aria-hidden="true">∑</span><span>KhmerMath</span></a>
+      <div class="lg-hello">
+        <h1>សូមស្វាគមន៍ត្រឡប់មកវិញ! <span class="lg-spark" aria-hidden="true">✦</span></h1>
+        <p>ចូលគណនីដើម្បីបន្តការបង្រៀន រៀបចំការប្រឡង និងតាមដានលទ្ធផលសិស្ស។</p>
+      </div>
+      <svg class="lg-art" viewBox="0 0 560 420" role="img" aria-label="ទិដ្ឋភាពតុរៀន" preserveAspectRatio="xMidYMax slice">
+        <rect width="560" height="420" fill="#fbeee8"/>
+        <path d="M360 40h110a55 55 0 0 1 55 55v190H305V95a55 55 0 0 1 55-55z" fill="#f1d6a6"/>
+        <path d="M373 56h84a42 42 0 0 1 42 42v174H331V98a42 42 0 0 1 42-42z" fill="#cfe6f4"/>
+        <ellipse cx="380" cy="120" rx="26" ry="11" fill="#fff" opacity=".9"/><ellipse cx="465" cy="165" rx="22" ry="9" fill="#fff" opacity=".9"/>
+        <path d="M331 235q40-28 84-4t84-6v47H331z" fill="#a9d29a"/>
+        <path d="M415 56v216M331 168h168" stroke="#f1d6a6" stroke-width="8"/>
+        <rect x="46" y="228" width="130" height="10" rx="5" fill="#e9c58e"/>
+        <rect x="70" y="190" width="14" height="38" rx="4" fill="#f2b8a8"/><rect x="88" y="196" width="12" height="32" rx="4" fill="#f6cfc2"/>
+        <g fill="#7fb878"><circle cx="128" cy="196" r="16"/><circle cx="108" cy="170" r="14"/><circle cx="140" cy="165" r="13"/><circle cx="118" cy="146" r="12"/></g>
+        <rect x="230" y="108" width="80" height="96" rx="12" fill="#cdbbea"/><rect x="266" y="98" width="10" height="14" rx="4" fill="#a98fd8"/>
+        <g fill="#b7a0e0"><rect x="244" y="150" width="52" height="7" rx="3"/><rect x="244" y="168" width="52" height="7" rx="3"/></g><circle cx="258" cy="132" r="9" fill="#f2a3b8"/>
+        <rect x="0" y="300" width="560" height="120" fill="#f0c88f"/>
+        <rect x="0" y="292" width="560" height="22" rx="10" fill="#f6d6a2"/>
+        <rect x="24" y="314" width="22" height="106" fill="#e4b574"/><rect x="510" y="314" width="22" height="106" fill="#e4b574"/>
+        <rect x="318" y="250" width="110" height="68" rx="10" fill="#c9cdd6"/><rect x="326" y="256" width="94" height="54" rx="6" fill="#e7eaf0"/>
+        <text x="373" y="292" text-anchor="middle" font-size="30" font-family="serif" fill="#9a84d6">∑</text>
+        <rect x="300" y="316" width="146" height="9" rx="4" fill="#b6bac4"/>
+        <rect x="446" y="280" width="84" height="18" rx="5" fill="#f5cf62"/><rect x="450" y="298" width="84" height="18" rx="5" fill="#d9b8e8"/>
+        <path d="M80 318h56l-6 52H86z" fill="#b9a2e4"/><rect x="74" y="308" width="68" height="14" rx="6" fill="#c9b6ee"/>
+        <path d="M108 308c-14-28-30-34-34-46 20 4 34 18 34 46zM108 308c10-30 28-40 36-48-2 22-14 40-36 48z" fill="#78b36e"/>
+        <rect x="218" y="262" width="38" height="36" rx="10" fill="#f4a9b0"/><path d="M256 270h10a9 9 0 0 1 0 18h-10" fill="none" stroke="#f4a9b0" stroke-width="5"/>
+        <path d="M228 252q4-10 0-18M242 252q4-10 0-18" stroke="#fff" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round"/>
+        <g font-family="serif" font-size="34" fill="#a98fd8" opacity=".55"><text x="40" y="120">π</text><text x="190" y="70">√</text><text x="270" y="60">x²</text></g>
+      </svg>
+    </section>
+    <div class="auth-card lg-card">
+      <p class="lg-eyebrow">សម្រាប់គ្រូបង្រៀន</p>
+      <h2>ចូលគណនីគ្រូ</h2>
+      <p class="lg-sub">យើងរីករាយដែលបានជួបអ្នកម្តងទៀត! 💜</p>
+      <label for="login-username">ឈ្មោះអ្នកប្រើប្រាស់ ឬ អ៊ីមែល</label>
+      <div class="lg-field"><span class="lg-ico" aria-hidden="true">✉</span><input type="text" id="login-username" autocomplete="username" placeholder="ឧ. sopha, 012345678 ឬ sopha@gmail.com" autocapitalize="none" spellcheck="false"></div>
+      <label for="login-password">ពាក្យសម្ងាត់</label>
+      <div class="lg-field"><span class="lg-ico" aria-hidden="true">🔒</span><input type="password" id="login-password" autocomplete="current-password" placeholder="បញ្ចូលពាក្យសម្ងាត់"><button type="button" class="lg-eye" id="login-eye" aria-label="បង្ហាញ/លាក់ពាក្យសម្ងាត់" aria-pressed="false">👁</button></div>
+      <div class="lg-forgot"><a href="forgot.html">ភ្លេចពាក្យសម្ងាត់?</a></div>
+      <button id="login-submit" class="lg-submit">ចូល</button>
+      <p class="lg-foot">មិនទាន់មានគណនី? <a href="signup.html">បង្កើតគណនីសាកល្បង</a></p>
     </div>
   </div>
 </div>
@@ -58,8 +92,11 @@
 <div id="view-dashboard" class="wrap" hidden>
 <a class="skip-link" href="#dashboard-content">រំលងទៅមាតិកា</a>
   <header class="dashboard-header">
+    <a class="frame-logo" href="index.html"><span class="frame-logo-mark" aria-hidden="true">∑</span><span class="frame-logo-name">Khmer<span>Math</span></span></a>
+    <div class="dh-bar">
     <div class="dh-title"><p class="eyebrow">ផ្ទាំងគ្រូ</p><h1 id="workspace-title">ថ្នាក់ និងសិស្ស</h1><div id="teacher-username-badge" class="muted"></div></div>
     <div class="dashboard-actions">
+      <button type="button" class="live-pill" id="live-pill" title="ហ្គេមសំណួរផ្ទាល់"><i aria-hidden="true"></i>Live</button>
       <button type="button" class="teach-back" id="teach-back" hidden>← ថ្នាក់</button>
       <button type="button" class="mode-switch" id="teach-mode-btn" title="ម៉ូដបង្រៀន" aria-pressed="false">
         <span class="mode-switch-track" aria-hidden="true"><span class="mode-switch-knob"></span></span>
@@ -75,6 +112,7 @@
           <button type="button" class="menu-item danger" id="logout-btn">⎋ ចាកចេញ</button>
         </div>
       </div>
+    </div>
     </div>
   </header>
   <div id="teach-stage" class="teach-stage">
@@ -98,6 +136,17 @@
     <span class="nav-caption" data-owner>ការគ្រប់គ្រង</span>
     <button data-tab="teachers"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 4v3"/></svg><span>គ្រូបង្រៀន</span></button>
     <a class="nav-home" href="index.html">← ទំព័រដើម</a>
+    <div class="nav-art" aria-hidden="true">
+      <svg viewBox="0 0 140 96" fill="none">
+        <path d="M8 78c18-16 34-16 52 0 16-14 34-14 52 0" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"/>
+        <circle cx="46" cy="34" r="9" fill="#ffe08a"/>
+        <path d="M34 70c2-16 8-24 12-24s10 8 12 24" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <path d="M30 48c6 4 8 10 6 16M62 48c-6 4-8 10-6 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="96" cy="30" r="9" fill="#fff"/>
+        <path d="M84 68c2-16 8-22 12-22s10 6 12 22" stroke="#ffe08a" stroke-width="3" stroke-linecap="round"/>
+        <path d="M80 46c8 2 10 8 8 14M112 44c-6 4-8 10-6 16" stroke="#ffe08a" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
   </nav>
   <main id="dashboard-content" tabindex="-1">
   <div id="tab-teach" class="shimmer-host" hidden></div>
@@ -120,7 +169,9 @@
 <script src="js/common.js?v=20261024a"></script>
 <script src="js/interface.js?v=20261020e"></script>
 <script src="js/mathtype.js"></script>
-<script src="js/teacher.js?v=20261024b"></script>
+<script src="js/home.js?v=20261107b"></script>
+<script src="js/teacher.js?v=20261107f"></script>
+<script src="js/motion.js?v=20261107a"></script>
 <script src="js/teachroom.js?v=20261026a"></script>
 <script src="js/slides/g7l01.js?v=20261024d"></script>
 <script src="js/teachshow.js?v=20261102a"></script>
@@ -128,8 +179,8 @@
 <script src="js/team.js?v=20261024a"></script>
 <script src="js/bank.js?v=20261024b"></script>
 <script src="js/wheel.js?v=20261019q"></script>
-<script src="js/teamgame_tab.js?v=20261101a"></script>
-<script src="js/gamebank.js?v=20261021b"></script>
+<script src="js/teamgame_tab.js?v=20261101b"></script>
+<script src="js/gamebank.js?v=20261021c"></script>
 <script src="js/qrcode.js"></script>
 <script src="js/avatar.js?v=20261017b"></script>
 <script src="js/sfx.js?v=20261017i"></script>
