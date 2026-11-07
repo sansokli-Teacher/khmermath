@@ -1,31 +1,19 @@
 /* Teacher dashboard skin: lavender shell + premium micro-interactions. Loaded last. */
 @media screen {
-  /* ---------- colour overrides of old hard-coded blues ---------- */
-  body.teacher-body { background: var(--bg); }
+  /* ---------- colour overrides the base sheets do not cover ---------- */
   body.teacher-body:not(.teach-mode) {
     background: radial-gradient(820px 420px at 0% -8%, #e4dfff 0%, transparent 58%), radial-gradient(720px 460px at 100% 0%, #e9e4ff 0%, transparent 52%), var(--bg);
   }
   body.teacher-body:not(.teach-mode) #view-dashboard { background: #f7f6fd; box-shadow: 0 24px 60px rgba(90, 80, 170, .1); }
-  body.teach-mode { background: radial-gradient(900px 420px at 0% 0%, rgba(107, 99, 224, .14), transparent 60%), var(--bg); }
-  body.teach-mode .dashboard-header .eyebrow { color: var(--brand); }
-  .brand-symbol, .frame-logo-mark { background: var(--brand-grad); box-shadow: 0 8px 18px rgba(107, 99, 224, .35); }
-  .frame-logo-name { color: var(--brand); } .frame-logo-name span { color: var(--navy); }
-  body.teacher-body:not(.teach-mode) .teacher-navigation .site-brand { color: var(--navy); }
-  button, .btn { box-shadow: 0 1px 2px rgba(40, 30, 90, .12), 0 6px 14px rgba(107, 99, 224, .22); }
-  button:hover, .btn:hover { box-shadow: 0 2px 4px rgba(40, 30, 90, .14), 0 10px 20px rgba(107, 99, 224, .3); }
-  button:not(.secondary):not(.danger):not(.ghost):not(.good):not(.icon-btn):not(.lg-eye):not(.live-pill) { background-image: var(--brand-grad); }
-  .mode-switch.on .mode-switch-track { background: #8b84f0; }
-  .mode-switch.on { background: var(--navy); border-color: var(--navy); }
-  :where(a, button, input, select, textarea, summary):focus-visible { outline: 3px solid rgba(107, 99, 224, .5); outline-offset: 2px; }
-  input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shadow: var(--ring); }
+  button:not(.secondary):not(.danger):not(.ghost):not(.good):not(.icon-btn):not(.lg-eye):not(.live-pill):not(.pw-eye):not(:is(.teacher-navigation button)) { background-image: var(--brand-grad); }
   ::placeholder { color: var(--placeholder); opacity: 1; }
   .chip-open, .badge.open, .badge.ready, .save-status:not(.busy):not(.bad) { color: var(--good-text); }
 
   /* ---------- sidebar: active marker + softer rows ---------- */
   body.teacher-body:not(.teach-mode) .teacher-navigation { box-shadow: 0 10px 30px rgba(90, 80, 170, .08); border-right-color: transparent; }
-  body.teacher-body:not(.teach-mode) .teacher-navigation button { position: relative; color: #3c3f60; transition: background .2s var(--ease-out), color .2s, transform .35s var(--spring); }
-  body.teacher-body:not(.teach-mode) .teacher-navigation button:hover { background: var(--brand-soft); color: var(--brand-dark); }
-  body.teacher-body:not(.teach-mode) .teacher-navigation button.active { background: var(--brand-soft); color: var(--brand-dark); }
+  body.teacher-body:not(.teach-mode) .teacher-navigation button { position: relative; background: transparent; background-image: none; color: #3c3f60; box-shadow: none; transition: background .2s var(--ease-out), color .2s, transform .35s var(--spring); }
+  body.teacher-body:not(.teach-mode) .teacher-navigation button:hover { background: var(--brand-soft); background-image: none; color: var(--brand-dark); box-shadow: none; }
+  body.teacher-body:not(.teach-mode) .teacher-navigation button.active { background: var(--brand-soft); background-image: none; color: var(--brand-dark); box-shadow: none; }
   body.teacher-body:not(.teach-mode) .teacher-navigation button.active .ui-icon { color: var(--brand); }
   body.teacher-body:not(.teach-mode) .teacher-navigation button.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0; background: var(--brand); animation: skinMarker .35s var(--ease-out); }
   @keyframes skinMarker { from { transform: scaleY(.2); opacity: 0; } }

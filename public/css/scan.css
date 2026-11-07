@@ -1,5 +1,5 @@
 .scan-body { background: #eef2f8; margin: 0; }
-.scan-top { position: sticky; top: 0; z-index: 10; background: #2260d6; color: #fff; display: flex; align-items: center; gap: 12px; padding: 10px 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+.scan-top { position: sticky; top: 0; z-index: 10; background: var(--brand); color: #fff; display: flex; align-items: center; gap: 12px; padding: 10px 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
 .scan-top a { color: #fff; text-decoration: none; font-weight: 600; }
 .scan-ttl { font-size: 18px; font-weight: 700; }
 .scan-main { max-width: 760px; margin: 0 auto; padding: 14px 12px 60px; display: flex; flex-direction: column; gap: 14px; }
@@ -8,8 +8,8 @@
 .scan-info { font-size: 14px; color: var(--muted, #667); line-height: 1.6; }
 .scan-warn { background: #fff4e0; border-radius: 10px; padding: 10px 12px; color: #7a4b00; font-size: 14px; }
 .scan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.scan-big { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 56px; border-radius: 12px; font-size: 16px; font-weight: 700; padding: 10px; cursor: pointer; border: 1.5px solid #2260d6; background: #2260d6; color: #fff; }
-.scan-big.secondary { background: #fff; color: #2260d6; }
+.scan-big { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 56px; border-radius: 12px; font-size: 16px; font-weight: 700; padding: 10px; cursor: pointer; border: 1.5px solid var(--brand); background: var(--brand); color: #fff; }
+.scan-big.secondary { background: #fff; color: var(--brand); }
 .scan-sw { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--ink); margin: 0; }
 .scan-sw input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
 .scan-tips { font-size: 14px; color: var(--ink); }
@@ -37,7 +37,7 @@
 .sc-q.flag { background: #fff1d6; }
 .sc-q b { min-width: 22px; text-align: right; }
 .sc-q button { padding: 2px 0; width: 26px; height: 26px; min-height: 0; font-size: 13px; border-radius: 6px; background: #fff; color: var(--ink); border: 1px solid #c9d2e0; }
-.sc-q button.on { background: #2260d6; color: #fff; border-color: #2260d6; }
+.sc-q button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
 .sc-q button.right.on { background: #0f9d63; border-color: #0f9d63; }
 .cam { position: fixed; inset: 0; z-index: 50; background: #000; display: flex; flex-direction: column; }
 .cam video { flex: 1; width: 100%; min-height: 0; object-fit: cover; }

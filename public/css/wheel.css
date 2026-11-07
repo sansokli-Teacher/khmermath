@@ -7,8 +7,8 @@
   border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--ink); filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
 .wheel-hub { position: absolute; top: 50%; left: 50%; z-index: 2; width: 23%; aspect-ratio: 1; padding: 0; transform: translate(-50%, -50%); border-radius: 50%;
   border: 5px solid #fff; font-weight: 800; font-size: clamp(15px, 3.6vw, 22px); letter-spacing: .02em;
-  background: radial-gradient(circle at 35% 30%, #6ea0ff, #2f5fe3 55%, #1d2540);
-  box-shadow: 0 8px 22px rgba(47, 95, 227, .45), inset 0 -6px 12px rgba(0,0,0,.18); }
+  background: radial-gradient(circle at 35% 30%, #6ea0ff, var(--brand) 55%, var(--navy));
+  box-shadow: 0 8px 22px rgba(107, 99, 224, .45), inset 0 -6px 12px rgba(0,0,0,.18); }
 .wheel-song-sel { width: auto; min-width: 220px; max-width: 100%; }
 .wheel-parts {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
@@ -89,11 +89,17 @@
 
 /* fixed columns: 2 for up to 4 groups, 3 for five or more (6 groups = 3 x 2); fewer on small screens */
 .wheel-gcard { width: min(96vw, 1080px); }
+.wheel-gcard.count-8, .wheel-gcard.count-10, .wheel-gcard.count-12 { width: min(98vw, 1360px); }
 .wheel-ggrid.cols-1 { grid-template-columns: 1fr; }
 .wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .wheel-ggrid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 720px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 440px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: 1fr; } }
+.wheel-ggrid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.wheel-ggrid.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.wheel-ggrid.count-5 { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.wheel-ggrid.count-5 > .wheel-g { flex: 0 1 calc(33.333% - 10px); min-width: 200px; box-sizing: border-box; }
+@media (max-width: 900px) { .wheel-ggrid.cols-5, .wheel-ggrid.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wheel-ggrid.count-5 > .wheel-g { flex: 0 1 calc(50% - 10px); } }
+@media (max-width: 440px) { .wheel-ggrid.cols-5, .wheel-ggrid.cols-4, .wheel-ggrid.cols-3, .wheel-ggrid.cols-2 { grid-template-columns: 1fr; } .wheel-ggrid.count-5 > .wheel-g { flex: 0 1 100%; } }
 .wheel-fw.behind { z-index: 79; }
 /* cards keep their full height and the grid scrolls (without this, short screens squash every card to one name) */
 .wheel-ggrid { grid-auto-rows: max-content; align-content: start; }

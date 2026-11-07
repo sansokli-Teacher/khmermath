@@ -1284,7 +1284,7 @@ async function drawTestBuilder(container) {
       q.params ? h('div', { class: 'callout', style: 'margin:6px 0;' }, '🎲 សំណួរមានអថេរ — សិស្សម្នាក់ៗទទួលលេខខុសគ្នា (កំពុងបង្ហាញឧទាហរណ៍មួយ)') : null,
       q.image_key ? h('img', { src: `/api/images/${q.image_key}` }) : null,
       q.kind === 'writing'
-        ? (q.solution_text ? mathEl('div', { class: 'p-key', style: 'white-space:pre-line;margin-top:8px;padding:6px 10px;background:#f1f6ff;border-left:4px solid #2260d6;' }, q.solution_text) : null)
+        ? (q.solution_text ? mathEl('div', { class: 'p-key', style: 'white-space:pre-line;margin-top:8px;padding:6px 10px;background:#efedff;border-left:4px solid #6b63e0;' }, q.solution_text) : null)
         : h('div', { class: 'radio-list' }, Exam.withSample(q).options.map((opt, idx) => h('div', { class: `radio-opt${idx === q.correct_index ? ' selected' : ''}` }, [
             h('span', {}, idx === q.correct_index ? '✓' : '○'), mathEl('span', { class: 'opt-body' }, opt),
           ]))),

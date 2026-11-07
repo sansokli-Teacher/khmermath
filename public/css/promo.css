@@ -1,5 +1,5 @@
 /* Sign-up page + in-app upgrade card: the "why upgrade" advertising. */
-:root { --pr-1: #2260d6; --pr-2: #16895a; --pr-gold: #f5b82e; --pr-ink: #10223d; }
+:root { --pr-1: var(--brand); --pr-2: #16895a; --pr-gold: #f5b82e; --pr-ink: #10223d; }
 
 /* ---------- sign-up page ---------- */
 .su-page { min-height: 100vh; background: radial-gradient(1200px 520px at 10% -10%, #dbe8ff 0%, transparent 60%), radial-gradient(900px 480px at 100% 10%, #d9f4e6 0%, transparent 55%), var(--bg); padding: 22px 16px 60px; }
@@ -15,8 +15,8 @@
 .su-form .su-sub { color: var(--muted); margin: 0 0 12px; font-size: .95em; }
 .su-form label { display: block; margin: 12px 0 4px; font-weight: 600; }
 .su-form input { width: 100%; }
-.su-cta { width: 100%; margin-top: 18px; padding: 14px 18px; font-size: 1.08em; font-weight: 800; border: 0; border-radius: 14px; color: #fff; cursor: pointer; background: linear-gradient(135deg, var(--pr-1), var(--pr-2)); box-shadow: 0 10px 24px rgba(34, 96, 214, .32); transition: transform .12s, box-shadow .12s; font-family: inherit; }
-.su-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(34, 96, 214, .4); }
+.su-cta { width: 100%; margin-top: 18px; padding: 14px 18px; font-size: 1.08em; font-weight: 800; border: 0; border-radius: 14px; color: #fff; cursor: pointer; background: linear-gradient(135deg, var(--pr-1), var(--pr-2)); box-shadow: 0 10px 24px rgba(107, 99, 224, .32); transition: transform .12s, box-shadow .12s; font-family: inherit; }
+.su-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(107, 99, 224, .4); }
 .su-cta:disabled { opacity: .6; transform: none; }
 .su-trust { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 12px; color: var(--muted); font-size: .88em; }
 .su-feat { grid-area: feat; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
@@ -30,7 +30,7 @@
 /* pricing cards (sign-up + in-app) */
 .pc-row { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: stretch; }
 .pc { position: relative; background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 20px 18px 18px; display: flex; flex-direction: column; text-align: center; box-shadow: var(--shadow); }
-.pc.best { border-color: var(--pr-1); background: linear-gradient(180deg, #f3f8ff 0%, #fff 55%); box-shadow: 0 16px 40px rgba(34, 96, 214, .22); transform: translateY(-4px); }
+.pc.best { border-color: var(--pr-1); background: linear-gradient(180deg, #f3f8ff 0%, #fff 55%); box-shadow: 0 16px 40px rgba(107, 99, 224, .22); transform: translateY(-4px); }
 .pc .ribbon { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: linear-gradient(135deg, #ffb703, #fb8500); color: #3a2200; font-weight: 800; font-size: .85em; padding: 4px 14px; border-radius: 99px; box-shadow: 0 6px 14px rgba(251, 133, 0, .4); }
 .pc .name { font-weight: 800; color: var(--pr-ink); font-size: 1.1em; }
 .pc .price { font-size: 2.3em; font-weight: 900; line-height: 1.1; margin: 6px 0 0; color: var(--pr-1); }
@@ -42,7 +42,7 @@
 .pc li::before { content: '✔'; position: absolute; left: 2px; color: var(--pr-2); font-weight: 900; }
 .pc li.no { color: #9aa7b6; } .pc li.no::before { content: '✕'; color: #c4ccd6; }
 .pc .btn-pc { display: block; width: 100%; padding: 11px 12px; border-radius: 12px; font-weight: 800; border: 2px solid var(--pr-1); background: #fff; color: var(--pr-1); cursor: pointer; font-family: inherit; font-size: 1em; text-decoration: none; }
-.pc.best .btn-pc { background: linear-gradient(135deg, var(--pr-1), #1747a8); color: #fff; border-color: transparent; box-shadow: 0 8px 20px rgba(34, 96, 214, .35); }
+.pc.best .btn-pc { background: linear-gradient(135deg, var(--pr-1), var(--brand-dark)); color: #fff; border-color: transparent; box-shadow: 0 8px 20px rgba(107, 99, 224, .35); }
 .pc .btn-pc:hover { filter: brightness(1.06); }
 
 /* ---------- in-app upgrade card ---------- */
@@ -75,4 +75,4 @@
 /* password eye (common.js adds it to every password box) */
 .pw-wrap { position: relative; width: 100%; }
 .pw-wrap .pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #285b55; font-size: 1.15em; cursor: pointer; line-height: 1; }
-.pw-wrap .pw-eye:hover { background: rgba(34, 96, 214, .12); }
+.pw-wrap .pw-eye:hover { background: rgba(107, 99, 224, .12); }
