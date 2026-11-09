@@ -43,6 +43,8 @@ function untilFor(row, months) {
 
 const hasLicense = (row) => row.plan === 'full' && (!row.license_until || new Date(row.license_until.replace(' ', 'T') + 'Z') > new Date());
 
+const STUDENT_UPSERT = 'INSERT INTO students (id, class_id, surname, first_name, gender, dob) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(id) DO UPDATE SET class_id = ?2, surname = ?3, first_name = ?4, gender = ?5';
+
 export async function provision(req, env) {
   const g = await needService(req, env); if (g.resp) return g.resp;
   await ensureColumns(env);
@@ -80,6 +82,21 @@ export async function provision(req, env) {
   }
   const lic = await env.DB.prepare('SELECT license_until FROM teachers WHERE id = ?1').bind(t.id).first();
 
+  const keepNames = new Set((Array.isArray(body.classes) ? body.classes : []).map(c => clip(c && c.name, 30)).filter(Boolean));
+  if (Array.isArray(body.classes)) {
+    const prevClasses = (await env.DB.prepare('SELECT id, name FROM classes WHERE owner_id = ?1').bind(t.id).all()).results || [];
+    for (const pc of prevClasses) {
+      if (!keepNames.has(pc.name)) {
+        const hasSessions = await env.DB.prepare('SELECT COUNT(*) AS n FROM test_sessions WHERE class_id = ?1').bind(pc.id).first();
+        if (!hasSessions || hasSessions.n === 0) {
+          await env.DB.prepare('DELETE FROM students WHERE class_id = ?1').bind(pc.id).run();
+          await env.DB.prepare("DELETE FROM shares WHERE resource_type = 'class' AND resource_id = ?1").bind(pc.id).run();
+          await env.DB.prepare('DELETE FROM classes WHERE id = ?1').bind(pc.id).run();
+        }
+      }
+    }
+  }
+
   const out = [];
   for (const c of (Array.isArray(body.classes) ? body.classes : []).slice(0, 30)) {
     const cname = clip(c && c.name, 30);
@@ -91,16 +108,26 @@ export async function provision(req, env) {
       cls = { id: r.meta.last_row_id };
     }
     let added = 0; const skipped = [];
+    const rows = [];
     for (const s of (Array.isArray(c.students) ? c.students : []).slice(0, 200)) {
       const id = clip(s && s.id, 20), surname = clip(s && s.surname, 60), first = clip(s && s.firstName, 60);
       if (!id || !surname || !first) { skipped.push(id || '?'); continue; }
-      // student ids are global (a student signs in with the id): never move one out of a class this teacher does not own
-      const ex = await env.DB.prepare('SELECT s.class_id, c.owner_id FROM students s JOIN classes c ON c.id = s.class_id WHERE s.id = ?1').bind(id).first();
-      if (ex && ex.class_id !== cls.id && ex.owner_id !== t.id) { skipped.push(id); continue; }
-      await env.DB.prepare('INSERT INTO students (id, class_id, surname, first_name, gender, dob) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(id) DO UPDATE SET class_id = ?2, surname = ?3, first_name = ?4, gender = ?5')
-        .bind(id, cls.id, surname, first, clip(s.gender, 10) || null, clip(s.dob, 20) || null).run();
-      added++;
+      rows.push({ id, surname, first, gender: clip(s.gender, 10) || null, dob: clip(s.dob, 20) || null });
     }
+    // student ids are global (a student signs in with the id): never move one out of a class this teacher does not own.
+    // One lookup and one batch per few dozen students (a call per student made a class of 100 take 20 seconds).
+    const taken = new Set();
+    for (let i = 0; i < rows.length; i += 80) {
+      const part = rows.slice(i, i + 80);
+      const { results } = await env.DB.prepare(`SELECT s.id, s.class_id, c.owner_id FROM students s JOIN classes c ON c.id = s.class_id WHERE s.id IN (${part.map((_, k) => `?${k + 1}`).join(',')})`).bind(...part.map(r => r.id)).all();
+      for (const ex of results || []) if (ex.class_id !== cls.id && ex.owner_id !== t.id) taken.add(String(ex.id));
+    }
+    const todo = [];
+    for (const r of rows) { if (taken.has(r.id)) skipped.push(r.id); else todo.push(r); }
+    for (let i = 0; i < todo.length; i += 50) {
+      await env.DB.batch(todo.slice(i, i + 50).map(r => env.DB.prepare(STUDENT_UPSERT).bind(r.id, cls.id, r.surname, r.first, r.gender, r.dob)));
+    }
+    added = todo.length;
     out.push({ name: cname, examClassId: cls.id, students: added, skipped });
   }
   return json({ ok: true, created, teacherId: t.id, username: t.username, licenseUntil: lic.license_until, classes: out });

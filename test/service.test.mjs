@@ -52,6 +52,25 @@ test('syncing again updates, never duplicates or stacks months', async () => {
   assert.equal(env.raw.prepare("SELECT display_name FROM teachers WHERE username = 'chaysophea'").get().display_name, 'ចាយ សុភា (ថ្មី)');
 });
 
+test('syncing removes classes no longer in the class list if they have no test sessions', async () => {
+  const env = await setup();
+  const T_two = { ...T, classes: [
+    { name: '8NGS-B', grade: 8, students: [{ id: '0109293', surname: 'សុខ', firstName: 'ដារ៉ា' }] },
+    { name: '8NGS-C', grade: 8, students: [{ id: '0109294', surname: 'ចាន់', firstName: 'បុប្ផា' }] }
+  ]};
+  await service.provision(req('http://x/p', T_two), env);
+  assert.equal(env.raw.prepare("SELECT COUNT(*) n FROM classes WHERE owner_id = (SELECT id FROM teachers WHERE username = 'chaysophea')").get().n, 2);
+
+  // Sync again with only 8NGS-B
+  const T_one = { ...T, classes: [
+    { name: '8NGS-B', grade: 8, students: [{ id: '0109293', surname: 'សុខ', firstName: 'ដារ៉ា' }] }
+  ]};
+  await service.provision(req('http://x/p', T_one), env);
+  const remaining = env.raw.prepare("SELECT name FROM classes WHERE owner_id = (SELECT id FROM teachers WHERE username = 'chaysophea')").all();
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].name, '8NGS-B');
+});
+
 test('an expired plan is renewed on sync; a taken username or the owner is never taken over', async () => {
   const env = await setup();
   await service.provision(req('http://x/p', T), env);
@@ -70,6 +89,26 @@ test("a student already in another teacher's class is skipped, not moved", async
   const d = await (await service.provision(req('http://x/p', other), env)).json();
   assert.deepEqual(d.classes[0].skipped, ['0109293']); assert.equal(d.classes[0].students, 1);
   assert.equal(env.raw.prepare("SELECT surname FROM students WHERE id = '0109293'").get().surname, 'សុខ');
+});
+
+test('a big roster (3 classes, 150 students each) is saved in a few database calls, not one per student; another teacher\'s student is still skipped', async () => {
+  const env = await setup();
+  const other = { username: 'otherteach', refId: 'tch-9', displayName: 'Other', classes: [{ name: '7NGS-A', grade: 7, students: [{ id: '0500005', surname: 'ក', firstName: 'ខ' }] }] };
+  assert.equal((await service.provision(req('http://x/p', other), env)).status, 200);
+  const mk = (n, from) => Array.from({ length: n }, (_, i) => ({ id: String(1000000 + from + i), surname: 'ក' + i, firstName: 'ខ', gender: 'ស្រី' }));
+  const big = { ...T, classes: [
+    { name: '8NGS-B', grade: 8, students: [...mk(150, 0), { id: '0500005', surname: 'ក', firstName: 'ខ' }, { id: '', surname: 'x', firstName: 'y' }] },
+    { name: '8NGS-C', grade: 8, students: mk(150, 1000) }, { name: '9NGS-A', grade: 9, students: mk(150, 2000) }] };
+  let calls = 0; const prep = env.DB.prepare.bind(env.DB); const bat = env.DB.batch.bind(env.DB);
+  env.DB.prepare = (q) => { calls++; return prep(q); }; env.DB.batch = (st) => { calls -= st.length - 1; return bat(st); };   // a batch is one round trip, however many statements it holds
+  const d = await (await service.provision(req('http://x/p', big), env)).json();
+  assert.deepEqual(d.classes.map(c => c.students), [150, 150, 150]);
+  assert.deepEqual(d.classes[0].skipped.sort(), ['0500005', '?'].sort());
+  assert.equal(env.raw.prepare('SELECT COUNT(*) n FROM students').get().n, 451);
+  assert.ok(calls < 60, `a handful of database calls, got ${calls}`);                       // it was about 900 before
+  const again = await (await service.provision(req('http://x/p', big), env)).json();      // a second sync changes nothing
+  assert.deepEqual(again.classes.map(c => c.students), [150, 150, 150]);
+  assert.equal(env.raw.prepare('SELECT COUNT(*) n FROM students').get().n, 451);
 });
 
 test('the sign-in link signs the teacher in once, then is dead; a tampered one fails', async () => {
