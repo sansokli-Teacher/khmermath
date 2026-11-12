@@ -4,7 +4,7 @@
 .ls-head { display: flex; align-items: center; gap: 22px; }
 .ls-badge {
   display: grid; place-items: center; width: 88px; height: 88px; flex: none; border-radius: 16px;
-  background: #3b8686; color: #fff; font-size: 44px; font-weight: 700; box-shadow: 0 10px 24px -12px #3b8686;
+  background: #347b7b; color: #fff; font-size: 44px; font-weight: 700; box-shadow: 0 10px 24px -12px #347b7b;
 }
 .ls-badge.sm { width: 48px; height: 48px; border-radius: 12px; font-size: 22px; box-shadow: none; }
 .ls-kicker { display: block; color: var(--ink-3); font-size: 15px; }
@@ -28,9 +28,9 @@
 .ls-fx .ic { width: 18px; height: 18px; }
 
 .ls-paper {
-  --teal: #3b8686; --teal-d: #2c6464; --coral: #e8725c; --coral-d: #c95a45;
+  --teal: #347b7b; --teal-d: #2c6464; --coral: #e8725c; --coral-d: #b34e3a;
   --lt-teal: #e6f2f0; --lt-coral: #fdeae6; --lt-green: #eef7f1; --lt-amber: #fff8e7; --lt-gray: #f5f3f0;
-  --pink: #333333; --muted: #888888; --rule: #d0cece;
+  --pink: #333333; --muted: #6b6b6b; --rule: #d0cece;
   padding: 34px 40px 26px; border-radius: 18px; background: #fff; color: #333; border: 1px solid var(--line);
   box-shadow: var(--shadow-sm); font-size: 16.5px; line-height: 1.95;
 }
@@ -118,11 +118,11 @@
 
 .ls-pager { display: flex; justify-content: space-between; gap: 14px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--rule); }
 .ls-pager a { display: flex; flex-direction: column; max-width: 48%; padding: 10px 16px; border-radius: 12px; border: 1px solid #d5e5e3; text-decoration: none; color: #333; line-height: 1.6; }
-.ls-pager a:hover { border-color: #3b8686; background: #f4faf9; }
-.ls-pager small { color: #888; }
+.ls-pager a:hover { border-color: #347b7b; background: #f4faf9; }
+.ls-pager small { color: #6b6b6b; }
 .ls-pager b { color: #2c6464; }
 .ls-pager .next { margin-left: auto; text-align: right; }
-.ls-copy { margin: 22px 0 0; color: #888; font-size: 13.5px; line-height: 1.7; }
+.ls-copy { margin: 22px 0 0; color: #6b6b6b; font-size: 13.5px; line-height: 1.7; }
 
 /* book home */
 .book-head { display: flex; align-items: center; gap: 36px; }
@@ -131,7 +131,7 @@
   padding: 0 18px 0 46px; border-radius: 8px 14px 14px 8px; background: #fff; color: #2c6464; overflow: hidden;
   box-shadow: 0 24px 40px -18px rgba(16, 42, 67, .45), 0 1px 0 var(--line);
 }
-.book-cover::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 26px; background: #3b8686; }
+.book-cover::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 26px; background: #347b7b; }
 .book-cover::after { content: ''; position: absolute; left: 26px; top: 0; bottom: 0; width: 6px; background: #e8725c; }
 .book-cover span { font-size: 22px; font-weight: 700; line-height: 1.4; }
 .book-cover b { font-size: 30px; line-height: 1.4; }
@@ -139,7 +139,7 @@
 .book-by { margin: 12px 0 0; color: var(--ink-2); font-size: 15.5px; }
 .ls-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .ls-card { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s; }
-.ls-card:hover { transform: translateY(-2px); border-color: #3b8686; color: var(--ink); }
+.ls-card:hover { transform: translateY(-2px); border-color: #347b7b; color: var(--ink); }
 .ls-card-t { display: flex; flex-direction: column; line-height: 1.55; min-width: 0; }
 .ls-card-t b { font-size: 16px; }
 .ls-card-t small { color: var(--ink-3); font-size: 13px; }
@@ -149,7 +149,7 @@
 .ls-preface .greet { color: var(--ink); font-weight: 700; font-size: 18px; }
 .ls-preface .sign { color: #e8725c; font-weight: 600; }
 .ls-preface .sign b { color: var(--ink); }
-.legend { display: grid; gap: 10px; --teal: #3b8686; --teal-d: #2c6464; --coral: #e8725c; --coral-d: #c95a45;
+.legend { display: grid; gap: 10px; --teal: #347b7b; --teal-d: #2c6464; --coral: #e8725c; --coral-d: #c95a45;
   --lt-teal: #e6f2f0; --lt-coral: #fdeae6; --lt-green: #eef7f1; --lt-amber: #fff8e7; --lt-gray: #f5f3f0; }
 .lg { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: center; }
 .lg .bx { margin: 0; padding: 10px 14px 4px; }
@@ -211,7 +211,7 @@
 .ls-paper .report { background: #fff8e7; border-color: #f0d9a8; color: #333; }
 .ls-paper .report-t span { color: #555; }
 .ls-paper .report-i { background: #c9862b; }
-.ls-paper .report .btn { background: #3b8686; border-color: #3b8686; color: #fff !important; text-decoration: none; }
+.ls-paper .report .btn { background: #347b7b; border-color: #347b7b; color: #fff !important; text-decoration: none; }
 .ls-paper .report .btn:hover { background: #2c6464; }
 
 /* Grade 7 (lesson/g7/): the answer inside a worked example, the hidden answer of a practice, captions */
