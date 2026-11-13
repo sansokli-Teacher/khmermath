@@ -1,0 +1,1 @@
+UPDATE test_questions SET options_json = '["ចំនួនកុំផ្លិចមិនសូន្យណាក៏បាន \\(z\\ne0\\)", "ចំនួននិមិត្តសុទ្ធ \\(z=bi\\) ដែល \\(b\\ne0\\)", "ចំនួនពិតវិជ្ជមាន \\(z=a\\) ដែល \\(a>0\\)", "ចំនួនពិតអវិជ្ជមាន \\(z=-a\\) ដែល \\(a>0\\)"]' WHERE test_id = 10 AND grade = '12SC' AND order_no = 20131 AND correct_index = 1;
