@@ -152,7 +152,7 @@ def main(names):
                 opts, ci, oj = [], 0, '[]'
             chapter = getattr(mod, 'CHAPTER', None) or CHAPTER_MAP.get(lesson)
             sql.append("INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params, cancelled, bloom) VALUES (10, %d, %s, %s, %s, %d, NULL, %s, %s, %s, %s, %s, %d, %s, %s, %s, NULL, 0, %s);" % (
-                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(lesson), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(grade), sqlq(lesson), sqlq(chapter), sqlq(c.get('bloom'))))
+                order, sqlq(c['stem']), ikey, sqlq(oj), ci, 5 if c['kind'] == 'writing' else POINTS[c['level']], sqlq(c['kind']), sqlq(c['sol'] or None), sqlq(getattr(mod, 'TOPIC_MAP', {}).get(c['sec'], lesson)), sqlq(c['level']), 1 if c['kind'] == 'mcq' else 0, sqlq(grade), sqlq(lesson), sqlq(chapter), sqlq(c.get('bloom'))))
         report.append(f'{nm} {lesson}: had {total_have}, adding {len(picked)} -> {total_have + len(picked)}')
         have2 = have + collections.Counter((c['kind'], c['level']) for c in picked)
         report.append('   final cells: ' + ', '.join(f'{k[0][0]}/{k[1][0]}={v}' for k, v in sorted(have2.items())))

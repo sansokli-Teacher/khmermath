@@ -4,7 +4,7 @@
 // Bump when anything below changes. A cold Worker reads ONE row to learn the schema is current and
 // skips everything else; the (batched) migration runs once per version, not once per cold start.
 // (Cloudflare limits each request to 50 subrequests on the free plan — 45 one-by-one ALTERs hit it.)
-const SCHEMA_VERSION = '2026-11-06-ext-ref';
+const SCHEMA_VERSION = '2026-11-13-bloom';
 let done = false;
 
 export function _resetSchemaForTests() { done = false; }
@@ -47,6 +47,8 @@ export async function ensureColumns(env) {
     'ALTER TABLE test_questions ADD COLUMN grade TEXT',
     'ALTER TABLE test_questions ADD COLUMN lesson TEXT',
     'ALTER TABLE test_questions ADD COLUMN chapter TEXT',
+    // Bloom level of a question (Remember, Understand, Apply, Analyze, Evaluate, Create); NULL for older questions
+    'ALTER TABLE test_questions ADD COLUMN bloom TEXT',
     'ALTER TABLE session_questions ADD COLUMN chapter TEXT',
     // exam-day controls
     'ALTER TABLE results ADD COLUMN extra_minutes INTEGER NOT NULL DEFAULT 0',

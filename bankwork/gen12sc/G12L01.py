@@ -20,6 +20,16 @@ from sympy import I, Rational, sqrt, simplify, expand, expand_complex, re as sre
 LESSON = 'ចំនួនកុំផ្លិចទម្រង់ពីជគណិត'
 CHAPTER = 'ជំពូកទី 1 : ចំនួនកុំផ្លិច'
 GRADE = '12SC'
+# the section chips of the game wizard / question bank (public/js/*, teach-app/src/*: G12_L01_SECTIONS) filter on `topic`
+TOPIC_MAP = {
+    'sec1_concept': 'សញ្ញាណចំនួនកុំផ្លិច',
+    'sec2_ops': 'ប្រមាណវិធីលើចំនួនកុំផ្លិច',
+    'sec3_conj': 'ចំនួនកុំផ្លិចឆ្លាស់និងសមភាព',
+    'sec4_plane': 'ប្លង់កុំផ្លិច', 'sec5_geom': 'ប្លង់កុំផ្លិច',
+    'pisa_circuit': 'ប្រមាណវិធីលើចំនួនកុំផ្លិច', 'pisa_filter': 'ប្រមាណវិធីលើចំនួនកុំផ្លិច',
+    'pisa_drone': 'ប្លង់កុំផ្លិច', 'pisa_schools': 'ប្លង់កុំផ្លិច', 'pisa_robot': 'ប្លង់កុំផ្លិច',
+    'pisa_force': 'ប្លង់កុំផ្លិច', 'pisa_river': 'ប្លង់កុំផ្លិច', 'pisa_plot': 'ប្លង់កុំផ្លិច',
+}
 TARGET = {('mcq', 'easy'): 10, ('mcq', 'medium'): 14, ('mcq', 'hard'): 7, ('mcq', 'pisa'): 5,
           ('writing', 'easy'): 1, ('writing', 'medium'): 4, ('writing', 'hard'): 4, ('writing', 'pisa'): 5}
 
