@@ -26,15 +26,71 @@
     }
   }
 
+
+  // Mastery: 80% or more on the whole-lesson check (the "final" box, else all questions) unlocks the next lesson.
+  var PASS = 0.8;
+  var root = (function () { try { return new URL('../../', document.currentScript.src).pathname; } catch (e) { return '/'; } })();
+  var rel = (location.pathname.indexOf(root) === 0 ? location.pathname.slice(root.length) : location.pathname.replace(/^\//, '')).replace(/index\.html$/, '');
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var ORDER = { easy: 0, medium: 1, hard: 2, pisa: 3 };
+  // A question pool (data-draw on the box): n questions per attempt, about 40% easy, 40% medium, 20% hard, shown easiest first.
+  // The drawn set is kept with the answers; "ធ្វើឡើងវិញ" draws a fresh one, so a retry is not the same paper.
+  function drawn(sec, n) {
+    var all = data.filter(function (q) { return q.sec === sec; }), ids = store['__draw_' + sec], set;
+    if (ids && ids.length === Math.min(n, all.length)) {
+      set = ids.map(function (no) { return all.filter(function (q) { return q.no === no; })[0]; }).filter(Boolean);   // keep the drawn order
+      if (set.length === ids.length) return set;
+    }
+    var hard = Math.ceil(n * 0.2), easy = Math.round(n * 0.4), med = n - hard - easy, want = { easy: easy, medium: med, hard: hard };
+    var by = { easy: [], medium: [], hard: [], pisa: [] };
+    shuffle(all.slice()).forEach(function (q) { (by[q.level] || by.medium).push(q); });
+    set = [];
+    ['easy', 'medium', 'hard'].forEach(function (l) { set = set.concat(by[l].splice(0, want[l])); });
+    var rest = shuffle([].concat(by.easy, by.medium, by.hard, by.pisa));
+    while (set.length < Math.min(n, all.length) && rest.length) set.push(rest.pop());
+    set.sort(function (x, y) { return (ORDER[x.level] - ORDER[y.level]) || (x.no - y.no); });
+    store['__draw_' + sec] = set.map(function (q) { return q.no; });
+    save();
+    return set;
+  }
+  function boxQuestions(box) {
+    var sec = box.getAttribute('data-sec'), n = parseInt(box.getAttribute('data-draw') || '0', 10);
+    return n ? drawn(sec, n) : data.filter(function (q) { return q.sec === sec; });
+  }
+  var scopeBox = document.querySelector('.qz[data-sec="final"]') || null;
+  var scope = scopeBox ? boxQuestions(scopeBox) : data;
+  function mastery() {
+    var ok = 0, done = 0;
+    scope.forEach(function (q) { var s = store[q.no]; if (s) { done++; if (s.ok) ok++; } });
+    var pct = scope.length ? ok / scope.length : 0;
+    var banner = document.getElementById('qz-mastery');
+    if (done === scope.length && scope.length) {
+      var all = {};
+      try { all = JSON.parse(localStorage.getItem('km_mastery_v1') || '{}'); } catch (e) { all = {}; }
+      if (!all[rel] || pct >= all[rel].pct) all[rel] = { pct: pct, ok: ok, total: scope.length, at: Date.now() };   // keep the best attempt
+      try { localStorage.setItem('km_mastery_v1', JSON.stringify(all)); } catch (e) { /* private mode: fine */ }
+      try { window.dispatchEvent(new CustomEvent('km-mastery')); } catch (e) { /* old browser */ }
+    }
+    if (banner) {
+      var need = Math.ceil(scope.length * PASS - 1e-9);
+      banner.className = 'qz-mastery' + (done === scope.length && pct >= PASS ? ' qz-mastery-ok' : '');
+      banner.textContent = done < scope.length
+        ? 'ឆ្លើយឱ្យត្រូវយ៉ាងតិច ' + kh(need) + ' / ' + kh(scope.length) + ' (80%) ដើម្បីបំពេញមេរៀននេះ'
+        : pct >= PASS ? '🏆 បំពេញមេរៀនហើយ! ' + kh(ok) + ' / ' + kh(scope.length) + ' (' + kh(Math.round(pct * 100)) + '%) · អាចបន្តមេរៀនបន្ទាប់'
+                      : 'បានត្រឹម ' + kh(ok) + ' / ' + kh(scope.length) + ' (' + kh(Math.round(pct * 100)) + '%) · ត្រូវការ ' + kh(need) + ' ឡើងទៅ។ ចុច «ធ្វើម្ដងទៀត» លើសំណួរខុស';
+    }
+  }
+
   function build(box) {
     var sec = box.getAttribute('data-sec');
-    var qs = data.filter(function (q) { return q.sec === sec; });
+    var qs = boxQuestions(box);
     var list = box.querySelector('.qz-list');
     var score = box.querySelector('.qz-score');
     function tally() {
       var ok = 0, done = 0;
       qs.forEach(function (q) { var s = store[q.no]; if (s) { done++; if (s.ok) ok++; } });
       score.textContent = 'ត្រឹមត្រូវ ' + kh(ok) + ' / ' + kh(qs.length) + (done < qs.length ? ' · បានធ្វើ ' + kh(done) : ' ✓');
+      mastery();
     }
     qs.forEach(function (q, i) {
       var item = el('div', 'qz-q');
@@ -126,7 +182,13 @@
     if (reset && !box.__reset) {
       box.__reset = true;
       reset.addEventListener('click', function () {
-        qs.forEach(function (q) { delete store[q.no]; }); save();
+        qs.forEach(function (q) { delete store[q.no]; });
+        if (box.getAttribute('data-draw')) {
+          delete store['__draw_' + sec];
+          qs = boxQuestions(box);
+          if (box === scopeBox) scope = qs;
+        }
+        save();
         list.innerHTML = ''; build(box);
       });
     }

@@ -651,3 +651,38 @@ span.anim-link { display: block; }
   text-align: center;
 }
 
+
+/* mastery: soft gate on the next-lesson button, trophy on the lesson list, banner above the check */
+.qz-mastery { margin: 10px 0 14px; padding: 10px 14px; border-radius: 10px; background: #fff7e6; border: 1px solid #f0d9a8; color: #5b4310; font-weight: 600; }
+.qz-mastery-ok { background: #e8f6ee; border-color: #9fd6b4; color: #1d5a37; }
+.ls-pager a .ls-gate { margin-top: 4px; font-size: 13px; font-weight: 600; }
+.ls-pager a.ls-wait { opacity: .78; border-style: dashed; }
+.ls-pager a.ls-wait .ls-gate { color: #8a5a10; }
+.ls-pager a.ls-open { border-color: #5fb286; background: #f1faf5; }
+.ls-pager a.ls-open .ls-gate { color: #1d5a37; }
+.ls-card { position: relative; }
+.ls-card .ls-trophy { position: absolute; top: 8px; right: 10px; font-size: 18px; }
+
+/* flipped-mastery path: watch, read, practise, check, test yourself */
+.km-steps { margin: 0 0 22px; }
+.km-steps ol { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.km-steps li { flex: 1 1 130px; }
+.km-steps a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid #cfe0dd; background: #f4faf9; color: #1f4d4d; text-decoration: none; font-weight: 600; font-size: 14.5px; }
+.km-steps a:hover { background: #e7f4f1; }
+.km-steps b { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #347b7b; color: #fff; flex: none; }
+.km-steps li.done a { background: #e8f6ee; border-color: #9fd6b4; }
+.km-steps li.done b { background: #1d7a46; }
+.km-steps li.done b::after { content: '✓'; }
+.km-steps li.done b { font-size: 0; } .km-steps li.done b::after { font-size: 15px; }
+.km-video { margin: 0 0 26px; padding: 16px; border-radius: 16px; border: 1px solid #cfe0dd; background: #fff; }
+.km-video .km-h { margin: 0 0 12px; font-size: 18px; }
+.km-video .yt { display: block; max-width: 720px; margin: 0 auto; }
+.km-video-soon { background: #fafbfa; border-style: dashed; }
+.km-video-soon p { margin: 0; color: #5b6676; }
+@media print { .km-steps, .km-video { display: none; } }
+
+.km-sheets { margin: 0 0 26px; padding: 16px; border-radius: 16px; border: 1px solid #cfe0dd; background: #f4faf9; }
+.km-sheets .km-h { margin: 0 0 8px; font-size: 18px; }
+.km-sheets p { margin: 0 0 12px; color: #3f4f63; }
+.km-sheet-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+@media print { .km-sheets { display: none; } }

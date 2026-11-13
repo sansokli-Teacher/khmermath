@@ -17,7 +17,8 @@
   function mark() {
     var as = document.querySelectorAll('main a[href]');
     for (var i = 0; i < as.length; i++) {
-      var a = as[i], u; try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { continue; }
+      var a = as[i], u; if ((a.getAttribute('href') || '').charAt(0) === '#') continue;   // in-page links (the step tracker, the contents) are not lessons
+      try { u = new URL(a.getAttribute('href'), location.href); } catch (e) { continue; }
       if (u.origin !== location.origin) continue;
       var p = u.pathname.indexOf(root) === 0 ? u.pathname.slice(root.length) : u.pathname.replace(/^\//, ''); p = p.replace(/index\.html$/, '');
       if (data.seen[p] && !a.querySelector('.km-done') && /^(lesson|formular|play|construct)\//.test(p)) { var s = document.createElement('span'); s.className = 'km-done'; s.title = 'បានបើកអានរួច'; s.textContent = '✓'; a.appendChild(s); }
