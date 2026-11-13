@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 
 // D1 uses ?1 ?2 numbered parameters; node:sqlite treats those as *named*, so map them to :p1 :p2.
 const toNamed = (sql, v) => {
+  // D1 also accepts bare ? placeholders (e.g. `IN (?,?,?)`): number them in order when the statement uses no ?N at all
+  if (!/\?\d/.test(sql)) { let k = 0; sql = sql.replace(/\?/g, () => `?${++k}`); }
   const used = new Set([...sql.matchAll(/\?(\d+)/g)].map((m) => Number(m[1])));
   const obj = {};
   for (const n of used) obj[`p${n}`] = v[n - 1] ?? null;

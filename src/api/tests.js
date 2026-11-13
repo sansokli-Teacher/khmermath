@@ -42,7 +42,7 @@ export async function getTest(req, env, params) {
   const test = await env.DB.prepare('SELECT id, title, status FROM tests WHERE id = ?1').bind(params.testId).first();
   if (!test) return err('Test not found.', 404);
   const { results } = await env.DB.prepare(
-    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, shuffle, topic, level, grade, lesson, points, kind, solution_text, params FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
+    'SELECT id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, cancelled, shuffle, topic, level, bloom, grade, lesson, points, kind, solution_text, params FROM test_questions WHERE test_id = ?1 ORDER BY order_no',
   ).bind(params.testId).all();
   const { results: notes } = await env.DB.prepare(
     `SELECT n.id, n.question_id, n.body, n.resolved, n.created_at, n.teacher_id, COALESCE(t.display_name, t.username) AS author
@@ -303,13 +303,13 @@ export async function duplicateTest(req, env, params) {
   const newTestId = meta.last_row_id;
 
   const { results: questions } = await env.DB.prepare(
-    'SELECT order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params FROM test_questions WHERE test_id = ?1 ORDER BY order_no'
+    'SELECT order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, bloom, shuffle, grade, lesson, params FROM test_questions WHERE test_id = ?1 ORDER BY order_no'
   ).bind(params.testId).all();
 
   for (const q of questions) {
     await env.DB.prepare(
-      'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)'
-    ).bind(newTestId, q.order_no, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade, q.lesson, q.params ?? null).run();
+      'INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, params, bloom) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)'
+    ).bind(newTestId, q.order_no, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade, q.lesson, q.params ?? null, q.bloom ?? null).run();
   }
 
   return json({ id: newTestId, title: newTitle });
@@ -380,7 +380,7 @@ async function bankRows(env, t, { dedupe = true, includeShared = false } = {}) {
   const sharedIds = new Set(ids.filter((id) => !mine.has(id) || !['owner', 'editor'].includes(mine.get(id))));
   const { results: raw } = await env.DB.prepare(
     `SELECT q.id, q.test_id, x.title AS test_title, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind,
-            q.topic, q.level, q.grade, q.lesson, q.chapter, q.shuffle, q.solution_text, q.cancelled, q.params
+            q.topic, q.level, q.bloom, q.grade, q.lesson, q.chapter, q.shuffle, q.solution_text, q.cancelled, q.params
      FROM test_questions q JOIN tests x ON x.id = q.test_id WHERE q.test_id IN (${ids.map(() => '?').join(',')}) ORDER BY q.test_id DESC, q.order_no`,
   ).bind(...ids).all();
   const results = raw.map((q) => (sharedIds.has(q.test_id) ? { ...q, shared: 1, test_title: 'ឃ្លាំងសំណួររួម' } : q));
@@ -451,9 +451,9 @@ export async function listBank(req, env) {
 async function copyInto(env, testId, q) {
   const { results } = await env.DB.prepare('SELECT COALESCE(MAX(order_no), 0) AS m FROM test_questions WHERE test_id = ?1').bind(testId).all();
   await env.DB.prepare(
-    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)`,
-  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null, q.chapter || null, q.params ?? null).run();
+    `INSERT INTO test_questions (test_id, order_no, stem_text, image_key, options_json, correct_index, alt_correct_index, points, kind, solution_text, topic, level, shuffle, grade, lesson, chapter, params, bloom)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
+  ).bind(testId, results[0].m + 1, q.stem_text, q.image_key, q.options_json, q.correct_index, q.alt_correct_index, q.points, q.kind, q.solution_text, q.topic, q.level, q.shuffle, q.grade || null, q.lesson || null, q.chapter || null, q.params ?? null, q.bloom ?? null).run();
 }
 
 // copy chosen questions into a test
@@ -461,6 +461,7 @@ export async function copyQuestions(req, env, params) {
   const g = await needTest(req, env, params.testId, 'edit'); if (g.resp) return g.resp;
   const { question_ids } = await req.json();
   if (!Array.isArray(question_ids) || !question_ids.length) return err('question_ids is required.', 400);
+  await ensureColumns(env);
   const bank = await bankRows(env, g.t, { dedupe: false, includeShared: true });
   const byId = new Map(bank.map((q) => [q.id, q]));
   let n = 0;
