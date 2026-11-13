@@ -28,9 +28,13 @@ def frac(a, b=None):
 
 POINTS = {'easy': 1, 'medium': 2, 'hard': 3, 'pisa': 3}
 
-def Q(kind, level, sec, stem, correct=None, wrongs=None, sol='', steps=None):
+BLOOMS = ('Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create')
+
+
+def Q(kind, level, sec, stem, correct=None, wrongs=None, sol='', steps=None, bloom=None):
     """mcq: correct + 3 wrongs (strings, already LaTeX-wrapped).  writing: steps = [(text, points)] summing to 5."""
-    d = dict(kind=kind, level=level, sec=sec, stem=stem.strip())
+    assert bloom is None or bloom in BLOOMS, ('unknown Bloom level', bloom, stem)
+    d = dict(kind=kind, level=level, sec=sec, stem=stem.strip(), bloom=bloom)
     if kind == 'mcq':
         assert correct is not None and wrongs and len(wrongs) >= 3, stem
         opts = [str(correct)] + [str(w) for w in wrongs]
@@ -43,8 +47,8 @@ def Q(kind, level, sec, stem, correct=None, wrongs=None, sol='', steps=None):
         d['sol'] = '\n'.join(f'{t} ({p} ពិន្ទុ)' for t, p in steps)
     return d
 
-def mcq(level, sec, stem, correct, wrongs, sol=''): return Q('mcq', level, sec, stem, correct, wrongs, sol)
-def wr(level, sec, stem, steps): return Q('writing', level, sec, stem, steps=steps)
+def mcq(level, sec, stem, correct, wrongs, sol='', bloom=None): return Q('mcq', level, sec, stem, correct, wrongs, sol, bloom=bloom)
+def wr(level, sec, stem, steps, bloom=None): return Q('writing', level, sec, stem, steps=steps, bloom=bloom)
 
 def norm(s): return re.sub(r'\s+', '', re.sub(r'\\[,; ]|\\text\{[^}]*\}', '', s or ''))
 
