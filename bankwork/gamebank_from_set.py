@@ -23,9 +23,13 @@ for q in out:
 path = 'public/data/teamgame_g7.json'
 data = json.load(open(path, encoding='utf-8'))
 cur = [l for l in data['lessons'] if l.get('n') == n and l.get('g') == g]
-assert len(cur) == 1, 'lesson not found exactly once'
-title = cur[0]['title']
-new = dict(cur[0], q=out, qs=out)
-data['lessons'] = [new if (l.get('n') == n and l.get('g') == g) else l for l in data['lessons']]
+assert len(cur) <= 1, 'lesson found more than once'
+if cur:
+    title = cur[0]['title']
+    new = dict(cur[0], q=out, qs=out)
+    data['lessons'] = [new if (l.get('n') == n and l.get('g') == g) else l for l in data['lessons']]
+else:                                    # a lesson that is not in the game bank yet: add it
+    title = mod.LESSON
+    data['lessons'].append({'n': n, 'g': g, 'd': d, 'title': title, 't': title, 'q': out, 'qs': out})
 json.dump(data, open(path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print('lesson', n, title, ':', len(out), 'questions;', dict(collections.Counter(q['t'] for q in out)), '; positions', dict(sorted(collections.Counter(q['k'] for q in out).items())))
