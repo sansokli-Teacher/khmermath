@@ -92,47 +92,50 @@ def main(name):
             errs.append('#%d numeric mismatch: %s' % (n, ex))
         except Exception as ex:
             pass
-    # specific claims, independent of the generator
-    expect = {
-        'z_1z_2': None,
-    }
-    I_ = I
-    pairs = [('(5+3i)+(-1+2i)', '4+5i'), ('(9-2i)-(4-4i)', '5+2i'), ('(2+3i)(4+2i)', '2+16i'), ('3i(5-4i)', '12+15i'),
-             ('\\dfrac{3}{2+i}', '\\dfrac{6}{5}-\\dfrac{3}{5}i'), ('\\dfrac{3+2i}{1-3i}', '\\dfrac{-3}{10}+\\dfrac{11}{10}i'), ('(2-i)^2', '3-4i'),
-             ('\\dfrac{1+i}{1-i}', 'i'), ('\\dfrac{1}{1+i}', '\\dfrac{1}{2}-\\dfrac{1}{2}i'), ('(1+2i)(3-5i)', '13+i'), ('(1+2i)+(3-5i)', '4-3i')]
-    for a, b in pairs:
-        assert simplify(num(a) - num(b)) == 0, (a, b)
-        checks += 1
-    # hand-solved items: re-solve here
-    a, b, x_, y_ = symbols('a b x_ y_', real=True)
-    sol = solve([(a + b*I + 2*(a - b*I) - (3 + 2*I)).as_real_imag()[0], (a + b*I + 2*(a - b*I) - (3 + 2*I)).as_real_imag()[1]], [a, b], dict=True)[0]
-    assert (sol[a], sol[b]) == (1, -2); checks += 1                                  # z + 2 conj z = 3 + 2i  -> 1 - 2i
-    xs = symbols('xs', real=True)
-    e = (3 + I)/(1 + I) + (xs - I)/(1 - I)
-    assert solve(e.expand(complex=True).as_real_imag()[1], xs) == [3]; checks += 1     # real  -> x = 3
-    sol = solve([((x_ + y_*I)*(2 - I) - (5 + 5*I)).expand(complex=True).as_real_imag()[0], ((x_ + y_*I)*(2 - I) - (5 + 5*I)).expand(complex=True).as_real_imag()[1]], [x_, y_], dict=True)[0]
-    assert (sol[x_], sol[y_]) == (1, 3); checks += 1                                  # (x+iy)(2-i) = 5+5i
-    z1, z2 = symbols('z1 z2')
-    s_ = solve([z1 + 2*z2 - (4 + 3*I), 2*z1 - z2 - (3 - 4*I)], [z1, z2], dict=True)[0]
-    assert (simplify(s_[z1] - (2 - I)), simplify(s_[z2] - (1 + 2*I))) == (0, 0); checks += 1
-    assert simplify((1 + 3*I)/(2 - I) - (2 + I)/(1 + 2*I) - (-1 + 2*I)) == 0; checks += 1
-    assert simplify((20 + 10*I)/(4 + 2*I) - 5) == 0 and simplify(5*(4 + 2*I) - (20 + 10*I)) == 0; checks += 1   # impedance
-    assert simplify((2 - I)*(3 + 2*I) - (8 + I)) == 0; checks += 1                       # Ohm
-    assert simplify((1 + 7*I) - (4 + 3*I) - (-3 + 4*I)) == 0; checks += 1               # drones
-    assert simplify(((-2 + 6*I) + (4 - 2*I))/2 - (1 + 2*I)) == 0; checks += 1          # midpoint
-    assert simplify((1 + 4*I) + 4*(2 - I) - 9) == 0 and all(simplify((1 + 4*I + k*(2 - I)).as_real_imag()[1]) != 0 for k in (1, 2, 3)); checks += 1  # robot n = 4
-    assert simplify((1 + I) + (5 + 5*I) - (4 + 2*I) - (2 + 4*I)) == 0 and simplify(((1 + I) + (5 + 5*I))/2 - ((4 + 2*I) + (2 + 4*I))/2) == 0; checks += 1  # plot D
-    assert simplify(1/(1 + 2*I) - (Rational(1, 5) - Rational(2, 5)*I)) == 0; checks += 1  # filter
-    assert simplify((2 + 3*I)**2 - 4*(2 + 3*I) + 13) == 0; checks += 1                     # quadratic
-    # pump station: minimise AP+PB on y = 0 numerically
-    import math
-    best = min((math.hypot(t - 1, 3) + math.hypot(5 - t, 2), t) for t in [i/1000 for i in range(0, 8000)])
-    assert abs(best[1] - 3.4) < 0.002, best; checks += 1
-    # z * conj z = 1 for z = (i-x)/(i+x)
-    xr = symbols('xr', real=True)
-    zz = (I - xr)/(I + xr)
-    assert simplify(zz*zz.conjugate()) == 1; checks += 1
-    assert simplify(zz.expand(complex=True).as_real_imag()[0] - (1 - xr**2)/(1 + xr**2)) == 0 and simplify(zz.expand(complex=True).as_real_imag()[1] - 2*xr/(1 + xr**2)) == 0; checks += 1
+    if name == 'G12L01':
+        # specific claims, independent of the generator
+        expect = {
+            'z_1z_2': None,
+        }
+        I_ = I
+        pairs = [('(5+3i)+(-1+2i)', '4+5i'), ('(9-2i)-(4-4i)', '5+2i'), ('(2+3i)(4+2i)', '2+16i'), ('3i(5-4i)', '12+15i'),
+                 ('\\dfrac{3}{2+i}', '\\dfrac{6}{5}-\\dfrac{3}{5}i'), ('\\dfrac{3+2i}{1-3i}', '\\dfrac{-3}{10}+\\dfrac{11}{10}i'), ('(2-i)^2', '3-4i'),
+                 ('\\dfrac{1+i}{1-i}', 'i'), ('\\dfrac{1}{1+i}', '\\dfrac{1}{2}-\\dfrac{1}{2}i'), ('(1+2i)(3-5i)', '13+i'), ('(1+2i)+(3-5i)', '4-3i')]
+        for a, b in pairs:
+            assert simplify(num(a) - num(b)) == 0, (a, b)
+            checks += 1
+        # hand-solved items: re-solve here
+        a, b, x_, y_ = symbols('a b x_ y_', real=True)
+        sol = solve([(a + b*I + 2*(a - b*I) - (3 + 2*I)).as_real_imag()[0], (a + b*I + 2*(a - b*I) - (3 + 2*I)).as_real_imag()[1]], [a, b], dict=True)[0]
+        assert (sol[a], sol[b]) == (1, -2); checks += 1                                  # z + 2 conj z = 3 + 2i  -> 1 - 2i
+        xs = symbols('xs', real=True)
+        e = (3 + I)/(1 + I) + (xs - I)/(1 - I)
+        assert solve(e.expand(complex=True).as_real_imag()[1], xs) == [3]; checks += 1     # real  -> x = 3
+        sol = solve([((x_ + y_*I)*(2 - I) - (5 + 5*I)).expand(complex=True).as_real_imag()[0], ((x_ + y_*I)*(2 - I) - (5 + 5*I)).expand(complex=True).as_real_imag()[1]], [x_, y_], dict=True)[0]
+        assert (sol[x_], sol[y_]) == (1, 3); checks += 1                                  # (x+iy)(2-i) = 5+5i
+        z1, z2 = symbols('z1 z2')
+        s_ = solve([z1 + 2*z2 - (4 + 3*I), 2*z1 - z2 - (3 - 4*I)], [z1, z2], dict=True)[0]
+        assert (simplify(s_[z1] - (2 - I)), simplify(s_[z2] - (1 + 2*I))) == (0, 0); checks += 1
+        assert simplify((1 + 3*I)/(2 - I) - (2 + I)/(1 + 2*I) - (-1 + 2*I)) == 0; checks += 1
+        assert simplify((20 + 10*I)/(4 + 2*I) - 5) == 0 and simplify(5*(4 + 2*I) - (20 + 10*I)) == 0; checks += 1   # impedance
+        assert simplify((2 - I)*(3 + 2*I) - (8 + I)) == 0; checks += 1                       # Ohm
+        assert simplify((1 + 7*I) - (4 + 3*I) - (-3 + 4*I)) == 0; checks += 1               # drones
+        assert simplify(((-2 + 6*I) + (4 - 2*I))/2 - (1 + 2*I)) == 0; checks += 1          # midpoint
+        assert simplify((1 + 4*I) + 4*(2 - I) - 9) == 0 and all(simplify((1 + 4*I + k*(2 - I)).as_real_imag()[1]) != 0 for k in (1, 2, 3)); checks += 1  # robot n = 4
+        assert simplify((1 + I) + (5 + 5*I) - (4 + 2*I) - (2 + 4*I)) == 0 and simplify(((1 + I) + (5 + 5*I))/2 - ((4 + 2*I) + (2 + 4*I))/2) == 0; checks += 1  # plot D
+        assert simplify(1/(1 + 2*I) - (Rational(1, 5) - Rational(2, 5)*I)) == 0; checks += 1  # filter
+        assert simplify((2 + 3*I)**2 - 4*(2 + 3*I) + 13) == 0; checks += 1                     # quadratic
+        # pump station: minimise AP+PB on y = 0 numerically
+        import math
+        best = min((math.hypot(t - 1, 3) + math.hypot(5 - t, 2), t) for t in [i/1000 for i in range(0, 8000)])
+        assert abs(best[1] - 3.4) < 0.002, best; checks += 1
+        # z * conj z = 1 for z = (i-x)/(i+x)
+        xr = symbols('xr', real=True)
+        zz = (I - xr)/(I + xr)
+        assert simplify(zz*zz.conjugate()) == 1; checks += 1
+        assert simplify(zz.expand(complex=True).as_real_imag()[0] - (1 - xr**2)/(1 + xr**2)) == 0 and simplify(zz.expand(complex=True).as_real_imag()[1] - 2*xr/(1 + xr**2)) == 0; checks += 1
+    if hasattr(mod, 'verify'):
+        checks += mod.verify()
     # Bloom + quotas
     kinds = collections.Counter((q['kind'], q['level']) for q in C)
     assert kinds == collections.Counter(mod.TARGET), (kinds, mod.TARGET)
