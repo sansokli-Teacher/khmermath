@@ -662,4 +662,7 @@ def cands():
         ]
     ))
 
+    bloom_for = {'easy': 'Understand', 'medium': 'Apply', 'hard': 'Analyze', 'pisa': 'Evaluate'}
+    for q in C:
+        q['bloom'] = q.get('bloom') or bloom_for[q['level']]
     return C
