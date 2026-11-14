@@ -87,7 +87,7 @@ def main(names):
         mod = importlib.import_module('gen12sc.' + nm)
         # Parse lesson number from name, e.g. G11L01 -> 1
         les_idx = int(nm.split('L')[-1]) if 'L' in nm else 1
-        order = BASE_ORDER + les_idx * 100
+        order = getattr(mod, 'ORDER_BASE', BASE_ORDER + les_idx * 100)
         lesson = mod.LESSON
         target = getattr(mod, 'TARGET', TARGET)
         grade = getattr(mod, 'GRADE', '12SC')
