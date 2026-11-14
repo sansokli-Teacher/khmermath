@@ -43,6 +43,10 @@ PARTS = {
         'អនុគមន៍ត្រីកោណមាត្រ',
         'លក្ខណៈនៃអនុគមន៍ត្រីកោណមាត្រ',
         'ការសិក្សាអនុគមន៍ត្រីកោណមាត្រ']),
+    10: ('រូបមន្តត្រីកោណមាត្រ', [
+        'រូបមន្តផលបូកនិងផលដក',
+        'រូបមន្តមុំឌុប និងរូបមន្តកន្លះមុំ',
+        'រូបមន្តបម្លែង']),
     17: ('លីមីតនិងដេរីវេ', ['លីមីត', 'ដេរីវេ']),
     26: ('រូបធរណីមាត្រក្នុងលំហ', [
         'ការគូសរូបក្នុងលំហនៅលើប្លង់',
@@ -68,6 +72,7 @@ SEC_PART = {
     7: lambda s: int(s[3]),                      # sec1_def/sec1_graph -> 1, sec2_eq/sec2_ineq -> 2, sec3_apply -> 3
     8: lambda s: int(s[3]),                      # sec1_* .. sec6_apply -> part 1..6
     9: lambda s: int(s[3]),                      # sec1_.. sec4_.. -> part 1..4
+    10: lambda s: int(s[3]),                     # sec1_.. sec3_.. -> part 1..3
     17: lambda s: 1 if 'លីមីត' in s else 2,      # the free-text tags that mention លីមីត are limits, the rest are derivatives
 }
 
